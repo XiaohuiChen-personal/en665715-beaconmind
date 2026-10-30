@@ -52,11 +52,11 @@ Photos copied so those notes' image links resolve: `esp32cam-board.jpg`, `esp32c
 
 ## Scrub list (applied to this repo only)
 
-- Wi-Fi SSID and password values: not found in tracked text. The example headers still contain the placeholders `your-ssid`, `your-password`, `YOUR_2_4_GHZ_WIFI_NAME`, and `YOUR_WIFI_PASSWORD`. Those are not credentials.
+- Wi-Fi SSID and password values: the first pass reported none in tracked text. A later pass found the SSID string in `reference/hardware/pico-bringup.md` and removed it. The value is not repeated here. The password was not in tracked text. The example headers still contain the placeholders `your-ssid`, `your-password`, `YOUR_2_4_GHZ_WIFI_NAME`, and `YOUR_WIFI_PASSWORD`. Those are not credentials.
 - Gmail address and a `100.x` Tailscale address on two `ps` lines in `course-project/evidence/M1/M1.T6/usb-and-load.txt`, replaced with `<redacted>`. The address values are not repeated in this file.
 - Full MAC printed by esptool in `flash-id.txt`, `dout-write.txt`, and `uxga-write.txt`, replaced with `<redacted>`. The broadcast address `ff:ff:ff:ff:ff:ff` in the Wi-Fi design stayed. It is the hinted-join constant, not a device.
 - `cursor.com` address in `plan/M5-report.md`, replaced with `email removed`.
-- Classmate's name (`Vincent Hu` and `V. Hu`) in `CONTEXT.md`, `car.json`, evidence, and the measurements CSV, replaced with "a classmate".
+- Classmate's name (given name, surname, and the initial-plus-surname form) in `CONTEXT.md`, `car.json`, evidence, and the measurements CSV, replaced with "a classmate". This file no longer spells that name.
 - Room-by-room home-mesh map in the public `wifi-roaming-design-2026-10-23.md`: room names, per-node LAN addresses, and the eero-app checklist removed. Firmware decisions stayed (session supervisor, roam thresholds, host node choice, `WIFI_NODE_PRIORS`, why channel 6 stalls matter). Last-three-byte node labels stayed. They are not full MACs. The private original is unchanged.
 - Plate-CAD path `reference/hardware/emo-chassis-plate/` in imported project files now says the CAD is not published here. One broken join (`…here)README.md`) in `evidence/M1/M1.T9/plate-cad-2026-10-16/README.md` was rewritten.
 - `pico-bringup.md` no longer points at an assignment photo that is not in this repo.
@@ -91,7 +91,7 @@ Run from this repo root, after the tree and this file's earlier sections were wr
 find . -name wifi_config.h -print
 # content scan over text files, skipping .git:
 # gmail.com, utexas.edu, cursor.com, ts.net, 100.109,
-# tailscale-shaped 100.x.x.x, Vincent, "V. Hu", word Hu,
+# tailscale-shaped 100.x.x.x, the classmate's given name and surname,
 # colon MAC ([0-9a-f]{2}:){5}, QuadChart, JHU-Presentation, .potx,
 # l2_geometry.py, and quoted password/SSID assignments
 # path scan: a file named l2_geometry.py, assignment7, assignment8,
@@ -107,7 +107,7 @@ First-run results (before this file existed):
 | path containing `assignment7` or `assignment8` | none (prose mentions of the private course repo remain) |
 | `.venv`, `report/sources`, `.pptx`, `.potx` | none |
 | `gmail.com`, `cursor.com`, `ts.net`, `100.109`, other `100.x.x.x` | 0 |
-| `Vincent`, `V. Hu`, word `Hu` | 0 |
+| classmate given name and surname | 0 outside this file |
 | `utexas.edu` | 4, all the public maintainer email in the two packages' `package.xml` and `setup.py` |
 | colon MAC | 1, the broadcast hinted-join address in the Wi-Fi design |
 | quoted password or SSID assignment | 0 real values; example headers use the placeholders named above |
@@ -124,7 +124,7 @@ First-run results (before this file existed):
 
 ## Second search
 
-Run after this file existed, from the repo root, with the same patterns. Hits inside this file are the search record (the words `gmail.com`, `utexas.edu`, `cursor.com`, `ts.net`, `100.109`, `Vincent`, `V. Hu`, and the broadcast MAC appear here as documentation). They are not credentials.
+Run after this file existed, from the repo root, with the same patterns. Hits inside this file are the search record (the words `gmail.com`, `utexas.edu`, `cursor.com`, `ts.net`, `100.109`, and the broadcast MAC appear here as documentation). They are not credentials. The classmate's name was also spelled in this file at that time; a later pass removed those spellings and does not repeat them.
 
 Outside this file:
 
@@ -133,7 +133,7 @@ Outside this file:
 | `wifi_config.h` on disk | none |
 | `l2_geometry.py`, `.pptx`, `.potx`, `.venv`, `report/sources/`, `assignment7/` or `assignment8/` directories | none |
 | `gmail.com`, `cursor.com`, `ts.net`, `100.109`, other `100.x.x.x` | 0 |
-| `Vincent`, `V. Hu`, word `Hu` | 0 |
+| classmate given name and surname | 0 outside this file |
 | `utexas.edu` | 4, the public maintainer email only |
 | colon MAC | 1, broadcast `ff:ff:ff:ff:ff:ff` in the Wi-Fi design |
 | `wifi_config.h` as text | filename mentions in firmware comments, plans, and `.gitignore`; no credential file |
@@ -156,3 +156,17 @@ A commit hook appended `Co-authored-by: Cursor <cursoragent@cursor.com>` to both
 Gitignored files left on disk in the private `course-project/` folder, and not committed, include both `wifi_config.h` files, `.venv`, report `sources/`, and LaTeX aux files.
 
 No evidence JPEG or PNG was dropped.
+
+## Third search (2026-10-29, after the push)
+
+A later pass compared the pushed tree with the private `wifi_config.h` values and with the classmate's name. Neither value is copied into this file.
+
+- `reference/hardware/pico-bringup.md` still contained the Wi-Fi SSID. That string was removed. The password was not in the tree.
+- This file's scrub list and search record still spelled the classmate's name. Those spellings were removed.
+- Home LAN addresses and last-three-byte node labels stayed, as `AGENTS.md` §5 allows. No full home-mesh MAC was found. The only colon MAC in the tree is the broadcast hinted-join address.
+- The four `utexas.edu` maintainer addresses match the public GitHub profile email. They stayed.
+- The Cursor agent address in the paragraph above stays. It documents the hook trailer and is not a personal address.
+
+Do not restore `reference/hardware/pico-bringup.md` or the scrub-list wording in this file from the already-pushed history. That history still has the strings this pass removed. It was not rewritten.
+
+Grok 4.7 via Cursor (2026-10-29) did this pass. Xiaohui Chen is accountable for the public tree.

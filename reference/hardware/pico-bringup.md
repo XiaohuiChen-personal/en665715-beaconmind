@@ -63,7 +63,7 @@ Observed on that run, and **not stable across DHCP renewals**:
 
 - Pico address `192.168.4.81`
 - Agent address compiled into the firmware: Spark Ethernet `192.168.5.1`, UDP **8888**
-- SSID the firmware printed: `I am such a nice guy` (2.4 GHz BSS of that network). The password stays only in `wifi_config.h`.
+- The firmware joined the 2.4 GHz network named in `wifi_config.h`. That name is not recorded in this public copy. The password stays only in `wifi_config.h`.
 
 If the Spark's Ethernet address is no longer `192.168.5.1`, this image will not find the agent until `wifi_config.h` is updated and the UF2 is rebuilt and reflashed.
 
