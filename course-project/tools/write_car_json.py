@@ -54,6 +54,8 @@ axle-line row (B3 and S1 x had been left at 2 mm); after a third review, only th
 test_urdf.py's use of read_csv changed; 2026-10-16: added the CAD uncertainty rule (CAD_M), the two plate-front
 outline rows (P1, P2) and the rounded plate-front corners, for the plate CAD a classmate shared
 (the private course repo (plate CAD is not published here)). The measurements are Xiaohui Chen's; the CAD rows are the classmate's model.
+AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: made the K1_total_mass uncertainty reason generic
+(it named only the 2026-10-10 readings); the value TWO_SCALE_KG and all logic are unchanged.
 """
 
 import argparse
@@ -143,7 +145,8 @@ TWO_SCALE_KG = car_model.rss(0.001, 0.001)
 TWO_SCALE_WHY = "sum of two 1 g scale readings (caster scale + drive-wheel scale)"
 UNCERTAINTY_OVERRIDE = {
     "B5b_wing_depth_centre": (0.004, "review #7: photos suggest 35-37 mm against the 40 mm reading of 2026-10-10"),
-    "K1_total_mass": (TWO_SCALE_KG, TWO_SCALE_WHY + ", 142 g + 364 g on 2026-10-10"),
+    "K1_total_mass": (TWO_SCALE_KG, "two-scale rule (two 1 g readings, root-sum-square), kept for every whole-car "
+                      "mass row; the K-row notes give the readings"),
     # The template's mass_kg row asks for the same two-scale sum (its notes: "write the SUM").
     "mass_kg": (TWO_SCALE_KG, TWO_SCALE_WHY + ", as the template's mass_kg row asks"),
 }

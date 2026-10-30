@@ -1,0 +1,35 @@
+## robot_state_publisher + tf2_echo 2026-10-30T04:37:59+00:00
+$ ros2 node list
+/robot_state_publisher
+$ timeout 5 ros2 run tf2_ros tf2_echo base_link camera_optical_frame -p 6
+- Translation: [0.120000, 0.000000, 0.041500]
+- Rotation: in RPY (degree) [-90.000000, -0.000000, -90.000000]
+$ timeout 5 ros2 run tf2_ros tf2_echo base_link camera_link -p 6
+- Translation: [0.120000, 0.000000, 0.041500]
+- Rotation: in RPY (degree) [0.000000, -0.000000, 0.000000]
+$ timeout 5 ros2 run tf2_ros tf2_echo base_link imu_link -p 6
+- Translation: [-0.061000, 0.020000, 0.026500]
+- Rotation: in RPY (degree) [0.000000, -0.000000, 0.000000]
+$ timeout 5 ros2 run tf2_ros tf2_echo base_link caster_link -p 6
+- Translation: [0.100000, 0.000000, -0.021000]
+- Rotation: in RPY (degree) [0.000000, -0.000000, 0.000000]
+$ timeout 5 ros2 run tf2_ros tf2_echo base_link chassis_link -p 6
+- Translation: [0.000000, 0.000000, 0.000000]
+- Rotation: in RPY (degree) [0.000000, -0.000000, 0.000000]
+$ ros2 param get /robot_state_publisher robot_description | grep -c "<link name="
+8
+$ masses in the published robot_description
+<mass value="0.575" <mass value="0.03" <mass value="0.03" <mass value="0.01" <mass value="0.01" <mass value="0.005" 
+The daemon has been stopped
+--- launch.log (tail)
+[INFO] [launch]: All log files can be found below /tmp/bmhome/ros_log/2026-10-30-04-38-00-058671-013a46f8d6af-74
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [robot_state_publisher-1]: process started with pid [77]
+[robot_state_publisher-1] [INFO] [1793335080.195454645] [robot_state_publisher]: got segment base_link
+[robot_state_publisher-1] [INFO] [1793335080.195531764] [robot_state_publisher]: got segment camera_link
+[robot_state_publisher-1] [INFO] [1793335080.195536500] [robot_state_publisher]: got segment camera_optical_frame
+[robot_state_publisher-1] [INFO] [1793335080.195539236] [robot_state_publisher]: got segment caster_link
+[robot_state_publisher-1] [INFO] [1793335080.195541508] [robot_state_publisher]: got segment chassis_link
+[robot_state_publisher-1] [INFO] [1793335080.195543732] [robot_state_publisher]: got segment imu_link
+[robot_state_publisher-1] [INFO] [1793335080.195545988] [robot_state_publisher]: got segment left_wheel_link
+[robot_state_publisher-1] [INFO] [1793335080.195548084] [robot_state_publisher]: got segment right_wheel_link

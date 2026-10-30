@@ -1,0 +1,16 @@
+## expand + check_urdf 2026-10-30T04:37:59+00:00
+$ xacro /workspace/course-project/ros2_ws/src/beaconmind_description/urdf/beaconmind_car.urdf.xacro > /workspace/course-project/sim/isaac/assets/beaconmind_car.urdf
+xacro exit 0
+2cc248cf69855a5327c214b0f075848c63db9a9080ec26565def2136de485e54  /workspace/course-project/sim/isaac/assets/beaconmind_car.urdf
+$ check_urdf /workspace/course-project/sim/isaac/assets/beaconmind_car.urdf
+robot name is: beaconmind_car
+---------- Successfully Parsed XML ---------------
+root Link: base_link has 6 child(ren)
+    child(1):  camera_link
+        child(1):  camera_optical_frame
+    child(2):  caster_link
+    child(3):  chassis_link
+    child(4):  imu_link
+    child(5):  left_wheel_link
+    child(6):  right_wheel_link
+check_urdf exit 0

@@ -7,10 +7,18 @@
   AI-assisted: Claude Opus 5.5 (xhigh effort) via Claude Code, 2026-10-10: wrote the URDF/xacro, launch file and tests.
   AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-16: drew the plate's rounded front (front_slices, from the
   classmate's plate CAD in the private course repo (plate CAD is not published here)) and updated the plate comments for the CAD outline.
+  AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: added the power bank (box power_bank, colour
+  bank_black, guards) from the M1.T16 readings and updated the mass, centre-of-mass, inertia and Module 6 comments;
+  after a review the same day, added the one-weighing guard, the body_box size check, the bank-floor guard and the
+  complete bank/motor overlap test, compared the bank top with the measured rear underside, and corrected the inertia,
+  Isaac massless-link, self-collision and wheel-layout comments and added the M2.T16 notes (bank, caster).
 
-  beaconmind_car.urdf.xacro: the ONE robot description of Xiaohui Chen's two-wheel car, shared by
-    (a) the Module 6 Gazebo Fortress lab (assignments/assignment6, wrapped with the instructor's <gazebo> blocks), and
-    (b) the BeaconMind course project (robot_state_publisher TF tree, C12; Isaac Sim twin, M2.T4 / M2.T16).
+  beaconmind_car.urdf.xacro: the robot description of Xiaohui Chen's two-wheel car for the BeaconMind course project
+  (robot_state_publisher TF tree, C12; Isaac Sim twin, M2.T4 / M2.T16).
+  Until 2026-10-29 the Module 6 Gazebo Fortress lab (assignments/assignment6 in the private course repo, wrapped with the
+  instructor's <gazebo> blocks) included this file directly. Since 2026-10-29 the lab mounts a frozen snapshot instead
+  (assignments/assignment6/beaconmind_description-m6-snapshot in the private course repo), so changes here no longer
+  reach the lab.
 
   Frames (README C1): base_link = midpoint between the drive-wheel centres AT AXLE HEIGHT (z = 0 at the axle);
   +x toward the camera lens / caster end (the front); +y = robot left; +z up. Floor is at z = -wheel_radius.
@@ -22,22 +30,27 @@
   Links (exactly): base_link, chassis_link, left_wheel_link, right_wheel_link, caster_link, camera_link,
   camera_optical_frame, imu_link.
   This file has NO <gazebo>, <sensor>, ray or lidar elements (D1a: no range sensor). Simulator-specific
-  blocks belong in a wrapper (for the lab: assignments/assignment6/lab-step10/gazebo_car.urdf.xacro).
+  blocks belong in a wrapper (for the lab: assignments/assignment6/lab-step10/gazebo_car.urdf.xacro, private repo).
 -->
 <robot name="beaconmind_car">
   <!-- ================= base_link: the axle midpoint (no visual, no inertia) ================= -->
   <!-- No <inertial> here on purpose: KDL (robot_state_publisher) does not support an inertia on the root link,
        so the body's mass lives in chassis_link, attached by a fixed joint.
-       Isaac Sim (M2.T16): base_link and camera_optical_frame are the two links with NO <inertial> (no mass). How the
-       Isaac URDF importer treats a massless link with merge_fixed_joints = False is NOT verified here. After the
-       import, M2.T16 must check that neither became a rigid body with a default mass (the car's total must stay
-       0.506 kg) and that the import log has no warnings about them. (In the Gazebo lab, sdformat's URDF converter
-       merges fixed-joint links into their parent by default, so these frames get no body of their own there.) -->
+       Isaac Sim (M2.T16): base_link and camera_optical_frame are the two links with NO <inertial> (no mass). With
+       merge_fixed_joints = False the Isaac URDF importer makes both of them bodies and logs, for each, the warnings
+       "No mass specified for link %s" and "Link %s has no colliders, and no inertia was imported; assigning a small
+       isotropic inertia matrix" (isaacsim.asset.importer.urdf 2.4.30 in the Spark's Isaac Sim source,
+       plugins/isaacsim.asset.importer.urdf/UrdfImporter.cpp lines 393 and 608; read 2026-10-29). So EXPECT those two
+       warnings for these two links. M2.T16 checks that their PhysX mass is negligible, that the car's total stays
+       0.660 kg (car.json mass_kg), and that no OTHER warning mentions them. What mass PhysX assigns them is NOT
+       verified here. (In the Gazebo lab, sdformat's URDF converter merges fixed-joint links into their parent by
+       default, so these frames get no body of their own there.) -->
   <link name="base_link"/>
   <!-- ================= chassis_link: the plate and everything rigidly on it ================= -->
-  <!-- Boxes follow the real car (photos in assignments/assignment6/photos). None of them reaches the tyres:
-       the tyres span |y| 53.5 to 80 mm and x -33.5 to +33.5 mm; the boxes stay inside |y| <= 51 mm where they
-       overlap that x range, and the wide wing slices stay behind x = -42.14 mm. -->
+  <!-- Boxes follow the real car (photos in assignments/assignment6/photos, private repo; the power bank:
+       evidence/M1/M1.T16/photos). None of them reaches the tyres: the tyres span |y| 53.5 to 80 mm and x -33.5 to
+       +33.5 mm; the boxes stay inside |y| <= 51 mm where they overlap that x range, and the wide wing slices stay behind
+       x = -42.14 mm. -->
   <link name="chassis_link">
     <visual name="plate_strip_visual">
       <origin rpy="0 0 0" xyz="0.036606 0.0 0.0125"/>
@@ -160,33 +173,48 @@
       </geometry>
     </collision>
     <visual name="motor_left_visual">
-      <origin rpy="0 0 0" xyz="0.021 0.04 0.00375"/>
+      <origin rpy="0 0 0" xyz="0.0215 0.04 0.00375"/>
       <geometry>
-        <box size="0.074 0.022 0.0145"/>
+        <box size="0.073 0.022 0.0145"/>
       </geometry>
       <material name="motor_light_blue">
         <color rgba="0.45 0.72 0.92 1"/>
       </material>
     </visual>
     <collision name="motor_left_collision">
-      <origin rpy="0 0 0" xyz="0.021 0.04 0.00375"/>
+      <origin rpy="0 0 0" xyz="0.0215 0.04 0.00375"/>
       <geometry>
-        <box size="0.074 0.022 0.0145"/>
+        <box size="0.073 0.022 0.0145"/>
       </geometry>
     </collision>
     <visual name="motor_right_visual">
-      <origin rpy="0 0 0" xyz="0.021 -0.04 0.00375"/>
+      <origin rpy="0 0 0" xyz="0.0215 -0.04 0.00375"/>
       <geometry>
-        <box size="0.074 0.022 0.0145"/>
+        <box size="0.073 0.022 0.0145"/>
       </geometry>
       <material name="motor_light_blue">
         <color rgba="0.45 0.72 0.92 1"/>
       </material>
     </visual>
     <collision name="motor_right_collision">
-      <origin rpy="0 0 0" xyz="0.021 -0.04 0.00375"/>
+      <origin rpy="0 0 0" xyz="0.0215 -0.04 0.00375"/>
       <geometry>
-        <box size="0.074 0.022 0.0145"/>
+        <box size="0.073 0.022 0.0145"/>
+      </geometry>
+    </collision>
+    <visual name="power_bank_visual">
+      <origin rpy="0 0 0" xyz="-0.05 0.0 -0.004"/>
+      <geometry>
+        <box size="0.07 0.07 0.025"/>
+      </geometry>
+      <material name="bank_black">
+        <color rgba="0.11 0.11 0.12 1"/>
+      </material>
+    </visual>
+    <collision name="power_bank_collision">
+      <origin rpy="0 0 0" xyz="-0.05 0.0 -0.004"/>
+      <geometry>
+        <box size="0.07 0.07 0.025"/>
       </geometry>
     </collision>
     <visual name="breadboard_visual">
@@ -267,11 +295,17 @@
     <!-- Inertia: box approximation. The chassis is treated as ONE uniform solid box of chassis_mass,
          207 x 100 x 36 mm (plate length x strip width x main-body height, motor bottoms to battery top),
          centred on the chassis centre of mass and aligned with base_link. Not measured; good enough for
-         a slow indoor car (no pendulum / bifilar measurement was made). -->
+         a slow indoor car (no pendulum / bifilar measurement was made).
+         The power bank (above) is drawn as geometry only, and this box was NOT resized for it: by the M1.T16 decision
+         (evidence/M1/M1.T16/measurements.md) its unweighed mass stays inside chassis_mass, and only the inertia spread
+         is affected. With the current numbers the box spans x -94.7 to +112.3 mm (chassis_com_x +- 103.5 mm),
+         y +-50 mm and 30 to 66 mm above the floor (chassis_com_z +- 18 mm). The bank (x -85 to -15 mm, y +-35 mm,
+         17 to 42 mm) lies inside it in x and y and with its upper 12 mm (30 to 42 mm) inside it in height; only its
+         lower 13 mm (17 to 30 mm) are below the box. -->
     <inertial>
-      <origin rpy="0 0 0" xyz="0.035973871 -0.00023753 0.0145"/>
-      <mass value="0.421"/>
-      <inertia ixx="0.0003963013333333334" ixy="0" ixz="0" iyy="0.0015484632740333333" iyz="0" izz="0.0018538286073666666"/>
+      <origin rpy="0 0 0" xyz="0.008808696 -0.000173913 0.0145"/>
+      <mass value="0.575"/>
+      <inertia ixx="0.0005412666666666667" ixy="0" ixz="0" iyy="0.0021148845191666663" iyz="0" izz="0.002531951185833333"/>
     </inertial>
   </link>
   <joint name="chassis_joint" type="fixed">
@@ -293,8 +327,13 @@
            (section 5.1): a sphere meets the ground at one point in the middle of the tyre, like a real tyre, while a
            cylinder meets it at its edges, which in the instructor's testing made the simulated robot turn about 20 %
            more than its wheel odometry computed. Side effect: the sphere bulges 20 mm past the tyre's outer face
-           (|y| up to 100 mm) and into the body; self-collision is off by default in Gazebo and in the Isaac
-           importer, so the inner overlap is harmless.
+           (|y| up to 100 mm) and into the body: it already intersects the motor box (about 18 mm deep), the plate
+           strip (13.5 mm) and the breadboard (11.7 mm); the power bank clears it by 1.6 mm. Self-collision is off by
+           default in both simulators: sdformat 1.11 model.sdf (the Jazzy sdformat14 vendor package, read on the Spark
+           2026-10-29) gives self_collide default false and says "Links connected by a joint will never collide"; the
+           Isaac URDF importer's config has selfCollision = false (isaacsim.asset.importer.urdf 2.4.30, IUrdf.h line 71).
+           M2.T16 must still set self-collision OFF explicitly: the wheel links are jointed to base_link, not to
+           chassis_link, so with self-collision on these overlapping colliders would collide.
            Left UNNAMED on purpose: sdformat's URDF converter (checked with gz sdf 14.9 on 2026-10-10) drops the
            <gazebo reference> friction (mu1/mu2) of a link whose <collision> has a name attribute. -->
     <collision>
@@ -327,8 +366,13 @@
            (section 5.1): a sphere meets the ground at one point in the middle of the tyre, like a real tyre, while a
            cylinder meets it at its edges, which in the instructor's testing made the simulated robot turn about 20 %
            more than its wheel odometry computed. Side effect: the sphere bulges 20 mm past the tyre's outer face
-           (|y| up to 100 mm) and into the body; self-collision is off by default in Gazebo and in the Isaac
-           importer, so the inner overlap is harmless.
+           (|y| up to 100 mm) and into the body: it already intersects the motor box (about 18 mm deep), the plate
+           strip (13.5 mm) and the breadboard (11.7 mm); the power bank clears it by 1.6 mm. Self-collision is off by
+           default in both simulators: sdformat 1.11 model.sdf (the Jazzy sdformat14 vendor package, read on the Spark
+           2026-10-29) gives self_collide default false and says "Links connected by a joint will never collide"; the
+           Isaac URDF importer's config has selfCollision = false (isaacsim.asset.importer.urdf 2.4.30, IUrdf.h line 71).
+           M2.T16 must still set self-collision OFF explicitly: the wheel links are jointed to base_link, not to
+           chassis_link, so with self-collision on these overlapping colliders would collide.
            Left UNNAMED on purpose: sdformat's URDF converter (checked with gz sdf 14.9 on 2026-10-10) drops the
            <gazebo reference> friction (mu1/mu2) of a link whose <collision> has a name attribute. -->
     <collision>
@@ -350,7 +394,14 @@
   <!-- ================= Caster ================= -->
   <!-- The swivel caster's white wheel, modelled as a sphere of radius caster_radius centred caster_radius above the
        floor at the TRAILING contact point (caster_x = 100 mm measured), so it touches the floor exactly:
-       sphere bottom = caster_z - caster_radius = -wheel_radius. -->
+       sphere bottom = caster_z - caster_radius = -wheel_radius.
+       Isaac Sim (M2.T16), computed from this model: the whole car's centre of mass is 46.6 mm above the floor and
+       10.545 mm ahead of the axle, so the caster lifts at a forward acceleration of about g * x / h = 2.2 m/s^2
+       (1.85 to 2.59 m/s^2 over the +-1.8 mm of com_x; the 2026-10-10 model, 33.7 mm ahead: 7.15 m/s^2). With the
+       sphere at the trailing contact (x = 0.100 m) and the middle com_x, the model's static caster load is
+       0.660 x 10.545 / 100 = 69.6 g against the 58 g weighed (only the trailing-toward-the-axle com_x, 8.79 mm,
+       matches the scales). Record 69.6 g as the expected settle value in M2.T16; the model is not changed for it
+       (Xiaohui chose the middle value, 2026-10-29). -->
   <link name="caster_link">
     <visual name="caster_wheel_visual">
       <geometry>

@@ -10,6 +10,47 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
 
+## 2026-10-29 (night) — M2.T4: URDF updated to the M1.T16 car (660 g, power bank)
+
+Branch `urdf/m1t16-measured-mass` (PR into `main`), made in a separate worktree because another agent was working
+on `main`. Record, run logs and review: `evidence/M2/M2.T4/2026-10-29-m1t16/README.md`. This entry replaces the
+"URDF still the 2026-10-10 car" statements of the two entries below.
+
+- **Model now:** total mass **0.660 kg** (`car.json` `mass_kg`, from the new CSV
+  `evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv` through `write_car_json.py`); two-scale split
+  58 / 602 g; whole-car centre of mass **0.010545 m** ahead of the axle (Xiaohui's middle value, ±0.0018 m with the
+  assumed 20 mm caster trail; 8.8–11.2 mm from the readings alone); chassis 0.575 kg; a geometry-only `power_bank`
+  box on `chassis_link` (x −85 to −15 mm, y ±35 mm, 17–42 mm above the floor). Unchanged: ride height
+  30 / 46 / 43 mm, lens pose, camera rpy 0, IMU pose, wheels, caster, and the `car.json` footprint keys
+  (`sweep_radius_m`, both overhangs, `corners`, `chassis_length_m`, `chassis_height_m`).
+- **Agent decision for Xiaohui to accept:** the gearbox boxes' rear end (a photo ESTIMATE, ±6 mm) moved from −16 to
+  −15 mm so they do not share volume with the measured bank front face. Whether the parts touch on the car is not
+  measured.
+- **Checks:** `beaconmind-ros:humble` (throwaway `--network none` container on a scratch copy): colcon **23 tests,
+  0 errors, 0 failures, 1 skipped** (no `camera.json`); `check_urdf` OK; TF unchanged (`base_link →
+  camera_optical_frame` 0.120, 0, 0.0415 m); `gz sdf` 14.9 converts with no warnings, 0.660 kg. Unmodified `main`
+  had 2 broken URDF tests after the public-repo move (stale `car.json` hash in `car_props.xacro`; the extras CSV path
+  pointed into the private repo); both fixed. `beaconmind` pytest 64 passed, 1 skipped.
+- **Review:** one round, four lenses (source fidelity, math and geometry, data chain and tests, ROS and simulator).
+  No critical finding; every number confirmed. Fixed: a guard and a test that the split and the total are one
+  weighing (a later total without a new split used to pass), bank guards (rounding, completeness, measured rear
+  underside), a `body_box` size guard, an inertia test, and comment accuracy (inertia box, Isaac massless-link
+  warnings, self-collision sources, private-repo labels, the CSV's AI line).
+- **Notes for M2.T16 (Isaac twin), in the xacro comments:** the caster lifts at about 2.2 m/s² forward acceleration
+  (7.15 m/s² for the old model), so ramp wheel commands and log pitch; the bank's rear-bottom edge is the first rear
+  contact at about 11.8° nose-up, rear clearance 17 mm, and the bank collider needs a physics material; set
+  self-collision off explicitly; importer 2.4.30 warns for the massless `base_link` and `camera_optical_frame`; with
+  the caster sphere at the trailing contact the model's static caster load is 69.6 g against the 58 g weighed.
+- **Open for Xiaohui:** the 1 mm gearbox-box change; the rear Pico cable (148 mm) vs the 0.140 m sweep radius; the
+  front camera-cable point; the bank alone (not weighed); re-weighing with the caster turned sideways would remove
+  the ±1.8 mm. The plan's M2.T16 claim that `merge_fixed_joints = True` "would delete the camera frames" does not
+  match importer 2.4.30 per the ROS reviewer (not re-run). The Spark's private-repo mirror predates the Module 6
+  snapshot commit: `git pull` it before that lab is used again.
+- **Status:** M2.T4 stays `blocked` (M1.T7 `camera.json`, M2.T3 `load_car`). M1.T16 stays `in-progress`.
+
+AI-assisted: Claude Opus 5.5 via Cursor, 2026-10-29: this entry, the worktree and PR, the container and Gazebo runs,
+and the review; the URDF/xacro edits were made by Claude Opus 5.5 at xhigh effort, as the 2026-10-06 rule asks.
+
 ## 2026-10-29 (late) — M1.T16 measured: 660 g car, bank box, URDF may now be regenerated
 
 Xiaohui measured the car as it is now. Evidence: `evidence/M1/M1.T16/measurements.md`, `confirm.md`, `photos/`.

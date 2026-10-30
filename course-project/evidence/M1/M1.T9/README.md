@@ -1,11 +1,52 @@
 # M1.T9 evidence: car measurements and `configs/car.json`
 
 **Measured by Xiaohui Chen on 2026-10-10** at the bench (car on the floor, battery switch off, camera fitted, no
-USB cable). The readings were taken for the Module 6 Gazebo lab and reviewed there
-(`assignments/assignment6/review/MEASUREMENT-REVIEW.md`, round 1: 54 findings, each re-checked against the
-photos and the arithmetic). This task turns them into the project's `configs/car.json` (schema `bm.car/1`).
+USB cable). On 2026-10-29, for M1.T16, he weighed the whole car and the two-scale split again and read the
+power-bank box (B15 rows) and the cable points (X1/X2 rows, not model inputs) (section below). The 2026-10-10
+readings were taken for the Module 6 Gazebo lab and reviewed there
+(`assignments/assignment6/review/MEASUREMENT-REVIEW.md` in the private course repo, round 1: 54 findings, each
+re-checked against the photos and the arithmetic). This task turns them into the project's `configs/car.json` (schema `bm.car/1`).
 M1.T9 is **blocked**, not done (plan README §1.2 step 4, §1.4 items 1 and 8): the remaining work needs Xiaohui at
 the bench or his decisions. See "What is still missing".
+
+## 2026-10-29 update: the M1.T16 mass
+
+Xiaohui weighed the car as it is now (M1.T16, `evidence/M1/M1.T16/measurements.md`), in what `measurements.md` calls
+the "staying configuration"; the M1.T16 prerequisites in `plan/M1-foundations.md` define it as bank fixed, four cells
+in, camera on, only the cables that stay on the car. The battery switch state at that weighing was not recorded (the
+"Battery OFF" on the CSV's first line describes the earlier rows). So `car.json` is now built from
+**`measurements-2026-10-29-with-m1t16-mass.csv`**: the 2026-10-16 CSV unchanged (every row; only dated `#` comment
+lines added at the top) plus these rows at the end:
+
+| Row | Reading | Used for |
+| --- | --- | --- |
+| `K1_total_mass_remeasure` (→ `mass_kg`) | **660 g**, one Pitney Bowes postal scale (5 kg × 1 g) | `car.json` `mass_kg`; replaces `K1_total_mass` (506 g, 2026-10-10) |
+| `K2_caster_load_remeasure`, `K2_drive_wheels_load_remeasure` | **58 g + 602 g** = 660 g, two scales of that model side by side; caster **not** turned sideways, trail direction unknown | `car_geometry_extras.xacro` (`caster_load`, `drive_wheels_load`, `com_x`) |
+| `B15_bank_front_x`, `B15_bank_rear_x`, `B15_bank_bottom_h`, `B15_bank_height`, `B15_bank_width`, `B15_bank_tyre_gap` | 15 and 85 mm behind the axle, 17 mm above the floor, 25 mm tall, 70 mm wide, 18 mm to each tyre | the power-bank box in `car_geometry_extras.xacro` (geometry only) |
+| `X1_pico_usb_cable_rear_x`, `X2_lowest_cable_h` | 148 mm behind the axle, 7 mm above the floor | **not model inputs** (record only) |
+
+Effect on `car.json`: `mass_kg` 0.506 → **0.660 kg** (± 0.0014 kg, the same two-scale rule: 58 g + 602 g, which
+one scale read as 660 g); its `source` names `K1_total_mass_remeasure`. Every entry's `evidence` and `updated` now
+name the new CSV (or `derived.txt`) and 2026-10-29, and the `measured` block notes the update. **Nothing else
+changed**: every other value and uncertainty is identical (checked key by key).
+
+**Why the footprint keys stay.** `front_overhang_m`, `rear_overhang_m`, `chassis_length_m`, `corners`,
+`sweep_radius_m` and `chassis_height_m` are deliberately not updated. The bank's rear face (85 mm behind the axle) is
+8.5 mm behind the plate's rear apex (`rear_overhang_m` 76.49 mm); the Pico's USB cable reaches 148 mm behind the axle,
+outside the 0.140 m sweep radius; and the front-most point of the camera's cable, which sticks out at the front since
+the camera runs from the bank, is not measured yet. Xiaohui decides the footprint (reroute the cables or enlarge the
+sweep radius) later; until then `car.json` keeps the 2026-10-16 footprint. The bank is now the lowest body point
+(17 mm above the floor), but `chassis_height_m` stays the gearbox-bottom-to-battery-top 36 mm, which the URDF guard and
+the chassis inertia box use. Ride height, camera stand, BNO055, antenna, tyres and cell type are unchanged
+(`evidence/M1/M1.T16/confirm.md`).
+
+The centre of mass is not a `car.json` key. Xiaohui's decision is to use the middle value, 0.0105 m ahead of the
+axle, ± 0.0018 m for the unknown caster trail direction (2026-10-10: 0.0337 m). `car_geometry_extras.xacro`
+implements it with the caster's swivel x C3 (120 mm) as the lever arm: 120 × 58 / 660 = 0.0105 m. The ± 0.0018 m
+assumes the 20 mm trail of the 2026-10-10 notes; from the readings alone (the swung-forward caster front, about
+140 mm, limits the forward contact to about 127.5 mm) the range is 0.0088 to 0.0112 m, and 0.0105 m lies inside
+both. `write_car_json.py` changed only the reason text of the K1 uncertainty (now generic; it named only the
+2026-10-10 readings); its logic and `TWO_SCALE_KG` are unchanged.
 
 ## 2026-10-16 update: the plate outline from a classmate's CAD
 
@@ -44,11 +85,12 @@ gives the old `car.json` values). `test_configs_car_json_is_the_writer_output` n
 
 | File | What it holds |
 | --- | --- |
-| `measurements-xiaohui-chen-2026-10-10.csv` | Xiaohui's readings: an unchanged copy of `assignments/assignment6/measurements.csv` (sha256 `f26dbb39…25e573da`, same as the source) |
-| `measurements-2026-10-16-with-plate-cad.csv` | **The CSV `car.json` is built from since 2026-10-16**: the 2026-10-10 copy plus the plate-CAD and fit rows (section above) |
+| `measurements-xiaohui-chen-2026-10-10.csv` | Xiaohui's readings: an unchanged copy of `assignments/assignment6/measurements.csv`, a private course repo file (sha256 `f26dbb39…25e573da`, same as the source) |
+| `measurements-2026-10-16-with-plate-cad.csv` | The CSV `car.json` was built from between 2026-10-16 and 2026-10-29: the 2026-10-10 copy plus the plate-CAD and fit rows (2026-10-16 section) |
+| `measurements-2026-10-29-with-m1t16-mass.csv` | **The CSV `car.json` is built from since 2026-10-29**: the 2026-10-16 file unchanged plus the M1.T16 mass, power-bank and cable rows (2026-10-29 section) |
 | `plate-cad-2026-10-16/` | The 2026-10-16 run logs: `pytest-mac.txt`, `pytest-py310.txt`, `colcon-test.txt`, `urdf-named-diff.txt` |
 | `measured.json` | The `measured` block written into `car.json`: who, when, instruments, and the deviations and conventions below |
-| `derived.txt` | Output of `course-project/tools/write_car_json.py` (re-run 2026-10-10 08:27 after the second review's fixes): every value, its source row, its uncertainty and the rule used, the corners (each labelled, the assumed ones marked), the derived keys, the omitted keys, and the schema check |
+| `derived.txt` | Output of `course-project/tools/write_car_json.py` (re-run 2026-10-29 for the M1.T16 mass; first line = the command): every value, its source row, its uncertainty and the rule used, the corners (each labelled, the assumed ones marked), the derived keys, the omitted keys, and the schema check |
 | `schema-validate.txt` | `python -m beaconmind.schemas car ../configs/car.json` → `OK ../configs/car.json (1 objects)` |
 | `pytest-mac.txt`, `pytest-py310.txt` | `beaconmind` tests after the second review's fixes: Mac 55 passed; `beaconmind-ros` (Python 3.10) 55 passed. They include `tests/test_car_model.py` (15 tests, among them `test_configs_car_json_is_the_writer_output`: `car.json` is exactly what the writer builds from this CSV; three tests of the template; two tests that rows typed in m / kg give the same uncertainties as rows in mm / g) |
 | `derived-dv-proposals.md` | Step 6: `done_range_m` 0.588 ± 0.003 m (placeholder 0.55), sweep radius 0.140 m, the nose-to-wall check, and why metres-per-count is not yet computable |
@@ -76,7 +118,7 @@ the template's instruction notes do not.
   `evidence/M2/M2.T4/README.md`). Only B9/B10 (the xacro guard) and a new total mass (`test_com_matches_lever_rule`)
   are caught if this is forgotten.
 
-Photos: `assignments/assignment6/photos/` (bottom view, camera stand, battery holder, breadboard, wing close-up,
+Photos: `assignments/assignment6/photos/` in the private course repo (bottom view, camera stand, battery holder, breadboard, wing close-up,
 the two-scale weighing). They are **not copied here**: they show the desk, screens or a hand, and the plan forbids
 personal items in evidence photos (plan README L8; `photos/README.md`). The plan's `car-top.jpg`,
 `car-side.jpg` and `imu-orientation.jpg` (ruler in view, nothing personal in frame) do not exist yet.
@@ -87,8 +129,11 @@ personal items in evidence photos (plan README L8; `photos/README.md`). The plan
   rows say "not stated", and they are treated as ruler readings. x is measured forward from the drive-wheel axle
   line (+x toward the camera lens / caster end, the front Xiaohui confirmed), y to the robot's left, heights from
   the floor.
-- Mass: the car stood with its caster on one Pitney Bowes kitchen scale (5 kg × 1 g) and both drive wheels on an
-  identical scale at the same height: 142 g + 364 g = 506 g.
+- Mass (since 2026-10-29, M1.T16): the whole car on one Pitney Bowes postal scale (5 kg × 1 g): 660 g; the same
+  sitting split over two scales of that model, caster on one (not turned sideways) and both drive wheels on the
+  other: 58 g + 602 g = 660 g. Until 2026-10-29 (the 2026-10-10 weighing): the car stood with its caster turned
+  sideways on one Pitney Bowes kitchen scale (5 kg × 1 g) and both drive wheels on an identical scale at the same
+  height: 142 g + 364 g = 506 g.
 - `course-project/tools/write_car_json.py` maps the CSV rows onto the plan's keys (M1.T9 step 5), converts to m and
   kg, applies the superseding rule (a `_corrected` / `_recheck` / `_remeasure*` row replaces the earlier row;
   `SUPERSEDED` rows are not inputs), computes the derived keys, and validates the result.
@@ -102,14 +147,14 @@ personal items in evidence photos (plan README L8; `photos/README.md`). The plan
 | `caster_x_m` | 0.100 m | 0.005 | `C2_caster_contact_x` ("around"; trailing caster's floor contact) |
 | `caster_diameter_m` | 0.025 m | 0.002 | `C1_caster_wheel_diameter_recheck` (re-check of the first 25 mm reading) |
 | `front_overhang_m` | 0.138 m | 0.003 | `B3_front_most_x` (ESP32-CAM USB-C side, **no cable**; axle-datum floor) |
-| `rear_overhang_m` | 0.07649 m (0.077 until 2026-10-16) | 0.003 | `B4_rear_most_x_corrected` (= plate rear apex; fitted to the CAD length; axle-datum floor) |
+| `rear_overhang_m` | 0.07649 m (0.077 until 2026-10-16) | 0.003 | `B4_rear_most_x_corrected` (= plate rear apex; fitted to the CAD length; axle-datum floor). Since 2026-10-29 the power bank reaches 8.5 mm and the Pico's cable 71.5 mm further back; deliberately not updated (2026-10-29 section) |
 | `chassis_length_m` | 0.21449 m (0.215 until 2026-10-16) | 0.0042 | derived: front + rear overhang |
 | `chassis_width_m` | 0.14792 m (0.150 until 2026-10-16) | 0.0005 | `B5_plate_width_max_corrected` (CAD; widest **body** point, tyres excluded; over the tyres 0.160 m): **deviation 7** |
-| `chassis_height_m` | 0.036 m | 0.0028 | derived: `B10_battery_holder_top_h` 66 − `B9_lowest_body_h` 30 mm (**main body**; the camera stand reaches ~100 mm): **deviation 7** |
+| `chassis_height_m` | 0.036 m | 0.0028 | derived: `B10_battery_holder_top_h` 66 − `B9_lowest_body_h` 30 mm (**main body**; the camera stand reaches ~100 mm; since 2026-10-29 the power bank's bottom, 17 mm, is lower than `B9`, and this key is deliberately left as it is): **deviation 7** |
 | `lens_x_m`, `lens_y_m`, `lens_z_m` | 0.120, 0.000, 0.075 m | 0.005, 0.002, 0.002 | `S3_lens_x` ("around"), `S3_lens_y`, `S3_lens_centre_h` (height above the **floor**) |
 | `imu_x_m`, `imu_y_m` | −0.061, +0.020 m | 0.003, 0.002 | `S1_imu_board_centre_x` (axle-datum floor), `S1_imu_board_centre_y_corrected` (robot LEFT) |
 | `imu_z_m` | 0.0265 m | 0.0022 | derived: `S1_imu_board_top_h` 60 mm (board top above the floor) − `wheel_diameter_m` / 2 = 33.5 mm, i.e. the board top above the **axle** midpoint, as M1.T9 step 3 defines the IMU position; ± = root-sum-square of 2 mm and 1 mm |
-| `mass_kg` | 0.506 kg | 0.0014 | `K1_total_mass` = 142 g + 364 g (root-sum-square of two 1 g readings) |
+| `mass_kg` | 0.660 kg (0.506 until 2026-10-29) | 0.0014 | `K1_total_mass_remeasure` = 660 g on one scale = 58 g + 602 g (M1.T16; ± = root-sum-square of two 1 g readings, as for `K1_total_mass` = 142 g + 364 g on 2026-10-10) |
 | `corners` | 12 points | 0.005 | derived plan-view extremes (`derived.txt` lists them); four of them **assume** a centred part: **deviation 8** |
 | `sweep_radius_m` | 0.140 m (0.1402 until 2026-10-16) | 0.005 | derived: max distance over `corners`, reached since 2026-10-16 at the caster swung fully forward (no assumption); until then at the plate's square front corners, one of the assumed ones: **deviation 8** |
 
@@ -140,8 +185,10 @@ m or kg gets the same uncertainty as one typed in mm or g.
 3. **Encoder counts per wheel revolution postponed** (step 4 needs the Pico on USB with the diagnostic firmware).
    `counts_per_rev_left`, `counts_per_rev_right`, `ticks_per_wheel_rev` are omitted, which the plan allows; the
    M2.T3 view then uses the nominal 4320 with an `assumptions` entry. The Pico was not touched in this session.
-4. **No USB cable fitted** when `front_overhang_m` was measured (and when the car was weighed). Re-measure with the
-   operating cable in M3.T1.
+4. **No USB cable fitted** when `front_overhang_m` was measured (and when the car was weighed on 2026-10-10; the
+   2026-10-29 weighing was in the staying configuration, which the M1.T16 prerequisites define with the cables that
+   stay on the car). Re-measure with the operating cable in M3.T1: the
+   camera's cable now sticks out at the front, and its front-most point is not measured yet (M1.T16).
 5. **`imu_axes` not recorded** (no photo of the BNO055's printed axes from above).
 6. **Camera not calibrated** (M1.T7 not done): `lens_*` are ruler readings, not `camera.json` extrinsics, and the
    camera's mount angles are unknown (the URDF assumes 0).
@@ -209,3 +256,11 @@ rebuilt it byte-identical), extended the 3 mm axle-datum floor to every axle-lin
 2 mm, so `front_overhang_m`, `imu_x_m` and `chassis_length_m` changed their ± and nothing else), and added the m/kg
 and template uncertainty tests; after a third review the same day, it wrote the "Rebuilding `car.json` from the filled
 template" notes above (the URDF tests were changed in `evidence/M2/M2.T4/`; nothing in this folder's data changed).
+
+AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: wrote `measurements-2026-10-29-with-m1t16-mass.csv`
+(a copy of the 2026-10-16 CSV plus rows that transcribe Xiaohui Chen's M1.T16 readings from
+`evidence/M1/M1.T16/measurements.md`), updated `measured.json`, the K1 reason text in `write_car_json.py` and this
+README, rebuilt `configs/car.json` with the writer and saved its output as `derived.txt`; after a review the same
+day, sourced the configuration list to the M1.T16 prerequisites, stated the unrecorded battery state, corrected who
+decided what about the centre of mass, made the K1 reason text generic and labelled the private-repo files (no value
+changed). The readings are Xiaohui Chen's.

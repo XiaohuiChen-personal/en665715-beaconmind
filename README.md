@@ -1,6 +1,6 @@
 # BeaconMind
 
-Xiaohui Chen. BeaconMind is an individual class project for JHU EN.665.715 that asks whether a language-model agent can keep its own pose and AprilTag map on a small wheeled car: code does the geometry, and a validator gates each move. The geometry library, the 2026-10-10 car URDF, and flashed-but-uncalibrated ESP32-CAM firmware are in this repo; the Pico project firmware and the Isaac Sim twin are not built yet.
+Xiaohui Chen. BeaconMind is an individual class project for JHU EN.665.715 that asks whether a language-model agent can keep its own pose and AprilTag map on a small wheeled car: code does the geometry, and a validator gates each move. The geometry library, the car URDF (updated to the car measured on 2026-10-29: 660 g, power bank), and flashed-but-uncalibrated ESP32-CAM firmware are in this repo; the Pico project firmware and the Isaac Sim twin are not built yet.
 
 Wi-Fi secrets are not in this repo. `wifi_config.h` stays on the machine that flashes the boards.
 

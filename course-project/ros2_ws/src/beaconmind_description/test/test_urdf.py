@@ -10,6 +10,12 @@ calibrated camera.json it failed against the ruler readings), and made the measu
 car.json names, through write_car_json.py's reader and plan-key table (they were tied to the 2026-10-10 row names, so a
 car.json rebuilt from the M1.T9 template failed them). 2026-10-16: added test_plate_outline_matches_measurements for the
 plate outline taken from a classmate's plate CAD (the private course repo (plate CAD is not published here)).
+AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: pointed the extras source CSV at the public evidence
+CSV of the M1.T16 weighing (it named a private-repo file, so test_com_matches_lever_rule errored in this repository),
+updated the docstrings for the 660 g weighing, and added test_power_bank_box_matches_measurements; after a review the
+same day, added the one-weighing check on the CSV rows to test_com_matches_lever_rule, compared the bank top with the
+measured rear plate underside, added test_inertias_are_physical_and_chassis_is_the_uniform_box, and rewrote the
+docstrings on what catches a half-done update.
 
 The URDF under test is what `xacro` (run via subprocess, so ROS must be sourced) expands from
 urdf/beaconmind_car.urdf.xacro, parsed with xml.etree.ElementTree.
@@ -26,14 +32,23 @@ measurement CSV -> car.json (tools/write_car_json.py) -> car_props.xacro + car_g
     5-revolution roll-outs when both were measured, else the direct reading W1_tyre_diameter_direct; the IMU height
     above the axle is an imu_z_m row, else S1_imu_board_top_h - wheel diameter / 2. So a car.json rebuilt from a
     filled tools/car_measurements_template.csv is tested against THAT CSV with no edit here.
-  - fixture `extras_meas`: assignments/assignment6/measurements.csv, the source of the hand-written
-    car_geometry_extras.xacro. Only test_com_matches_lever_rule reads it (C3 swivel x and the two-scale weighing, which
-    car.json does not carry). The extras file is NOT regenerated: when one of its rows is re-measured it is edited by
-    hand (its header says so). Two checks catch a half-done update: the xacro guard on chassis_height (B9/B10), and
-    test_com_matches_lever_rule, which fails while car.json's mass and the extras' caster_load come from different
-    weighings. Since 2026-10-16 test_plate_outline_matches_measurements checks the plate outline (B1, B2, B5 narrow,
-    B5b, the B5 max width and the front radii P1/P2) against the `meas` CSV, which holds the plate CAD rows; B14 and
-    the part boxes are still not checked against a re-measured CSV.
+  - fixture `extras_meas`: course-project/evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv, the source
+    of the hand-written car_geometry_extras.xacro (until 2026-10-29 the private course repo's
+    assignments/assignment6/measurements.csv, which is not in this public repo). test_com_matches_lever_rule reads it
+    (C3 swivel x and the two-scale weighing, which car.json does not carry), and
+    test_power_bank_box_matches_measurements reads its B15_bank_* rows. The extras file is NOT regenerated: when one of
+    its rows is re-measured it is edited by hand (its header says so). Since 2026-10-29 `extras_meas` and `meas` are the
+    same CSV, so comparing car.json's mass with the extras CSV's mass can no longer tell two weighings apart. What
+    catches a half-done update now: the xacro guard on chassis_height (B9/B10); the xacro one-weighing guard, which
+    stops xacro (and so fails every test that expands the URDF) when the extras' caster_load + drive_wheels_load and
+    car.json's mass differ by more than 2.5 g, e.g. car.json rebuilt from a new whole-car mass row while the extras
+    still hold the old split; and test_com_matches_lever_rule, which checks the same 2.5 g sum on the CSV rows after
+    the superseding rule (a new whole-car mass row without a new two-scale split fails there even before car.json is
+    rebuilt) and fails while the extras' caster_load differs from the CSV's K2 row (the COM no longer matches the
+    lever rule). Since 2026-10-16 test_plate_outline_matches_measurements checks
+    the plate outline (B1, B2, B5 narrow, B5b, the B5 max width and the front radii P1/P2) against the `meas` CSV,
+    which holds the plate CAD rows; since 2026-10-29 test_power_bank_box_matches_measurements checks the power-bank
+    box; B14 and the other part boxes are still not checked against a re-measured CSV.
 Overrides: BM_MEASUREMENTS_CSV (the `meas` CSV), BM_EXTRAS_CSV, BM_CAR_JSON (camera.json is looked for next to
 car.json). Expected values computed from a CSV are compared within MEAS_TOL = 2e-6 m: car.json stores every value to
 1 um and the xacro rounds derived values to 1 um, so a mean of three readings or a roll-out can land up to about
@@ -87,7 +102,9 @@ XACRO_FILE = PKG / "urdf" / "beaconmind_car.urdf.xacro"
 PROPS_FILE = PKG / "urdf" / "car_props.xacro"
 EXTRAS_FILE = PKG / "urdf" / "car_geometry_extras.xacro"
 GEN_PROPS = PKG / "beaconmind_description" / "gen_props.py"
-EXTRAS_CSV_IN_REPO = Path("assignments") / "assignment6" / "measurements.csv"  # car_geometry_extras.xacro's source
+# car_geometry_extras.xacro's source CSV (BM_EXTRAS_CSV overrides it)
+EXTRAS_CSV_IN_REPO = (Path("course-project") / "evidence" / "M1" / "M1.T9"
+                      / "measurements-2026-10-29-with-m1t16-mass.csv")
 CAR_IN_REPO = Path("course-project") / "configs" / "car.json"
 WRITER_IN_REPO = Path("course-project") / "tools" / "write_car_json.py"
 
@@ -96,8 +113,8 @@ def find_repo_root(start, marker):
     """The nearest folder above `start` that holds `marker` (a repo-relative file), else None.
 
     In the source tree the package is <repo>/course-project/ros2_ws/src/beaconmind_description, but a copy of it can
-    sit much shallower (the lab container mounts it at /description), where a fixed PKG.parents[3] would raise
-    IndexError while the module is imported. Searching upward never raises; the fixtures report a missing file.
+    sit much shallower (the Module 6 lab container mounted one at /description), where a fixed PKG.parents[3] would
+    raise IndexError while the module is imported. Searching upward never raises; the fixtures report a missing file.
     """
     for folder in start.parents:
         if (folder / marker).is_file():
@@ -135,6 +152,9 @@ TOL = 1e-6
 # For expected values computed from a measurement CSV: car.json keeps 1 um and the xacro rounds derived values to
 # 1 um, so up to three 0.5 um roundings separate a CSV mean (or a roll-out diameter) from the URDF number.
 MEAS_TOL = 2e-6
+# One weighing: the whole-car total and the two-scale split (caster + drive wheels) are three 1 g readings, so one
+# weighing can disagree with itself by about root-sum-square(1, 1, 1) = 1.7 g; the same 2.5 g as the xacro guard.
+SPLIT_TOL_KG = 0.0025
 
 
 # ---------------------------------------------------------------- fixtures and helpers
@@ -255,8 +275,8 @@ def meas(writer, car_json_path):
 
 @pytest.fixture(scope="module")
 def extras_meas(writer):
-    """assignments/assignment6/measurements.csv (or BM_EXTRAS_CSV): the readings car_geometry_extras.xacro was
-    hand-written from."""
+    """course-project/evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv (or BM_EXTRAS_CSV): the readings
+    car_geometry_extras.xacro was hand-written from."""
     if EXTRAS_CSV is None or not EXTRAS_CSV.is_file():
         pytest.fail(f"extras source CSV not found (looked for {EXTRAS_CSV_IN_REPO} above {PKG}; got {EXTRAS_CSV}): "
                     "set BM_EXTRAS_CSV")
@@ -549,8 +569,8 @@ def test_no_range_sensor(robot):
 
 
 def test_total_mass_matches_car_json(robot, meas, car_json_path):
-    """Sum of link masses = car.json mass_kg, and = the measurement CSV's mass_kg (K1_total_mass, 506 g, on
-    2026-10-10) end to end."""
+    """Sum of link masses = car.json mass_kg, and = the measurement CSV's mass_kg end to end (K1_total_mass after the
+    superseding rule: since 2026-10-29 K1_total_mass_remeasure, 660 g, M1.T16; 506 g on 2026-10-10)."""
     total = sum(float(m.get("value")) for m in robot.findall("link/inertial/mass"))
     car_mass = json.loads(car_json_path.read_text(encoding="utf-8"))["values"]["mass_kg"]["value"]
     assert abs(total - car_mass) <= TOL, f"sum of link masses {total} kg, car.json mass_kg {car_mass} kg"
@@ -747,13 +767,27 @@ def test_imu_pose_from_measurements(robot, meas, car_json_path):
 
 
 def test_com_matches_lever_rule(robot, extras_meas):
-    """Whole-car COM from all <inertial>s = C3 swivel x * caster-scale load / total mass, and y = 0.
+    """The CSV's two-scale split adds up to its total (one weighing), and the whole-car COM from all <inertial>s =
+    C3 swivel x * caster-scale load / total mass, with y = 0.
 
     C3 and K2 are inputs of the hand-written car_geometry_extras.xacro, so they come from its source CSV
-    (extras_meas). The total must be that CSV's mass too: the lever rule needs the caster load and the total from ONE
-    weighing, so a car.json mass from a newer weighing fails here until caster_load is updated by hand."""
-    total, com = whole_car_com(robot)
+    (extras_meas). Since 2026-10-29 that CSV is also the one car.json is built from, so "the URDF total equals that
+    CSV's mass" no longer shows that the total and the split are one weighing. Three checks do: here,
+    K2_caster_load + K2_drive_wheels_load (after the superseding rule) must equal the CSV's mass_kg within 2.5 g, so a
+    new whole-car mass row without a new split fails; the xacro one-weighing guard compares the extras'
+    caster_load + drive_wheels_load with car.json's mass and stops xacro; and the COM check below fails while the
+    extras' caster_load differs from the CSV's K2 row.
+    The lever arm: Xiaohui decided on 2026-10-29 to use the middle value (x = 0.0105 m, +-0.0018 m), which the model
+    implements with the swivel x C3 as the lever arm (car_geometry_extras.xacro com_x), because on the M1.T16 scales
+    the caster was not turned sideways and its trail direction is unknown. On 2026-10-10 the swivel x was the correct
+    lever arm (the caster was turned sideways)."""
     weighed = extras_meas["mass_kg"]
+    split = extras_meas["K2_caster_load"] + extras_meas["K2_drive_wheels_load"]
+    rows = [extras_meas.reading(k).row_name for k in ("K2_caster_load", "K2_drive_wheels_load", "mass_kg")]
+    assert abs(split - weighed) <= SPLIT_TOL_KG, (
+        f"{extras_meas.path.name}: K2 caster + drive-wheel loads {split} kg ({rows[0]} + {rows[1]}) and the whole-car "
+        f"mass {weighed} kg ({rows[2]}) are not one weighing: re-weigh the two-scale split with the total")
+    total, com = whole_car_com(robot)
     assert abs(total - weighed) <= TOL, (
         f"sum of link masses {total} kg (car.json mass_kg) is not the mass {weighed} kg of {extras_meas.path.name}, "
         "the weighing that gave car_geometry_extras.xacro its caster_load: re-weigh both parts and update "
@@ -785,6 +819,70 @@ def test_chassis_boxes_do_not_overlap(robot):
     boxes = boxes_in_base(robot, "chassis_link")
     clashes = [(a, b) for (a, box_a), (b, box_b) in itertools.combinations(boxes, 2) if overlap(box_a, box_b)]
     assert not clashes, f"overlapping chassis boxes: {clashes}"
+
+
+def test_power_bank_box_matches_measurements(robot, meas, extras_meas):
+    """The chassis box power_bank (collision and visual) is the M1.T16 power bank (2026-10-29, rows B15_bank_* of the
+    extras source CSV): x from -B15_bank_rear_x to -B15_bank_front_x (both read as distances BEHIND the axle line),
+    y +-B15_bank_width / 2 (centred), floor heights B15_bank_bottom_h to B15_bank_bottom_h + B15_bank_height (model
+    z = floor height - the wheel radius from `meas`). It is the lowest chassis box, and its top is not above the
+    MEASURED plate underside at the rear, where it sits (B8_plate_underside_h_rear; the level model plate is higher)."""
+    r = meas.wheel_diameter() / 2
+    front, rear = extras_meas["B15_bank_front_x"], extras_meas["B15_bank_rear_x"]
+    width, bottom, height = (extras_meas[k] for k in ("B15_bank_width", "B15_bank_bottom_h", "B15_bank_height"))
+    expected = [(-rear, -front), (-width / 2, width / 2), (bottom - r, bottom + height - r)]
+    # The readings agree with each other: "centred, 18 mm to each tyre" against (track inner - bank width) / 2, within
+    # the 2 mm ruler rule.
+    gap = (meas["track_inner_m"] - width) / 2
+    assert abs(gap - extras_meas["B15_bank_tyre_gap"]) <= 0.002, f"bank-to-tyre gap {gap} m vs the reading"
+    for element in ("collision", "visual"):
+        boxes = dict(boxes_in_base(robot, "chassis_link", element))
+        name = f"power_bank_{element}"
+        assert name in boxes, f"chassis_link has no {element} box named {name}"
+        box = boxes[name]
+        for axis, (lo, hi), (e_lo, e_hi) in zip("xyz", box, expected):
+            assert abs(lo - e_lo) <= MEAS_TOL and abs(hi - e_hi) <= MEAS_TOL, \
+                f"{name} {axis} spans ({lo}, {hi}) m, the readings give ({e_lo}, {e_hi}) m"
+        others = {n: b for n, b in boxes.items() if n != name}
+        lowest = min(others, key=lambda n: others[n][2][0])
+        assert box[2][0] < others[lowest][2][0], f"{name} is not the lowest chassis box ({lowest} is as low)"
+        plate_rear = extras_meas["B8_plate_underside_h_rear"] - r
+        assert box[2][1] <= plate_rear + TOL, \
+            f"{name} top {box[2][1]} m is above the measured rear plate underside {plate_rear} m (B8 rear)"
+
+
+def test_inertias_are_physical_and_chassis_is_the_uniform_box(robot, meas, car_json_path):
+    """(a) Every link's <inertia> is a valid solid-body inertia about principal axes: zero products of inertia,
+    positive moments, and ixx + iyy >= izz, ixx + izz >= iyy, iyy + izz >= ixx.
+    (b) chassis_link's inertia is the uniform solid box of its own mass with sx = the plate length
+    B1_plate_front_x + B2_plate_rear_x (`meas`, after the superseding rule), sy = B5_plate_width_narrow and
+    sz = car.json chassis_height_m: ixx = m (sy^2 + sz^2) / 12 and so on, within a relative 1e-9. A swapped edge in the
+    chassis inertia call passes (a) and fails (b)."""
+    checked = 0
+    for lk in robot.findall("link"):
+        inertial = lk.find("inertial")
+        if inertial is None:
+            continue
+        checked += 1
+        el, name = inertial.find("inertia"), lk.get("name")
+        v = {k: float(el.get(k)) for k in ("ixx", "ixy", "ixz", "iyy", "iyz", "izz")}
+        assert v["ixy"] == v["ixz"] == v["iyz"] == 0.0, f"{name}: non-zero products of inertia {v}"
+        assert min(v["ixx"], v["iyy"], v["izz"]) > 0.0, f"{name}: a principal moment is not positive {v}"
+        for a, b, c in (("ixx", "iyy", "izz"), ("ixx", "izz", "iyy"), ("iyy", "izz", "ixx")):
+            assert v[a] + v[b] >= v[c] * (1 - 1e-12), f"{name}: {a} + {b} < {c} ({v})"
+    # base_link and camera_optical_frame carry no <inertial> (KDL root link; a pure frame).
+    assert checked == len(EXPECTED_LINKS) - 2, f"{checked} links have an <inertial>"
+    sx = meas["B1_plate_front_x"] + meas["B2_plate_rear_x"]
+    sy = meas["B5_plate_width_narrow"]
+    sz = json.loads(car_json_path.read_text(encoding="utf-8"))["values"]["chassis_height_m"]["value"]
+    chassis = link(robot, "chassis_link").find("inertial")
+    m = float(chassis.find("mass").get("value"))
+    expected = {"ixx": m * (sy ** 2 + sz ** 2) / 12, "iyy": m * (sx ** 2 + sz ** 2) / 12,
+                "izz": m * (sx ** 2 + sy ** 2) / 12}
+    for k, want in expected.items():
+        got = float(chassis.find("inertia").get(k))
+        assert abs(got - want) <= 1e-9 * want, (
+            f"chassis_link {k} = {got}, the uniform box of {m} kg and {sx} x {sy} x {sz} m gives {want}")
 
 
 def test_plate_outline_matches_measurements(robot, meas, writer, car_json_path):

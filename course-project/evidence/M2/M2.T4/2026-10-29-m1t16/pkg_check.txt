@@ -1,0 +1,8 @@
+## pkg check 2026-10-30T04:37:57+00:00
+xacro: /opt/ros/humble
+robot_state_publisher: /opt/ros/humble
+tf2_ros: /opt/ros/humble
+ros-humble-robot-state-publisher 3.0.3-2jammy.20260908.051617
+ros-humble-tf2-ros 0.25.23-1jammy.20260908.042633
+ros-humble-xacro 2.1.1-1jammy.20260307.132851
+ROS_DOMAIN_ID=73 ROS_LOCALHOST_ONLY=1 (container --network none)

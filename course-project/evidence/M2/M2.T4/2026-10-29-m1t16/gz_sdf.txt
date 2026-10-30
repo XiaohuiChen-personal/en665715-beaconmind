@@ -1,0 +1,11 @@
+## gz sdf -p (host, ROS 2 Jazzy gz_tools_vendor, 14.9.0 ) 2026-10-29T23:38:36-05:00
+$ gz sdf -p course-project/sim/isaac/assets/beaconmind_car.urdf
+exit 0; stderr bytes 0
+links: 3
+    <link name='base_link'>
+        <mass>0.59999999999999998</mass>
+    <link name='left_wheel_link'>
+        <mass>0.029999999999999999</mass>
+    <link name='right_wheel_link'>
+        <mass>0.029999999999999999</mass>
+        <pose>0.011600000333333331 4.166666668246617e-11 0.01445833333333333 0 0 0</pose>

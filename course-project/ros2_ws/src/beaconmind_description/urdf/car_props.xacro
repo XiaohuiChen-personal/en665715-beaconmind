@@ -5,10 +5,12 @@
   gen_props.py again. test_props_up_to_date fails while this file is out of date.
 
   AI-assisted: Claude Opus 5.5 (xhigh effort) via Claude Code, 2026-10-10: wrote the generator that writes
-  this file. The measurements behind it are Xiaohui Chen's (2026-10-10).
+  this file. AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: made its comment texts
+  independent of particular readings. The readings behind it are Xiaohui Chen's, except the CSV rows whose
+  instrument starts with 'CAD' (a classmate's plate CAD); each CSV row carries its own date.
 
   Inputs:
-    course-project/configs/car.json  sha256 55488b314b99...
+    course-project/configs/car.json  sha256 52a95a71bc9c...
     camera.json: absent (M1.T7 calibration not done)
   Read through load_car_standin(), the stand-in for the M2.T3 view beaconmind.config.load_car.
   View status: measured. View assumptions (values from a stated default, not a measurement):
@@ -22,8 +24,9 @@
   (z = 0 at the axle). +x = toward the camera lens / caster end (the car's front). +y = robot left. +z = up.
   Lengths in metres, masses in kg, angles in radians. Values named *_h are heights above the FLOOR (model
   z = floor height - wheel_radius); camera_h is one, imu_z (car.json imu_z_m) is already above the AXLE.
-  Each comment gives the car.json entry: value, status, uncertainty and source row
-  (assignments/assignment6/measurements.csv; evidence/M1/M1.T9/).
+  Each comment gives the car.json entry: value, status, uncertainty and source row.
+  Source CSV (named by car.json's evidence fields): evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv.
+  Derived values: evidence/M1/M1.T9/derived.txt.
 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
@@ -44,9 +47,9 @@
   <xacro:property name="wheel_separation" value="${track_width}"/>
 
   <!-- ================= Body extents ================= -->
-  <!-- view axle_to_front_m, car.json front_overhang_m = 0.138 m, measured +- 0.003 m (M1.T9 measurements.csv B3_front_most_x); front-most point = ESP32-CAM USB-C side, no cable -->
+  <!-- view axle_to_front_m, car.json front_overhang_m = 0.138 m, measured +- 0.003 m (M1.T9 measurements.csv B3_front_most_x); front-most point (B3: the ESP32-CAM's USB-C side); the source row's notes in the CSV say whether a cable was fitted -->
   <xacro:property name="axle_to_front" value="0.138"/>
-  <!-- view axle_to_rear_m, car.json rear_overhang_m = 0.07649 m, measured +- 0.003 m (M1.T9 measurements.csv B4_rear_most_x_corrected); rear-most point = plate rear edge -->
+  <!-- view axle_to_rear_m, car.json rear_overhang_m = 0.07649 m, measured +- 0.003 m (M1.T9 measurements.csv B4_rear_most_x_corrected); rear-most point of the PLATE (B4); parts reaching further back are recorded in car_geometry_extras.xacro and evidence/M1/M1.T16 -->
   <xacro:property name="axle_to_rear" value="0.07649"/>
   <!-- view body_width_m, car.json chassis_width_m = 0.14792 m, measured +- 0.0005 m (M1.T9 measurements.csv B5_plate_width_max_corrected); widest body point = the rear wing (tyres excluded) -->
   <xacro:property name="body_width" value="0.14792"/>
@@ -92,7 +95,7 @@
   <xacro:property name="caster_z" value="${round(caster_radius - wheel_radius, 6)}"/>
 
   <!-- ================= Mass ================= -->
-  <!-- view mass_kg, car.json mass_kg = 0.506 kg, measured +- 0.0014 kg (M1.T9 measurements.csv K1_total_mass); batteries in, camera fitted, no cable -->
-  <xacro:property name="mass" value="0.506"/>
+  <!-- view mass_kg, car.json mass_kg = 0.66 kg, measured +- 0.0014 kg (M1.T9 measurements.csv K1_total_mass_remeasure); whole car as weighed; the source row's notes in the CSV say what was on the car -->
+  <xacro:property name="mass" value="0.66"/>
 
 </robot>
