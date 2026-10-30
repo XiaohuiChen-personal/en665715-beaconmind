@@ -14,7 +14,8 @@ doing any course-project work and update it at the end of every course-project s
 
 Branch `urdf/m1t16-measured-mass` (PR into `main`), made in a separate worktree because another agent was working
 on `main`. Record, run logs and review: `evidence/M2/M2.T4/2026-10-29-m1t16/README.md`. This entry replaces the
-"URDF still the 2026-10-10 car" statements of the two entries below.
+"URDF still the 2026-10-10 car" statements of the earlier 2026-10-29 entries below, and settles open item (5) of
+the pilot entry below (the sweep-radius / cable decision: Xiaohui kept the cables and the footprint follows them).
 
 - **Model now:** total mass **0.660 kg** (`car.json` `mass_kg`, from the new CSV
   `evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv` through `write_car_json.py`); two-scale split
@@ -65,6 +66,46 @@ on `main`. Record, run logs and review: `evidence/M2/M2.T4/2026-10-29-m1t16/READ
 
 AI-assisted: Claude Opus 5.5 via Cursor, 2026-10-29: this entry, the worktree and PR, the container and Gazebo runs,
 and the review; the URDF/xacro edits were made by Claude Opus 5.5 at xhigh effort, as the 2026-10-06 rule asks.
+
+## 2026-10-29 (night) — first-draft pilot run and report draft written
+
+For the Class Project Report "First Draft with Experiments" (due 2026-11-03), Xiaohui delegated the work fully
+("fully automate the process", 2026-10-29 22:37 CDT). Done this session:
+
+- **Pilot code (public, tested):** `beaconmind/envs/kinsim_lite.py` (port of the Module 4 simulator with the M2.T3
+  placeholder noise, seeded D3 worlds with 3 duplicated IDs, `odo_bias`), `harness/tools_d5.py`,
+  `harness/anthropic_replay.py` (prompt caching, retries, budget cap, resume, fallback), `metrics/pilot.py` (C10.3
+  map, C10.4 association, tool-call P/R/F1), `metrics/judge.py` (rubric and LLM judge with automated calibration),
+  `tools/pilot_*.py`; `prompts/robot_system_prompt_v3.3.txt` published (Xiaohui's approval). `tests/test_pilot.py`
+  24 passed (Mac and `beaconmind-ros`). Adversarial code review logged in `evidence/M4/M4.T11/CODE-REVIEW.md`.
+- **Pilot run (Spark, 2026-10-29 22:53-23:32 CDT):** Claude Opus 5.5 in replay on dev seeds 1000-1004, kinsim only,
+  two conditions: no drift (416 steps, US$31.19) and 2 % systematic odometry over-read (314 steps, US$23.92). All
+  reports valid. Judges: GPT-6.1 Sol and Gemma 4 26B (Xiaohui's choice), calibrated without hand labels.
+  Everything is in `evidence/M4/M4.T11/` (README, `pilot_summary.json`); raw logs stay in
+  `data/pilot-20261029/` on the Spark.
+- **Findings (pilot, not claims):** the agent executed the procedure almost exactly (same pose source on every step,
+  same association decision for every detection, tool-call recall 1.00); its ATE tracked B2 within 0.5 cm; it lost
+  to dead reckoning without drift and beat it on all 5 seeds with 2 % drift (mean -2.7 cm, below the 3 cm SESOI).
+  A 100-seed baseline sweep puts the B2-over-B0 crossover between 0.5 and 1 % drift; B2's unimplemented branches stop
+  1, 5 and 21 of 100 seeds at 2, 3 and 5 % drift.
+- **Plan consequences:** odometry drift becomes a blocked factor and H1 moves to the 2 % block (report §IV-A);
+  implement relocalization before larger drift; M2.T14 state correction still missing (counters reset on claimed
+  fixes); the main study must test what the LLM adds beyond the procedure.
+- **Report:** `report/Chen-Project-Report.tex` now has all eight sections; generated inputs `pilot_macros.tex`,
+  `tab_pilot.tex`, `tab_judge.tex`, `fig_trace.tex`, `figures/fig_pilot.pdf`; hand-drafted `fig_architecture.tex`,
+  `tab_tools.tex`. Build with `latexmk -pdf`. Plan rows M2.T3, M2.T7, M2.T8, M2.T10, M4.T11, M5.T1-T6 set to in-progress.
+- **Judges:** evidence version 1 (tool results and report only) made Sol fail 21 of 730 notes, mostly for facts
+  the agent had but the evidence lacked; version 2 (rules, observation, maps, full tool results) fails 1. Sol is the
+  selected judge (all thresholds met); Gemma fails coverage (weighted kappa 0.41). Judge spend US$10.27.
+- **Draft review:** one adversarial round (three reviewers), all findings verified and logged in
+  `report/REVIEW-DRAFT.md`. PDF 11 pages, clean build.
+- **Open for Xiaohui:** (1) commit and push the pilot code and evidence, or the report's repository link does not
+  show it; (2) measure the camera tilt (inclinometer) so IV-B can state it; (3) the real arena floor; (4) the
+  frontier-model sweep budget (the full K = 3 Opus design would cost about US$1,000); (5) the sweep-radius/cable
+  decision from M1.T16.
+
+AI-assisted: Claude Opus 5.5 via Cursor, 2026-10-29: wrote the pilot code, ran the pilot and the analysis, drafted
+the report and this entry.
 
 ## 2026-10-29 (late) — M1.T16 measured: 660 g car, bank box, URDF may now be regenerated
 

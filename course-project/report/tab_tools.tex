@@ -1,0 +1,101 @@
+% BeaconMind agent tools (Table tab:tools). Input by Chen-Project-Report.tex; needs no extra package.
+% Content from AGENT-DESIGN D4, D5 and D7, plan/README.md C0, C2, C4 and C5, and the run_tool
+% behaviour of the v3.3 smoke harness. Every threshold is a design value until measured.
+% AI-assisted: Claude Opus 5.5 via Cursor drafted this table (2026-10-29). Xiaohui Chen reviews it.
+\begin{table*}[!t]
+\caption{The Agent's Nine Tools and the Checks That Guard Them}
+\label{tab:tools}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.1}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{\dimexpr0.19\textwidth-2\tabcolsep\relax}
+                p{\dimexpr0.17\textwidth-2\tabcolsep\relax}
+                p{\dimexpr0.31\textwidth-2\tabcolsep\relax}
+                p{\dimexpr0.33\textwidth-2\tabcolsep\relax}}
+\hline
+\raggedright\textbf{Tool} & \raggedright\textbf{Purpose} &
+\raggedright\textbf{Inputs $\rightarrow$ outputs} & \raggedright\textbf{Safety and validity checks}
+\tabularnewline
+\hline
+\raggedright\texttt{compose\_odometry} &
+\raggedright Predict the pose from the odometry increment &
+\raggedright pose $(x,y,\theta)$, forward $f$, left $l$, $\Delta\theta$ $\rightarrow$ pose
+$x+f\cos\theta-l\sin\theta$, $y+f\sin\theta+l\cos\theta$, $\theta+\Delta\theta$ &
+\raggedright Heading wrapped to $(-180^\circ,180^\circ]$; designed but not yet in the pilot harness: a
+reported pose that differs from the tool result is a state violation, and the tool value is kept
+\tabularnewline
+\hline
+\raggedright\texttt{gate\_detection} &
+\raggedright Associate one detection with candidate beacons &
+\raggedright pose, detection index, candidate labels $\rightarrow$ new map point; per candidate:
+predicted range and bearing, residuals, \texttt{in\_gate}, \texttt{revisit} &
+\raggedright Refuses labels not in \texttt{PREVIOUS\_REPORT}'s map; gate 0.30\,m\,/\,15$^\circ$,
+widened with travel and turns since the last fix, capped at 0.60\,m\,/\,30$^\circ$
+\tabularnewline
+\hline
+\raggedright\texttt{fix\_pose} &
+\raggedright Correct the pose from matched beacons &
+\raggedright prior pose, matches (detection, beacon) $\rightarrow$ full fix (2 or more matches):
+$x$, $y$, $\theta$, residual, $\sigma_{xy}$, $\sigma_\theta$; position-only fix: $x$, $y$, shift &
+\raggedright Refuses beacons that are not confirmed or are suspect; returns
+\texttt{well\_conditioned}, \texttt{within\_prior\_gate}, \texttt{relocalisation\_ok} and
+\texttt{heading\_safe} flags
+\tabularnewline
+\hline
+\raggedright\texttt{map\_point} &
+\raggedright Place a new detection in the map frame &
+\raggedright pose, detection index $\rightarrow$ $x$, $y$ &
+\raggedright Index must name a detection of this observation; the new beacon starts tentative
+\tabularnewline
+\hline
+\raggedright\texttt{update\_beacon} &
+\raggedright Refine a tentative beacon &
+\raggedright pose, detection index, beacon $\rightarrow$ running-mean $x$, $y$, observation count,
+baseline &
+\raggedright Refuses confirmed beacons (frozen anchors) and unknown labels; confirmation needs
+2 observations over a 0.40\,m baseline
+\tabularnewline
+\hline
+\raggedright\texttt{predict\_observation} &
+\raggedright Range and bearing to a navigation target &
+\raggedright pose, beacon label or point $(x,y)$ $\rightarrow$ range, bearing,
+\texttt{near\_blocked} &
+\raggedright \texttt{near\_blocked} when the target lies within 30$^\circ$ of the heading where the
+car last made contact
+\tabularnewline
+\hline
+\raggedright\texttt{exploration\_summary} &
+\raggedright Rank directions for the next exploration leg &
+\raggedright pose $\rightarrow$ distance to the nearest scan point, \texttt{new\_place}; twelve
+30$^\circ$ sectors with blocked flag, leg length, score, turns &
+\raggedright \texttt{new\_place} only beyond 0.5\,m from every scan point; leg length 0--3 moves,
+bounded by mapped beacons used as wall proxies
+\tabularnewline
+\hline
+\raggedright\texttt{move} &
+\raggedright Execute one bounded move &
+\raggedright one of \texttt{FORWARD\_25}, \texttt{FORWARD\_10}, \texttt{BACKWARD\_10},
+\texttt{TURN\_LEFT\_30}, \texttt{TURN\_RIGHT\_30} $\rightarrow$ result (done, stalled, bumped,
+timeout, link\_lost, refused, not\_called), reason &
+\raggedright Validator refuses: any other action; a second executed move per observation; any
+move when status is error or the latch is set; a move not in the safety flags; a move beyond the
+step budget; any move in replay
+\tabularnewline
+\hline
+\raggedright\texttt{emergency\_stop} &
+\raggedright Stop the car and latch &
+\raggedright reason $\rightarrow$ status ok, latched &
+\raggedright Latch holds until the operator clears it; the validator also latches after two
+consecutive contacts, slips or errors, a lost link, or a Pico reboot
+\tabularnewline
+\hline
+\end{tabular}
+
+\vspace{2pt}
+\begin{minipage}{\textwidth}
+\footnotesize All nine tools are single-timestep (one observation and the previous report) and return
+JSON with a \texttt{status} field; a refused call returns status \texttt{error} with a reason and
+changes nothing. Every threshold is a design value until measured.
+\end{minipage}
+\end{table*}

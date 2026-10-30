@@ -3,6 +3,8 @@
 % Every entry was checked on 2026-10-01 against the paper itself (the PDF's first page)
 % and against the publisher's own record: the PMLR proceedings page, Crossref, or the
 % arXiv listing. Entries are grouped in the order of the Related Works section.
+% The 14 evaluation and statistics entries at the end were added and verified on 2026-10-29
+% (Claude Opus 5.5 via Cursor); notes in course-project/evidence/M5/eval_refs.md.
 % AI assistance: Claude Fable 5.1 via Claude Code retrieved and formatted these entries;
 % see the disclosure at the end of the report.
 
@@ -247,4 +249,118 @@
   author={Anderson, Peter and Chang, Angel and Chaplot, Devendra Singh and Dosovitskiy, Alexey and Gupta, Saurabh and Koltun, Vladlen and Kosecka, Jana and Malik, Jitendra and Mottaghi, Roozbeh and Savva, Manolis and Zamir, Amir R.},
   journal={arXiv preprint arXiv:1807.06757},
   year={2018}
+}
+
+% Evaluation and statistics methodology (verified 2026-10-29; notes in course-project/evidence/M5/eval_refs.md)
+% Evaluation / statistics references for the BeaconMind report (IEEEtran via BibTeX).
+% Every field below was checked on 2026-10-29 against the primary record named in
+% eval_refs.md (arXiv API, ACL Anthology, NeurIPS / PMLR proceedings, TMLR, Crossref,
+% PubMed, Library of Congress). Unverifiable fields were left out.
+
+@inproceedings{zheng2023judging,
+  title={Judging {LLM-as-a-Judge} with {MT-Bench} and {Chatbot Arena}},
+  author={Zheng, Lianmin and Chiang, Wei-Lin and Sheng, Ying and Zhuang, Siyuan and Wu, Zhanghao and Zhuang, Yonghao and Lin, Zi and Li, Zhuohan and Li, Dacheng and Xing, Eric P. and Zhang, Hao and Gonzalez, Joseph E. and Stoica, Ion},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
+  volume={36}, pages={46595--46623}, year={2023}, doi={10.52202/075280-2020},
+  eprint={2306.05685}, archivePrefix={arXiv}
+}
+
+@inproceedings{liu2023geval,
+  title={{G-Eval}: {NLG} Evaluation using {GPT-4} with Better Human Alignment},
+  author={Liu, Yang and Iter, Dan and Xu, Yichong and Wang, Shuohang and Xu, Ruochen and Zhu, Chenguang},
+  booktitle={Proc. Conf. Empirical Methods in Natural Language Processing (EMNLP)},
+  pages={2511--2522}, year={2023}, doi={10.18653/v1/2023.emnlp-main.153},
+  eprint={2303.16634}, archivePrefix={arXiv}
+}
+
+@inproceedings{ribeiro2020beyond,
+  title={Beyond Accuracy: Behavioral Testing of {NLP} Models with {CheckList}},
+  author={Ribeiro, Marco Tulio and Wu, Tongshuang and Guestrin, Carlos and Singh, Sameer},
+  booktitle={Proc. 58th Annu. Meeting of the Association for Computational Linguistics (ACL)},
+  pages={4902--4912}, year={2020}, doi={10.18653/v1/2020.acl-main.442}
+}
+
+@inproceedings{doddapaneni2024finding,
+  title={Finding Blind Spots in Evaluator {LLMs} with Interpretable Checklists},
+  author={Doddapaneni, Sumanth and Khan, Mohammed Safi Ur Rahman and Verma, Sshubam and Khapra, Mitesh M.},
+  booktitle={Proc. Conf. Empirical Methods in Natural Language Processing (EMNLP)},
+  pages={16279--16309}, year={2024}, doi={10.18653/v1/2024.emnlp-main.911},
+  eprint={2406.13439}, archivePrefix={arXiv}
+}
+
+@inproceedings{panickssery2024llm,
+  title={{LLM} Evaluators Recognize and Favor Their Own Generations},
+  author={Panickssery, Arjun and Bowman, Samuel R. and Feng, Shi},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  volume={37}, pages={68772--68802}, year={2024}, doi={10.52202/079017-2197},
+  eprint={2404.13076}, archivePrefix={arXiv}
+}
+
+@inproceedings{dror2018hitchhikers,
+  title={The Hitchhiker's Guide to Testing Statistical Significance in Natural Language Processing},
+  author={Dror, Rotem and Baumer, Gili and Shlomov, Segev and Reichart, Roi},
+  booktitle={Proc. 56th Annu. Meeting of the Association for Computational Linguistics (ACL), Vol. 1: Long Papers},
+  pages={1383--1392}, year={2018}, doi={10.18653/v1/P18-1128}
+}
+
+@article{liang2023holistic,
+  title={Holistic Evaluation of Language Models},
+  author={Liang, Percy and Bommasani, Rishi and Lee, Tony and Tsipras, Dimitris and Soylu, Dilara and Yasunaga, Michihiro and Zhang, Yian and Narayanan, Deepak and Wu, Yuhuai and Kumar, Ananya and Newman, Benjamin and Yuan, Binhang and Yan, Bobby and Zhang, Ce and Cosgrove, Christian and Manning, Christopher D. and R{\'e}, Christopher and Acosta-Navas, Diana and Hudson, Drew A. and Zelikman, Eric and Durmus, Esin and Ladhak, Faisal and Rong, Frieda and Ren, Hongyu and Yao, Huaxiu and Wang, Jue and Santhanam, Keshav and Orr, Laurel and Zheng, Lucia and Yuksekgonul, Mert and Suzgun, Mirac and Kim, Nathan and Guha, Neel and Chatterji, Niladri S. and Khattab, Omar and Henderson, Peter and Huang, Qian and Chi, Ryan Andrew and Xie, Sang Michael and Santurkar, Shibani and Ganguli, Surya and Hashimoto, Tatsunori and Icard, Thomas and Zhang, Tianyi and Chaudhary, Vishrav and Wang, William and Li, Xuechen and Mai, Yifan and Zhang, Yuhui and Koreeda, Yuta},
+  journal={Transactions on Machine Learning Research},
+  year={2023}, url={https://openreview.net/forum?id=iO4LZibEqW},
+  eprint={2211.09110}, archivePrefix={arXiv}, note={arXiv:2211.09110}
+}
+
+@inproceedings{patil2024gorilla,
+  title={Gorilla: Large Language Model Connected with Massive {APIs}},
+  author={Patil, Shishir G. and Zhang, Tianjun and Wang, Xin and Gonzalez, Joseph E.},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  volume={37}, pages={126544--126565}, year={2024}, doi={10.52202/079017-4020},
+  eprint={2305.15334}, archivePrefix={arXiv}
+}
+
+@inproceedings{patil2025bfcl,
+  title={The {Berkeley} Function Calling Leaderboard ({BFCL}): From Tool Use to Agentic Evaluation of Large Language Models},
+  author={Patil, Shishir G. and Mao, Huanzhi and Yan, Fanjia and Ji, Charlie Cheng-Jie and Suresh, Vishnu and Stoica, Ion and Gonzalez, Joseph E.},
+  booktitle={Proc. 42nd Int. Conf. Machine Learning (ICML)},
+  series={Proceedings of Machine Learning Research}, volume={267},
+  pages={48371--48392}, year={2025}, url={https://proceedings.mlr.press/v267/patil25a.html}
+}
+
+@article{holm1979simple,
+  title={A Simple Sequentially Rejective Multiple Test Procedure},
+  author={Holm, Sture},
+  journal={Scandinavian Journal of Statistics},
+  volume={6}, number={2}, pages={65--70}, year={1979},
+  url={https://www.jstor.org/stable/4615733}
+}
+
+@article{wilcoxon1945individual,
+  title={Individual Comparisons by Ranking Methods},
+  author={Wilcoxon, Frank},
+  journal={Biometrics Bulletin},
+  volume={1}, number={6}, pages={80--83}, year={1945}, doi={10.2307/3001968}
+}
+
+@article{cohen1968weighted,
+  title={Weighted Kappa: Nominal Scale Agreement with Provision for Scaled Disagreement or Partial Credit},
+  author={Cohen, Jacob},
+  journal={Psychological Bulletin},
+  volume={70}, number={4}, pages={213--220}, year={1968}, doi={10.1037/h0026256}
+}
+
+@article{kerby2014simple,
+  title={The Simple Difference Formula: An Approach to Teaching Nonparametric Correlation},
+  author={Kerby, Dave S.},
+  journal={Comprehensive Psychology},
+  volume={3}, year={2014}, doi={10.2466/11.IT.3.1},
+  note={Art. no. 11.IT.3.1}
+}
+
+@book{efron1993introduction,
+  title={An Introduction to the Bootstrap},
+  author={Efron, Bradley and Tibshirani, Robert J.},
+  series={Monographs on Statistics and Applied Probability}, volume={57},
+  publisher={Chapman \& Hall}, address={New York}, year={1993},
+  isbn={0-412-04231-2}, doi={10.1007/978-1-4899-4541-9}
 }

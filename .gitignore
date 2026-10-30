@@ -33,3 +33,5 @@ course-project/report/*.fls
 course-project/report/*.fdb_latexmk
 course-project/report/*.synctex
 course-project/report/*.synctex.gz
+course-project/report/*.bbl
+course-project/report/*.blg
