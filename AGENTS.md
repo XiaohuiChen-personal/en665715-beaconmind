@@ -34,9 +34,11 @@ As of the **2026-10-29** handoff, which later work must not silently overwrite:
   under `course-project/firmware/pico/` is still only placeholders.
 - Camera firmware **`bm_cam-0.2`** is flashed and **not** calibrated. There is no
   `configs/camera.json`. **M1.T7 is not done.**
-- The URDF mass is still the **2026-10-10** car (total mass 0.506 kg). Do not
-  regenerate the URDF from a new weight until that mass and the power bank are
-  actually measured.
+- The URDF mass is still the **2026-10-10** car (total mass 0.506 kg). The current
+ car was measured on 2026-10-29 (M1.T16: 0.660 kg, centre of mass 0.0105 m ahead
+ of the axle, power-bank box; `course-project/evidence/M1/M1.T16/`). Regenerate
+ the URDF from those readings only. Do not change the sweep radius or the front
+ overhang until the cable stick-out in that folder is settled.
 
 The Isaac Sim twin and the Pico project firmware are not built.
 

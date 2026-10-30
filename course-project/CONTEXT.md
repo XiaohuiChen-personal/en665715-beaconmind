@@ -10,6 +10,27 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
 
+## 2026-10-29 (late) — M1.T16 measured: 660 g car, bank box, URDF may now be regenerated
+
+Xiaohui measured the car as it is now. Evidence: `evidence/M1/M1.T16/measurements.md`, `confirm.md`, `photos/`.
+M1.T16 is `in-progress` (bank alone, front camera cable and the sweep-radius decision are open).
+This entry replaces the earlier "do not regenerate the URDF" rule: the mass and the bank are now measured.
+
+- **Mass 0.660 kg** (was 0.506). Two-scale split 58 g front (caster) / 602 g drive wheels, caster not turned
+  sideways. **Centre of mass 0.0105 m ahead of the axle** (middle value, ±0.0018 m; Xiaohui chose the middle value).
+- **Power bank:** 70 × 70 × 25 mm lying flat under the plate at the breadboard end (the back), 3M double-sided
+  tape. x −0.085 to −0.015 m, y centred (±0.035 m), z 0.017 to 0.042 m above the floor. It is now the lowest
+  body point (17 mm). Model it as geometry only; its mass stays in the measured total (bank not weighed).
+- **Ride height unchanged** (30 / 46 / 43 mm). Camera stand, BNO055, antenna, tyres, cells unchanged.
+- **Open:** the rear Pico cable reaches 148 mm behind the axle, outside the 0.140 m sweep radius; the camera is
+  now powered from the bank and its cable sticks out at the front (front-most point not measured). Do not change
+  `sweep_radius_m` or the front overhang until Xiaohui settles these (reroute with right-angle plugs per
+  AGENT-DESIGN §W, or enlarge the radius).
+- **Next:** M2.T4 can update `car.json` (mass) and the URDF (mass, `com_x`, bank box) from these numbers.
+  Earlier rule still in force: the URDF subagent is Claude Opus 5.5 at xhigh effort (2026-10-06 entry).
+
+AI-assisted: Claude Opus 5.5 via Cursor, 2026-10-29: recorded Xiaohui's measurements, the checks and this entry.
+
 ## 2026-10-29 — status pass: K2, uncalibrated camera, URDF still the 2026-10-10 car
 
 Full record: [`research/2026-10-29-urdf-firmware-camera-status.md`](research/2026-10-29-urdf-firmware-camera-status.md).
