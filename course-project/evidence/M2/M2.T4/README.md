@@ -9,6 +9,18 @@ with `ROS_DOMAIN_ID=47` and `ROS_LOCALHOST_ONLY=1` for every ROS process. The la
 the ROS 2 CLI daemon that step 9's `ros2` calls had started (domain 47) was missed by the end check and stayed up
 until a review found it; it was stopped at ~07:52 CDT (`daemon_stop.txt`).
 
+## 2026-10-29: the M1.T16 car (the URDF DID change)
+
+Full record, run logs and the four-lens review: [`2026-10-29-m1t16/`](2026-10-29-m1t16/README.md). Total mass
+0.506 → **0.660 kg**, two-scale split 58 / 602 g, whole-car centre of mass 33.676 → **10.545 mm** (middle value,
+±1.8 mm), chassis mass 0.421 → **0.575 kg**, a geometry-only `power_bank` box on `chassis_link`, the gearbox boxes'
+estimated rear end −16 → −15 mm; after 23:45 CDT, by Xiaohui's decision to keep the cables, `front_overhang_m`
+0.178 m, `rear_overhang_m` 0.148 m, `sweep_radius_m` 0.178 m, and two cable boxes (front with a collider, rear visual
+only). `colcon test` in `beaconmind-ros:humble`: **24 tests, 0 errors, 0 failures, 1 skipped** (unmodified `main`
+gave 21 tests, 1 error, 1 failure, 1 skipped after the public-repo move). Since 2026-10-29 the Module 6 lab mounts a frozen snapshot in the private course
+repo, so sections below that tie the URDF to the lab are history. Where the sections below quote 0.506 kg, 0.421 kg,
+33.676 mm or 12 boxes, they describe the 2026-10-10 / 2026-10-16 model.
+
 ## 2026-10-16: the plate outline from a classmate's CAD (the URDF DID change)
 
 The plate rows of `car_geometry_extras.xacro` now come from a classmate's CAD of the Emo chassis plate
@@ -98,6 +110,11 @@ The shared description was reviewed for the Module 6 lab before it became M2.T4'
 of step 5 in the ways below. None changes the total mass (0.506 kg), the frames of C1 or any joint position step 5
 fixes. Xiaohui to accept each one, or to have the plan text changed; changing the URDF instead would change the lab's
 model, whose screenshots are taken.
+
+**2026-10-29 numbers.** The six deviations still hold for the M1.T16 model, with these values: total 0.660 kg; chassis
+0.575 kg against step 5's `mass − 2·0.03 − 0.01` = 0.590 kg; chassis centre of mass (8.809, −0.174, 14.5) mm for a
+whole-car centre of mass of 10.545 mm; 16 chassis boxes (15 since the 2026-10-16 rounded front, plus the power bank). The Module 6 reason no longer applies:
+the lab uses a frozen snapshot since 2026-10-29 ([`2026-10-29-m1t16/`](2026-10-29-m1t16/README.md)).
 
 1. **`chassis_link` is 12 boxes at the measured heights, not one box with its bottom at the axle.** Step 5: a box from
    `−axle_to_rear` to `+axle_to_front`, `body_width` wide, `chassis_height` tall, bottom at the axle. The URDF draws the

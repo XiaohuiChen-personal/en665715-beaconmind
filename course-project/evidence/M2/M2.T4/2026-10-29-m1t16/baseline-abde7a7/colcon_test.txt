@@ -1,0 +1,39 @@
+## colcon build + test 2026-10-30T03:54:49+00:00
+$ colcon build --symlink-install --packages-select beaconmind_description
+Starting >>> beaconmind_description
+Finished <<< beaconmind_description [0.50s]
+
+Summary: 1 package finished [0.68s]
+$ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 colcon test --packages-select beaconmind_description --event-handlers console_direct+
+test/test_urdf.py::test_xacro_expands PASSED                             [  4%]
+test/test_urdf.py::test_link_names PASSED                                [  9%]
+test/test_urdf.py::test_wheel_separation_equals_track_width PASSED       [ 14%]
+test/test_urdf.py::test_wheel_radius_half_diameter PASSED                [ 19%]
+test/test_urdf.py::test_optical_frame_matches_camera_json SKIPPED (/...) [ 23%]
+test/test_urdf.py::test_optical_frame_pose_from_measurements PASSED      [ 28%]
+test/test_urdf.py::test_caster_touches_floor PASSED                      [ 33%]
+test/test_urdf.py::test_no_range_sensor PASSED                           [ 38%]
+test/test_urdf.py::test_total_mass_matches_car_json PASSED               [ 42%]
+test/test_urdf.py::test_props_up_to_date FAILED                          [ 47%]
+test/test_urdf.py::test_props_files_do_not_overlap PASSED                [ 52%]
+test/test_urdf.py::test_gen_props_rejects_bad_input PASSED               [ 57%]
+test/test_urdf.py::test_gen_props_camera_labels_follow_the_extrinsics_used PASSED [ 61%]
+test/test_urdf.py::test_optical_to_link_rpy PASSED                       [ 66%]
+test/test_urdf.py::test_measurement_reader_follows_the_writer_rules PASSED [ 71%]
+test/test_urdf.py::test_imu_pose_from_measurements PASSED                [ 76%]
+test/test_urdf.py::test_com_matches_lever_rule ERROR                     [ 80%]
+test/test_urdf.py::test_chassis_boxes_clear_floor_and_tyres PASSED       [ 85%]
+test/test_urdf.py::test_chassis_boxes_do_not_overlap PASSED              [ 90%]
+test/test_urdf.py::test_plate_outline_matches_measurements PASSED        [ 95%]
+test/test_urdf.py::test_every_visual_has_inline_colour PASSED            [100%]
+==================================== ERRORS ====================================
+________________ ERROR at setup of test_com_matches_lever_rule _________________
+FAILED test/test_urdf.py::test_props_up_to_date - Failed: car_props.xacro is ...
+ERROR test/test_urdf.py::test_com_matches_lever_rule - Failed: extras source ...
+=============== 1 failed, 18 passed, 1 skipped, 1 error in 0.14s ===============
+$ colcon test-result --verbose
+  <<< error message
+    failed on setup with "Failed: extras source CSV not found (looked for assignments/assignment6/measurements.csv above /workspace/course-project/ros2_ws/src/beaconmind_description; got None): set BM_EXTRAS_CSV"
+  >>>
+
+Summary: 21 tests, 1 error, 1 failure, 1 skipped

@@ -36,6 +36,13 @@ course-project/plan/M2-sim-mvp.md, not copied from any code); later the same day
 height to the axle-relative imu_z_m; after a second review, added extrinsics_used() so the camera comments and the
 printout follow the source the view actually used (a camera.json with null extrinsics had been labelled as
 calibrated).
+AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: made the generated texts independent of particular
+readings and dates, so test_props_up_to_date can keep them honest (the mass, front- and rear-overhang comments point to
+the source row's notes and to car_geometry_extras.xacro / evidence/M1/M1.T16 instead of quoting readings; the header
+names the CSV car.json uses, through evidence_csv(), which says so explicitly when car.json names none or several);
+later the same day, when the camera and Pico cables became the front- and rear-most points, made the axle_to_front /
+axle_to_rear comments say "front-most / rear-most point of the whole car" (they had named the ESP32-CAM board and the
+plate). The values and the logic that produces them are unchanged.
 """
 
 import argparse
@@ -232,6 +239,16 @@ def build_view(car_path, camera_path):
 
 # ----------------------------------------------------------------------------------- the generated text
 
+def evidence_csv(entries):
+    """The measurement CSV that car.json's values name in their "evidence" fields. When they name none or several,
+    say so explicitly ("car.json names N CSVs: a, b"; sorted, so the generated text stays deterministic)."""
+    named = sorted({e["evidence"] for e in entries.values()
+                    if isinstance(e, dict) and str(e.get("evidence", "")).endswith(".csv")})
+    if len(named) == 1:
+        return named[0]
+    return "car.json names %d CSVs: %s" % (len(named), ", ".join(named) if named else "none")
+
+
 def describe(entries, key):
     """'car.json <key> = <value> <unit>, <status> +- <u> <unit> (<source>)' for one per-value object."""
     if key not in entries:
@@ -306,7 +323,9 @@ def render(car_path, camera_path=None):
         "  gen_props.py again. test_props_up_to_date fails while this file is out of date.",
         "",
         "  AI-assisted: Claude Opus 5.5 (xhigh effort) via Claude Code, 2026-10-10: wrote the generator that writes",
-        "  this file. The measurements behind it are Xiaohui Chen's (2026-10-10).",
+        "  this file. AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: made its comment texts",
+        "  independent of particular readings. The readings behind it are Xiaohui Chen's, except the CSV rows whose",
+        "  instrument starts with 'CAD' (a classmate's plate CAD); each CSV row carries its own date.",
         "",
         "  Inputs:",
         "    %s  sha256 %s..." % (repo_relative(car_path), sha12(car_path)),
@@ -328,8 +347,9 @@ def render(car_path, camera_path=None):
         "  (z = 0 at the axle). +x = toward the camera lens / caster end (the car's front). +y = robot left. +z = up.",
         "  Lengths in metres, masses in kg, angles in radians. Values named *_h are heights above the FLOOR (model",
         "  z = floor height - wheel_radius); camera_h is one, imu_z (car.json imu_z_m) is already above the AXLE.",
-        "  Each comment gives the car.json entry: value, status, uncertainty and source row",
-        "  (assignments/assignment6/measurements.csv; evidence/M1/M1.T9/).",
+        "  Each comment gives the car.json entry: value, status, uncertainty and source row.",
+        "  Source CSV (named by car.json's evidence fields): %s." % evidence_csv(entries),
+        "  Derived values: evidence/M1/M1.T9/derived.txt.",
         "-->",
         '<robot xmlns:xacro="http://www.ros.org/wiki/xacro">',
         "",
@@ -355,9 +375,10 @@ def render(car_path, camera_path=None):
     ]
     lines += lit("axle_to_front", view["axle_to_front_m"],
                  c("view axle_to_front_m, " + describe(entries, "front_overhang_m")
-                   + "; front-most point = ESP32-CAM USB-C side, no cable"))
+                   + "; front-most point of the whole car; the source row's notes in the CSV say what that point is"))
     lines += lit("axle_to_rear", view["axle_to_rear_m"],
-                 c("view axle_to_rear_m, " + describe(entries, "rear_overhang_m") + "; rear-most point = plate rear edge"))
+                 c("view axle_to_rear_m, " + describe(entries, "rear_overhang_m")
+                   + "; rear-most point of the whole car; the source row's notes in the CSV say what that point is"))
     lines += lit("body_width", view["body_width_m"],
                  c("view body_width_m, " + describe(entries, "chassis_width_m")
                    + "; widest body point = the rear wing (tyres excluded)"))
@@ -414,7 +435,8 @@ def render(car_path, camera_path=None):
         c("================= Mass ================="),
     ]
     lines += lit("mass", view["mass_kg"],
-                 c("view mass_kg, " + describe(entries, "mass_kg") + "; batteries in, camera fitted, no cable")
+                 c("view mass_kg, " + describe(entries, "mass_kg") + "; whole car as weighed; the source row's notes in"
+                   " the CSV say what was on the car")
                  if "mass_kg" in entries else c("ASSUMED by the view: mass_kg stand-in"))
     lines += ["", "</robot>", ""]
     return "\n".join(lines)

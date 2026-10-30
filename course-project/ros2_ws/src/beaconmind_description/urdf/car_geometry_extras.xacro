@@ -7,20 +7,37 @@
   AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-16: took the plate outline from a classmate's CAD of the Emo chassis
   plate (wing depth 40 -> 34.35 mm, plate ends fitted to the CAD length, CAD thickness, and the rounded front's two
   radii); every other value is unchanged.
+  AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: took the mass-distribution inputs from the M1.T16
+  weighing (caster_load 0.142 -> 0.058 kg, drive_wheels_load 0.364 -> 0.602 kg, the com_x comment for the middle-value
+  decision), added the power-bank box (bank_*), moved the photo ESTIMATE motor_x_min from -0.016 to -0.015 m so the
+  gearbox boxes end at the measured bank front face, and updated the sources and the stale comments; after a review
+  the same day, added bank_top_h (rounded), stated the com_x range from the readings alone (8.8 to 11.2 mm) and who
+  decided what, reworded the motor_x_min clipping as an agent decision, and labelled the private-repo files. No value
+  changed in that review. Later the same day, after Xiaohui's footprint decision, added esp32_front_x (the board's
+  front, no longer the car's front-most point) and the front/rear cable envelope properties; after a review the same
+  day, made esp32_front_x cite its own row B14b_esp32cam_front_x, gave the front cable's 178 mm its 5.8 mm, and
+  stated which parts of the rear envelope are assumed and what is not modelled. The readings are Xiaohui Chen's.
 
   car_geometry_extras.xacro: the car geometry that configs/car.json (M1.T9, schema bm.car/1) does NOT carry, one
   xacro:property per value. HAND-WRITTEN, not generated. gen_props.py writes car_props.xacro from car.json;
   beaconmind_car.urdf.xacro includes car_props.xacro and then this file. No property may be defined in both files
   (test_props_files_do_not_overlap), because a later xacro definition would silently replace the earlier one.
 
-  Sources: assignments/assignment6/measurements.csv (readings by Xiaohui Chen, 2026-10-10; unchanged copy in
-  course-project/evidence/M1/M1.T9/measurements-xiaohui-chen-2026-10-10.csv), the photos in assignments/assignment6/photos/
-  and the dispositions in assignments/assignment6/review/MEASUREMENT-REVIEW.md. Since 2026-10-16 the PLATE OUTLINE rows
-  (plate_front_x, plate_rear_x, plate_strip_width, wing_depth, plate_thickness, the two front radii) come from
-  course-project/evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv instead (a classmate's CAD of the plate,
-  and B1/B2 fitted to its length; the private course repo (plate CAD is not published here)), labelled CAD or fit below. Where the CSV has a later row for the
-  same quantity (suffix _corrected, _recheck, _remeasure, _remeasure2) the later row is used; rows marked SUPERSEDED are
-  not inputs; C3_caster_swivel_axis_x replaces the earlier photo estimate of the swivel x.
+  Sources: course-project/evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv holds every row used here
+  (test_urdf.py reads it as this file's source CSV). It is built up in three dated layers:
+    - 2026-10-10: readings by Xiaohui Chen, an unchanged copy of assignments/assignment6/measurements.csv, a file of the
+      private course repo that is not in this public repo (the copy is
+      course-project/evidence/M1/M1.T9/measurements-xiaohui-chen-2026-10-10.csv). The photos (assignments/assignment6/photos/)
+      and the dispositions (assignments/assignment6/review/MEASUREMENT-REVIEW.md) cited below are in the private repo too.
+    - 2026-10-16: the PLATE OUTLINE rows (plate_front_x, plate_rear_x, plate_strip_width, wing_depth, plate_thickness, the
+      two front radii), from a classmate's CAD of the plate and B1/B2 fitted to its length (the private course repo
+      (plate CAD is not published here)), labelled CAD or fit below; first in measurements-2026-10-16-with-plate-cad.csv.
+    - 2026-10-29: the M1.T16 rows (readings by Xiaohui Chen, course-project/evidence/M1/M1.T16/measurements.md): the
+      weighing K1_total_mass_remeasure / K2_caster_load_remeasure / K2_drive_wheels_load_remeasure and the power-bank
+      box B15_bank_*.
+  Where the CSV has a later row for the same quantity (suffix _corrected, _recheck, _remeasure, _remeasure2) the later
+  row is used; rows marked SUPERSEDED are not inputs; C3_caster_swivel_axis_x replaces the earlier photo estimate of
+  the swivel x.
   If a row used here is re-measured, edit this file by hand. Values that car.json carries are changed in car.json
   (course-project/tools/write_car_json.py) and regenerated with gen_props.py, never here.
 
@@ -45,11 +62,14 @@
 
   <!-- ================= Plate (clear acrylic) ================= -->
   <!-- The overall extents axle_to_front, axle_to_rear and body_width, and the main-body height chassis_height, come
-       from car.json through car_props.xacro. -->
+       from car.json through car_props.xacro. Since 2026-10-29 axle_to_front and axle_to_rear are the whole car's
+       front- and rear-most points, the camera and Pico USB cables (Xiaohui's footprint decision; "Cables" below); the
+       plate's own ends are plate_front_x and plate_rear_x. -->
   <!-- 2026-10-16: the plate outline now follows a classmate's CAD of the same Emo chassis plate (Onshape STEP and
        drawing DRW_MOBILE_ROBOT_CHASSIS, the private course repo (plate CAD is not published here)), whose hole pattern matches this car's
        plate on the bottom-view photo to 0.25 mm rms (photo-check.txt there). The rows are in
-       course-project/evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv (the CSV car.json names).
+       course-project/evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv and, unchanged, in
+       measurements-2026-10-29-with-m1t16-mass.csv (the CSV car.json names since 2026-10-29).
        CAD = a dimension of the model, +-0.5 mm allowance; fit = the 2026-10-10 ruler readings B1/B2 fitted to the
        CAD plate length 206.98 mm. -->
   <!-- fit B1_plate_front_x_corrected = 130.49 mm: axle line to the plate's front apex (131 mm ruler reading, less half
@@ -91,7 +111,10 @@
   <xacro:property name="plate_thickness" value="0.003"/>
   <!-- measured B9_lowest_body_h = 30 mm: bottom of the TT motor gearboxes (floor); re-measured, upheld by review #2; +-2 mm.
        car.json chassis_height_m (= chassis_height) is B10_battery_holder_top_h 66 - B9 30 = 36 mm; beaconmind_car.urdf.xacro
-       stops if chassis_height and battery_top_h - lowest_body_h disagree. -->
+       stops if chassis_height and battery_top_h - lowest_body_h disagree.
+       Since 2026-10-29 the power bank (bank_bottom_h = 17 mm, below) is the car's lowest body point, not the gearboxes.
+       This property stays the GEARBOX bottom: it is the bottom of the motor boxes and one term of the chassis_height
+       guard, and chassis_height_m is deliberately unchanged (M1.T16 decision, evidence/M1/M1.T16/measurements.md). -->
   <xacro:property name="lowest_body_h" value="0.030"/>
 
   <!-- ================= Parts on and under the plate ================= -->
@@ -99,12 +122,44 @@
        z: measured B9 (bottom 30 mm floor) to the plate underside (44.5 mm floor, derived above).
        x: ESTIMATE (photo IMG_7436 bottom view, scaled from the shaft at the tyre centre) - provisional: gearbox rear
           end about 16 mm behind the axle, encoder end about 58 mm ahead; +-6 mm.
+          2026-10-29: the rear end is drawn at 15 mm behind the axle (-0.015), within the +-6 mm of the photo estimate
+          (-16 mm): it is clipped to the power bank's MEASURED front face (B15_bank_front_x, x = -15 mm) so that the
+          gearbox boxes (|y| 29 to 51 mm) and the bank box do not share volume. Whether the two parts touch on the car
+          is not measured. This 1 mm change is an agent decision (Claude Opus 5.5, 2026-10-29) for Xiaohui to accept.
+          At -0.016 the boxes would share 1 x 6 x 12 mm, and the bank/motor guard in beaconmind_car.urdf.xacro stops
+          xacro. Still an ESTIMATE.
        y: ESTIMATE (IMG_7436 shows |y| about 27-52 mm; vendor-typical TT gearbox width 22 mm) - provisional:
           |y| 29 to 51 mm, which stays 2.5 mm clear of the tyre inner face at |y| = 53.5 mm; +-4 mm. -->
-  <xacro:property name="motor_x_min" value="-0.016"/>
+  <xacro:property name="motor_x_min" value="-0.015"/>
   <xacro:property name="motor_x_max" value="0.058"/>
   <xacro:property name="motor_y_inner" value="0.029"/>
   <xacro:property name="motor_y_outer" value="0.051"/>
+
+  <!-- USB power bank (a black block, 70 x 70 x 25 mm, lying flat) under the plate at the breadboard end (the back),
+       fixed with 3M double-sided tape to the plate underside. Readings by Xiaohui Chen, 2026-10-29 (M1.T16,
+       course-project/evidence/M1/M1.T16/measurements.md; rows B15_bank_*).
+       GEOMETRY ONLY (M1.T16 decision): no link and no mass of its own. The bank was not weighed alone, so its mass stays
+       inside the measured total (car.json mass_kg, hence chassis_mass) and chassis_link's uniform-box inertia.
+       x: measured B15_bank_front_x = 15 mm and B15_bank_rear_x = 85 mm BEHIND the axle line, written as signed x;
+          +-3 mm each (axle-datum floor, review #15). 85 - 15 = 70 mm, the bank's side. The rear face is 8.5 mm behind
+          the plate's rear apex (plate_rear_x = -76.49 mm). Since Xiaohui's footprint decision (2026-10-29) car.json's
+          rear-most point is the Pico cable 148 mm behind the axle, so the bank lies inside the footprint; its rear
+          corners are 91.9 mm from the axle midpoint, inside the 0.178 m sweep radius.
+       width: measured B15_bank_width = 70 mm (the 70 x 70 mm footprint); +-2 mm.
+       y: measured: centred (Xiaohui), 18 mm from the bank to each tyre (B15_bank_tyre_gap; (107 - 70) / 2 = 18.5 mm);
+          +-2 mm.
+       bottom: measured B15_bank_bottom_h = 17 mm floor; +-2 mm. The car's lowest body point (the gearboxes are at 30 mm).
+       height: measured B15_bank_height = 25 mm (vertical size); +-2 mm. Top 17 + 25 = 42 mm floor, under the plate
+          (43 mm measured at this end, B8_plate_underside_h_rear; 44.5 mm in the level model): the tape fills the gap. -->
+  <xacro:property name="bank_x_min" value="-0.085"/>
+  <xacro:property name="bank_x_max" value="-0.015"/>
+  <xacro:property name="bank_width" value="0.070"/>
+  <xacro:property name="bank_bottom_h" value="0.017"/>
+  <xacro:property name="bank_height" value="0.025"/>
+  <!-- derived: bank top above the floor = bank_bottom_h + bank_height = 42 mm, rounded to 1 um as body_box rounds, so
+       the guards that compare it with a touching face do not misfire on float noise (0.005 + 0.025 gives
+       0.030000000000000002). Used by the guards and by the power_bank box. -->
+  <xacro:property name="bank_top_h" value="${round(bank_bottom_h + bank_height, 6)}"/>
 
   <!-- Breadboard: two 400-point boards snapped side by side, one rail strip removed
        (reference/hardware/car-build-notes.md), on the plate over the rear wing; rows 1-30 run along x (row 1 at the
@@ -129,15 +184,19 @@
   <xacro:property name="battery_top_h" value="0.066"/>
 
   <!-- ESP32-CAM on its ESP32-CAM-MB base, flat on the plate at the front, USB-C forward, in front of the battery holder.
-       x: derived - from the battery holder's front (B13 +100 mm; IMG_7437 shows the two touching) to the measured
-          front-most point B3_front_most_x = +138 mm (= axle_to_front, no cable): 38 mm long, so the two boxes
-          share a face and do not overlap. +-3 mm.
+       x: derived - from the battery holder's front (B13 +100 mm; IMG_7437 shows the two touching) to the board's
+          front esp32_front_x = +138 mm (below): 38 mm long, so the two boxes share a face and do not overlap. +-3 mm.
        width: measured B14_esp32cam_width = 20 mm; +-2 mm. FLAG: narrower than the vendor-typical ESP32-CAM board
           (27 mm, not a source recorded in this repo); re-check if the camera's clearance ever matters.
        y: ESTIMATE - provisional: centred on y = 0 (the lens above it is measured on the centre line, S3_lens_y = 0).
        top: measured B14_esp32cam_front_top_h = 61 mm floor (highest point at the board's front edge), used as the
           top of the whole stack; +-2 mm. -->
   <xacro:property name="esp32_x_min" value="${battery_x_max}"/>
+  <!-- measured B14b_esp32cam_front_x = 138 mm: the ESP32-CAM board's own front, its USB-C side; +-3 mm (axle-datum
+       floor). It is the 2026-10-10 reading B3_front_most_x (no cable plugged in), re-filed under its own row on
+       2026-10-29 because B3 now means the whole car's front-most point: since then that is the camera's USB cable
+       (B3_front_most_x_remeasure = 178 mm = axle_to_front; "Cables" below). -->
+  <xacro:property name="esp32_front_x" value="0.138"/>
   <xacro:property name="esp32_width" value="0.020"/>
   <xacro:property name="esp32_top_h" value="0.061"/>
 
@@ -150,6 +209,49 @@
   <xacro:property name="camera_module_depth" value="0.006"/>
   <!-- ESTIMATE (vendor-typical OV3660 / OV2640 camera module, about 8.5 mm square) - provisional; visual only -->
   <xacro:property name="camera_module_size" value="0.0085"/>
+
+  <!-- ================= Cables (since 2026-10-29: in the footprint) ================= -->
+  <!-- Xiaohui's decision of 2026-10-29: keep the cables as they are and update the footprint. car.json front_overhang_m
+       and rear_overhang_m (axle_to_front, axle_to_rear) are now the camera and Pico cables' tips, and car.json corners
+       and sweep_radius_m include them. beaconmind_car.urdf.xacro draws each cable as a box (an envelope, not the
+       cable's shape): the front one with a collider, the rear one visual only (it explains why). Each value below is a
+       measured property or is labelled ASSUMED. -->
+  <!-- Front: the camera's USB cable, plugged into the ESP32-CAM board's USB-C port at its front.
+       x: from esp32_front_x (measured: the board's front, B14b_esp32cam_front_x, 138 mm) to axle_to_front (measured:
+          car.json front_overhang_m = B3_front_most_x_remeasure, 178 mm, given as "4cm" past the original; +-5.8 mm,
+          root-sum-square of 3 mm for B3 and 5 mm for reading "4cm" to the nearest centimetre, the agent's reading).
+       y and height: ASSUMED, not measured (Xiaohui gave neither): the cable leaves the board's USB-C port and stays
+          within the board's cross-section, y within +-esp32_width / 2 and heights from the plate top (the board's
+          bottom, = plate_top_h of beaconmind_car.urdf.xacro) to esp32_top_h. car.json's front-most corners make the
+          same width assumption. -->
+  <xacro:property name="front_cable_x_min" value="${esp32_front_x}"/>
+  <xacro:property name="front_cable_x_max" value="${axle_to_front}"/>
+  <xacro:property name="front_cable_half_width" value="${esp32_width / 2}"/>
+  <xacro:property name="front_cable_bottom_h" value="${round(plate_underside_h + plate_thickness, 6)}"/>
+  <xacro:property name="front_cable_top_h" value="${esp32_top_h}"/>
+  <!-- Rear: the USB cables that leave the power bank's rear face and loop behind the car; one climbs to the Pico on the
+       breadboard (evidence/M1/M1.T16/photos/bank-rear-low.jpg and car-from-rear.jpg).
+       x: from -axle_to_rear (measured: car.json rear_overhang_m = B4_rear_most_x_remeasure, the Pico's cable, 148 mm
+          behind the axle, +-3 mm) to bank_x_min (measured: the bank's rear face, -85 mm, where the photos show the
+          cables leaving it).
+       y: ASSUMED within +-bank_width / 2 (the photos show the loops hanging behind the bank; their sideways spread is
+          not measured). car.json's rear-most point takes y = 0 instead; the sweep radius does not depend on that (the
+          rear point could move about 99 mm sideways before it reached 0.178281 m).
+       bottom: X2_lowest_cable_h = 7 mm floor (+-2 mm) is a measured height, but it is the lowest point of ANY cable and
+          its location was not given. Putting it at the bottom of THIS envelope is an ASSUMPTION placed from
+          bank-rear-low.jpg; the photos suggest the camera's power cable runs forward under the bank, so the lowest
+          point may be under the car instead.
+       top: ASSUMED breadboard_top_h (the cable climbs to the Pico on the breadboard).
+       Not modelled: the camera cable's route under the car, and the Pico's plug above the breadboard (from about
+       x = -0.070, the breadboard's rear edge, forward).
+       If the cables are rerouted so that the rear overhang falls under 0.085 m (inside the bank's rear face), xacro
+       stops on the rear cable guard in beaconmind_car.urdf.xacro by design: this envelope must then be redrawn. -->
+  <xacro:property name="cable_lowest_h" value="0.007"/>
+  <xacro:property name="rear_cable_x_min" value="${-axle_to_rear}"/>
+  <xacro:property name="rear_cable_x_max" value="${bank_x_min}"/>
+  <xacro:property name="rear_cable_half_width" value="${bank_width / 2}"/>
+  <xacro:property name="rear_cable_bottom_h" value="${cable_lowest_h}"/>
+  <xacro:property name="rear_cable_top_h" value="${breadboard_top_h}"/>
 
   <!-- BNO055 board (Adafruit 2472): 20 x 27 mm (reference/hardware/bno055-pin-map.md section 5).
        Orientation (derived from the sources, not measured on the car): in reference/hardware/bno055-top.jpg both
@@ -177,32 +279,57 @@
        OPEN, not used in the model: the swung-forward readings C2b_caster_front_swung_x = 127 mm (disputed, review #4)
        and its re-measures C2b_..._remeasure = 135 mm and C2b_..._remeasure2 = 140 mm imply a swivel offset of only
        (140 - 12.5) - 120 = 7.5 mm, against 20 mm from C3 and the trailing contact C2 = 100 ("around", probably the
-       looser reading). The caster sphere stays at the measured trailing contact C2 = 100 mm (car.json caster_x_m);
-       the footprint sweep (ROBOT_RADIUS) uses 140 mm, the worst measured front. -->
+       looser reading). The caster sphere stays at the measured trailing contact C2 = 100 mm (car.json caster_x_m).
+       The footprint sweep (car.json sweep_radius_m) used 140 mm, the worst measured caster front, from 2026-10-16
+       to 2026-10-29; since then the front camera cable's corners set it (0.178281 m), and the swung caster is a
+       corner inside it. -->
   <xacro:property name="caster_swivel_x" value="0.120"/>
 
   <!-- ================= Mass distribution ================= -->
-  <!-- The total, mass = K1_total_mass = 506 g, comes from car.json mass_kg through car_props.xacro. -->
-  <!-- measured K2_caster_load = 142 g (caster alone on one scale, turned SIDEWAYS, review #3); +-1 g -->
-  <xacro:property name="caster_load" value="0.142"/>
-  <!-- measured K2_drive_wheels_load = 364 g (both drive wheels on the other scale); +-1 g -->
-  <xacro:property name="drive_wheels_load" value="0.364"/>
-  <!-- derived (lever rule): whole-car centre of mass x = C3_caster_swivel_axis_x x K2_caster_load / K1_total_mass
-       = 120 x 142 / 506 = 33.676 mm. Uses the swivel pivot x, not the trailing contact, because the caster was turned
-       sideways on the scale, so its load acted at the pivot (review #3). About +-0.6 mm from the +-2 mm of C3
-       (each mm of C3 moves it 142 / 506 = 0.28 mm) and about +-0.2 mm from the +-1 g scale readings (0.17 mm per g
-       on the caster scale, 0.07 mm per g on the drive-wheel scale, since K1 = 142 + 364). Kept to 9 decimals so that
-       the URDF reproduces it within 1e-6 m (test_com_matches_lever_rule). -->
+  <!-- The total, mass = K1_total_mass_remeasure = 660 g (2026-10-29, M1.T16; 506 g until then), comes from car.json
+       mass_kg through car_props.xacro. The lever rule below needs the caster load and the total from ONE weighing:
+       both are the M1.T16 weighing. The one-weighing guard in beaconmind_car.urdf.xacro stops xacro when
+       caster_load + drive_wheels_load and car.json's mass differ by more than 2.5 g, and test_com_matches_lever_rule
+       checks the same sum on the CSV rows. -->
+  <!-- measured K2_caster_load_remeasure = 58 g (2026-10-29, M1.T16: caster on one scale, NOT turned sideways, which way
+       it trailed unknown); +-1 g. Was K2_caster_load = 142 g on 2026-10-10 (caster turned sideways, review #3). -->
+  <xacro:property name="caster_load" value="0.058"/>
+  <!-- measured K2_drive_wheels_load_remeasure = 602 g (2026-10-29, both drive wheels on the other scale; 58 + 602 = 660 g,
+       the single-scale K1 reading); +-1 g. Was K2_drive_wheels_load = 364 g on 2026-10-10. -->
+  <xacro:property name="drive_wheels_load" value="0.602"/>
+  <!-- derived (lever rule). Xiaohui's decision of 2026-10-29 (evidence/M1/M1.T16/measurements.md "Decisions for M2.T4"):
+       use the middle value, x = 0.0105 m ahead of the axle, +-0.0018 m. The model implements it (agent wording) with the
+       caster's swivel x as the lever arm: whole-car centre of mass x = C3_caster_swivel_axis_x x K2_caster_load_remeasure
+       / K1_total_mass_remeasure = 120 x 58 / 660 = 10.545 mm.
+       Why a range: the caster was NOT turned sideways on its scale this time, so its load acted at its floor contact,
+       not at the swivel pivot, and which way it trailed is unknown.
+         - The +-1.8 mm ASSUMES the 20 mm trail of the 2026-10-10 notes (pivot C3 120 mm, trailing contact C2 about
+           100 mm): trailing toward the axle 100 x 58 / 660 = 8.788 mm, trailing forward 140 x 58 / 660 = 12.303 mm,
+           so the swivel x is the middle, +-1.758 mm.
+         - From the readings alone the forward contact is at most about 127.5 mm: C2b_caster_front_swung_x_remeasure2
+           puts the wheel FRONT at about 140 mm with the caster swung fully forward, and the caster radius is 12.5 mm
+           (the 2026-10-10 trail conflict, review #4, is still open). That gives 8.8 to 11.2 mm
+           (127.5 x 58 / 660 = 11.205 mm).
+         The chosen 10.545 mm lies inside both intervals, so the value does not change.
+       Smaller terms: each mm of C3 (+-2 mm) moves it 58 / 660 = 0.088 mm, and each g on the caster scale about 0.18 mm.
+       Re-weighing with the caster turned sideways (the 2026-10-10 method) removes the range. (2026-10-10, caster turned
+       sideways: 120 x 142 / 506 = 33.676 mm.)
+       Kept to 9 decimals so that the URDF reproduces it within 1e-6 m (test_com_matches_lever_rule). -->
   <xacro:property name="com_x" value="${round(caster_swivel_x * caster_load / mass, 9)}"/>
   <!-- ESTIMATE - provisional, not measured: chassis centre-of-mass height = middle of the main body
-       (30 to 66 mm floor = 48 mm floor), i.e. 48 - 33.5 = 14.5 mm above the axle; +-10 mm -->
+       (30 to 66 mm floor = 48 mm floor), i.e. 48 - 33.5 = 14.5 mm above the axle; +-10 mm.
+       Still an unmeasured estimate after 2026-10-29: the power bank (17 to 42 mm floor, centre 29.5 mm floor, below)
+       may pull the true height down, within the +-10 mm; no reading fixes it (the bank was not weighed alone). -->
   <xacro:property name="chassis_com_z" value="0.0145"/>
-  <!-- stand-in masses, NOT weighed; the chassis gets the remainder (beaconmind_car.urdf.xacro chassis_mass).
+  <!-- stand-in masses, NOT weighed; the chassis gets the remainder (beaconmind_car.urdf.xacro chassis_mass), now
+       0.660 - 2 x 0.030 - 0.010 - 0.010 - 0.005 = 0.575 kg (0.421 kg with the 2026-10-10 total of 0.506 kg).
        wheel_mass 30 g each and caster_mass 10 g: M2.T4 step 5 ("mass 0.03 kg each (stand-in)", caster "mass 0.01 kg").
-       camera_mass 10 g and imu_mass 5 g: the Module 6 guide defaults (assignments/assignment6/derived-values.md line 41;
-       the instructor's model, guide-original/urdf/gazebo_car.urdf.xacro, gives camera_link 0.01 and imu_link 0.005 kg).
-       M2.T4 step 5 gives the camera and IMU links no mass, and its chassis mass is mass - 2 x 0.03 - 0.01 = 0.436 kg;
-       this model's 0.421 kg also subtracts these two (a recorded deviation, evidence/M2/M2.T4/README.md). -->
+       camera_mass 10 g and imu_mass 5 g: the Module 6 guide defaults (assignments/assignment6/derived-values.md line 41,
+       a private course repo file; the instructor's model, guide-original/urdf/gazebo_car.urdf.xacro, also in the
+       private course repo, gives camera_link 0.01 and imu_link 0.005 kg).
+       M2.T4 step 5 gives the camera and IMU links no mass, and its chassis mass is mass - 2 x 0.03 - 0.01 = 0.590 kg
+       (0.436 kg in 2026-10-10 terms); this model's 0.575 kg also subtracts these two (a recorded deviation,
+       evidence/M2/M2.T4/README.md). The stand-in values are unchanged by the M1.T16 update. -->
   <xacro:property name="wheel_mass" value="0.030"/>
   <xacro:property name="caster_mass" value="0.010"/>
   <xacro:property name="camera_mass" value="0.010"/>

@@ -6,8 +6,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv W2_tyre_width",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.002
     },
     "track_outer_m": {
@@ -15,8 +15,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv W3_track_outer",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.002
     },
     "track_inner_m": {
@@ -24,8 +24,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv W3_track_inner",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.002
     },
     "caster_x_m": {
@@ -33,8 +33,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv C2_caster_contact_x",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.005
     },
     "caster_diameter_m": {
@@ -42,26 +42,26 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv C1_caster_wheel_diameter_recheck",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.002
     },
     "front_overhang_m": {
-      "value": 0.138,
+      "value": 0.178,
       "unit": "m",
       "status": "measured",
-      "source": "M1.T9 measurements.csv B3_front_most_x",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
-      "uncertainty": 0.003
+      "source": "M1.T9 measurements.csv B3_front_most_x_remeasure",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
+      "uncertainty": 0.0058
     },
     "rear_overhang_m": {
-      "value": 0.07649,
+      "value": 0.148,
       "unit": "m",
       "status": "measured",
-      "source": "M1.T9 measurements.csv B4_rear_most_x_corrected",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "source": "M1.T9 measurements.csv B4_rear_most_x_remeasure",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.003
     },
     "chassis_width_m": {
@@ -69,8 +69,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv B5_plate_width_max_corrected",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.0005
     },
     "lens_x_m": {
@@ -78,8 +78,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv S3_lens_x",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.005
     },
     "lens_y_m": {
@@ -87,8 +87,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv S3_lens_y",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.002
     },
     "lens_z_m": {
@@ -96,8 +96,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv S3_lens_centre_h",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.002
     },
     "imu_x_m": {
@@ -105,8 +105,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv S1_imu_board_centre_x",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.003
     },
     "imu_y_m": {
@@ -114,17 +114,17 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv S1_imu_board_centre_y_corrected",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.002
     },
     "mass_kg": {
-      "value": 0.506,
+      "value": 0.66,
       "unit": "kg",
       "status": "measured",
-      "source": "M1.T9 measurements.csv K1_total_mass",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "source": "M1.T9 measurements.csv K1_total_mass_remeasure",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.0014
     },
     "wheel_diameter_m": {
@@ -132,8 +132,8 @@
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 measurements.csv W1_tyre_diameter_direct (direct unloaded tyre diameter; NOT a roll-out)",
-      "evidence": "evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv",
-      "updated": "2026-10-16",
+      "evidence": "evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv",
+      "updated": "2026-10-29",
       "uncertainty": 0.002
     },
     "imu_z_m": {
@@ -142,7 +142,7 @@
       "status": "measured",
       "source": "M1.T9 (derived): measurements.csv S1_imu_board_top_h (board top above the floor) - wheel_diameter_m / 2 = board top above the axle midpoint",
       "evidence": "evidence/M1/M1.T9/derived.txt",
-      "updated": "2026-10-16",
+      "updated": "2026-10-29",
       "uncertainty": 0.0022
     },
     "track_width_m": {
@@ -151,17 +151,17 @@
       "status": "measured",
       "source": "M1.T9 (derived)",
       "evidence": "evidence/M1/M1.T9/derived.txt",
-      "updated": "2026-10-16",
+      "updated": "2026-10-29",
       "uncertainty": 0.0014
     },
     "chassis_length_m": {
-      "value": 0.21449,
+      "value": 0.326,
       "unit": "m",
       "status": "measured",
       "source": "M1.T9 (derived)",
       "evidence": "evidence/M1/M1.T9/derived.txt",
-      "updated": "2026-10-16",
-      "uncertainty": 0.0042
+      "updated": "2026-10-29",
+      "uncertainty": 0.0066
     },
     "chassis_height_m": {
       "value": 0.036,
@@ -169,17 +169,17 @@
       "status": "measured",
       "source": "M1.T9 (derived)",
       "evidence": "evidence/M1/M1.T9/derived.txt",
-      "updated": "2026-10-16",
+      "updated": "2026-10-29",
       "uncertainty": 0.0028
     },
     "corners": {
       "value": [
         [
-          0.138,
+          0.178,
           0.01
         ],
         [
-          0.138,
+          0.178,
           -0.01
         ],
         [
@@ -215,7 +215,7 @@
           -0.07396
         ],
         [
-          -0.07649,
+          -0.148,
           0.0
         ],
         [
@@ -225,29 +225,31 @@
       ],
       "unit": "m",
       "status": "measured",
-      "source": "M1.T9 (derived): plan-view extreme points from the axle midpoint (derived.txt); the ESP32-CAM front corners and the plate-front corners ASSUME those parts are centred on y = 0 (only their widths were measured)",
+      "source": "M1.T9 (derived): plan-view extreme points from the axle midpoint (derived.txt); the front-most corners take y = +-B14 / 2, which ASSUMES the front-most point is as wide as the ESP32-CAM board (true when it is the board itself, not when it is a cable) and centred on y = 0; the plate-front corners ASSUME the plate strip is centred on y = 0; the rear-most point takes y = 0; no sideways offset was measured",
       "evidence": "evidence/M1/M1.T9/derived.txt",
-      "updated": "2026-10-16",
-      "uncertainty": 0.005
+      "updated": "2026-10-29",
+      "uncertainty": 0.0058
     },
     "sweep_radius_m": {
-      "value": 0.14,
+      "value": 0.178281,
       "unit": "m",
       "status": "measured",
-      "source": "M1.T9 (derived): the largest distance over corners, reached at the caster swung fully forward, which uses no centring assumption",
+      "source": "M1.T9 (derived): the largest distance over corners, reached at the front-most corner, so sweep_radius_m depends on what that corner's y assumes (see corners: the width it takes and its centring on y = 0)",
       "evidence": "evidence/M1/M1.T9/derived.txt",
-      "updated": "2026-10-16",
-      "uncertainty": 0.005
+      "updated": "2026-10-29",
+      "uncertainty": 0.0058
     }
   },
   "measured": {
     "by": "Xiaohui Chen (readings); the plate-outline rows with instrument 'CAD ...' are a classmate's CAD model",
     "date": "2026-10-10",
     "instruments": [
-      "ruler / tape measure in mm (the CSV names a ruler for rows B9 and B10; the other length rows say 'not stated')",
-      "two Pitney Bowes kitchen scales, 5 kg x 1 g (rows K1, K2)",
+      "ruler / tape measure in mm (the CSV names a ruler for rows B9 and B10; the other length rows, including the 2026-10-29 B15 power-bank, X cable, B3/B4 remeasure and B14b rows, say 'not stated'; B3_front_most_x_remeasure was read as 40 mm past B3_front_most_x)",
+      "two Pitney Bowes kitchen scales, 5 kg x 1 g (rows K1_total_mass, K2_caster_load, K2_drive_wheels_load, 2026-10-10)",
+      "Pitney Bowes postal scale, 5 kg x 1 g (row K1_total_mass_remeasure, 2026-10-29, M1.T16)",
+      "two Pitney Bowes postal scales of that model, side by side (rows K2_caster_load_remeasure, K2_drive_wheels_load_remeasure, 2026-10-29, M1.T16)",
       "CAD: a classmate's Onshape model and drawing of the Emo chassis plate (STEP file and DRW_MOBILE_ROBOT_CHASSIS.pdf, 2026-10-13; the private course repo (plate CAD is not published here)), rows whose instrument starts 'CAD'"
     ],
-    "notes": "Readings by Xiaohui Chen on 2026-10-10, taken for the Module 6 lab (assignments/assignment6/measurements.csv, reviewed in assignments/assignment6/review/MEASUREMENT-REVIEW.md) and copied unchanged to evidence/M1/M1.T9/measurements-xiaohui-chen-2026-10-10.csv. UPDATE 2026-10-16: car.json is now built from evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv, which is that copy plus superseding rows for the plate outline from a classmate's CAD of the same Emo chassis plate (instrument 'CAD ...': width 147.92 mm, narrow strip 100 mm, wing depth 34.35 mm, front arc R135.14 mm, front corner fillets R8 mm) and B1/B2/B4 fitted to the CAD plate length 206.98 mm (130.49 / 76.49 / 76.49 mm; instrument 'fit ...'). The wheel, track, caster, camera, IMU, height and mass readings are unchanged: the CAD models the plate only. Car on the floor, battery off, camera fitted, no USB cable. DEVIATIONS from the M1.T9 procedure, each for Xiaohui to accept or redo: (1) ONE reading per quantity, not three, so there is no repeatability check; uncertainty = 2 mm per ruler reading, 5 mm for readings given as 'around', 1 g per scale reading, with these exceptions: at least 3 mm for every x measured from the axle line, because the axle line itself is located to about 3 mm (review #15; rows B1, B2, B3, B4 and S1_imu_board_centre_x get 3 mm, while the 'around' rows C2, C2b and S3_lens_x keep 5 mm), 4 mm for the 2026-10-10 B5b reading (review #7; that reading is superseded since 2026-10-16), 0.5 mm for a CAD dimension (an allowance, not a measured tolerance), and root-sum-square of 1 g and 1 g for the two-scale mass; propagated root-sum-square into derived values. (2) NO 5-revolution roll-out: wheel_diameter_m is the direct, unloaded tyre diameter (row W1_tyre_diameter_direct), not the effective rolling diameter under load; rollout_left_m, rollout_right_m, wheel_diameter_left_m and wheel_diameter_right_m are omitted. (3) Encoder counts per wheel revolution postponed (they need the Pico): counts_per_rev_left, counts_per_rev_right and ticks_per_wheel_rev are omitted. (4) front_overhang_m was measured with NO USB cable in the ESP32-CAM; re-measure with the operating cable (M3.T1). (5) imu_axes not recorded (no photo of the BNO055's printed axes). (6) The camera is not calibrated (M1.T7): lens_x_m, lens_y_m and lens_z_m are ruler readings of the lens position. (7) chassis_length_m, chassis_width_m and chassis_height_m are NOT the whole-car bounding box that M1.T9 step 3 asks for. They describe the main body without the drive wheels and without the camera stand, which is what the URDF chassis box (M2.T4 step 5, body_width) draws and what M2.T3 maps to body_width_m (kinsim's contact corners): length = front_overhang_m + rear_overhang_m = 0.214 m (0.21449 m since 2026-10-16; 0.215 m before) (also the whole car's length, except that the caster swung fully forward reaches x = 0.140 m, see corners); width = the widest plate point, the rear wing, 0.148 m (CAD 147.92 mm since 2026-10-16; the 150 mm ruler reading before) (the whole car is 0.160 m wide over the tyres = track_outer_m); height = gearbox bottoms (30 mm above the floor) to battery-holder top (66 mm) = 0.036 m (the whole car reaches about 0.100 m above the floor at the camera-stand top, row B10_camera_stand_top_h, 'around 10 cm'). (8) corners, and therefore sweep_radius_m, rest on one ASSUMPTION: the ESP32-CAM front corners and the plate-front corners take y = +-(measured width) / 2, i.e. those parts are assumed centred on y = 0 (their sideways offsets were not measured). Until 2026-10-16 the farthest corner, which set sweep_radius_m = 0.140218 m, was a square plate-front corner (0.131, +-0.050). Since 2026-10-16 the plate-front corners follow the CAD's rounded front (an R135.14 arc with R8 corner fillets, apex at B1): (0.1229, +-0.0447) m, r = 0.1308 m; the farthest point is now the caster swung fully forward (0.140, 0), so sweep_radius_m = 0.140 m needs no centring assumption. The stick antenna was not measured (review #9). CONVENTIONS: x and y from the axle midpoint, +x toward the camera/caster end, +y to the robot's left. lens_z_m (lens centre) is a height above the FLOOR, as M1.T9 step 3 ('measure as M1.T7 step 8') and M1.T7 step 8 define the camera's z_m. imu_z_m is the BNO055 board top surface above the AXLE midpoint, as M1.T9 step 3 defines the IMU position ('from the axle midpoint'): row S1_imu_board_top_h (60 mm above the floor) minus wheel_diameter_m / 2 (33.5 mm) = 0.0265 m, uncertainty root-sum-square of 2 mm and 1 mm = 0.0022 m. The URDF's base_link is at axle height, wheel_diameter_m / 2 above the floor. caster_x_m is the trailing caster's floor contact ('around'); the swivel pivot is at about 0.120 m (row C3) and the swung-forward wheel front at about 0.140 m (row C2b), which conflicts with a 20 mm swivel offset (review #4, open). mass_kg: whole car with batteries and camera, no cable, = 142 g on the caster + 364 g on the drive wheels. This file was written by course-project/tools/write_car_json.py (AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-10; updated 2026-10-16 for the plate CAD); the readings are Xiaohui Chen's."
+    "notes": "Readings by Xiaohui Chen on 2026-10-10, taken for the Module 6 lab (assignments/assignment6/measurements.csv, reviewed in assignments/assignment6/review/MEASUREMENT-REVIEW.md) and copied unchanged to evidence/M1/M1.T9/measurements-xiaohui-chen-2026-10-10.csv. UPDATE 2026-10-16: car.json is now built from evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv, which is that copy plus superseding rows for the plate outline from a classmate's CAD of the same Emo chassis plate (instrument 'CAD ...': width 147.92 mm, narrow strip 100 mm, wing depth 34.35 mm, front arc R135.14 mm, front corner fillets R8 mm) and B1/B2/B4 fitted to the CAD plate length 206.98 mm (130.49 / 76.49 / 76.49 mm; instrument 'fit ...'). The wheel, track, caster, camera, IMU, height and mass readings are unchanged: the CAD models the plate only. UPDATE 2026-10-29: car.json is now built from evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv, which is the 2026-10-16 file unchanged plus Xiaohui Chen's 2026-10-29 readings of the car as it is now (M1.T16, evidence/M1/M1.T16/measurements.md): K1_total_mass_remeasure = 660 g on one Pitney Bowes postal scale (5 kg x 1 g), in the staying configuration (as measurements.md says; the M1.T16 prerequisites in plan/M1-foundations.md define it as bank fixed, four cells in, camera on, only the cables that stay on the car; the battery switch state was not recorded), and the two-scale split K2_caster_load_remeasure 58 g + K2_drive_wheels_load_remeasure 602 g = 660 g. The caster was NOT turned sideways on its scale this time (it was on 2026-10-10) and which way it trailed is unknown. Xiaohui's decision: use the middle value, 0.0105 +- 0.0018 m ahead of the axle; the URDF implements it with the swivel x (C3, 120 mm) as the lever arm (car_geometry_extras.xacro; the +- 0.0018 m assumes the 20 mm trail of the 2026-10-10 notes, and the readings alone give 0.0088 to 0.0112 m). The power bank (70 x 70 x 25 mm, rows B15_bank_*) and the cables are now on the car; the URDF draws the bank as geometry only. The weighing changed mass_kg (0.506 -> 0.660 kg, uncertainty unchanged at 0.0014 kg). FOOTPRINT, later on 2026-10-29: Xiaohui read the camera's USB cable at 40 mm past B3_front_most_x (chat, 23:45 CDT; row B3_front_most_x_remeasure = 178 mm; Xiaohui gave '4cm', which the agent reads to the nearest centimetre) and decided to keep the cables as they are and update the footprint now. So front_overhang_m = 0.178 +- 0.0058 m (the camera cable's tip; root-sum-square of B3's 3 mm and 5 mm for the 40 mm, write_car_json.py ROW_UNCERTAINTY), rear_overhang_m = 0.148 +- 0.003 m (the Pico's USB cable, row B4_rear_most_x_remeasure, the same reading as X1_pico_usb_cable_rear_x, which is now SUPERSEDED), chassis_length_m = 0.326 +- 0.0066 m (the whole car with its cables), and corners and sweep_radius_m follow from them. The farthest points are now the front-most corners (0.178, +-0.010) m, which rest on TWO ASSUMPTIONS: the cable is taken as wide as the ESP32-CAM board, and centred on y = 0 (its y and width were not given); so sweep_radius_m = hypot(0.178, 0.010) = 0.178281 m. The rear-most point (-0.148, 0) takes y = 0 (its y was not given), while the URDF's rear cable envelope is +-0.035 m wide; the sweep radius is unaffected, since the rear point could move about 0.099 m sideways before it reached 0.178281 m. The original B3_front_most_x reading (138 mm) is re-filed as B14b_esp32cam_front_x, the ESP32-CAM board's own front, for the URDF; it is not a car.json input. The bank's rear face (85 mm behind the axle, 8.5 mm behind the plate's rear apex) lies inside the new footprint. chassis_height_m stays 0.036 m (gearbox bottoms to battery-holder top; the bank's bottom, 17 mm above the floor, is lower). Ride height, camera stand, BNO055, antenna, tyres and cell type are unchanged (Xiaohui, evidence/M1/M1.T16/confirm.md). Car on the floor, battery off, camera fitted, no USB cable (the 2026-10-10 readings; for the 2026-10-29 weighing see UPDATE 2026-10-29). DEVIATIONS from the M1.T9 procedure, each for Xiaohui to accept or redo: (1) ONE reading per quantity, not three, so there is no repeatability check; uncertainty = 2 mm per ruler reading, 5 mm for readings given as 'around', 1 g per scale reading, with these exceptions: at least 3 mm for every x measured from the axle line, because the axle line itself is located to about 3 mm (review #15; rows B1, B2, B3, B4 and S1_imu_board_centre_x get 3 mm, while the 'around' rows C2, C2b and S3_lens_x keep 5 mm, while B3_front_most_x_remeasure (since 2026-10-29) has a stated row exception, root-sum-square of 3 mm and 5 mm = 5.8 mm, because its 40 mm stick-out was given as '4cm'), 4 mm for the 2026-10-10 B5b reading (review #7; that reading is superseded since 2026-10-16), 0.5 mm for a CAD dimension (an allowance, not a measured tolerance), and root-sum-square of 1 g and 1 g for the two-scale mass; propagated root-sum-square into derived values. (2) NO 5-revolution roll-out: wheel_diameter_m is the direct, unloaded tyre diameter (row W1_tyre_diameter_direct), not the effective rolling diameter under load; rollout_left_m, rollout_right_m, wheel_diameter_left_m and wheel_diameter_right_m are omitted. (3) Encoder counts per wheel revolution postponed (they need the Pico): counts_per_rev_left, counts_per_rev_right and ticks_per_wheel_rev are omitted. (4) Until 2026-10-29 front_overhang_m was the 2026-10-10 reading with NO USB cable in the ESP32-CAM (B3_front_most_x, 138 mm). The camera is now powered from the power bank and its cable sticks out at the front (evidence/M1/M1.T16/confirm.md); since 2026-10-29 front_overhang_m is that cable's tip, B3_front_most_x_remeasure = 178 +- 5.8 mm (40 mm past B3, given as '4cm'; y and height not given). A finer reading with the operating cable can still come from M3.T1. (5) imu_axes not recorded (no photo of the BNO055's printed axes). (6) The camera is not calibrated (M1.T7): lens_x_m, lens_y_m and lens_z_m are ruler readings of the lens position. (7) chassis_width_m and chassis_height_m are NOT the whole-car bounding box that M1.T9 step 3 asks for, and until 2026-10-29 chassis_length_m was not either. Width and height describe the main body without the drive wheels and without the camera stand, which is what the URDF chassis box (M2.T4 step 5, body_width) draws and what M2.T3 maps to body_width_m (kinsim's contact corners); since 2026-10-29 chassis_length_m is the whole car's length with its cables, not the main body's: length = front_overhang_m + rear_overhang_m = 0.326 m since 2026-10-29 (the front camera cable at 0.178 m and the rear Pico cable at 0.148 m; the swung caster at 0.140 m is inside it); until then 0.214 m (0.21449 m from 2026-10-16; 0.215 m before), the body without cables, except that the caster swung fully forward reached x = 0.140 m; width = the widest plate point, the rear wing, 0.148 m (CAD 147.92 mm since 2026-10-16; the 150 mm ruler reading before) (the whole car is 0.160 m wide over the tyres = track_outer_m); height = gearbox bottoms (30 mm above the floor) to battery-holder top (66 mm) = 0.036 m (since 2026-10-29 the power bank's bottom, 17 mm above the floor, is the lowest body point; chassis_height_m is deliberately left at 0.036 m) (the whole car reaches about 0.100 m above the floor at the camera-stand top, row B10_camera_stand_top_h, 'around 10 cm'). (8) corners, and therefore sweep_radius_m, rest on stated ASSUMPTIONS about y: the front-most corners and the plate-front corners take y = +-(a measured width) / 2 (the front-most corners the ESP32-CAM board's width B14; until 2026-10-29 the front-most point was that board itself, so only its centring was assumed), i.e. those parts are assumed centred on y = 0 (their sideways offsets were not measured). Until 2026-10-16 the farthest corner, which set sweep_radius_m = 0.140218 m, was a square plate-front corner (0.131, +-0.050). From 2026-10-16 the plate-front corners follow the CAD's rounded front (an R135.14 arc with R8 corner fillets, apex at B1): (0.1229, +-0.0447) m, r = 0.1308 m; the farthest point was then the caster swung fully forward (0.140, 0), so sweep_radius_m = 0.140 m needed no centring assumption. Since 2026-10-29 the front-most corners are the camera cable's tip taken as wide as the ESP32-CAM board, (0.178, +-0.010) m; they are the farthest points, so sweep_radius_m = 0.178281 m depends on TWO assumptions: the cable as wide as the board, and centred (the cable's y and width were not given). The rear-most point, the Pico cable at (-0.148, 0), takes y = 0 (its y was not given), while the URDF's rear cable envelope is +-0.035 m wide; the sweep radius is unaffected (the rear point could move about 0.099 m sideways before it reached 0.178281 m). The stick antenna was not measured (review #9). CONVENTIONS: x and y from the axle midpoint, +x toward the camera/caster end, +y to the robot's left. lens_z_m (lens centre) is a height above the FLOOR, as M1.T9 step 3 ('measure as M1.T7 step 8') and M1.T7 step 8 define the camera's z_m. imu_z_m is the BNO055 board top surface above the AXLE midpoint, as M1.T9 step 3 defines the IMU position ('from the axle midpoint'): row S1_imu_board_top_h (60 mm above the floor) minus wheel_diameter_m / 2 (33.5 mm) = 0.0265 m, uncertainty root-sum-square of 2 mm and 1 mm = 0.0022 m. The URDF's base_link is at axle height, wheel_diameter_m / 2 above the floor. caster_x_m is the trailing caster's floor contact ('around'); the swivel pivot is at about 0.120 m (row C3) and the swung-forward wheel front at about 0.140 m (row C2b), which conflicts with a 20 mm swivel offset (review #4, open). mass_kg: whole car in the staying configuration (M1.T16 prerequisites: bank fixed, four cells in, camera on, only the cables that stay on the car) = 660 g on one postal scale = 58 g on the caster + 602 g on the drive wheels (2026-10-29, row K1_total_mass_remeasure; until 2026-10-29: 0.506 kg, the car with batteries and camera, no power bank, no cable, = 142 g on the caster + 364 g on the drive wheels). This file was written by course-project/tools/write_car_json.py (AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-10; updated 2026-10-16 for the plate CAD; updated 2026-10-29 for the M1.T16 mass and, the same day, for the cable footprint Xiaohui decided, by Claude Opus 5.5 (xhigh effort) via Cursor); the readings are Xiaohui Chen's."
   }
 }

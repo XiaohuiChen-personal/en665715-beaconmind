@@ -3,10 +3,22 @@
   AI-assisted: Claude Opus 5.5 (xhigh effort) via Claude Code, 2026-10-10: wrote the URDF/xacro, launch file and tests.
   AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-16: drew the plate's rounded front (front_slices, from the
   classmate's plate CAD in the private course repo (plate CAD is not published here)) and updated the plate comments for the CAD outline.
+  AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: added the power bank (box power_bank, colour
+  bank_black, guards) from the M1.T16 readings and updated the mass, centre-of-mass, inertia and Module 6 comments;
+  after a review the same day, added the one-weighing guard, the body_box size check, the bank-floor guard and the
+  complete bank/motor overlap test, compared the bank top with the measured rear underside, and corrected the inertia,
+  Isaac massless-link, self-collision and wheel-layout comments and added the M2.T16 notes (bank, caster); later the
+  same day, after Xiaohui's footprint decision, ended the ESP32-CAM box at esp32_front_x and added the two visual-only
+  cable boxes (body_visual_box, colour cable_grey); after a review of that, gave the front cable a collider (an agent
+  decision for Xiaohui to accept), added the footprint guards and the floor check of body_visual_box, and stated the
+  rear wall-contact offset, the camera-view occlusion and what is not modelled.
 
-  beaconmind_car.urdf.xacro: the ONE robot description of Xiaohui Chen's two-wheel car, shared by
-    (a) the Module 6 Gazebo Fortress lab (assignments/assignment6, wrapped with the instructor's <gazebo> blocks), and
-    (b) the BeaconMind course project (robot_state_publisher TF tree, C12; Isaac Sim twin, M2.T4 / M2.T16).
+  beaconmind_car.urdf.xacro: the robot description of Xiaohui Chen's two-wheel car for the BeaconMind course project
+  (robot_state_publisher TF tree, C12; Isaac Sim twin, M2.T4 / M2.T16).
+  Until 2026-10-29 the Module 6 Gazebo Fortress lab (assignments/assignment6 in the private course repo, wrapped with the
+  instructor's <gazebo> blocks) included this file directly. Since 2026-10-29 the lab mounts a frozen snapshot instead
+  (assignments/assignment6/beaconmind_description-m6-snapshot in the private course repo), so changes here no longer
+  reach the lab.
 
   Frames (README C1): base_link = midpoint between the drive-wheel centres AT AXLE HEIGHT (z = 0 at the axle);
   +x toward the camera lens / caster end (the front); +y = robot left; +z up. Floor is at z = -wheel_radius.
@@ -18,12 +30,12 @@
   Links (exactly): base_link, chassis_link, left_wheel_link, right_wheel_link, caster_link, camera_link,
   camera_optical_frame, imu_link.
   This file has NO <gazebo>, <sensor>, ray or lidar elements (D1a: no range sensor). Simulator-specific
-  blocks belong in a wrapper (for the lab: assignments/assignment6/lab-step10/gazebo_car.urdf.xacro).
+  blocks belong in a wrapper (for the lab: assignments/assignment6/lab-step10/gazebo_car.urdf.xacro, private repo).
 -->
 <robot name="beaconmind_car" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- Relative to THIS file's folder, so they resolve wherever this file is included from
-       (the package share, the source tree, or the lab container's /description mount).
+       (the package share or the source tree; the lab container's /description mount now holds the frozen snapshot).
        car_props.xacro: generated from car.json. car_geometry_extras.xacro: hand-written; defines no property of
        car_props.xacro (test_props_files_do_not_overlap), so neither file can silently override the other. -->
   <xacro:include filename="car_props.xacro"/>
@@ -39,8 +51,17 @@
   <xacro:if value="${battery_x_min &lt; breadboard_x_max}">
     ${xacro.fatal('battery holder (x from %s) would overlap the breadboard (x to %s)' % (battery_x_min, breadboard_x_max))}
   </xacro:if>
-  <xacro:if value="${axle_to_front &lt;= esp32_x_min}">
-    ${xacro.fatal('ESP32-CAM stack would have no length: front %s is not ahead of rear %s' % (axle_to_front, esp32_x_min))}
+  <xacro:if value="${esp32_front_x &lt;= esp32_x_min}">
+    ${xacro.fatal('ESP32-CAM stack would have no length: front %s (esp32_front_x) is not ahead of rear %s' % (esp32_front_x, esp32_x_min))}
+  </xacro:if>
+  <!-- The cable envelopes (car_geometry_extras.xacro "Cables") need car.json's footprint to reach past the parts they
+       start from: the front cable runs from the board's front to axle_to_front, the rear cable from axle_to_rear to the
+       bank's rear face. A footprint without the cables (an older car.json, or rerouted cables) stops here by design. -->
+  <xacro:if value="${axle_to_front &lt;= esp32_front_x}">
+    ${xacro.fatal('axle_to_front %s (car.json front_overhang_m, the camera cable tip) must exceed esp32_front_x %s (the board front): car.json front_overhang_m must reach past the board' % (axle_to_front, esp32_front_x))}
+  </xacro:if>
+  <xacro:if value="${axle_to_rear &lt;= -bank_x_min}">
+    ${xacro.fatal('axle_to_rear %s (car.json rear_overhang_m, the Pico cable) must exceed %s (-bank_x_min, the bank rear face): if the cables were rerouted, redraw the rear cable envelope' % (axle_to_rear, -bank_x_min))}
   </xacro:if>
   <xacro:if value="${wing_slices != 4}">
     ${xacro.fatal('wing_slices is %s, but chassis_link instantiates exactly 4 plate_wing_slice calls' % wing_slices)}
@@ -56,6 +77,32 @@
        both readings, so a re-measure that updates only one of the two files stops here. -->
   <xacro:if value="${math.fabs(chassis_height - (battery_top_h - lowest_body_h)) &gt; 1e-9}">
     ${xacro.fatal('chassis_height %s (car.json) is not battery_top_h - lowest_body_h = %s (car_geometry_extras.xacro)' % (chassis_height, battery_top_h - lowest_body_h))}
+  </xacro:if>
+  <!-- One weighing. The lever rule (com_x) needs the caster load and the total from the SAME weighing, but car.json's mass
+       and the extras' caster_load / drive_wheels_load live in two files. A re-weighing that reaches only one of them
+       stops here: a whole-car mass row re-measured without a new two-scale split, or a split copied by hand while
+       car.json was not rebuilt. Why 2.5 g: the single-scale total and the two split readings are each read to 1 g
+       (the 1 g scale rule), so one weighing can disagree with itself by about root-sum-square(1, 1, 1) = 1.7 g; 2.5 g
+       leaves margin for that, while two different weighings (506 g on 2026-10-10, 660 g on 2026-10-29) are far apart. -->
+  <xacro:if value="${math.fabs(caster_load + drive_wheels_load - mass) &gt; 0.0025}">
+    ${xacro.fatal('caster_load + drive_wheels_load = %s kg (car_geometry_extras.xacro) and mass = %s kg (car.json) are not one weighing (they differ by more than 2.5 g): update the two-scale split and the total together' % (caster_load + drive_wheels_load, mass))}
+  </xacro:if>
+  <!-- The power bank (M1.T16). It is taped to the plate underside, so its bottom must be above the floor and its top
+       no higher than the MEASURED underside at the rear, where it sits (plate_underside_h_rear, B8 rear 43 mm; the level
+       model plate is at 44.5 mm). The gearbox rear end is a photo ESTIMATE clipped to the measured bank front face
+       (car_geometry_extras.xacro motor_x_min), so the bank box and the motor boxes may touch but not share volume: they
+       share volume only when their x, y and height intervals all overlap (strict comparisons, so touching faces pass).
+       bank_top_h is rounded to 1 um like body_box, so a sum such as 0.005 + 0.025 does not misfire on a touching face. -->
+  <xacro:if value="${bank_bottom_h &lt;= 0}">
+    ${xacro.fatal('power bank bottom %s must be above the floor (bank_bottom_h > 0)' % bank_bottom_h)}
+  </xacro:if>
+  <xacro:if value="${(bank_x_max &gt; motor_x_min and bank_x_min &lt; motor_x_max
+                      and bank_width / 2 &gt; motor_y_inner and -bank_width / 2 &lt; motor_y_outer
+                      and bank_top_h &gt; lowest_body_h and bank_bottom_h &lt; plate_underside_h)}">
+    ${xacro.fatal('power bank box (x %s to %s, |y| up to %s, height %s to %s) would share volume with the motor boxes (x %s to %s, |y| %s to %s, height %s to %s)' % (bank_x_min, bank_x_max, bank_width / 2, bank_bottom_h, bank_top_h, motor_x_min, motor_x_max, motor_y_inner, motor_y_outer, lowest_body_h, plate_underside_h))}
+  </xacro:if>
+  <xacro:if value="${bank_top_h &gt; plate_underside_h_rear}">
+    ${xacro.fatal('power bank top %s (bank_top_h) would be above the plate underside at the rear, %s (plate_underside_h_rear, B8 rear)' % (bank_top_h, plate_underside_h_rear))}
   </xacro:if>
 
   <!-- ================= Derived model quantities ================= -->
@@ -82,14 +129,15 @@
                   value="${front_arc_cx + plate_front_arc_radius / (plate_front_arc_radius - plate_front_corner_radius) * (front_fillet_cx - front_arc_cx)}"/>
   <xacro:property name="front_round_x" value="${snap2um(front_fillet_cx)}"/>
   <xacro:property name="front_slice" value="${(plate_front_x - front_round_x) / front_slices}"/>
-  <!-- Chassis mass = measured total minus the stand-in part masses: 0.506 - 2 x 0.030 - 0.010 - 0.010 - 0.005 = 0.421 kg -->
+  <!-- Chassis mass = measured total minus the stand-in part masses: 0.660 - 2 x 0.030 - 0.010 - 0.010 - 0.005 = 0.575 kg
+       (the total is the M1.T16 weighing of 2026-10-29; it includes the power bank, which has no mass of its own here) -->
   <xacro:property name="chassis_mass" value="${round(mass - 2 * wheel_mass - caster_mass - camera_mass - imu_mass, 9)}"/>
   <!-- Chassis centre of mass, chosen so that the WHOLE car's centre of mass is at x = com_x (lever-rule value,
        car_geometry_extras.xacro) and y = 0 (ASSUMED symmetric: no sideways weighing was made). The wheels sit at x = y = 0
        and add nothing.
        chassis_com_x = (mass*com_x - caster_mass*caster_x - camera_mass*camera_x - imu_mass*imu_x) / chassis_mass
        chassis_com_y = -(caster_mass*caster_y + camera_mass*camera_y + imu_mass*imu_y) / chassis_mass
-       (with imu_y = +0.020 this is about -0.24 mm, which cancels the IMU's stand-in 5 g on the left).
+       (with imu_y = +0.020 this is about -0.17 mm, which cancels the IMU's stand-in 5 g on the left).
        9 decimals so that the whole-car COM matches the lever rule within 1e-6 m. -->
   <xacro:property name="chassis_com_x"
                   value="${round((mass * com_x - caster_mass * caster_x - camera_mass * camera_x - imu_mass * imu_x) / chassis_mass, 9)}"/>
@@ -104,6 +152,8 @@
       breadboard_white='0.95 0.95 0.93 1',
       battery_black='0.08 0.08 0.08 1',
       motor_light_blue='0.45 0.72 0.92 1',
+      bank_black='0.11 0.11 0.12 1',
+      cable_grey='0.42 0.42 0.44 1',
       esp32_black='0.04 0.04 0.04 1',
       stand_grey='0.62 0.62 0.62 1',
       imu_purple='0.45 0.15 0.60 1',
@@ -139,16 +189,26 @@
              izz="${2 * m * r * r / 5}"/>
   </xacro:macro>
 
-  <!-- One named box of the chassis: a <visual> and a <collision> with the same geometry.
-       x and y are base_link coordinates; h_min / h_max are heights above the FLOOR (converted to model z here).
-       Named collisions are fine here because nothing sets Gazebo friction on chassis_link; if a
-       <gazebo reference="chassis_link"> surface block is ever added, drop the collision names (see the tyres). -->
-  <xacro:macro name="body_box" params="name x_min x_max y_min y_max h_min h_max material">
+  <!-- One named VISUAL-ONLY box of the chassis (no collider): used for the rear cable. x and y are base_link
+       coordinates; h_min / h_max are heights above the FLOOR (converted to model z here). -->
+  <xacro:macro name="body_visual_box" params="name x_min x_max y_min y_max h_min h_max material">
+    <!-- xacro would silently write a negative box size or a box through the floor; stop instead and name the box. -->
+    <xacro:if value="${x_max &lt;= x_min or y_max &lt;= y_min or h_max &lt;= h_min or h_min &lt;= 0}">
+      ${xacro.fatal('box %s has no volume or is not above the floor: x %s to %s, y %s to %s, h %s to %s (each max must exceed its min, and h_min must be > 0)' % (name, x_min, x_max, y_min, y_max, h_min, h_max))}
+    </xacro:if>
     <visual name="${name}_visual">
       <origin xyz="${round((x_min + x_max) / 2, 6)} ${round((y_min + y_max) / 2, 6)} ${round((h_min + h_max) / 2 - wheel_radius, 6)}" rpy="0 0 0"/>
       <geometry><box size="${round(x_max - x_min, 6)} ${round(y_max - y_min, 6)} ${round(h_max - h_min, 6)}"/></geometry>
       <xacro:part_material name="${material}"/>
     </visual>
+  </xacro:macro>
+
+  <!-- One named box of the chassis: body_visual_box (its <visual> and size check) plus a <collision> with the same
+       geometry. Named collisions are fine here because nothing sets Gazebo friction on chassis_link; if a
+       <gazebo reference="chassis_link"> surface block is ever added, drop the collision names (see the tyres). -->
+  <xacro:macro name="body_box" params="name x_min x_max y_min y_max h_min h_max material">
+    <xacro:body_visual_box name="${name}" x_min="${x_min}" x_max="${x_max}" y_min="${y_min}" y_max="${y_max}"
+                           h_min="${h_min}" h_max="${h_max}" material="${material}"/>
     <collision name="${name}_collision">
       <origin xyz="${round((x_min + x_max) / 2, 6)} ${round((y_min + y_max) / 2, 6)} ${round((h_min + h_max) / 2 - wheel_radius, 6)}" rpy="0 0 0"/>
       <geometry><box size="${round(x_max - x_min, 6)} ${round(y_max - y_min, 6)} ${round(h_max - h_min, 6)}"/></geometry>
@@ -187,17 +247,22 @@
   <!-- ================= base_link: the axle midpoint (no visual, no inertia) ================= -->
   <!-- No <inertial> here on purpose: KDL (robot_state_publisher) does not support an inertia on the root link,
        so the body's mass lives in chassis_link, attached by a fixed joint.
-       Isaac Sim (M2.T16): base_link and camera_optical_frame are the two links with NO <inertial> (no mass). How the
-       Isaac URDF importer treats a massless link with merge_fixed_joints = False is NOT verified here. After the
-       import, M2.T16 must check that neither became a rigid body with a default mass (the car's total must stay
-       0.506 kg) and that the import log has no warnings about them. (In the Gazebo lab, sdformat's URDF converter
-       merges fixed-joint links into their parent by default, so these frames get no body of their own there.) -->
+       Isaac Sim (M2.T16): base_link and camera_optical_frame are the two links with NO <inertial> (no mass). With
+       merge_fixed_joints = False the Isaac URDF importer makes both of them bodies and logs, for each, the warnings
+       "No mass specified for link %s" and "Link %s has no colliders, and no inertia was imported; assigning a small
+       isotropic inertia matrix" (isaacsim.asset.importer.urdf 2.4.30 in the Spark's Isaac Sim source,
+       plugins/isaacsim.asset.importer.urdf/UrdfImporter.cpp lines 393 and 608; read 2026-10-29). So EXPECT those two
+       warnings for these two links. M2.T16 checks that their PhysX mass is negligible, that the car's total stays
+       0.660 kg (car.json mass_kg), and that no OTHER warning mentions them. What mass PhysX assigns them is NOT
+       verified here. (In the Gazebo lab, sdformat's URDF converter merges fixed-joint links into their parent by
+       default, so these frames get no body of their own there.) -->
   <link name="base_link"/>
 
   <!-- ================= chassis_link: the plate and everything rigidly on it ================= -->
-  <!-- Boxes follow the real car (photos in assignments/assignment6/photos). None of them reaches the tyres:
-       the tyres span |y| 53.5 to 80 mm and x -33.5 to +33.5 mm; the boxes stay inside |y| <= 51 mm where they
-       overlap that x range, and the wide wing slices stay behind x = -42.14 mm. -->
+  <!-- Boxes follow the real car (photos in assignments/assignment6/photos, private repo; the power bank:
+       evidence/M1/M1.T16/photos). None of them reaches the tyres: the tyres span |y| 53.5 to 80 mm and x -33.5 to
+       +33.5 mm; the boxes stay inside |y| <= 51 mm where they overlap that x range, and the wide wing slices stay behind
+       x = -42.14 mm. -->
   <link name="chassis_link">
     <!-- Clear acrylic plate, 3 mm thick (CAD), underside level at 44.5 mm floor (mean of the two B8 readings).
          Outline from the classmate's plate CAD (car_geometry_extras.xacro): rear apex -76.49, front apex +130.49 mm. -->
@@ -225,6 +290,26 @@
                     y_min="${-motor_y_outer}" y_max="${-motor_y_inner}"
                     h_min="${lowest_body_h}" h_max="${plate_underside_h}" material="motor_light_blue"/>
 
+    <!-- USB power bank taped under the plate at the back: x -85 to -15 mm, y +-35 mm, 17 to 42 mm floor, all measured
+         (M1.T16, evidence/M1/M1.T16/measurements.md; car_geometry_extras.xacro bank_*). Its front face is the measured
+         x = -15 mm; the gearbox boxes' rear end, a photo ESTIMATE, is clipped to that face (car_geometry_extras.xacro
+         motor_x_min), and whether the two parts touch on the car is not measured.
+         Geometry only: no link, no mass of its own (its mass is inside the measured total). The lowest rigid body
+         point; its rear face is 8.5 mm behind the plate's rear apex, inside the car.json footprint, which since
+         Xiaohui's decision (2026-10-29) reaches the Pico cable 0.148 m behind the axle.
+         Isaac Sim (M2.T16), computed from this model: the bank's rear-bottom edge (x = -0.085 m, 17 mm above the floor)
+         is the first rear contact, at about 11.8 deg nose-up pitch about the axle (rear clearance 17 mm; the plate's
+         rear apex would touch only at about 34 deg). The rear cable is visual only, so it makes no contact in
+         simulation, and this bank's rear face is the simulated car's first rear WALL contact, 63 mm short of the
+         footprint (cables comment below); on the real car a cable's lowest point (7 mm above the floor, its x not
+         measured) may brush the floor at a smaller pitch. The bank's collider (and the front cable's) are not in the
+         M2.T16 friction list (wheels 1.0, caster 0.0), so each needs a physics material of its own. The caster lifts at
+         a forward acceleration of about 2.2 m/s^2 (caster_link comment), so ramp the wheel commands or limit the drive
+         force, and log the pitch. -->
+    <xacro:body_box name="power_bank" x_min="${bank_x_min}" x_max="${bank_x_max}"
+                    y_min="${-bank_width / 2}" y_max="${bank_width / 2}"
+                    h_min="${bank_bottom_h}" h_max="${bank_top_h}" material="bank_black"/>
+
     <!-- Breadboard on the plate over the rear wing (top 55 mm floor, x -70 to +20 mm, 100 mm wide: measured, B10/B12;
          centred on y = 0: ESTIMATE). -->
     <xacro:body_box name="breadboard" x_min="${breadboard_x_min}" x_max="${breadboard_x_max}"
@@ -243,9 +328,10 @@
                     y_min="${-battery_width / 2}" y_max="${battery_width / 2}"
                     h_min="${plate_top_h}" h_max="${battery_top_h}" material="battery_black"/>
 
-    <!-- ESP32-CAM + MB board stack at the front, from the battery holder's front face (+100 mm) to the measured
-         front-most point (+138 mm), 20 mm wide, top 61 mm floor (B3/B13/B14); centred on y = 0: ESTIMATE. -->
-    <xacro:body_box name="esp32_cam_stack" x_min="${esp32_x_min}" x_max="${axle_to_front}"
+    <!-- ESP32-CAM + MB board stack at the front, from the battery holder's front face (+100 mm) to the board's measured
+         front esp32_front_x (+138 mm, B14b_esp32cam_front_x), 20 mm wide, top 61 mm floor (B13/B14/B14b); centred on
+         y = 0: ESTIMATE. Not axle_to_front: since 2026-10-29 that is the camera cable's tip. -->
+    <xacro:body_box name="esp32_cam_stack" x_min="${esp32_x_min}" x_max="${esp32_front_x}"
                     y_min="${-esp32_width / 2}" y_max="${esp32_width / 2}"
                     h_min="${plate_top_h}" h_max="${esp32_top_h}" material="esp32_black"/>
 
@@ -255,10 +341,45 @@
                     y_min="${camera_y - stand_section / 2}" y_max="${camera_y + stand_section / 2}"
                     h_min="${esp32_top_h}" h_max="${stand_top_h}" material="stand_grey"/>
 
+    <!-- The USB cables. Since Xiaohui's decision of 2026-10-29 they are part of the footprint: car.json front_overhang_m
+         and rear_overhang_m end at their tips, and car.json corners and sweep_radius_m include them; the planner and the
+         planned kinsim (M2.T3: a contact when the body rectangle at axle_to_front_m / axle_to_rear_m crosses a wall) use
+         that footprint. Each box is an envelope, not the cable's shape: its ends are measured, its cross-section partly
+         ASSUMED (car_geometry_extras.xacro "Cables").
+         Front camera cable: visual AND collision (body_box). Agent's decision (Claude Opus 5.5, 2026-10-29), for
+         Xiaohui to accept: the envelope sits 47.5 to 61 mm above the floor, so it cannot make a false floor contact, and
+         with a collider the simulated car's first front wall contact is at front_overhang_m, as in the footprint and in
+         kinsim (conservative for "bumped": the real cable bends). On the real car the first front contact is likely the
+         USB plug, which loads the board's port. M2.T16 must bind a physics material to this collider too. The envelope
+         is in the camera's view: with the D3 design HFOV of 60 deg (not calibrated, M1.T7), a level camera at the
+         measured lens pose (x 0.120 m, 75 mm above the floor) and a 640 x 480 image, it covers rows 374 to 480 (from
+         about 78 % of the height down) and columns 150 to 490 (computed from this model); M2.T16 should compare its
+         first rendered frame with a real frame.
+         Rear Pico cable(s): visual only (body_visual_box). The loops hang toward the floor, and a rigid box there would
+         be a false floor contact in Isaac Sim and Gazebo, catching or skidding where the real cable bends away. (The
+         envelope's 7 mm bottom is X2, the lowest point of ANY cable, location not given: placing it here is an
+         ASSUMPTION; the camera cable's route under the car and the Pico's plug above the breadboard are not modelled;
+         car_geometry_extras.xacro "Cables".) So the simulated car's first rear wall contact is the bank's rear
+         face (x = -0.085 m), 63 mm short of the footprint's rear_overhang_m (0.148 m) and of kinsim's rear contact. -->
+    <!-- Front camera cable: x +138 to +178 mm (board front to the measured tip), within the board's cross-section. -->
+    <xacro:body_box name="front_camera_cable" x_min="${front_cable_x_min}" x_max="${front_cable_x_max}"
+                    y_min="${-front_cable_half_width}" y_max="${front_cable_half_width}"
+                    h_min="${front_cable_bottom_h}" h_max="${front_cable_top_h}" material="cable_grey"/>
+    <!-- Rear Pico cable(s): x -148 to -85 mm (measured tip to the bank's rear face), 7 to 55 mm floor. -->
+    <xacro:body_visual_box name="rear_pico_cable" x_min="${rear_cable_x_min}" x_max="${rear_cable_x_max}"
+                           y_min="${-rear_cable_half_width}" y_max="${rear_cable_half_width}"
+                           h_min="${rear_cable_bottom_h}" h_max="${rear_cable_top_h}" material="cable_grey"/>
+
     <!-- Inertia: box approximation. The chassis is treated as ONE uniform solid box of chassis_mass,
          207 x 100 x 36 mm (plate length x strip width x main-body height, motor bottoms to battery top),
          centred on the chassis centre of mass and aligned with base_link. Not measured; good enough for
-         a slow indoor car (no pendulum / bifilar measurement was made). -->
+         a slow indoor car (no pendulum / bifilar measurement was made).
+         The power bank (above) is drawn as geometry only, and this box was NOT resized for it: by the M1.T16 decision
+         (evidence/M1/M1.T16/measurements.md) its unweighed mass stays inside chassis_mass, and only the inertia spread
+         is affected. With the current numbers the box spans x -94.7 to +112.3 mm (chassis_com_x +- 103.5 mm),
+         y +-50 mm and 30 to 66 mm above the floor (chassis_com_z +- 18 mm). The bank (x -85 to -15 mm, y +-35 mm,
+         17 to 42 mm) lies inside it in x and y and with its upper 12 mm (30 to 42 mm) inside it in height; only its
+         lower 13 mm (17 to 30 mm) are below the box. -->
     <inertial>
       <origin xyz="${chassis_com_x} ${chassis_com_y} ${chassis_com_z}" rpy="0 0 0"/>
       <mass value="${chassis_mass}"/>
@@ -279,9 +400,10 @@
        Both define the SAME spin axis: R_x(-pi/2) maps the child's z axis (0, 0, 1) onto base_link's +y (0, 1, 0),
        so the wheel spins about base_link +y either way, and a positive joint velocity drives the car toward +x.
        Why this one: a URDF cylinder is built along its own z axis, so with the joint frame already turned the tyre
-       cylinder needs no extra visual rotation; and the instructor's lab model uses exactly this joint layout with the
-       ignition DiffDrive plugin, so the Gazebo lab keeps its documented behaviour. robot_state_publisher and the
-       Isaac URDF importer accept either form. -->
+       cylinder needs no extra visual rotation. The layout is also kept from the Module 6 lab: the instructor's lab
+       model uses exactly this joint layout with the ignition DiffDrive plugin, and the lab included this file until
+       2026-10-29 (it now uses a frozen snapshot). robot_state_publisher and the Isaac URDF importer accept either
+       form. -->
   <xacro:macro name="drive_wheel" params="side sign">
     <link name="${side}_wheel_link">
       <!-- What you see: the real tyre, a cylinder 67 mm across and 27 mm wide. -->
@@ -293,8 +415,13 @@
            (section 5.1): a sphere meets the ground at one point in the middle of the tyre, like a real tyre, while a
            cylinder meets it at its edges, which in the instructor's testing made the simulated robot turn about 20 %
            more than its wheel odometry computed. Side effect: the sphere bulges 20 mm past the tyre's outer face
-           (|y| up to 100 mm) and into the body; self-collision is off by default in Gazebo and in the Isaac
-           importer, so the inner overlap is harmless.
+           (|y| up to 100 mm) and into the body: it already intersects the motor box (about 18 mm deep), the plate
+           strip (13.5 mm) and the breadboard (11.7 mm); the power bank clears it by 1.6 mm. Self-collision is off by
+           default in both simulators: sdformat 1.11 model.sdf (the Jazzy sdformat14 vendor package, read on the Spark
+           2026-10-29) gives self_collide default false and says "Links connected by a joint will never collide"; the
+           Isaac URDF importer's config has selfCollision = false (isaacsim.asset.importer.urdf 2.4.30, IUrdf.h line 71).
+           M2.T16 must still set self-collision OFF explicitly: the wheel links are jointed to base_link, not to
+           chassis_link, so with self-collision on these overlapping colliders would collide.
            Left UNNAMED on purpose: sdformat's URDF converter (checked with gz sdf 14.9 on 2026-10-10) drops the
            <gazebo reference> friction (mu1/mu2) of a link whose <collision> has a name attribute. -->
       <collision>
@@ -319,7 +446,14 @@
   <!-- ================= Caster ================= -->
   <!-- The swivel caster's white wheel, modelled as a sphere of radius caster_radius centred caster_radius above the
        floor at the TRAILING contact point (caster_x = 100 mm measured), so it touches the floor exactly:
-       sphere bottom = caster_z - caster_radius = -wheel_radius. -->
+       sphere bottom = caster_z - caster_radius = -wheel_radius.
+       Isaac Sim (M2.T16), computed from this model: the whole car's centre of mass is 46.6 mm above the floor and
+       10.545 mm ahead of the axle, so the caster lifts at a forward acceleration of about g * x / h = 2.2 m/s^2
+       (1.85 to 2.59 m/s^2 over the +-1.8 mm of com_x; the 2026-10-10 model, 33.7 mm ahead: 7.15 m/s^2). With the
+       sphere at the trailing contact (x = 0.100 m) and the middle com_x, the model's static caster load is
+       0.660 x 10.545 / 100 = 69.6 g against the 58 g weighed (only the trailing-toward-the-axle com_x, 8.79 mm,
+       matches the scales). Record 69.6 g as the expected settle value in M2.T16; the model is not changed for it
+       (Xiaohui chose the middle value, 2026-10-29). -->
   <link name="caster_link">
     <visual name="caster_wheel_visual">
       <geometry><sphere radius="${caster_radius}"/></geometry>
