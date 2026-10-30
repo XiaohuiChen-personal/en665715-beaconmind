@@ -1,0 +1,148 @@
+% BeaconMind architecture (Fig. fig:arch). Input by Chen-Project-Report.tex.
+% Needs \usepackage{tikz} and \usetikzlibrary{positioning,arrows.meta,fit,backgrounds,shapes.geometric}.
+% AI-assisted: Claude Opus 5.5 via Cursor drafted this figure (2026-10-29) from AGENT-DESIGN D1-D10,
+% CONTEXT.md (2026-10-29), reference/hardware/ and plan/README.md C2-C5, C12, and marked the metrics and
+% the two judges as built after the pilot code existed. Xiaohui Chen reviews it.
+\begin{figure*}[!t]
+\centering
+\begin{tikzpicture}[
+  x=1cm, y=1cm, font=\scriptsize,
+  >={Stealth[length=3.6pt,width=3.2pt]},
+  comp/.style={draw, line width=0.6pt, rounded corners=1.5pt, fill=white,
+               align=center, inner sep=2pt, text width=#1},
+  comp/.default=2cm,
+  plan/.style={comp=#1, dashed},
+  plan/.default=2cm,
+  link/.style={->, line width=0.55pt},
+  plink/.style={link, dashed},
+  biarrow/.style={<->, line width=0.55pt},
+  lbl/.style={font=\scriptsize, inner sep=1pt, align=center},
+  grp/.style={fill=black!7, draw=none, rounded corners=3pt},
+  gtitle/.style={anchor=north west, align=left, inner sep=0pt},
+]
+% ------------------------------------------------------------------ group 1: robot car
+\node[comp=3.1cm] (cam) at (1.75,9.0)
+  {\textbf{ESP32-CAM} (OV3660)\\ firmware bm\_cam-0.2};
+\node[align=center, text width=3.1cm, inner sep=1pt] (picot) at (1.75,8.05)
+  {\textbf{Raspberry Pi Pico 2 W}\\ RP2350; micro-ROS client;\\ lab firmware flashed now};
+\node[plan=2.9cm, below=3pt of picot] (fw)
+  {project firmware: bounded moves, watchdog, e-stop};
+\node[draw, line width=0.6pt, rounded corners=1.5pt, fit=(picot)(fw), inner sep=2pt] (pico) {};
+\node[comp=1.15cm] (imu) at (0.75,5.85) {\textbf{BNO055}\\ IMU};
+\node[comp=1.45cm] (drv) at (2.6,5.85) {\textbf{TB6612FNG}\\ motor driver};
+\node[comp=3.1cm] (mot) at (1.75,4.7)
+  {2 $\times$ TT gear motors (1:90)\\ with Hall quadrature encoders};
+\node[lbl, text width=3.2cm] (pwr) at (1.75,3.75)
+  {\textit{Power: 4$\times$AA pack $\rightarrow$ motor driver; USB power bank $\rightarrow$
+   Pico and ESP32-CAM}};
+
+\draw[biarrow] (imu.north |- pico.south) -- node[lbl, right] {I$^2$C} (imu.north);
+\draw[link] (drv.north |- pico.south) -- node[lbl, left] {PWM} (drv.north);
+\draw[link] (drv.south) -- (drv.south |- mot.north);
+\draw[link] ([xshift=-0.15cm]mot.north) -- node[lbl, left, pos=0.22] {A/B}
+  ([xshift=-0.15cm]mot.north |- pico.south);
+
+% ------------------------------------------------------------------ group 2: host
+\node[plan=1.95cm] (cb) at (5.88,9.1)
+  {camera bridge +\\ AprilTag detector\\ \texttt{apriltag\_ros}};
+\node[comp=2.4cm] (ob) at (9.33,9.1)
+  {\textbf{observation builder}\\ odometry, detections, counters, safety flags};
+\node[comp=1.95cm] (mr) at (5.88,7.6)
+  {\textbf{micro-ROS agent}\\ UDP over Wi-Fi\\ (own container)};
+\node[comp=2.4cm] (va) at (9.33,7.6)
+  {\textbf{validator}\\ move checks, safety flags (auto-latch planned)};
+\node[comp=2.4cm] (ha) at (9.33,6.2)
+  {\textbf{benchmark harness}\\ closed loop or replay; run logs};
+\node[plan=1.95cm] (isaac) at (5.88,4.75)
+  {\textbf{Isaac Sim 5.1} digital twin (ROS~2 bridge)};
+\node[comp=2.4cm] (kin) at (9.33,4.75)
+  {\textbf{kinematic simulator}\\ (pilot)};
+\node[lbl] (altcap) at (7.6,3.9)
+  {\textit{alternative environments,}\\ \textit{same observation interface}};
+
+% ------------------------------------------------------------------ group 3: agent and models
+\node[comp=2.9cm, anchor=north] (ag) at (12.98,9.95)
+  {\textbf{ReAct agent (LLM)}, stateless per step\\[1pt]
+   step message: mission + OBSERVATION (odometry increment; detections: id, range, bearing,
+   quality; safety flags) + PREVIOUS\_REPORT\\[1pt]
+   \textit{owns the pose belief and the beacon map}};
+\node[comp=2.85cm, anchor=north] (be) at (16.455,10.72)
+  {\textbf{LLM back ends}\\ Claude Opus 5.5\\ (Anthropic API; pilot)\\
+   planned on the Spark: vLLM\\ serving \mbox{Qwen3.8-Flash-Next}};
+\node[comp=2.85cm, below=0.25cm of be] (tl)
+  {\textbf{deterministic tools}\\ single-timestep, JSON out\\[1pt]
+   \texttt{compose\_odometry}\\ \texttt{gate\_detection}\\ \texttt{fix\_pose}\\
+   \texttt{map\_point}\\ \texttt{update\_beacon}\\ \texttt{predict\_observation}\\
+   \texttt{exploration\_summary}\\ \texttt{move}\\ \texttt{emergency\_stop}};
+\node[plan=2.85cm, below=0.25cm of tl] (rosa)
+  {\textbf{ROSA demo}, same tools\\ (\texttt{rosa-ros2} container)};
+\node[plan=2.85cm] (gt) at (16.455,3.75) {overhead ground-truth\\ camera (real arena)};
+\node[comp=2.9cm] (rp) at (12.98,6.2)
+  {\textbf{JSON belief report}\\ pose, associations, map, memory, decision, note};
+\node[comp=2.9cm] (met) at (12.98,4.85)
+  {\textbf{metrics}: trajectory, map and association error, tool-call F1};
+\node[comp=2.9cm] (jud) at (12.98,3.75)
+  {\textbf{LLM judges}: GPT-6.1 Sol (API) and \mbox{Gemma 4 26B} (Ollama) score the \textit{note}};
+
+% ------------------------------------------------------------------ links: car <-> host
+\draw[plink] (cam.east |- cb.west) -- node[lbl, above] {JPEG over\\ HTTP} (cb.west);
+\draw[link] ([yshift=0.3cm]pico.east |- mr.west) -- node[lbl, above] {odometry,\\ IMU}
+  ([yshift=0.3cm]mr.west);
+\draw[plink] ([yshift=-0.3cm]mr.west) -- node[lbl, below] {bounded\\ moves}
+  ([yshift=-0.3cm]pico.east |- mr.west);
+% out-of-band STOP (harness hotkey or /estop) straight to the Pico
+\draw[plink, red!70!black, line width=0.8pt]
+  ([yshift=0.15cm]ha.west) -- ([yshift=0.15cm]ha.west -| 3.25,0) -- (3.25,0 |- pico.south);
+\node[lbl, text=red!70!black, anchor=south] at (5.88,6.45)
+  {out-of-band STOP\\ (hotkey, \texttt{/estop})};
+% ------------------------------------------------------------------ links: host internal
+\draw[plink] (cb.east) -- node[lbl, above] {tags} (cb.east -| ob.west);
+\draw[plink] (mr.north east) -- (ob.south west);
+\draw[link] (va.north) -- node[lbl, right] {flags} (ob.south);
+\draw[plink] (va.west) -- (mr.east);
+\draw[link] ([xshift=-0.6cm]va.south) -- node[lbl, right] {replay: logged}
+  ([xshift=-0.6cm]ha.north);
+\draw[biarrow] (kin.north) -- (ha.south -| kin.north);
+\draw[plink] (isaac.north) |- ([xshift=-0.75cm]ha.south |- 0,5.3)
+  -- ([xshift=-0.75cm]ha.south);
+% ------------------------------------------------------------------ links: host <-> agent
+\draw[link] (ob.east) -- node[lbl, above] {step} (ob.east -| ag.west);
+\draw[link] (ag.west |- va.east) -- node[lbl, above] {move} (va.east);
+\draw[link] (rp.west) -- node[lbl, above] {report} (rp.west -| ha.east);
+% ------------------------------------------------------------------ links: agent internal
+\draw[link] (ag.south) -- (rp.north);
+\draw[biarrow] (ag.east |- 0,7.75) -- (tl.west |- 0,7.75);
+\draw[biarrow] (be.west |- 0,9.55) -- (ag.east |- 0,9.55);
+\draw[dashed, line width=0.55pt] (rosa.north) -- (tl.south);
+% ------------------------------------------------------------------ links: evaluation
+\draw[link] ([yshift=-0.25cm]ha.east) -- (11.05,5.95) |- (jud.west);
+\draw[link] (11.05,4.85) -- (met.west);
+\node[lbl, rotate=90, anchor=south] at (11.05,4.3) {run logs};
+\draw[plink] (gt.west) -- (14.73,3.75) |- (met.east);
+
+% ------------------------------------------------------------------ groups, container, legend
+\begin{scope}[on background layer]
+  \fill[grp] (0,3.15) rectangle (3.5,10.8);
+  \fill[grp] (4.7,3.15) rectangle (10.75,10.8);
+  \fill[grp] (11.35,3.15) rectangle (18.05,10.8);
+  \draw[line width=0.6pt, rounded corners=2pt]
+    (4.75,10.0) -- (10.7,10.0) -- (10.7,5.55) -- (7.95,5.55) -- (7.95,8.3) -- (4.75,8.3) -- cycle;
+\end{scope}
+\node[gtitle] at (0.1,10.72) {\footnotesize\textbf{Robot car}\\ small differential drive};
+\node[gtitle] at (4.8,10.72) {\footnotesize\textbf{Host: NVIDIA DGX Spark}\\ GB10, 128 GB unified memory};
+\node[gtitle] at (11.45,10.72) {\footnotesize\textbf{Agent and models}\\ Spark or cloud API};
+\node[lbl, anchor=north] at (7.73,9.95) {\texttt{beaconmind-ros} container (ROS~2 Humble)};
+
+\node[draw, line width=0.6pt, rounded corners=1pt, minimum width=0.45cm, minimum height=0.25cm]
+  (lg1) at (0.3,2.85) {};
+\node[lbl, right=2pt of lg1] (lg1t) {built (the simulator pilot ran on these)};
+\node[draw, line width=0.6pt, rounded corners=1pt, dashed, minimum width=0.45cm,
+  minimum height=0.25cm, right=10pt of lg1t] (lg2) {};
+\node[lbl, right=2pt of lg2] {planned, not built yet (borders and arrows)};
+\end{tikzpicture}
+\caption{BeaconMind architecture. Solid borders and arrows mark components that exist; dashed ones mark
+planned components that are not built yet. The
+language model owns the pose belief and the beacon map, while deterministic single-timestep tools
+compute every geometric quantity and a validator below the model checks every move.}
+\label{fig:arch}
+\end{figure*}

@@ -223,7 +223,7 @@ Count the calendar days left to 2026-12-13 at the start of every session.
 | M4.T8 | Stretch: the NoMaD/GNM navigation arm (W6) (go/no-go) | todo | L | `evidence/M4/M4.T8/` | 2026-10-05 | Optional |
 | M4.T9 | Stretch: the hidden-ID condition and the V (image) ablation | todo | M | `evidence/M4/M4.T9/` | 2026-10-05 | Optional |
 | M4.T10 | Sweep infrastructure: interface check, job manifests, resumable sweep runner, spend ledger, holdout guard, cost and time estimator | todo | M | `evidence/M4/M4.T10/` | 2026-10-05 | Appended task |
-| M4.T11 | Dev-seed pilot: roster on dev logs and dev closed loop, latency at concurrency 1, variance, tokens and cost; frontier pilot within $100 | todo | M | `evidence/M4/M4.T11/` | 2026-10-05 | Appended task |
+| M4.T11 | Dev-seed pilot: roster on dev logs and dev closed loop, latency at concurrency 1, variance, tokens and cost; frontier pilot within $100 | in-progress | M | `evidence/M4/M4.T11/` | 2026-10-29 | Appended task. 2026-10-29: early 5-seed pilot for the report draft (Opus 5.5 only, K=1, two drift levels, judges calibrated): `evidence/M4/M4.T11/README.md` |
 | M4.T12 | Record the held-out simulated observation logs for the frozen test seeds | todo | M | `evidence/M4/M4.T12/` | 2026-10-05 | Appended task |
 | M4.T13 | Real-log replay sweep and the sim-to-real gap | todo | M | `evidence/M4/M4.T13/` | 2026-10-05 | Appended task; needs M3.T12 |
 | M4.T14 | Request-suite scoring on held-out contexts | todo | S | `evidence/M4/M4.T14/` | 2026-10-05 | Appended task |

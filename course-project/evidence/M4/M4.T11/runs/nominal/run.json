@@ -1,0 +1,27 @@
+{
+ "settings": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 64000,
+  "output_config": {
+   "effort": "medium"
+  }
+ },
+ "price_usd_per_mtok": {
+  "input": 4.0,
+  "cache_write_5m": 5.0,
+  "cache_read": 0.2,
+  "output": 20.0
+ },
+ "prompt_file": "robot_system_prompt_v3.3.txt",
+ "max_steps": 110,
+ "seeds": [
+  1000,
+  1001,
+  1002,
+  1003,
+  1004
+ ],
+ "cap_usd": 40.0,
+ "anthropic_sdk": "1.11.0",
+ "started": "2026-10-30T03:53:47+0000"
+}

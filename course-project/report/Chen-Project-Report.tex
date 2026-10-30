@@ -1,12 +1,12 @@
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
-% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 %
 % Class Project Report -- EN.665.715 Embodied Agentic AI for Robotic Control
 % Built from the instructor's "Class Project Template" (conference_101719.tex, IEEEtran).
-% DRAFT STATUS: only Section II (Related Works) and the References are written.
-% AI assistance: Claude Fable 5.1 via Claude Code drafted this file; see the disclosure
-% section before the references.
+% DRAFT STATUS: first full draft with experiments (2026-10-29). Results are a pilot.
+% Pilot numbers come from pilot_macros.tex, tab_pilot.tex and tab_judge.tex, which
+% course-project/tools/pilot_analyze.py generates; do not type them by hand.
+% AI assistance: see the disclosure section before the references.
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
@@ -14,25 +14,21 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{comment}
-% caption=false keeps IEEEtran's own caption format (centered small-caps table titles);
-% the template loaded subfig without it, which lets the caption package override that format.
+\usepackage{url}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,shapes.geometric}
+% caption=false keeps IEEEtran's own caption format (centered small-caps table titles).
 \usepackage[caption=false,font=footnotesize]{subfig}
-% Balances the two columns of the last page (the reference list).
-\usepackage{flushend}
 \newcommand{\centered}[1]{\begin{tabular}{l} #1 \end{tabular}}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
-% Marker for the sections that this draft does not cover.
-\newcommand{\laterdraft}{\textit{Reserved for a later draft.}}
+\input{pilot_macros}
 \begin{document}
 % IEEE reference style: more than six authors are printed as "first author et al."
 \bstctlcite{IEEEexample:BSTcontrol}
 
-\title{BeaconMind: Can a Large Language Model Own Landmark SLAM?\\
-%{\footnotesize \textsuperscript{*}Note: Sub-titles are not captured %in Xplore and
-%should not be used}
-%\thanks{Identify applicable funding agency here. If none, delete this.}
-}
+\title{BeaconMind: Can a Large Language Model Own Landmark SLAM?}
 
 \author{\IEEEauthorblockN{Xiaohui Chen}
 \IEEEauthorblockA{\textit{Engineering for Professionals, Whiting School of Engineering} \\
@@ -44,62 +40,81 @@ EN.665.715 Embodied Agentic AI for Robotic Control (individual project)}
 \maketitle
 
 \begin{abstract}
-Reserved for a later draft. This submission covers only Section~\ref{sec:related}
-(Related Works) and the References; the other sections are placeholders.
+Language-model agents now plan for robots and call their tools, but the robot's pose and map still come
+from classical estimators. BeaconMind asks whether a large language model (LLM) can own landmark
+simultaneous localization and mapping (SLAM) itself. A small differential-drive car with wheel encoders,
+an inertial measurement unit and one camera explores a walled arena whose only landmarks are AprilTags,
+some of which share an ID. At every stop a stateless ReAct agent receives the odometry increment and the
+tag detections as text, calls deterministic single-timestep geometry tools, and decides which detections
+to trust, which beacon each belongs to, and which pose and map to report; a validator below the model
+checks every move. The study will compare the agent with dead reckoning, a factor-graph reference and the
+same procedure written as code, on identical replayed logs and in closed loop, using trajectory, map and
+association error, tool-call F1 against the coded procedure, and a rubric for the agent's notes scored by
+LLM judges calibrated without hand labels. A pilot
+with Claude Opus 5.5 on five simulated episodes per condition (\stepsNom{} and \stepsDrift{} steps)
+found that the agent executed the procedure almost exactly (tool-call F1 \fOneNom{} and \fOneDrift{}).
+Without odometry drift it did not beat dead reckoning (median trajectory error \ateLTwoNom{} versus
+\ateBZeroNom{}\,cm); with a 2\,\% systematic odometry error the order reversed (\ateLTwoDrift{} versus
+\ateBZeroDrift{}\,cm). These are pilot results without significance claims; they made odometry drift a
+blocked factor of the main study.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Reserved for a later draft.
+embodied agents, large language models, ReAct, SLAM, AprilTag, tool use, LLM-as-a-judge, evaluation
 \end{IEEEkeywords}
 
-\section{Introduction}
-\laterdraft
+\section{Introduction}\label{sec:intro}
+Agentic language models now drive robots through tools: they decompose instructions into admissible
+skills~\cite{ahn2022saycan}, close the loop with textual feedback~\cite{huang2023inner}, and interleave
+reasoning with actions~\cite{yao2023react}, and frameworks such as ROSA expose the Robot Operating System
+(ROS) to such agents~\cite{royce2025rosa}. These systems take the robot's state, its pose and its map, as given
+or from a classical estimator. Diagnostics of LLM spatial reasoning explain the caution: models
+treat spatial questions in isolation~\cite{li2026llms}, collapse on long whole-route plans~\cite{jiang2026lost},
+and make arithmetic mistakes even when their decomposition is right~\cite{gao2023pal}. Tools remove the
+arithmetic; what remains open is whether the \emph{decisions} of an estimator, which detection to trust,
+which landmark a detection belongs to, and whether a pose fix or a loop closure is accepted, can be owned
+by a language model. If they can, an agent can explain, question and refuse on the basis of its own state;
+if they cannot, the boundary of agentic control in robotics is clearer.
+
+\textbf{Goal.} BeaconMind's ReAct agent must keep its own pose belief and AprilTag map on a small car well
+enough to explore a walled arena, return to its start and drive to a named beacon, while a deterministic
+validator keeps every move bounded and safe. Tag IDs may repeat, so data association is not given by the
+tag code.
+
+\textbf{Contributions.} (1)~A tool-grounded, stateless ReAct agent design in which the LLM owns every SLAM
+decision, single-timestep tools compute every geometric quantity, and a validator below the model enforces
+safety (Section~\ref{sec:system}); the code is public. (2)~An evaluation protocol that separates estimation
+(identical replayed logs) from navigation (closed loop), compares the agent with three baselines, scores
+metrics on a 0--1 scale where possible, measures tool-call F1 against the coded procedure applied to the agent's own
+input, and scores the agent's free-text notes with a rubric whose two LLM judges are calibrated without
+hand labels (Section~\ref{sec:experiments}). (3)~A pilot that measured procedure fidelity, latency and cost,
+and showed that the answer to the primary question depends on odometry drift (Section~\ref{sec:results}).
+
+\textbf{Research questions.} The primary question, RQ1, is whether the agent's pose belief is more accurate
+than dead reckoning and how close it comes to a factor-graph reference. RQ2 asks how precisely the agent
+associates detections when tag IDs repeat, and how faithfully it executes the procedure. RQ3 asks whether,
+in closed loop, it returns to the start and reaches named beacons as often as the procedure written as code.
+
+\textbf{Roadmap.} Section~\ref{sec:related} reviews related work, Section~\ref{sec:system} describes the
+system, Section~\ref{sec:experiments} specifies the experiments, Section~\ref{sec:results} reports the pilot,
+and Section~\ref{sec:conclusion} concludes.
 
 \section{Related Works}\label{sec:related}
-BeaconMind, the system proposed in this project, asks which parts of landmark-based
-simultaneous localization and mapping (SLAM) a large language model (LLM) can own, that
-is, for which parts the model itself can make the estimation decisions. A low-cost
-differential-drive car with wheel encoders, an inertial measurement unit, and one
-monocular camera, but no range sensor, explores a walled arena whose only landmarks are
-AprilTags printed on paper and fixed to the walls. Each physical tag is a \emph{beacon};
-because tag identifiers may repeat in the benchmark, an identifier does not always name one
-beacon. The car moves in a stop-observe-decide-move cycle. At each stop, an LLM agent
-receives the odometry increment and the tag detections as text, obtains every geometric
-quantity from deterministic tools, and maintains its estimate of the car's pose (the pose
-belief) and the beacon map: it decides which detections to trust, which beacon a detection
-belongs to, whether a pose fix or a loop closure (a recognized revisit) is accepted, and
-which of a few fixed, short moves to make next. The project is at the design stage, so
-statements about BeaconMind describe the planned system and its planned evaluation, not
-results. Four strands of prior work shape the design; for each, this section summarizes
-what was shown, what it leaves open, and how BeaconMind differs.
-
 \subsection{Language-Conditioned Planning and Closed-Loop Agents}
-A first line of work made LLM plans executable by grounding them in what the robot can
-do. Huang \textit{et~al.} showed that a pretrained LLM decomposes a household task into
-plausible steps, but that naively generated plans often cannot be mapped to admissible
-actions~\cite{huang2022zeroshot}. SayCan addressed this by weighting each candidate skill
-with a learned affordance value; removing that grounding lowered planning success from
-84\% to 67\% over 101 instructions~\cite{ahn2022saycan}. Inner Monologue then returned
-success detection and scene descriptions to the planner as text and found that
-closed-loop language feedback significantly improves instruction
-completion~\cite{huang2023inner}. ReAct formulated the pattern in general form,
-interleaving reasoning, action, and observation, and outperformed imitation and
-reinforcement learning baselines on the ALFWorld and WebShop benchmarks by 34 and 10
-percentage points in success rate, respectively~\cite{yao2023react}. Kambhampati
-\textit{et~al.} argue that this line of work has a limit: LLMs can neither plan nor verify
-plans by themselves and, in what the authors call an LLM-Modulo framework, should generate
-candidates that external, sound verifiers check~\cite{kambhampati2024llmmodulo}.
-
-These ideas are now packaged for robot software. ROSA wraps the Robot Operating System
-(ROS) in a ReAct agent with predefined tools so that operators can command robots in
-natural language~\cite{royce2025rosa}, and the survey by Salimpour \textit{et~al.}
-classifies such integrations from single-shot protocol translation, through ReAct-style
-agentic interfaces and orchestration, to end-to-end embedded
-policies~\cite{salimpour2025towards}. Benchmarks quantify what still fails. The Embodied
-Agent Interface reports that trajectory-feasibility errors are common (45.2\%), a large
-portion of them missing-step and additional-step errors~\cite{li2024embodied}, and in
-SafeAgentBench the most safety-conscious agent rejects only 10\% of detailed hazardous
-tasks~\cite{yin2025safeagentbench}.
+LLM plans for household tasks are plausible but often not admissible~\cite{huang2022zeroshot}; SayCan grounded
+each skill with a learned affordance value, without which planning success fell from 84\% to
+67\%~\cite{ahn2022saycan}. Inner Monologue showed that closed-loop textual feedback significantly improves
+completion~\cite{huang2023inner}, and ReAct's interleaving of reasoning, action and observation beat imitation
+and reinforcement learning on ALFWorld and WebShop by 34 and 10 points~\cite{yao2023react}. Kambhampati
+\textit{et~al.} argue that LLMs can neither plan nor verify plans alone and should propose candidates that sound
+external verifiers check~\cite{kambhampati2024llmmodulo}. ROSA packages a ReAct agent with ROS
+tools~\cite{royce2025rosa}, an agentic interface in the classification of Salimpour
+\textit{et~al.}~\cite{salimpour2025towards}. Failures remain: in the Embodied Agent Interface, trajectory-feasibility
+errors are common (45.2\%)~\cite{li2024embodied}, and the most safety-conscious agent of
+SafeAgentBench rejects only 10\% of detailed hazardous tasks~\cite{yin2025safeagentbench}. BeaconMind adopts one
+admissible move per observation, a closed loop, and, following LLM-Modulo, a deterministic validator between the
+model and the motors. It differs in what the model reasons about: these works plan tasks and take the robot's
+state as given, while BeaconMind asks the model to estimate that state.
 
 \begin{table*}[t]
 \caption{Division of Labor Between the Language Model and Classical Geometry in Representative Prior Systems and in BeaconMind}
@@ -119,194 +134,472 @@ Syarubany \textit{et~al.}~\cite{syarubany2026llm} & ORB-SLAM3 global pose; April
 SEO-SLAM~\cite{hong2025seoslam} & Odometry, linear-assignment association, factor graph & Object verification, label refinement, and landmark merging \\
 Sandfuchs \textit{et~al.}~\cite{sandfuchs2026llms} & Oracle localization in a text gridworld & One grid move per step, to explore or to navigate \\
 \hline
-BeaconMind (this project, planned) & The LLM's pose belief and beacon map, updated at every stop with single-timestep geometry tools; in the primary design a classical factor graph serves only as the reference & Which detections to trust, data association under duplicated tag identifiers, acceptance of pose fixes and loop closures, map updates, and the choice of each move \\
+BeaconMind (this project) & The LLM's pose belief and beacon map, updated at every stop with single-timestep geometry tools; a classical factor graph serves only as the reference & Which detections to trust, data association under duplicated tag identifiers, acceptance of pose fixes and loop closures, map updates, and the choice of each move \\
 \hline
 \end{tabular}
 \end{table*}
 
-BeaconMind adopts these lessons. Its agent is a ReAct-style agentic interface in the
-survey's classification, and ROSA is its planned demonstration runtime; the benchmark will
-instead use a minimal harness that exposes only the project's own tools, because stock
-ROSA adds its own tools and fixed prompts to every call and would confound a comparison
-of models. Its actions are admissible by construction, because the agent may choose only
-from a small fixed set of short moves, and its loop is closed, because every decision
-starts from a fresh observation. The missing-step and additional-step errors that the
-Embodied Agent Interface reports cannot arise in that form, since the agent emits one
-move per observation instead of a multi-step plan. Following the LLM-Modulo argument, a
-deterministic validator between the model and the motors rejects any move outside that set
-or beyond the safety limits. Because the agent also accepts free-text operator requests,
-its refusal of unsafe ones is proposed to be measured with a fixed request suite and a
-rejection rate adapted from SafeAgentBench. The difference lies in what the model reasons
-about: the works above plan \emph{tasks} and take the robot's state as given, whereas
-BeaconMind asks the model to estimate that state, the pose and the map that such plans
-presuppose.
-
 \subsection{Language Models in Navigation, Mapping, and SLAM}
-In the language-driven navigation systems reviewed here, the geometry stays classical
-(Table~\ref{tab:division}). SayPlan plans over a pre-constructed 3D scene graph and
-delegates path planning to Dijkstra's algorithm; its authors report that the LLM fails at
-simple distance-based reasoning and name the pre-built, static graph as a
-limitation~\cite{rana2023sayplan}, whereas BeaconMind's map does not exist before the run
-and is built by the agent. For unknown spaces, VLFM builds an occupancy map from depth
-observations and uses a vision-language model to score frontiers (the boundaries between
-explored and unexplored space) and pick the next one to visit~\cite{yokoyama2024vlfm},
-and L3MVN has an LLM select the relevant frontier from a semantic map built from RGB-D
-images~\cite{yu2023l3mvn}; both report strong object-goal navigation results in
-simulation and a real-robot demonstration. Both also need depth to build the map and take
-the robot's position from an odometry sensor; BeaconMind has no range sensor, so its map
-is a set of beacon coordinates, not an occupancy grid. Lee \textit{et~al.} connect LLMs to
-ROS through Model Context Protocol tools that render the occupancy grid as annotated
-images; with Cartographer for SLAM and Nav2 for navigation in Isaac Sim, Claude Sonnet 4.6
-and GPT-5.5 reach 97.8\% and 99.8\% map coverage and succeed in 26 and 28 of 30
-spatial-reasoning navigation trials, respectively~\cite{lee2026spatial}. The closest
-system identified in the literature search is that of Syarubany \textit{et~al.}: an LLM
-issues one constrained discrete command at each corridor junction, and AprilTags serve as
-stable anchors, but ORB-SLAM3 provides the global pose and the evaluation of the
-integrated system is qualitative~\cite{syarubany2026llm}.
-
-Where language models come closer to SLAM itself, they supply semantics or discrete
-choices, not estimates. SEO-SLAM assigns multimodal LLM agents to object verification,
-label refinement, and landmark merging, and reports higher semantic accuracy and fewer
-false positives than its baselines, while data association (deciding which landmark an
-observation belongs to) is solved as a linear assignment problem over semantic and
-Mahalanobis distances and the map comes from factor-graph optimization, the standard
-graph-based formulation of SLAM~\cite{hong2025seoslam}. Lyu \textit{et~al.} let a
-multimodal LLM make the final choice among place-recognition candidates retrieved by a
-vision foundation model~\cite{lyu2024tell}; this is a language-based form of the place
-recognition behind loop closure, but its output is a choice among images, not a pose.
-Sandfuchs \textit{et~al.} evaluate nine LLMs as text-only controllers in partially
-observable gridworlds in which the agent's coordinates are always known, and they state
-the boundary explicitly: ``This is not SLAM: the uncertainty is in the map, not in
-pose''~\cite{sandfuchs2026llms}. The strongest reasoning-tuned models (GPT-5 and
-GPT-OSS-120B) reach the goal in all three layouts, but with the pose supplied, which is
-the condition BeaconMind removes. Learned visual navigation policies such as NoMaD
-sidestep metric estimation altogether: they use no language model, turn camera images
-directly into actions and, for long horizons, rely on a topological graph of past
-observations instead of a metric map~\cite{sridhar2024nomad}. BeaconMind lists such a
-policy as a candidate exploration baseline; it cannot be scored on pose or map error,
-because it yields no metric pose or map.
-
-In none of the language-model systems above is the robot's pose estimate in the model's
-hands. SEO-SLAM comes closest on the map side: its agents prune and merge object landmarks
-produced by a conventional detection, association, and factor-graph pipeline and feed
-those edits back into the graph. The paper scores the semantic precision and recall of
-the resulting map and the absolute pose error of the optimized trajectory, but the
-estimate remains the optimizer's. None of these systems can say how accurate a pose or a
-geometric map maintained by a language model would be. BeaconMind moves that responsibility to the LLM: deterministic tools still
-do the arithmetic, but the LLM decides at every stop which results enter the pose belief
-and the beacon map. In the primary design the classical estimator is kept only as a
-reference (variants with no tools, or with the LLM on top of the classical estimator, are
-proposed as stretch conditions), and the LLM's belief is scored against ground truth at every stop. To
-my knowledge, no prior study reports a trajectory or map error for a landmark-SLAM
-estimate maintained by an LLM. That measurement is the gap this project targets, and a
-negative outcome would still be informative.
+In the language-driven navigation systems reviewed here the geometry stays classical (Table~\ref{tab:division}):
+the pose comes from odometry, SLAM or a pre-built scene graph, and the model plans over the graph, scores or selects
+frontiers, or picks goals~\cite{rana2023sayplan,yokoyama2024vlfm,yu2023l3mvn,lee2026spatial}. The closest system
+identified in the literature search, by Syarubany \textit{et~al.}, issues one constrained command per junction
+with AprilTags as anchors but takes its global pose from ORB-SLAM3~\cite{syarubany2026llm}.
+Where language models come closer to SLAM they supply semantics or discrete choices: SEO-SLAM's agents verify,
+relabel and merge object landmarks while association is a linear assignment and the map comes from a factor
+graph~\cite{hong2025seoslam}; Lyu \textit{et~al.} let a multimodal LLM choose among place-recognition
+candidates~\cite{lyu2024tell}; and Sandfuchs \textit{et~al.} state of their gridworld controllers that
+``this is not SLAM: the uncertainty is in the map, not in pose''~\cite{sandfuchs2026llms}. Learned policies
+such as NoMaD avoid metric estimation altogether~\cite{sridhar2024nomad}. In none of these systems is the pose
+estimate in the model's hands, and to my knowledge no prior study reports a trajectory or map error for a
+landmark-SLAM estimate maintained by an LLM; that measurement is the gap this project targets.
 
 \subsection{Limits of LLM Spatial Reasoning and the Case for Tools}
-Recent diagnostics show why handing estimation to a language model is risky, and they
-shape how BeaconMind does it. Jiang \textit{et~al.} find that single-call, whole-route
-maze navigation by GPT-4o, DeepSeek-V3, and Llama-3.3-70B falls to near-zero success by
-$10\times10$ mazes; that structured coordinate text is the most navigable input format,
-far ahead of rendered images; and that handing corridor walking and dead-end retreat to a
-deterministic walker, with the model queried only at junctions through an explicit
-cell-type prompt, lifts GPT-4o's success by up to 92 percentage points at mid sizes,
-although the collapse returns by $30\times30$~\cite{jiang2026lost}. Li \textit{et~al.}
-find that models treat each spatial question independently instead of building cumulative
-spatial knowledge, and that accuracy depends on the representation: Gemini-2.5-Flash with
-chain-of-thought prompting reaches \mbox{80--86\%} on small mazes given as adjacency lists
-but \mbox{16--34\%} when they are given as visual character grids~\cite{li2026llms}. For
-perception, Deng \textit{et~al.} show that the best vision-language model reaches a
-macro-F1 of 0.66 on relative camera pose estimation, where a geometric pipeline (LoFTR)
-reaches 0.99 and humans 0.91~\cite{deng2026lost}. These results do not contradict Lee
-\textit{et~al.}, whose models read annotated map images to pick goal positions and judge
-coverage while a classical planner executed every path. On the constructive side, PAL
-shows that LLMs decompose problems well but make arithmetic mistakes even when the
-decomposition is correct, and that off-loading the solution step to a program interpreter
-gives more accurate results than much larger models~\cite{gao2023pal}.
-
-BeaconMind is designed around these findings. The model receives the tag detector's output
-(identifier, range, bearing, and a quality score) as structured text rather than pixels,
-with raw-image input kept as a separate planned ablation, and it keeps its state in
-explicit coordinates. As in PAL, every geometric quantity comes from a deterministic tool;
-unlike PAL's interpreter, which solves the whole problem, each tool is restricted to a
-single timestep: it is a function of one stop's detections, the previous belief, and a
-few harness counters, for example composing one odometry increment, converting one range
-and bearing into a map point, or fixing the pose from the beacons seen at that stop. None
-optimizes over the observation history. The system prompt prescribes a per-step procedure
-(predict, associate, correct the pose, update the map, check loop closure, choose a move),
-and the model carries it out by calling the tools and acting on their results, so
-trusting, matching, and accepting remain steps that the model must execute correctly.
-Because that procedure can also be run as ordinary code, a rule-program baseline is
-proposed to measure what executing it with an LLM costs in accuracy, time, and money; what
-the LLM adds beyond the procedure, such as handling free-text requests and refusing or
-asking, would be scored by the request suite. Each
-decision is a fresh, stateless conversation that carries only the mission, any operator
-request, the model's previous report, and the new observation. Every step is thus posed as an isolated
-decision, which Jiang \textit{et~al.} measured to be more reliable than the same decision
-made inside a long plan. Whether that is enough is open: in their study the collapse
-returned even with per-junction queries, and the maze studies used symbolic grids with
-perfect observations, whereas BeaconMind poses a physical estimation problem with noisy
-odometry and noisy range and bearing measurements.
+Jiang \textit{et~al.} find that whole-route maze navigation by GPT-4o and others falls to near-zero success by
+$10\times10$ mazes, that structured coordinate text is the most navigable input, and that handing corridor
+walking and dead-end retreat to a deterministic walker, with the model queried only at junctions through an
+explicit cell-type prompt, lifts GPT-4o's success by up to 92 points at mid sizes, although the collapse returns by
+$30\times30$~\cite{jiang2026lost}. Li \textit{et~al.} show that accuracy depends on the representation:
+Gemini-2.5-Flash with chain-of-thought prompting reaches 80--86\% on small mazes given as adjacency lists but
+16--34\% on character grids~\cite{li2026llms}. Deng \textit{et~al.} find that the best vision-language
+model reaches a macro-F1 of 0.66 on relative camera pose, against 0.99 for a geometric pipeline~\cite{deng2026lost},
+and PAL shows that LLMs decompose problems well but make arithmetic mistakes, and that off-loading the solution
+step to an interpreter is more accurate than much larger models~\cite{gao2023pal}. BeaconMind follows these
+findings: detections arrive as structured text, every geometric quantity comes from a tool restricted to one
+timestep, the system prompt prescribes a per-step procedure (predict, associate, correct, update the map, check
+loop closure, decide), and each step is posed as an isolated decision, which Jiang \textit{et~al.} found more
+reliable than the same decision inside a long plan.
 
 \subsection{Fiducial Landmark SLAM and Evaluation Practice}
-Fiducial SLAM supplies both the landmarks and the reference solution. AprilTag is a visual
-fiducial system that gives a tag's identity and its full 6-DOF pose relative to the camera
-from a single image~\cite{olson2011apriltag}. TagSLAM builds a factor graph over tags,
-cameras, and bodies on the GTSAM factor-graph library and observes that, with a small set
-of artificial landmarks, ``loop closure is guaranteed once a tag is successfully
-decoded''~\cite{pfrommer2019tagslam}; iSAM2 solves such graphs incrementally through the
-Bayes tree~\cite{kaess2012isam2}. For evaluation, Sturm \textit{et~al.} formalize the
-absolute trajectory error (ATE) and the relative pose error (RPE) as the trajectory
-metrics of their SLAM benchmark~\cite{sturm2012benchmark}, and Anderson \textit{et~al.}
-recommend that a navigation agent signal completion with an explicit ``DONE'' action and
-be scored by success weighted by path length (SPL)~\cite{anderson2018evaluation}.
+AprilTag gives a tag's identity and full six-degree-of-freedom pose from one image~\cite{olson2011apriltag}; TagSLAM builds a factor
+graph over tags and notes that ``loop closure is guaranteed once a tag is successfully
+decoded''~\cite{pfrommer2019tagslam}, and iSAM2 solves such graphs incrementally~\cite{kaess2012isam2}. Sturm
+\textit{et~al.} formalize the absolute trajectory error (ATE) and relative pose error~\cite{sturm2012benchmark},
+and Anderson \textit{et~al.} recommend an explicit DONE action and success weighted by path length
+(SPL)~\cite{anderson2018evaluation}. BeaconMind uses a GTSAM/iSAM2 graph as its best-case reference, dead
+reckoning as its floor, and removes the assumption that makes association trivial in TagSLAM: some IDs are
+duplicated on purpose.
 
-BeaconMind uses this body of work in two ways. First, fiducial SLAM supplies the
-yardstick: a GTSAM/iSAM2 planar factor graph is the best-case reference and dead reckoning
-(odometry alone) is the floor, and the LLM's ATE, RPE, and beacon-map error will be
-reported against both on identical replayed logs from simulation and from the real car. In
-replay the moves are those recorded in the log and the model only estimates; move choice
-is evaluated separately in closed loop, where navigation with the finished map will be
-scored by ground-truth success at ``DONE'' and by SPL. Second, BeaconMind removes the
-assumption that makes data association in fiducial SLAM trivial. TagSLAM requires unique
-identifiers, so decoding a tag settles data association and, with it, loop closure.
-BeaconMind's benchmark adds a condition in which identifiers are duplicated on purpose, so
-that association and, when a revisit occurs, loop closure require reasoning over geometry
-and the map built so far. For that condition it is proposed that the reference receive the
-true association, which makes it an upper bound on achievable accuracy, not a like-for-like
-competitor. The systems in Table~\ref{tab:division} either face no landmark association or
-solve it in classical code. SEO-SLAM is a partial exception: its measurement-to-landmark
-association is a linear assignment, but its language-model agents afterwards merge
-duplicate landmarks and remove erroneous ones. Whether an LLM can make these decisions
-with useful precision, and at what latency and cost, is the question BeaconMind is built
-to answer.
+\subsection{Evaluating LLM Agents: Metrics, Judges, and Statistics}
+HELM argues for reporting several metrics side by side instead of accuracy alone~\cite{liang2023holistic}, which
+BeaconMind follows with pose, map, association, tool-use, text-quality and cost metrics. Tool calls are scored in
+the spirit of Gorilla and the Berkeley Function Calling Leaderboard, which match the structure and arguments of
+each call against a reference call~\cite{patil2024gorilla,patil2025bfcl}. Free text is scored by an
+LLM judge: Zheng \textit{et~al.} found that a strong judge agrees with human experts about as often as humans
+agree with each other (85\% versus 81\% on MT-Bench expert votes without ties) and named position and verbosity
+biases~\cite{zheng2023judging};
+Panickssery \textit{et~al.} showed that LLM evaluators recognize and favor their own
+generations~\cite{panickssery2024llm}; G-Eval has the judge reason before filling a scoring
+form~\cite{liu2023geval}. Two works shape the automated calibration used here: CheckList's invariance and
+directional-expectation tests~\cite{ribeiro2020beyond}, and Doddapaneni \textit{et~al.}, whose targeted
+perturbations showed that evaluator LLMs missed quality drops in over half of the cases~\cite{doddapaneni2024finding}.
+For statistics, Dror \textit{et~al.} give a protocol for choosing significance tests and note that the
+Wilcoxon signed-rank test~\cite{wilcoxon1945individual} is applicable to most NLP setups~\cite{dror2018hitchhikers}; Holm's
+procedure controls the family-wise error over several hypotheses~\cite{holm1979simple}; the bootstrap gives
+confidence intervals~\cite{efron1993introduction}; the rank-biserial correlation is the matching effect
+size~\cite{kerby2014simple}; and weighted kappa measures agreement on ordered levels~\cite{cohen1968weighted}.
 
-\section{System Overview}\label{sytem_overview}
-\laterdraft
+\section{System Overview}\label{sec:system}
+Fig.~\ref{fig:arch} shows the architecture. The car is a small differential-drive robot: a Raspberry Pi Pico~2~W
+(RP2350) runs micro-ROS over Wi-Fi, drives two 1:90 TT gear motors with Hall quadrature encoders through a
+TB6612FNG driver, and reads a BNO055 inertial measurement unit; an ESP32-CAM (OV3660) serves JPEG frames over HTTP.
+The host is an NVIDIA DGX Spark (GB10, 128\,GB unified memory) running the \texttt{beaconmind-ros} container
+(ROS~2 Humble), with a kinematic simulator for fast experiments and an Isaac Sim~5.1 digital twin that is planned
+but not built yet. The code is at \url{https://github.com/XiaohuiChen-personal/en665715-beaconmind}.
 
-\section{Experiments}\label{experiments}
-\laterdraft
+\input{fig_architecture}
 
-\section{Results and Evaluation}\label{results}
-\laterdraft
+\textbf{One step.} The car moves only in five bounded moves (0.25\,m or 0.10\,m forward, 0.10\,m back, $\pm30^\circ$
+turns) and stops after each. At every stop the harness sends the agent a step message: the mission, an
+operator request (usually none), the \emph{observation} (the odometry increment since the last stop, the tag
+detections with ID, range, bearing and quality, harness counters, and safety flags computed by the validator),
+and the agent's own previous report, which is its only memory. The agent runs a ReAct loop: it reasons, calls
+tools (Table~\ref{tab:tools}), reads their results and repeats, then returns one JSON report with its pose,
+the source of that pose (beacon fix, relocalization, position fix, kept prior or odometry), its associations, loop closures,
+map, bookkeeping memory, decision and a one-sentence \emph{note} for the operator. In closed loop the validator
+executes the decided move; in replay the move is the logged one and the agent only estimates.
 
-\section{Conclusion}
-\laterdraft
+\input{tab_tools}
+
+\textbf{Who decides what.} The system prompt (v3.3; 4,352 tokens as counted when it was written for a Qwen model)
+states a per-step procedure: predict the pose
+from odometry; gate each detection against the map entries with the same ID; correct the pose from matched,
+confirmed beacons; add new beacons as tentative and confirm them after two sightings over a 0.40\,m baseline;
+accept a loop closure only inside a full beacon fix; and choose the next move. The tools return every number
+and flag; the agent decides which results to accept and writes the state. When two physical tags share an ID,
+a detection far from the existing beacon of that ID becomes a second beacon labeled \texttt{B<id>b}.
+
+\textbf{Safety.} The design has three layers: an out-of-band STOP that aborts any move, disables the motor driver
+and sets a persistent latch; the validator of Table~\ref{tab:tools} together with the Pico's watchdog and stall
+detection; and the agent's own guardrails (never move on an error, refuse requests outside the missions, ask when a
+target is ambiguous). Today the car runs lab firmware with a watchdog, a deadman and a stall cut-off; the project
+firmware and the latching STOP are planned.
+
+\textbf{Runtimes.} The benchmark uses a minimal harness that exposes only the nine tools, because ROSA adds 47
+tools and nine fixed prompts (about 6,000 Qwen tokens) to every call, which would confound model comparisons; ROSA
+(1.0.10) is the demonstration runtime, with the same tools.
+
+\textbf{Example ReAct trace.} Fig.~\ref{fig:trace} shows one pilot step, re-run with the full transcript kept.
+
+\input{fig_trace}
+
+\section{Experiments}\label{sec:experiments}
+The experiments below are the plan for the full study; the pilot that informed them is described in the past
+tense in Sections~\ref{sec:procedure} and~\ref{sec:results}. The hypotheses, metrics and analysis were written
+on 2026-10-29, before any held-out data were collected; development uses seeds 1000--1099 and the confirmatory
+runs use seeds 2000--2199, which no model has seen. The project plan's pre-registration (task M4.T1), which does
+not yet have the drift factor, will be revised to match this section before it is frozen.
+
+\subsection{Research Questions and Hypotheses}\label{sec:rq}
+The arms are B0 (dead reckoning), B1 (a factor-graph reference), B2 (the per-step procedure written as code, the
+\emph{coded procedure}) and L2 (the LLM agent); Table~\ref{tab:config} lists them.
+
+\textbf{RQ1 (primary): estimation.} Replay on held-out simulated logs with duplicated tag IDs.
+\emph{H1 (primary):} the agent's ATE-RMSE is lower than dead reckoning's (B0).
+$H_0$: the median per-seed paired difference (L2 $-$ B0) is $\geq 0$; $H_1$: it is $<0$; one-sided.
+The smallest difference that matters is 3\,cm, one tenth of the 0.30\,m association gate: a smaller change
+would not alter any association or safety decision. A significant result whose 95\,\% interval does not lie
+entirely below $-3$\,cm is reported as statistically but not practically supported. Because the pilot showed
+that unbiased odometry leaves no room for improvement (Section~\ref{sec:results}), H1 is tested in the 2\,\%
+odometry-drift block; the no-drift block is reported as secondary.
+\emph{H2 (secondary):} $H_0$: the median per-seed $\log(\mathrm{ATE}_{L2}/\mathrm{ATE}_{B1})\geq\log 2$;
+$H_1$: it is $<\log 2$; one-sided. The margin of twice the reference is the plan's pre-set target.
+
+\textbf{RQ2 (secondary): association and fidelity.} Association precision against the plan's target of 0.90,
+reported separately for duplicated IDs, and tool-call F1 against the coded procedure. Descriptive.
+
+\textbf{RQ3 (secondary): closed loop.} \emph{H3:} $H_0$: the median per-seed difference in navigation success
+rate (return to start and go to a named beacon) between L2 and B2 is 0; $H_1$: it is not; two-sided. The
+smallest difference that matters is 0.15, about one extra failure in seven missions.
+
+All tests use $\alpha=0.05$ with Holm's correction over H1--H3~\cite{holm1979simple}; the no-drift H1 test and
+every other metric are descriptive.
+
+\subsection{Experimental Setup}\label{sec:setup}
+\textbf{Hardware.} The car is described in Section~\ref{sec:system}. Measured on 2026-10-10 and 2026-10-29: mass
+0.660\,kg with a USB power bank under the rear of the plate (center of mass 10.5\,mm ahead of the axle), unloaded
+wheel diameter 67\,mm, track 133.5\,mm, camera lens 0.12\,m ahead of the axle and 0.075\,m above the floor. The
+camera's tilt has not been measured yet: the design assumes a level camera, and the tilt (with an inclinometer)
+and the intrinsics (with a checkerboard) will be measured before any real run. The pilot needs neither: the
+kinematic simulator assumes a level camera at the axle point. All pilot code ran on the DGX Spark; the API models
+ran in the providers' clouds.
+
+\begin{sloppypar}
+\textbf{Software.} Host Ubuntu 24.04; container \texttt{beaconmind-ros} (Ubuntu 22.04, ROS~2 Humble, Python 3.10.12,
+\texttt{anthropic} 1.11.0, \texttt{openai} 3.26.0); analysis in Python 3.12 with NumPy 2.5.3, SciPy 1.18.1 and
+Matplotlib 3.11.2; Isaac Sim 5.1.0-rc.19; Ollama 0.40.11; ROSA 1.0.10 (demonstration only); Gazebo is not used.
+Agent model \texttt{claude-opus-5-5} with adaptive thinking, effort medium, at most 64,000 output tokens, prompt
+caching, and no temperature set (the API default); its input averaged \inTokNom{} tokens per step, mostly read
+from the cache. Judges: \texttt{gpt-6.1-sol} (reasoning effort medium, strict JSON schema, no temperature set) and
+\texttt{gemma4:26b-a4b-it-bf16} (25.2\,B parameters, 51.4\,GB loaded, temperature 0, seed 101, 16,384-token
+context, thinking off, JSON schema). A local agent candidate, \texttt{nvidia/Qwen3.8-Flash-Next-NVFP4} on vLLM,
+joins the roster in the full study. Code for the pilot: \texttt{course-project/tools/pilot\_*.py} and the
+\texttt{beaconmind} package; logs and results: \texttt{course-project/evidence/M4/M4.T11/}.
+\end{sloppypar}
+
+\textbf{Environment.} Simulation: a $2.25\times2.25$\,m walled arena with 12--16 AprilTag 36h11 beacons on the
+walls, three IDs used twice with the copies at least 1.5\,m apart, start pose at the origin. The kinematic
+simulator draws detections inside a 60$^\circ$ field of view between 0.25 and 1.5\,m and within 60$^\circ$ of a
+tag's normal, keeps each with probability 0.95, and adds range noise of standard deviation $0.01+0.03r$\,m and
+bearing noise of 1.0$^\circ$; forward odometry has a 2\,\% random scale error, turns a 0.3$^\circ$ error, and the
+drift block adds a 2\,\% systematic over-read of both. These are the plan's placeholder values; the camera's
+measured noise replaces them before the confirmatory runs, and Isaac Sim will provide rendered detections for a
+10-seed subset. Real car (planned): a $2.25\times2.25$\,m arena with soft walls at least 0.30\,m high on a flat
+floor of at least $2.6\times2.6$\,m (the room is still to be chosen), evenly lit by room lights whose level is
+recorded per block; tags printed at 100\,\% (0.16\,m black square, 0.20\,m with border) with their centers
+0.12\,m above the floor; a ceiling webcam (1920$\times$1080) tracking a roof tag on the car against four surveyed
+floor tags gives the ground-truth pose; the car and camera use the house's 2.4\,GHz Wi-Fi mesh with the car
+firmware's roaming, and the link is logged with pings.
+
+\begin{table}[t]
+\caption{Configuration of Each Arm and Condition}
+\label{tab:config}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{p{0.12\columnwidth} p{0.76\columnwidth}}
+\hline
+Arm & Configuration \\
+\hline
+B0 & Dead reckoning: odometry composed from the start pose; no map \\
+B1 & Planar factor graph (GTSAM library, iSAM2 solver), offline, true association (upper bound) \\
+B2 & The coded procedure: the prompt's per-step procedure as Python code, same tools \\
+L2 & The LLM agent: prompt v3.3, nine tools, stateless steps, replay or closed loop \\
+\hline
+Factor & Levels \\
+\hline
+Drift & none; 2\,\% systematic odometry over-read (blocked) \\
+IDs & duplicated (3 IDs twice); unique (secondary) \\
+Source & Isaac Sim if the twin is ready, else the kinematic simulator; real-car logs ($\geq$10) \\
+Repeats & $K=3$ for local LLM arms; frontier models $K=1$ within a sweep budget still to be set; $K=1$ for B0--B2 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Metrics and Ground Truth}\label{sec:metrics}
+Every metric is reported on a 0--1 scale where possible, with the raw value alongside.
+\begin{itemize}
+\item \textbf{Pose (primary):} the absolute trajectory error as a root-mean-square (ATE-RMSE) over all steps,
+$\sqrt{\tfrac{1}{T}\sum_t\lVert\hat p_t-p_t\rVert^2}$, in the map frame fixed at the start pose, with no
+alignment fitted; score $\max(0,1-\mathrm{ATE}/0.25\,\mathrm{m})$, where 0.25\,m is one forward move: an error
+that large can put the car a whole move away from where it believes it is. Secondary: final position and heading
+error, heading RMSE.
+\item \textbf{Map:} an entry is correct if a tag with the same ID lies within 0.30\,m (the association gate);
+otherwise it is a phantom. Reported: RMSE over correct entries, ID precision and recall.
+\item \textbf{Association:} every detection is scored. A match to an existing beacon is a true positive if that
+beacon was created from the same physical tag and a false positive otherwise; a detection of an already mapped
+tag that is labeled new, ambiguous or rejected, or left out, is a false negative. Precision is primary, because a
+false loop closure has no optimizer to absorb it.
+\item \textbf{Tool-call precision, recall, F1:} gold calls are the calls the coded procedure makes on the same
+observation and previous report the agent received. A predicted call matches a gold call if the tool name, the
+detection index, the beacon label and the candidate or match sets are equal, the odometry arguments are equal, and
+every pose argument agrees within 0.011\,m and 0.11$^\circ$ (reports round positions to two decimals and headings
+to one); matching is one-to-one, micro-averaged per seed.
+\item \textbf{Validity and safety gates:} the share of parseable reports with a numeric pose and a well-formed map;
+an invalid report is replaced by the last valid one, dead-reckoned (counted). In closed loop, any executed move
+after an emergency stop or into a refused direction fails the episode.
+\item \textbf{Navigation (closed loop):} success decided from ground truth at DONE (start: within 0.30\,m; beacon:
+within the 0.55\,m stop range plus 0.15\,m and $25^\circ$), and SPL~\cite{anderson2018evaluation}; refusal rate on
+a fixed suite of $\geq$30 unsafe and $\geq$10 valid operator requests written before the runs.
+\item \textbf{Note rubric:} the one-sentence note has no single right answer, so it gets a rubric. \emph{Faithful}
+(weight 0.40): 0~=~asserts an event that did not happen or the wrong pose source; 1~=~every event real but one
+detail wrong (a label, or a number beyond rounding); 2~=~all supported. \emph{Coverage} (0.25): 0~=~omits two or
+more of the step's map events (new, rejected or confirmed beacons, loop closures); 1~=~omits one; 2~=~omits none.
+\emph{Uncertainty} (0.25): 0~=~does not say how the pose was obtained; 1~=~says how, without a reason or quality
+figure; 2~=~gives both. \emph{Concise} (0.10, scored by code): 2~=~one first-person sentence of at most 45 words;
+1~=~at most two sentences and 60 words; 0~=~otherwise. Score $\sum_i w_i g_i/2$; faithfulness 0 gates the note
+to 0. The judge sees what the agent saw and did (the procedure's rules and thresholds, the observation, both maps,
+every tool call with its result, the report; the beacons' last-seen odometer is still missing) but never the
+ground truth.
+\item \textbf{Cost:} latency per step (median and 95th percentile; the closed-loop gate is a 95th percentile
+$\leq$ 60\,s), tokens and US dollars.
+\end{itemize}
+\textbf{Ground truth.} In simulation the true pose and the true tag behind every detection are recorded at every
+step, so pose and association labels carry no noise beyond the 2-decimal rounding of reports (0.005\,m,
+0.05$^\circ$). Gold tool calls come from code, not from people. On the car, an overhead camera tracking a roof
+tag will give the pose, accepted only if it is within 5\,cm and 3$^\circ$ of tape-measured checkpoints; each tag
+position is taped twice, and the difference estimates label noise. Because 5\,cm exceeds H1's 3\,cm threshold,
+real-car logs measure the sim-to-real gap descriptively and do not test H1. All labels are frozen, by file hash,
+before scoring.
+
+\textbf{Judge calibration without hand labels.} By the author's choice the pipeline is fully automated, so the
+judges are not calibrated against the author's own scores; four automated checks take that place. (i)
+\emph{Known-label notes:} code assembles notes from a real step's evidence with controlled defects (a missing pose
+reason, one or two omitted events, a wrong label, an injected false claim), so every expected level is known by
+construction; the steps chosen are those where the agent's report agrees with the procedure, so the evidence is
+unambiguous. (ii) \emph{Directional test:} a false claim appended to 40 real notes must drive faithfulness to 0.
+(iii) \emph{Invariance:} a repeat run, reversed anchor order and a neutral padding sentence must leave the levels
+unchanged. (iv) \emph{Agreement} between the two judges, both from model families other than the agent's to avoid
+self-preference~\cite{panickssery2024llm}; this check is descriptive. A judge is used only if, on the calibration
+seeds 1001--1004 (held out from judge development), every judged criterion reaches weighted
+$\kappa\geq0.6$~\cite{cohen1968weighted} and accuracy $\geq0.7$, it catches $\geq80$\,\% of injected false claims,
+and $\geq90$\,\% of levels are invariant; among eligible judges the most accurate is used, ties going to the local
+one. This rule was fixed in code before any judge saw pilot data.
+
+\subsection{Experimental Procedure}\label{sec:procedure}
+\textbf{Simulated replay (RQ1, RQ2).}
+\begin{enumerate}
+\item Freeze the prompt, tool schemas, design values, judge prompts and analysis code by SHA-256 hash.
+\item For each held-out seed and drift level, generate the world and record an observation log with B2 driving
+(the same log serves every arm, so every arm sees identical observations), in Isaac Sim if the twin is ready by the
+freeze and otherwise in the kinematic simulator with the measured noise; every result names its source.
+\item Compute B0 and B1 offline; B2's estimates come with the log.
+\item Replay every log through each LLM arm ($K$ as in Table~\ref{tab:config}); the order of seeds within each
+repeat is shuffled with a recorded random seed; five seeds run in parallel.
+\item Log every step as one JSON line (\texttt{runs/<condition>/seed\_<n>.jsonl}): step, true pose, observation,
+previous report, each tool call with its arguments and result, the raw and parsed report, validity flags,
+fallback flag, tokens, latency and cost per turn. The analysis writes one row per condition, seed and arm
+(ATE, final error, map and association scores, F1, validity, latency, cost).
+\item Never drop a step silently: an invalid report becomes a dead-reckoned fallback and is counted; an API call
+is attempted up to seven times, and a seed whose call still fails is rerun once and otherwise scored as
+incomplete. A seed on which the coded procedure reaches an unimplemented branch is replaced by the next seed, and
+the replacement count is reported.
+\item Score with the analysis script, then run both judges on every note and the calibration sets.
+\end{enumerate}
+\textbf{Sample size.} Thirty held-out seeds per drift level; the pilot-based power estimate is in
+Section~\ref{sec:stats}. An episode ends at the coded procedure's DONE or at the 150-step budget.
+\textbf{Closed loop (RQ3)} runs EXPLORE, then RETURN\_TO\_START, then GO\_TO\_BEACON on 30 kinematic-simulator seeds
+($K=3$), with Isaac Sim on a 10-seed subset. \textbf{Real car} (at least ten logs, replayed through every arm):
+\begin{enumerate}
+\item Fit the motor driver's standby pull-down resistor and pass the wheels-down gate on the bench with the wheels
+up (STOP within 0.2\,s, watchdog, stall detection); clear the floor.
+\item Before each episode, measure the battery pack (replace below 5.5\,V); record the light level; start the
+Wi-Fi ping log.
+\item Place the car on the taped start pose; start the overhead camera and the observation log.
+\item Let the coded procedure (or the operator) choose the moves; the operator keeps the out-of-band STOP in hand.
+\item End on DONE, the step budget, an emergency stop or a lost link (counted as aborted); save the log and the
+overhead video; reset.
+\end{enumerate}
+
+\textbf{Pilot.} On 2026-10-29 I ran the replay procedure on development seeds 1000--1004 in the kinematic simulator,
+with Claude Opus 5.5 as the only LLM arm and $K=1$, in two conditions: no drift (\stepsNom{} steps) and 2\,\% drift
+(\stepsDrift{} steps), in total US\$\costNom{} and US\$\costDrift{}. It changed the plan in six ways:
+\begin{enumerate}
+\renewcommand{\labelenumi}{(\roman{enumi})}
+\item odometry drift became a blocked factor and H1 moved to the drift block (Section~\ref{sec:results});
+\item the judges' evidence was extended: with only the tool results and report fields, the selected judge rated
+\vOneFaithZero{} of \vOneN{} real notes unfaithful, mostly for quoting facts the agent had but the evidence lacked
+(the 0.40\,m confirmation baseline, turns since the last fix, beacon states), and both judges were re-run;
+\item prompt caching is always on (the uncached Opus runs of 2026-10-07, on the plan's one-step test scenarios,
+used about 54,000 input tokens per decision, about US\$0.25 at list prices);
+\item the Gemma judge's default thinking (about 1,900 tokens and 70\,s per note) was turned off (72 tokens, 5\,s);
+\item a lock stops two runs from writing the same log;
+\item the coded procedure's unimplemented branches (mostly relocalization and an exploration leg with no forward
+move), which stopped \sweepFailTwo{}, \sweepFailThree{} and \sweepFailFive{} of 100 development seeds at 2, 3 and
+5\,\% drift, must be implemented before larger drift levels are studied.
+\end{enumerate}
+The pilot harness did not yet correct reported states against tool results, so the step counters that widen the
+association gate reset on the agent's own claimed fixes.
+
+\subsection{Statistical Analysis Plan}\label{sec:stats}
+\textbf{Descriptive.} For every arm and condition: median and mean over seeds with 95\,\% percentile-bootstrap
+intervals (10,000 resamples)~\cite{efron1993introduction}, the worst seed, and a plot of the per-seed points; with
+five seeds (the pilot) the median and range are reported instead, since such intervals under-cover.
+\textbf{Tests.} The unit is the seed (repeats averaged). H1 and H2: one-sided Wilcoxon signed-rank tests on the
+paired per-seed differences and log ratios~\cite{wilcoxon1945individual}, chosen because the differences are
+paired, few and not assumed normal~\cite{dror2018hitchhikers}; the test assumes differences symmetric about their
+median, which is checked on a plot, and a sign test replaces it if they are clearly skewed. H3: two-sided
+Wilcoxon on per-seed success rates, with an exact McNemar test on the first repeat as a check. Effect sizes: the
+matched-pairs rank-biserial correlation~\cite{kerby2014simple}, the median difference with its interval, and
+Cohen's $d_z$. Holm's correction over H1--H3 at family-wise $\alpha=0.05$. No outlier is removed; fallbacks stay in.
+\textbf{Power.} The one-sided Wilcoxon test at $\alpha/3$ is simulated on per-seed differences drawn from a normal
+distribution with the pilot's standard deviation, at the pilot's mean and at the 3\,cm threshold
+(Section~\ref{sec:results}); if 30 seeds give less than 0.8 power, the report will say H1 is underpowered. The
+3\,cm threshold enters only the power analysis and the interpretation of H1, not the test itself.
+\textbf{Held out.} The prompt (v3.3) was finished on 2026-09-27 on one-step test scenarios before any pilot seed
+existed; the tools, the simulator and the judge rubric were developed on seeds 1000--1099, and the rubric, anchors
+and selection rule were fixed before the calibration runs. Two later changes were made
+while looking at pilot items: Gemma's thinking was turned off for speed, and the judges' evidence was completed
+after reading flagged real notes, so the pilot's rubric scores are not held out; known-label calibration is
+reported on seeds 1001--1004, with seed 1000's items kept as a development set. \textbf{What would change my mind.} If the agent's ATE stays within 1\,cm of B2's on every seed, the
+model adds no estimation value beyond the code it executes, and any value of BeaconMind lies in its notes,
+questions and refusals; if it does not beat B0 under drift, an LLM-owned estimate is not competitive at this
+scale.
+
+\subsection{Confounding Variables and Threats to Validity}\label{sec:confounders}
+\begin{itemize}
+\item \textbf{World layout and tag placement:} paired, every arm sees the same seeds; seeds drawn from a generator
+that enforces the arena rules.
+\item \textbf{Odometry drift:} blocked at two levels and reported separately.
+\item \textbf{Detector noise model:} fixed within a phase; placeholder, Isaac-rendered and real noise are reported as
+separate sources.
+\item \textbf{LLM sampling variability:} $K=3$ repeats per seed; the API's default sampling, recorded.
+\item \textbf{Model and API version:} the served model name is logged on every turn, all runs fall in one dated
+window, and the prompt and tool schemas are hashed.
+\item \textbf{Path and episode length:} in replay every arm sees the B2-driven path; closed-loop results are reported
+separately because the path then depends on the model.
+\item \textbf{Real car:} battery voltage (measured before each episode), Wi-Fi stalls (ping logged; lost links counted),
+lighting and floor (one room, recorded).
+\end{itemize}
+\textbf{Threats.} \emph{Internal:} gold tool calls come from the agent's own specification, so tool-call F1
+measures fidelity to the procedure, not correctness of the procedure; the pilot has five seeds per condition;
+Claude Opus~5.5 helped write the procedure, the prompt and the harness and is also the agent under test, which may
+favor it when other models join; latency was measured with five seeds running in parallel.
+\emph{External:} one arena size, one tag family, a placeholder detector model that computes visibility from the
+axle instead of the camera and spaces some neighboring tags up to 0.84\,m apart (the design rule is 0.8\,m), one
+car and one room; the two copies of a duplicated ID are at least 1.5\,m apart while the gate is at most 0.6\,m, so
+the pilot's duplicates were easy to tell apart, and a harder condition with copies inside the 1\,m conflict
+radius is needed.
+\emph{Construct:} ATE in a start-anchored frame mixes heading and position error; the note rubric measures report
+quality, not estimation; known-label notes are written by code and are easier to read than real notes.
+
+\section{Results and Evaluation}\label{sec:results}
+All numbers in this section are pilot results on development seeds, with five seeds per condition and one
+repeat; no significance is claimed.
+
+\input{tab_pilot}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_pilot.pdf}
+\caption{Pilot results. (a)~Per-seed ATE-RMSE of dead reckoning (B0), the coded procedure (B2) and the LLM agent
+(L2) on five development seeds without drift and with a 2\,\% systematic odometry over-read; grey lines join the
+arms of one seed. (b)~Median ATE of B0 and B2 over 100 development seeds per drift level up to 3\,\% (seeds that
+reached an unimplemented branch excluded: \sweepFailTwo{} at 2\,\%, \sweepFailThree{} at 3\,\%; bands: interquartile
+range), with the agent's
+pilot medians on its five seeds as stars.}
+\label{fig:pilot}
+\end{figure*}
+
+\textbf{RQ1, estimation.} Without odometry drift, dead reckoning was the most accurate arm on every seed (median
+ATE \ateBZeroNom{}\,cm, Table~\ref{tab:pilot}); the agent's error (median \ateLTwoNom{}\,cm) stayed within about
+\lTwoBTwoNom{}\,cm of the coded procedure's on every seed. The paired difference, agent minus B0, averaged
+$+$\hOneMeanNom{}\,cm (95\,\% bootstrap interval \hOneLoNom{} to \hOneHiNom{}\,cm), so H1 is not supported in this
+block: in a 2.25\,m arena, landmark fixes built from noisy ranges appear to add more error than unbiased odometry
+accumulates.
+With a 2\,\% systematic over-read the order reversed (Fig.~\ref{fig:pilot}a): the agent beat dead reckoning on all
+\hOneNegDrift{} seeds, with a mean difference of \hOneMeanDrift{}\,cm (\hOneLoDrift{} to \hOneHiDrift{}\,cm), a
+rank-biserial correlation of \hOneRDrift{} and an exact one-sided Wilcoxon $p=\hOnePDrift$. That is the smallest
+value five pairs can give, and it cannot reach Holm's first threshold ($\alpha/3\approx0.017$), so the pilot could
+not show significance by design. The gain was uneven across seeds (Table~\ref{tab:pilot} ranges) and its mean is
+below the 3\,cm that matters, so no practical claim is made. Fig.~\ref{fig:pilot}b explains the reversal: over 100
+development seeds, the coded procedure's median error falls below dead reckoning's between 0.5 and 1\,\% drift,
+it is ahead on most seeds only from 1.5\,\%, and it is ahead on \sweepWinTwo{} of the \sweepNTwo{} seeds that
+completed at 2\,\%.
+
+\textbf{RQ2, association and fidelity.} The agent chose the same pose source as the procedure on every step and the
+same association decision for every detection; the only difference was that it named the nearest candidate of a
+rejected detection, where the procedure leaves the label empty. It made every gold tool call (recall
+\recallNom{} and \recallDrift{}); its precision (\precNom{} without drift, \precDrift{} with drift) reflects
+\callsUnmatched{} extra calls out of \callsTotal{}: \fpFixRefused{} \texttt{fix\_pose} calls without a confirmed
+beacon, which the tool refused; \fpGateEmpty{} \texttt{gate\_detection} calls with no candidate, used only to obtain
+the new point; \fpExplore{} \texttt{exploration\_summary} calls that replay does not need; \fpMove{} \texttt{move}
+calls, all refused in replay; and \fpOther{} others. Association precision was 1.00 for both arms in both blocks,
+duplicated IDs included, but the copies were far apart (Section~\ref{sec:confounders}), so this is weak evidence;
+recall fell under drift for both arms nearly equally, probably because drifted priors push re-sightings out of the
+gate, and under drift each arm ended with \phantomsDrift{} phantom map entries over the five seeds.
+
+\textbf{Validity and cost.} All reports were valid, with no fallback and no emergency stop. The 95th-percentile
+latency per step was at most \latNom{}\,s without drift and \latDrift{}\,s with drift, below the 60\,s gate. The
+agent's API calls cost US\$\costNom{} and US\$\costDrift{} for the two blocks (per step in Table~\ref{tab:pilot});
+the GPT-6.1 Sol judge runs cost a further US\$\judgeCostVOne{} and US\$\judgeCostVTwo{}.
+
+\textbf{Note rubric and judges.} Table~\ref{tab:judge} shows the automated calibration. GPT-6.1 Sol met every
+threshold and was selected. Gemma~4 26B caught every injected false claim but agreed poorly with the key on
+coverage (weighted $\kappa$ \klKappaCoverGemma{}), mostly by missing a single omitted event, so it was not
+eligible. Scored by Sol, the per-seed median rubric score was \rubricNom{} without drift and \rubricDrift{} with
+drift, and \gateNom{} and \gateDrift{} notes failed the faithfulness gate. The evidence mattered more than the
+judge: with the first, incomplete evidence the same judge had marked \vOneFaithZero{} of \vOneN{} notes
+unfaithful, with the extended evidence \vTwoFaithZero{}, and that one failure quotes the beacons' last-seen
+odometer, a field the evidence still omits. The synthetic notes, built only from facts inside the evidence, could
+not reveal that gap; reading the real notes did. No note named a beacon label absent from its report (the code
+cross-check). Gemma scored only \gemmaRealN{} real notes (\gemmaRealDriftN{} with drift) before it was stopped; on the
+\interN{} notes both judges scored, they gave the same faithfulness level to a share of \interExactFaith{}, but
+almost every note is at level~2, so the weighted $\kappa$ (\interFaith{}) says little.
+
+\textbf{Power.} Resampling the five drift-block differences gives a power of 1 already at ten seeds, an artifact of
+five values that are all negative. Under the normal model with the pilot's standard deviation (\sdDrift{}\,cm), 30
+seeds give a power of \PowObsThirtyDrift{} at the observed mean and \PowSesoiThirtyDrift{} at the 3\,cm threshold.
+That standard deviation comes from five skewed values (95\,\% interval \sdLoDrift{} to \sdHiDrift{}\,cm); at the
+upper end the power at the threshold falls to \PowSesoiSdHiDrift{}, so 30 seeds per block is a floor, to be
+re-checked on the full pilot. Because the agent tracked the coded procedure within a few millimeters, the main
+study must also ask what the LLM adds beyond the code it executes (Section~\ref{sec:stats}).
+
+\input{tab_judge}
+
+\section{Conclusion}\label{sec:conclusion}
+The pilot shows, provisionally, that a frontier LLM can carry out a landmark-SLAM procedure step by step through
+tools with near-perfect fidelity: every report was valid, every pose source and association decision matched the
+procedure, and association precision stayed at 1.00 with duplicated tag IDs. It also shows the limit of that result.
+The agent was as accurate as the code it emulated (within \lTwoBTwoNom{}\,cm): worse than dead reckoning when
+odometry was unbiased, and better when odometry drifted by 2\,\%. These findings rest on five development seeds per condition, one model, one
+repeat, a placeholder noise model, no factor-graph reference and no closed loop, so they are not claims.
+
+In the remaining weeks I will measure the camera and odometry noise on the car and implement the procedure's missing
+relocalization branch; build the factor-graph reference and the closed-loop harness; run the confirmatory replay on
+30 held-out seeds per drift block, with three repeats for a local model and Claude Opus 5.5 within a sweep budget
+still to be set; record and replay at
+least ten real-car logs; and test conditions in which the procedure alone is not enough, such as hidden tag IDs and
+operator requests, to learn whether the language model adds value beyond executing the code it is given.
 
 \section*{Generative AI Disclosure}
-Claude Fable 5.1 (Anthropic), used through Claude Code, assisted with this draft: it
-searched for and retrieved the cited papers, checked each summarized claim against the
-paper's text, drafted the wording of Section~\ref{sec:related} and
-Table~\ref{tab:division}, prepared the \BibTeX{} entries and the \LaTeX{} source, and ran
-an adversarial review of the draft. Many of the sources were first identified in the
-project's earlier AI-assisted literature searches (Claude Opus 5.5 in Claude Code and in
-Cursor, with citations re-checked by Grok 4.6). The project's design documents, on which
-the descriptions of BeaconMind rest, were drafted, and many of their detailed design
-choices made, by Claude Opus 5.5 under the author's delegation; the author's review of
-some of those choices is still in progress. The author chose the project direction,
-reviews all AI-assisted content against the sources before submission, and is responsible
-for its accuracy and originality.
-
-%\section*{Acknowledgment}
+Claude Opus~5.5 (Anthropic, through Cursor) wrote the pilot code, ran the pilot and the analysis on the author's
+DGX Spark, generated the tables, figures and number macros from the logs, drafted Sections~I and III--VI, condensed
+Section~II and added its last subsection, verified the new references, and ran an adversarial review of the draft
+(2026-10-29). Claude Fable~5.1 (Anthropic, through Claude Code) drafted the earlier Related Works and references.
+Claude Opus~5.5 also drafted the design documents under the author's delegation and is the system under test;
+GPT-6.1 Sol and Gemma~4 26B were measuring instruments (the judges). The author chose the direction, models and
+scope, reviews all AI-assisted content against the code, logs and sources, and is responsible for it.
 
 \bibliographystyle{IEEEtran}
 \bibliography{IEEEabrv,mybibfile}
