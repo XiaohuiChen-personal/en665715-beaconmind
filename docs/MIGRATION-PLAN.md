@@ -141,3 +141,18 @@ Outside this file:
 Geometry tests after the skip: `7 passed, 1 skipped`.
 
 Second search: no unfixed leak. Push may proceed.
+
+## After the push (2026-10-29)
+
+Public repo: <https://github.com/XiaohuiChen-personal/en665715-beaconmind>
+Visibility: public. Owner: `XiaohuiChen-personal`. Initial commit `f8039a2dfce92e7bfa03f0f03697f5c3a7491d5d`.
+
+Private course repo stayed private. Cleanup commit `6a4da8c8db8ce6f9831db451a43860efba0dd5b0` on `XiaohuiChen-personal/EN.665.715`. `course-project/` there is now a pointer README. The Module 6 URDF snapshot is `assignments/assignment6/beaconmind_description-m6-snapshot`. Git recorded that snapshot as a rename of the old description package.
+
+A commit hook appended `Co-authored-by: Cursor <cursoragent@cursor.com>` to both commit messages. That address was not in the message text I wrote. It is Cursor's public agent address. The commits were not amended and were not force-pushed.
+
+`gh auth status` still labels the keyring login `jack25409440`. The token that created the repo authenticates as `XiaohuiChen-personal`, and `gh repo view` confirms that owner.
+
+Gitignored files left on disk in the private `course-project/` folder, and not committed, include both `wifi_config.h` files, `.venv`, report `sources/`, and LaTeX aux files.
+
+No evidence JPEG or PNG was dropped.
