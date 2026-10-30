@@ -1,0 +1,11 @@
+mode=thinking-on n=20 p50_s=327.9 p95_s=555.7 max_s=761.5 mean_turns=6.95 mean_tool_calls=7.5 mean_prompt_tokens_first_turn=6097.5 mean_completion_tokens_total=9342.2 n_errors=0 n_all_pass=5 n_length_or_overflow=0 length_or_overflow_s= first_record_s=405.8
+mode=thinking-off n=20 p50_s=13.7 p95_s=18.8 max_s=18.9 mean_turns=1 mean_tool_calls=0 mean_prompt_tokens_first_turn=6099.5 mean_completion_tokens_total=436.1 n_errors=0 n_all_pass=0 n_length_or_overflow=0 length_or_overflow_s= first_record_s=13.5
+max_running=1
+max_waiting=0
+probe_samples=3259
+probe_na=0
+probe_numeric=3259
+probe_first_epoch=1791330758
+probe_last_epoch=1791337370
+probe_first_line=1791330758 running=0 waiting=0
+probe_last_line=1791337370 running=1 waiting=0

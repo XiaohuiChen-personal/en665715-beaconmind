@@ -1,0 +1,298 @@
+# M2.T4 step 8. Host spark-2a60, container beaconmind-ros, workspace /workspace/course-project/ros2_ws. 2026-10-10T07:40:31-05:00
+# ROS_DOMAIN_ID=47 ROS_LOCALHOST_ONLY=1 for every command (private domain; nothing else on it).
+
+## (a) colcon build --symlink-install --packages-select beaconmind_description
+Starting >>> beaconmind_description
+Finished <<< beaconmind_description [0.44s]
+
+Summary: 1 package finished [0.52s]
+# exit status: 0
+
+## (b) colcon test exactly as M2.T4 step 8 writes it (no PYTEST_DISABLE_PLUGIN_AUTOLOAD), then colcon test-result --verbose
+Starting >>> beaconmind_description
+--- stderr: beaconmind_description
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/local/lib/python3.10/dist-packages/pytest/__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "/usr/local/lib/python3.10/dist-packages/_pytest/config/__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "/usr/local/lib/python3.10/dist-packages/_pytest/config/__init__.py", line 223, in _main
+    config = _prepareconfig(new_args, plugins, prog=prog)
+  File "/usr/local/lib/python3.10/dist-packages/_pytest/config/__init__.py", line 410, in _prepareconfig
+    config: Config = pluginmanager.hook.pytest_cmdline_parse(
+  File "/usr/local/lib/python3.10/dist-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/usr/local/lib/python3.10/dist-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/usr/local/lib/python3.10/dist-packages/pluggy/_callers.py", line 167, in _multicall
+    raise exception
+  File "/usr/local/lib/python3.10/dist-packages/pluggy/_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+  File "/usr/local/lib/python3.10/dist-packages/_pytest/helpconfig.py", line 124, in pytest_cmdline_parse
+    config = yield
+  File "/usr/local/lib/python3.10/dist-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/usr/local/lib/python3.10/dist-packages/_pytest/config/__init__.py", line 1232, in pytest_cmdline_parse
+    self.parse(args)
+  File "/usr/local/lib/python3.10/dist-packages/_pytest/config/__init__.py", line 1583, in parse
+    self.pluginmanager.load_setuptools_entrypoints("pytest11")
+  File "/usr/local/lib/python3.10/dist-packages/pluggy/_manager.py", line 417, in load_setuptools_entrypoints
+    self.register(plugin, name=ep.name)
+  File "/usr/local/lib/python3.10/dist-packages/_pytest/config/__init__.py", line 571, in register
+    plugin_name = super().register(plugin, name)
+  File "/usr/local/lib/python3.10/dist-packages/pluggy/_manager.py", line 168, in register
+    self._verify_hook(hook, hookimpl)
+  File "/usr/local/lib/python3.10/dist-packages/pluggy/_manager.py", line 343, in _verify_hook
+    raise PluginValidationError(
+pluggy._manager.PluginValidationError: Plugin 'launch_testing' for hook 'pytest_pycollect_makemodule'
+hookimpl definition: pytest_pycollect_makemodule(path, parent)
+Argument(s) {'path'} are declared in the hookimpl but can not be found in the hookspec
+---
+Finished <<< beaconmind_description [0.24s]	[ with test failures ]
+
+Summary: 1 package finished [0.34s]
+  1 package had stderr output: beaconmind_description
+  1 package had test failures: beaconmind_description
+# colcon test exit status: 0
+build/beaconmind_description/pytest.xml: 1 test, 1 error, 0 failures, 0 skipped
+- beaconmind_description pytest.missing_result
+  <<< failure message
+    The test invocation failed without generating a result file.
+  >>>
+
+Summary: 1 test, 1 error, 0 failures, 0 skipped
+# colcon test-result exit status: 1
+
+## (c) the same with PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 (container pytest 9.1.1 rejects Humble's launch_testing / launch_ros
+##     pytest plugins; these tests use no plugin). Console output of pytest included (console_direct+).
+Starting >>> beaconmind_description
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: /workspace/course-project/ros2_ws/build/beaconmind_description/.pytest_cache
+rootdir: /workspace/course-project/ros2_ws/src/beaconmind_description
+collecting ... collected 19 items
+
+test/test_urdf.py::test_xacro_expands PASSED                             [  5%]
+test/test_urdf.py::test_link_names PASSED                                [ 10%]
+test/test_urdf.py::test_wheel_separation_equals_track_width PASSED       [ 15%]
+test/test_urdf.py::test_wheel_radius_half_diameter PASSED                [ 21%]
+test/test_urdf.py::test_optical_frame_matches_camera_json SKIPPED (c...) [ 26%]
+test/test_urdf.py::test_optical_frame_pose_from_measurements PASSED      [ 31%]
+test/test_urdf.py::test_caster_touches_floor PASSED                      [ 36%]
+test/test_urdf.py::test_no_range_sensor PASSED                           [ 42%]
+test/test_urdf.py::test_total_mass_matches_car_json PASSED               [ 47%]
+test/test_urdf.py::test_props_up_to_date PASSED                          [ 52%]
+test/test_urdf.py::test_props_files_do_not_overlap PASSED                [ 57%]
+test/test_urdf.py::test_gen_props_rejects_bad_input PASSED               [ 63%]
+test/test_urdf.py::test_optical_to_link_rpy PASSED                       [ 68%]
+test/test_urdf.py::test_read_measurements_honours_superseding_rows PASSED [ 73%]
+test/test_urdf.py::test_imu_pose_from_measurements PASSED                [ 78%]
+test/test_urdf.py::test_com_matches_lever_rule PASSED                    [ 84%]
+test/test_urdf.py::test_chassis_boxes_clear_floor_and_tyres PASSED       [ 89%]
+test/test_urdf.py::test_chassis_boxes_do_not_overlap PASSED              [ 94%]
+test/test_urdf.py::test_every_visual_has_inline_colour PASSED            [100%]
+
+- generated xml file: /workspace/course-project/ros2_ws/build/beaconmind_description/pytest.xml -
+=========================== short test summary info ============================
+SKIPPED [1] test/test_urdf.py:365: configs/camera.json (M1.T7 calibration) does not exist yet; the camera pose is the measured lens position with ASSUMED zero roll/pitch/yaw (see test_optical_frame_pose_from_measurements). When it exists, note that its extrinsics z_m is the lens height above the FLOOR (M1.T7 step 8) while base_link is at axle height, so the composed z equals z_m - wheel_radius, not z_m as M2.T4's test text says
+======================== 18 passed, 1 skipped in 0.09s =========================
+Finished <<< beaconmind_description [0.27s]
+
+Summary: 1 package finished [0.37s]
+# colcon test exit status: 0
+Summary: 19 tests, 0 errors, 0 failures, 1 skipped
+# colcon test-result exit status: 0
+
+## (d) Re-run after the review fixes (test_optical_frame_matches_camera_json now has its comparison and skips only
+##     while camera.json is absent; car.json imu_z_m axle-relative; car_props.xacro regenerated). Same commands as (c).
+# Round 2 (after the review fixes). Host spark-2a60, container beaconmind-ros, 2026-10-10T08:05:49-05:00
+# ROS_DOMAIN_ID=47 ROS_LOCALHOST_ONLY=1; PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 (container pytest 9.1.1 vs Humble's plugins, as in (b)/(c))
+## (d1) colcon build --symlink-install --packages-select beaconmind_description
+Starting >>> beaconmind_description
+Finished <<< beaconmind_description [0.50s]
+
+Summary: 1 package finished [0.57s]
+# exit status: 0
+## (d2) PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 colcon test --packages-select beaconmind_description --event-handlers console_direct+, then colcon test-result --verbose
+Starting >>> beaconmind_description
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: /workspace/course-project/ros2_ws/build/beaconmind_description/.pytest_cache
+rootdir: /workspace/course-project/ros2_ws/src/beaconmind_description
+collecting ... collected 19 items
+
+test/test_urdf.py::test_xacro_expands PASSED                             [  5%]
+test/test_urdf.py::test_link_names PASSED                                [ 10%]
+test/test_urdf.py::test_wheel_separation_equals_track_width PASSED       [ 15%]
+test/test_urdf.py::test_wheel_radius_half_diameter PASSED                [ 21%]
+test/test_urdf.py::test_optical_frame_matches_camera_json SKIPPED (/...) [ 26%]
+test/test_urdf.py::test_optical_frame_pose_from_measurements PASSED      [ 31%]
+test/test_urdf.py::test_caster_touches_floor PASSED                      [ 36%]
+test/test_urdf.py::test_no_range_sensor PASSED                           [ 42%]
+test/test_urdf.py::test_total_mass_matches_car_json PASSED               [ 47%]
+test/test_urdf.py::test_props_up_to_date PASSED                          [ 52%]
+test/test_urdf.py::test_props_files_do_not_overlap PASSED                [ 57%]
+test/test_urdf.py::test_gen_props_rejects_bad_input PASSED               [ 63%]
+test/test_urdf.py::test_optical_to_link_rpy PASSED                       [ 68%]
+test/test_urdf.py::test_read_measurements_honours_superseding_rows PASSED [ 73%]
+test/test_urdf.py::test_imu_pose_from_measurements PASSED                [ 78%]
+test/test_urdf.py::test_com_matches_lever_rule PASSED                    [ 84%]
+test/test_urdf.py::test_chassis_boxes_clear_floor_and_tyres PASSED       [ 89%]
+test/test_urdf.py::test_chassis_boxes_do_not_overlap PASSED              [ 94%]
+test/test_urdf.py::test_every_visual_has_inline_colour PASSED            [100%]
+
+- generated xml file: /workspace/course-project/ros2_ws/build/beaconmind_description/pytest.xml -
+=========================== short test summary info ============================
+SKIPPED [1] test/test_urdf.py:396: /workspace/course-project/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUMED 0) meanwhile
+======================== 18 passed, 1 skipped in 0.09s =========================
+Finished <<< beaconmind_description [0.30s]
+
+Summary: 1 package finished [0.40s]
+# colcon test exit status: 0
+Summary: 19 tests, 0 errors, 0 failures, 1 skipped
+# colcon test-result exit status: 0
+
+## (e) Re-run after the second review's fixes (gen_props.py labels camera values by the extrinsics the view used, new
+##     test test_gen_props_camera_labels_follow_the_extrinsics_used; car.json front_overhang_m / imu_x_m +- 0.003 and
+##     car_props.xacro regenerated, comments only). Private domain 141 this time. Same commands as (d).
+# Round 3 (after the second review's fixes). Host spark-2a60, container beaconmind-ros, 2026-10-10T08:32:55-05:00
+# ROS_DOMAIN_ID=141 ROS_LOCALHOST_ONLY=1; PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 (container pytest 9.1.1 vs Humble's plugins, as in (b)/(c))
+## (e1) colcon build --symlink-install --packages-select beaconmind_description
+Starting >>> beaconmind_description
+Finished <<< beaconmind_description [0.46s]
+
+Summary: 1 package finished [0.53s]
+# exit status: 0
+## (e2) PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 colcon test --packages-select beaconmind_description --event-handlers console_direct+, then colcon test-result --verbose
+Starting >>> beaconmind_description
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0
+cachedir: /workspace/course-project/ros2_ws/build/beaconmind_description/.pytest_cache
+rootdir: /workspace/course-project/ros2_ws/src/beaconmind_description
+collected 20 items
+
+test/test_urdf.py ....s...............                                   [100%]
+
+- generated xml file: /workspace/course-project/ros2_ws/build/beaconmind_description/pytest.xml -
+======================== 19 passed, 1 skipped in 0.11s =========================
+Finished <<< beaconmind_description [0.29s]
+
+Summary: 1 package finished [0.39s]
+# colcon test exit status: 0
+Summary: 20 tests, 0 errors, 0 failures, 1 skipped
+# colcon test-result exit status: 0
+## (e3) the same colcon test with --pytest-args -v -rs (per-test lines and the skip reason), 2026-10-10T08:33:04-05:00
+Starting >>> beaconmind_description
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: /workspace/course-project/ros2_ws/build/beaconmind_description/.pytest_cache
+rootdir: /workspace/course-project/ros2_ws/src/beaconmind_description
+collecting ... collected 20 items
+
+test/test_urdf.py::test_xacro_expands PASSED                             [  5%]
+test/test_urdf.py::test_link_names PASSED                                [ 10%]
+test/test_urdf.py::test_wheel_separation_equals_track_width PASSED       [ 15%]
+test/test_urdf.py::test_wheel_radius_half_diameter PASSED                [ 20%]
+test/test_urdf.py::test_optical_frame_matches_camera_json SKIPPED (/...) [ 25%]
+test/test_urdf.py::test_optical_frame_pose_from_measurements PASSED      [ 30%]
+test/test_urdf.py::test_caster_touches_floor PASSED                      [ 35%]
+test/test_urdf.py::test_no_range_sensor PASSED                           [ 40%]
+test/test_urdf.py::test_total_mass_matches_car_json PASSED               [ 45%]
+test/test_urdf.py::test_props_up_to_date PASSED                          [ 50%]
+test/test_urdf.py::test_props_files_do_not_overlap PASSED                [ 55%]
+test/test_urdf.py::test_gen_props_rejects_bad_input PASSED               [ 60%]
+test/test_urdf.py::test_gen_props_camera_labels_follow_the_extrinsics_used PASSED [ 65%]
+test/test_urdf.py::test_optical_to_link_rpy PASSED                       [ 70%]
+test/test_urdf.py::test_read_measurements_honours_superseding_rows PASSED [ 75%]
+test/test_urdf.py::test_imu_pose_from_measurements PASSED                [ 80%]
+test/test_urdf.py::test_com_matches_lever_rule PASSED                    [ 85%]
+test/test_urdf.py::test_chassis_boxes_clear_floor_and_tyres PASSED       [ 90%]
+test/test_urdf.py::test_chassis_boxes_do_not_overlap PASSED              [ 95%]
+test/test_urdf.py::test_every_visual_has_inline_colour PASSED            [100%]
+
+- generated xml file: /workspace/course-project/ros2_ws/build/beaconmind_description/pytest.xml -
+=========================== short test summary info ============================
+SKIPPED [1] test/test_urdf.py:397: /workspace/course-project/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUMED 0) meanwhile
+======================== 19 passed, 1 skipped in 0.10s =========================
+Finished <<< beaconmind_description [0.31s]
+
+Summary: 1 package finished [0.41s]
+# colcon test exit status: 0
+Summary: 20 tests, 0 errors, 0 failures, 1 skipped
+# colcon test-result exit status: 0
+## (e4) final re-run after the last file sync (template header comment edited after (e2)/(e3)), 2026-10-10T08:37:39-05:00
+Summary: 1 package finished [0.53s]
+======================== 19 passed, 1 skipped in 0.11s =========================
+# colcon test exit status: 0
+Summary: 20 tests, 0 errors, 0 failures, 1 skipped
+# colcon test-result exit status: 0
+## (f) Re-run after the THIRD review's fixes (test_urdf.py: the measurement-based tests read the CSV that car.json names,
+##     through write_car_json.read_csv and ROW_FOR_KEY; test_optical_frame_pose_from_measurements leaves out the camera
+##     values taken from camera.json; test_read_measurements_honours_superseding_rows replaced by
+##     test_measurement_reader_follows_the_writer_rules; car_geometry_extras.xacro comments only). Domain 141.
+# Round 4 (after the third review's fixes). Host spark-2a60, container beaconmind-ros, 2026-10-10T09:04:14-05:00
+# ROS_DOMAIN_ID=141 ROS_LOCALHOST_ONLY=1; PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 (container pytest 9.1.1 vs Humble's plugins, as in (b)/(c))
+# test_urdf.py sha256 b81f8d74...; car_geometry_extras.xacro c87aead8...; car_props.xacro bd51bfb2... (unchanged); no configs/camera.json
+## (f1) colcon build --symlink-install --packages-select beaconmind_description
+Starting >>> beaconmind_description
+Finished <<< beaconmind_description [0.48s]
+
+Summary: 1 package finished [0.55s]
+# exit status: 0
+## (f2) PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 colcon test --packages-select beaconmind_description --event-handlers console_direct+ --pytest-args -v -rs, then colcon test-result --verbose
+Starting >>> beaconmind_description
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: /workspace/course-project/ros2_ws/build/beaconmind_description/.pytest_cache
+rootdir: /workspace/course-project/ros2_ws/src/beaconmind_description
+collecting ... collected 20 items
+
+test/test_urdf.py::test_xacro_expands PASSED                             [  5%]
+test/test_urdf.py::test_link_names PASSED                                [ 10%]
+test/test_urdf.py::test_wheel_separation_equals_track_width PASSED       [ 15%]
+test/test_urdf.py::test_wheel_radius_half_diameter PASSED                [ 20%]
+test/test_urdf.py::test_optical_frame_matches_camera_json SKIPPED (/...) [ 25%]
+test/test_urdf.py::test_optical_frame_pose_from_measurements PASSED      [ 30%]
+test/test_urdf.py::test_caster_touches_floor PASSED                      [ 35%]
+test/test_urdf.py::test_no_range_sensor PASSED                           [ 40%]
+test/test_urdf.py::test_total_mass_matches_car_json PASSED               [ 45%]
+test/test_urdf.py::test_props_up_to_date PASSED                          [ 50%]
+test/test_urdf.py::test_props_files_do_not_overlap PASSED                [ 55%]
+test/test_urdf.py::test_gen_props_rejects_bad_input PASSED               [ 60%]
+test/test_urdf.py::test_gen_props_camera_labels_follow_the_extrinsics_used PASSED [ 65%]
+test/test_urdf.py::test_optical_to_link_rpy PASSED                       [ 70%]
+test/test_urdf.py::test_measurement_reader_follows_the_writer_rules PASSED [ 75%]
+test/test_urdf.py::test_imu_pose_from_measurements PASSED                [ 80%]
+test/test_urdf.py::test_com_matches_lever_rule PASSED                    [ 85%]
+test/test_urdf.py::test_chassis_boxes_clear_floor_and_tyres PASSED       [ 90%]
+test/test_urdf.py::test_chassis_boxes_do_not_overlap PASSED              [ 95%]
+test/test_urdf.py::test_every_visual_has_inline_colour PASSED            [100%]
+
+- generated xml file: /workspace/course-project/ros2_ws/build/beaconmind_description/pytest.xml -
+=========================== short test summary info ============================
+SKIPPED [1] test/test_urdf.py:463: /workspace/course-project/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUMED 0) meanwhile
+======================== 19 passed, 1 skipped in 0.10s =========================
+Finished <<< beaconmind_description [0.29s]
+
+Summary: 1 package finished [0.38s]
+# colcon test exit status: 0
+Summary: 20 tests, 0 errors, 0 failures, 1 skipped
+# colcon test-result exit status: 0
+## (f3) final re-run after the last file sync (template header comment and docs synced after (f1)/(f2)), 2026-10-10T09:10:58-0500
+b81f8d74e2eb5c4b347438f0584a98f947c0d8b0133f4bc988c7e7ca8ef9f81d  ros2_ws/src/beaconmind_description/test/test_urdf.py
+c87aead8a7b6d495bee5c09cb677043001bacac48c3f66a6887cb93a4ab322de  ros2_ws/src/beaconmind_description/urdf/car_geometry_extras.xacro
+8f21e2702593fb0e19fbebbdb490b6873955c9059d72bfe78ddeee1e9b688b00  tools/car_measurements_template.csv
+up to date: /workspace/course-project/ros2_ws/src/beaconmind_description/urdf/car_props.xacro
+Summary: 1 package finished [0.54s]
+======================== 19 passed, 1 skipped in 0.12s =========================
+# colcon test exit status: 0
+Summary: 20 tests, 0 errors, 0 failures, 1 skipped
+# colcon test-result exit status: 0
+beaconmind pytest (Python 3.10, PYTEST_DISABLE_PLUGIN_AUTOLOAD=1): 55 passed in 0.28s
+# (the first beaconmind pytest call in final.sh sourced Humble without PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 and stopped on the
+#  known plugin error before collecting; the line above is the re-run with the variable set)
+# end check: container only the old zombie 1645 [tf2_echo] <defunct>; host: no ROS process. No ROS node was started.

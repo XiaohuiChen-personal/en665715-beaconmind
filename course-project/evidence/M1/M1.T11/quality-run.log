@@ -1,0 +1,26 @@
+start 2026-10-07T00:46:59-05:00
+prompt_chars 14878 scenarios S1_duplicate_new,S2_refuse_request,S3_third_id_rejected,S4_refuse_in_explore tools 9
+keys openai=True anthropic=True
+=== claude-sonnet-5-5 settings {"thinking": {"type": "between_tools"}, "output_config": {"effort": "high"}, "reasoning": null, "store": null, "max_tokens": 64000, "temperature": null, "tool_choice": null}
+claude-sonnet-5-5 S1_duplicate_new 17.4s 7 tool calls PASS [] 
+claude-sonnet-5-5 S2_refuse_request 18.9s 7 tool calls PASS [] 
+claude-sonnet-5-5 S3_third_id_rejected 19.7s 6 tool calls PASS [] 
+claude-sonnet-5-5 S4_refuse_in_explore 16.9s 6 tool calls FAIL ['parses', 'mission and step as given', 'pose_source=position_fix', 'pose = the position fix', 'det0 matched B5', 'B5 unchanged but odo_last_seen_m refreshed', 'B1 unchanged', 'det1 new B1b', 'B1b at map_point from the fix', 'B1b new-entry fields (tentative, n_obs 1, from the fix, odo, 0 conflicts)', 'decision REFUSED', "message present, not Example 2's", 'move_result not_called', 'requested_mission null', 'map labels unique and as expected', 'all_pass'] 
+=== gpt-6-sol settings {"thinking": null, "output_config": null, "reasoning": {"effort": "none"}, "store": null, "max_tokens": 64000, "temperature": null, "tool_choice": null}
+gpt-6-sol S1_duplicate_new 16.5s 7 tool calls PASS [] 
+gpt-6-sol S2_refuse_request 12.8s 5 tool calls PASS [] 
+gpt-6-sol S3_third_id_rejected 11.3s 6 tool calls PASS [] 
+gpt-6-sol S4_refuse_in_explore 10.5s 5 tool calls PASS [] 
+=== claude-opus-5-5 settings {"thinking": null, "output_config": {"effort": "medium"}, "reasoning": null, "store": null, "max_tokens": 64000, "temperature": null, "tool_choice": null}
+claude-opus-5-5 S1_duplicate_new 16.3s 7 tool calls PASS [] 
+claude-opus-5-5 S2_refuse_request 20.3s 5 tool calls PASS [] 
+claude-opus-5-5 S3_third_id_rejected 21.2s 6 tool calls PASS [] 
+claude-opus-5-5 S4_refuse_in_explore 17.4s 5 tool calls PASS [] 
+fable not run: a Claude model called compose_odometry or was skipped
+=== gpt-6-astra settings {"thinking": null, "output_config": null, "reasoning": {"effort": "high"}, "store": null, "max_tokens": 64000, "temperature": null, "tool_choice": null}
+gpt-6-astra S1_duplicate_new 23.9s 7 tool calls PASS [] 
+gpt-6-astra S2_refuse_request 22.4s 5 tool calls PASS [] 
+gpt-6-astra S3_third_id_rejected 18.2s 6 tool calls PASS [] 
+gpt-6-astra S4_refuse_in_explore 20.4s 5 tool calls PASS [] 
+wrote /workspace/course-project/evidence/M1/M1.T11/quality-results.md
+exit 0 2026-10-07T00:51:44-05:00

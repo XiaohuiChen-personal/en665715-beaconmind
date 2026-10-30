@@ -1,0 +1,13 @@
+# Compile only. Upload has not run.
+# FQBN: esp32:esp32:esp32cam:FlashFreq=40,FlashMode=dio
+# BUILD_EXIT:0 on 2026-10-06.
+# Previous bootloader (FlashMode=qio default, FlashFreq=40) sha256
+# 2da374cc3a53e0a629e5880660a6b1e9e98ed1bb0f560ea75a5bd2a3276a1b8d (25040 bytes).
+# This bootloader sha256
+# f7ec7b7d9026e12dd3616bf79cee0e78974a2605afbc2863fcfb0ac9aeb159d4 (23520 bytes).
+# image-info: Flash freq: 40m. Flash mode: DIO. Segment 1 load 0x40078000 length 0x03d10.
+# Source ELF name from platform.txt: bootloader_dio_40m.elf
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: saved the DIO-bootloader compile result.
+
+--flash-mode dio --flash-freq 40m --flash-size 4MB
+Sketch uses 1026625 bytes (32%) of program storage space. Maximum is 3145728 bytes.

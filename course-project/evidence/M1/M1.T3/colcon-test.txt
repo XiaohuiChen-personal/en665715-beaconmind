@@ -1,0 +1,19 @@
+=== colcon build ===
+Starting >>> beaconmind_bringup
+Finished <<< beaconmind_bringup [0.66s]
+
+Summary: 1 package finished [0.75s]
+=== colcon test ===
+Starting >>> beaconmind_bringup
+--- stderr: beaconmind_bringup
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.000s
+
+OK
+---
+Finished <<< beaconmind_bringup [0.16s]
+
+Summary: 1 package finished [0.29s]
+  1 package had stderr output: beaconmind_bringup
+Summary: 0 tests, 0 errors, 0 failures, 0 skipped

@@ -1,0 +1,68 @@
+# M2.T4: a ROS 2 CLI daemon left running by the 2026-10-10 build session, found by review and stopped (spark-2a60).
+#
+# What it was: step 9's `ros2 node list` / `ros2 topic echo` calls (domain 47, ROS_LOCALHOST_ONLY=1) auto-started
+# the ros2cli daemon at 12:34:35 container time (UTC) = 07:34:35 CDT. The end-of-session check only ran
+# `pgrep -af "robot_state_publisher|tf2_echo|ros2 launch"`, which does not match the daemon, so CONTEXT.md and the
+# evidence said "nothing new is running" although this process was still up. Output below is pasted from the runs.
+
+## Before (2026-10-10 ~07:52 CDT)
+$ docker exec beaconmind-ros pgrep -af ros2
+1682 /usr/bin/python3 -c from ros2cli.daemon.daemonize import main; main() --name ros2-daemon --ros-domain-id 47 --rmw-implementation rmw_fastrtps_cpp
+$ docker exec beaconmind-ros ps -eo pid,ppid,stat,lstart,cmd
+    PID    PPID STAT                  STARTED CMD
+      1       0 Ss   Tue Oct  6 23:52:33 2026 sleep infinity
+    313       1 Z    Tue Oct  6 23:57:07 2026 [python3] <defunct>
+    919       1 Z    Wed Oct  7 05:15:01 2026 [python3] <defunct>
+   1645       1 Z    Sat Oct 10 12:34:30 2026 [tf2_echo] <defunct>
+   1682       1 Sl   Sat Oct 10 12:34:35 2026 /usr/bin/python3 -c from ros2cli.daemon.daemonize import main; main() --name ros2-daemon --ros-domain-id 47 --rmw-implementation rmw_fastrtps_cpp
+$ (its /proc/1682/environ, filtered)
+ROS_DOMAIN_ID=47
+ROS_LOCALHOST_ONLY=1
+
+## Stop (inside beaconmind-ros only; same domain and localhost setting as the daemon)
+$ ssh -o BatchMode=yes xiaohui_chen@spark-2a60 "docker exec beaconmind-ros bash -lc 'source /opt/ros/humble/setup.bash && ROS_DOMAIN_ID=47 ROS_LOCALHOST_ONLY=1 ros2 daemon stop'"
+The daemon has been stopped
+exit=0
+
+## After
+$ docker exec beaconmind-ros pgrep -af ros2
+(no output)
+pgrep_exit=1
+$ docker exec beaconmind-ros ps -eo pid,ppid,stat,cmd
+    PID    PPID STAT CMD
+      1       0 Ss   sleep infinity
+    313       1 Z    [python3] <defunct>
+    919       1 Z    [python3] <defunct>
+   1645       1 Z    [tf2_echo] <defunct>
+   1682       1 Z    [python3] <defunct>
+# 1682 exited and is now a zombie entry: the container's PID 1 is `sleep infinity`, which never reaps children.
+# A zombie uses no CPU, holds no socket and no DDS participant; it disappears when the container restarts.
+# `init: true` in course-project/docker/docker-compose.yml would reap these (an M1.T3 change, not made here).
+
+## Not this task's, not touched
+# On the Spark HOST (not in the container) another ros2 daemon is running:
+#   308295  started Sat Oct 10 06:08:10 2026 (CDT), user session scope, --ros-domain-id 87
+#   its environ: PWD=/tmp/bmcheck, AMENT_PREFIX_PATH=/tmp/bmcheck/ws/install/beaconmind_description:/opt/ros/jazzy,
+#   SSH_CONNECTION from this Mac. So an earlier host-Jazzy check of the description package (before the 07:3x build
+#   session, which worked only inside beaconmind-ros on domain 47) started it. It was NOT stopped here because this
+#   session did not start it; it is reported in CONTEXT.md. To stop it (harmless; the CLI restarts a daemon on demand):
+#   ssh -o BatchMode=yes xiaohui_chen@spark-2a60 'source /opt/ros/jazzy/setup.bash && ROS_DOMAIN_ID=87 ros2 daemon stop'
+# Host PID 357075 [tf2_echo] <defunct> is the container's 1645 seen from the host (NSpid 357075 1645).
+
+## Update (second review, 2026-10-10 08:24 CDT): the domain-87 HOST daemon above had EXITED by ~08:15. Nothing to stop.
+# The paragraph above described it as running and told Xiaohui to stop it; that is stale. Checked on the Spark host
+# (not in the container), output pasted from the run:
+$ ssh -o BatchMode=yes xiaohui_chen@spark-2a60 '...'   (host shell)
+2026-10-10T08:24:19-0500
+$ pgrep -af "[r]os2cli.daemon|[r]os2-daemon"
+pgrep_exit=1
+$ ls -d /proc/308295
+ls: cannot access '/proc/308295': No such file or directory
+$ ps -eo pid,ppid,stat,lstart,cmd | grep -E "[r]os2|[t]f2|[r]obot_state"
+ 357075 1383933 Z    Sat Oct 10 07:34:30 2026 [tf2_echo] <defunct>
+# So no ros2 daemon runs on the host. The only ROS-related host entry is pid 357075 [tf2_echo] <defunct>, which is the
+# container's zombie 1645 seen from the host. The second review's own host ps check found no daemon at about
+# 08:15 CDT, so pid 308295 exited between the 07:52 record above and ~08:15; its exact exit time cannot be read
+# back, and nothing on record says whether it exited by itself or someone stopped it (this session did not). The round-3 test runs (08:32-08:33 CDT, domain 141, localhost
+# only) started no ROS node; the end check found no daemon in beaconmind-ros (only the four zombies 313, 919, 1645,
+# 1682) and none on the host.

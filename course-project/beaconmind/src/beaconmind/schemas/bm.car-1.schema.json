@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.car-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/M1-foundations.md M1.T2 (M1.T9 output).",
+  "title": "bm.car/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "values",
+    "measured"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bm.car/1"
+    },
+    "values": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "value",
+          "unit",
+          "status",
+          "source",
+          "evidence",
+          "updated",
+          "uncertainty"
+        ],
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              }
+            ]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "DV",
+              "measured"
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "uncertainty": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "measured": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "by",
+        "date",
+        "instruments",
+        "notes"
+      ],
+      "properties": {
+        "by": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "instruments": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

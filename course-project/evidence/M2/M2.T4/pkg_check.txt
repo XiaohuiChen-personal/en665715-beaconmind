@@ -1,0 +1,15 @@
+# M2.T4 step 2 (verification step). Host spark-2a60, container beaconmind-ros. 2026-10-10T07:34:21-05:00
+# command: docker exec beaconmind-ros bash -lc 'source /opt/ros/humble/setup.bash && ros2 pkg prefix xacro && ros2 pkg prefix robot_state_publisher && ros2 pkg prefix tf2_ros'
+/opt/ros/humble
+/opt/ros/humble
+/opt/ros/humble
+# exit status: 0
+# package versions (dpkg-query in beaconmind-ros):
+ros-humble-robot-state-publisher	3.0.3-2jammy.20260908.051617
+ros-humble-tf2-ros	0.25.23-1jammy.20260908.042633
+ros-humble-xacro	2.1.1-1jammy.20260307.132851
+# bind mounts of beaconmind-ros (docker inspect): repository mounted at /workspace
+bind /home/xiaohui_chen/Projects/EN.665.715 -> /workspace rw=true
+
+# pytest in beaconmind-ros:
+pytest 9.1.1

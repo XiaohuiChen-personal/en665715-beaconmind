@@ -1,0 +1,76 @@
+{
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote configs/providers.json from plan/README.md C11.",
+  "schema": "bm.providers/1",
+  "models": {
+    "qwen35-a3b-think": {
+      "provider": "vllm",
+      "base_url": "http://127.0.0.1:8000/v1",
+      "model": "Qwen/Qwen3.5-35B-A3B",
+      "api_key_env": null,
+      "thinking": true,
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "presence_penalty": 1.5
+      },
+      "price_usd_per_mtok": {
+        "input": 0,
+        "cached_input": 0,
+        "output": 0
+      },
+      "price_checked": null,
+      "max_turns_per_step": 30,
+      "request_timeout_s": 900,
+      "options": {}
+    },
+    "qwen35-a3b-instruct": {
+      "provider": "vllm",
+      "base_url": "http://127.0.0.1:8000/v1",
+      "model": "Qwen/Qwen3.5-35B-A3B",
+      "api_key_env": null,
+      "thinking": false,
+      "sampling": {
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 20,
+        "presence_penalty": 1.5
+      },
+      "price_usd_per_mtok": {
+        "input": 0,
+        "cached_input": 0,
+        "output": 0
+      },
+      "price_checked": null,
+      "max_turns_per_step": 30,
+      "request_timeout_s": 900,
+      "options": {}
+    },
+    "gpt-6-sol-low": {
+      "provider": "openai_responses",
+      "model": "gpt-6-sol",
+      "api_key_env": "OPENAI_API_KEY",
+      "price_usd_per_mtok": {
+        "input": 2.0,
+        "cached_input": null,
+        "output": 10.0
+      },
+      "price_checked": "2026-09-27",
+      "options": {
+        "reasoning_effort": "low"
+      }
+    },
+    "claude-opus-5-5": {
+      "provider": "anthropic_messages",
+      "model": "claude-opus-5-5",
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "price_usd_per_mtok": {
+        "input": 4.0,
+        "cached_input": null,
+        "output": 20.0
+      },
+      "price_checked": "2026-09-27",
+      "options": {}
+    }
+  }
+}

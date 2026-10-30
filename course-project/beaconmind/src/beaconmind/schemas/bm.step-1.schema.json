@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.step-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C3.",
+  "title": "bm.step/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mission",
+    "operator_request",
+    "OBSERVATION",
+    "PREVIOUS_REPORT"
+  ],
+  "properties": {
+    "mission": {
+      "type": "string",
+      "pattern": "^(EXPLORE|RETURN_TO_START|REPORT|STOP|GO_TO_BEACON B[0-9]+b?)$"
+    },
+    "operator_request": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "OBSERVATION": {
+      "$ref": "https://schemas.beaconmind.invalid/bm.observation-1.schema.json"
+    },
+    "PREVIOUS_REPORT": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "https://schemas.beaconmind.invalid/bm.report-1.schema.json"
+        }
+      ]
+    }
+  }
+}

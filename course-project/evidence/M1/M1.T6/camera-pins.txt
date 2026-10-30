@@ -1,0 +1,24 @@
+# Pinned image bm-esp32-builder, esp32 core 3.3.12. The same block was printed again after the pin rebuild.
+# Command: docker run --rm bm-esp32-builder bash -c 'f=$(find / -name camera_pins.h -path "*CameraWebServer*" 2>/dev/null | head -1); echo FILE $f; grep -n -A18 "CAMERA_MODEL_AI_THINKER" "$f"'
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: saved the installed core's AI-Thinker pin block. No sketch code was copied.
+
+FILE /root/.arduino15/packages/esp32/hardware/esp32/3.3.12/libraries/ESP32/examples/Camera/CameraWebServer/camera_pins.h
+160:#elif defined(CAMERA_MODEL_AI_THINKER)
+161-#define PWDN_GPIO_NUM  32
+162-#define RESET_GPIO_NUM -1
+163-#define XCLK_GPIO_NUM  0
+164-#define SIOD_GPIO_NUM  26
+165-#define SIOC_GPIO_NUM  27
+166-
+167-#define Y9_GPIO_NUM    35
+168-#define Y8_GPIO_NUM    34
+169-#define Y7_GPIO_NUM    39
+170-#define Y6_GPIO_NUM    36
+171-#define Y5_GPIO_NUM    21
+172-#define Y4_GPIO_NUM    19
+173-#define Y3_GPIO_NUM    18
+174-#define Y2_GPIO_NUM    5
+175-#define VSYNC_GPIO_NUM 25
+176-#define HREF_GPIO_NUM  23
+177-#define PCLK_GPIO_NUM  22
+178-

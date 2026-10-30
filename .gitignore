@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+._*
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Cited papers for the report. Copyrighted; the report stands without them.
+course-project/report/sources/
+
+# Spark-side captures and other local data
+course-project/data/
+
+# Wi-Fi credentials. Example headers stay tracked.
+**/wifi_config.h
+secrets*.env
+
+# Firmware compiler output
+course-project/firmware/**/build/
+
+# Isaac Sim local render output
+course-project/sim/isaac/_out/
+
+# IEEEtran report build products. The .tex source and the PDF stay tracked.
+course-project/report/*.aux
+course-project/report/*.log
+course-project/report/*.out
+course-project/report/*.fls
+course-project/report/*.fdb_latexmk
+course-project/report/*.synctex
+course-project/report/*.synctex.gz

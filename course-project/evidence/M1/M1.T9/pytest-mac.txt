@@ -1,0 +1,21 @@
+# Mac, course-project/beaconmind, 2026-10-10T08:37:40-0500, after the second review's fixes (final): ../.venv/bin/python -m pytest -q -p no:cacheprovider
+.......................................................                  [100%]
+55 passed in 0.39s
+# exit status: 0
+# verbose run of the car-model test file:
+tests/test_car_model.py::test_effective_diameter PASSED                  [  6%]
+tests/test_car_model.py::test_track_width_mean PASSED                    [ 13%]
+tests/test_car_model.py::test_sweep_radius_max PASSED                    [ 20%]
+tests/test_car_model.py::test_counts_per_rev PASSED                      [ 26%]
+tests/test_car_model.py::test_mean_and_spread PASSED                     [ 33%]
+tests/test_car_model.py::test_car_json_validates PASSED                  [ 40%]
+tests/test_car_model.py::test_writer_rows_rules_and_derived PASSED       [ 46%]
+tests/test_car_model.py::test_override_uncertainty_does_not_depend_on_the_row_unit PASSED [ 53%]
+tests/test_car_model.py::test_whole_csv_in_m_and_kg_builds_the_same_car_json PASSED [ 60%]
+tests/test_car_model.py::test_writer_imu_z_row_is_used_as_is PASSED      [ 66%]
+tests/test_car_model.py::test_writer_rollout_branch PASSED               [ 73%]
+tests/test_car_model.py::test_configs_car_json_is_the_writer_output PASSED [ 80%]
+tests/test_car_model.py::test_template_lists_every_quantity PASSED       [ 86%]
+tests/test_car_model.py::test_template_blank_builds_nothing PASSED       [ 93%]
+tests/test_car_model.py::test_template_filled_under_plan_keys_matches_the_evidence_build PASSED [100%]
+============================== 15 passed in 0.04s ==============================

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>beaconmind_bringup</name>
+  <version>0.1.0</version>
+  <description>BeaconMind Humble bringup for the apriltag smoke graph.</description>
+  <maintainer email="xhchen0328@utexas.edu">Xiaohui Chen</maintainer>
+  <license>Proprietary</license>
+
+  <!-- AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote the beaconmind_bringup manifest. -->
+
+  <exec_depend>apriltag_ros</exec_depend>
+  <exec_depend>image_proc</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

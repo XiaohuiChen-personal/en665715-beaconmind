@@ -1,0 +1,20 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.7, pytest-9.1.1, pluggy-1.6.0 -- /Users/xiaohuichen/Projects/EN.665.715/course-project/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/xiaohuichen/Projects/EN.665.715/course-project/beaconmind
+configfile: pyproject.toml
+testpaths: tests
+collecting ... collected 37 items / 27 deselected / 10 selected
+
+tests/test_geometry.py::test_vendored_reference_hash PASSED              [ 10%]
+tests/test_geometry.py::test_wrap_deg_edges PASSED                       [ 20%]
+tests/test_geometry.py::test_compose_odometry_heading_90 PASSED          [ 30%]
+tests/test_geometry.py::test_matches_reference_random PASSED             [ 40%]
+tests/test_geometry.py::test_example1_numbers PASSED                     [ 50%]
+tests/test_geometry.py::test_example3_numbers PASSED                     [ 60%]
+tests/test_geometry.py::test_gate_widening_caps PASSED                   [ 70%]
+tests/test_geometry.py::test_dv_override_changes_gate PASSED             [ 80%]
+tests/test_schemas.py::test_c2_examples_validate PASSED                  [ 90%]
+tests/test_schemas.py::test_d8_example1_validates PASSED                 [100%]
+
+====================== 10 passed, 27 deselected in 0.15s =======================

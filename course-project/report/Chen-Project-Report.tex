@@ -1,0 +1,314 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%
+% Class Project Report -- EN.665.715 Embodied Agentic AI for Robotic Control
+% Built from the instructor's "Class Project Template" (conference_101719.tex, IEEEtran).
+% DRAFT STATUS: only Section II (Related Works) and the References are written.
+% AI assistance: Claude Fable 5.1 via Claude Code drafted this file; see the disclosure
+% section before the references.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{comment}
+% caption=false keeps IEEEtran's own caption format (centered small-caps table titles);
+% the template loaded subfig without it, which lets the caption package override that format.
+\usepackage[caption=false,font=footnotesize]{subfig}
+% Balances the two columns of the last page (the reference list).
+\usepackage{flushend}
+\newcommand{\centered}[1]{\begin{tabular}{l} #1 \end{tabular}}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+% Marker for the sections that this draft does not cover.
+\newcommand{\laterdraft}{\textit{Reserved for a later draft.}}
+\begin{document}
+% IEEE reference style: more than six authors are printed as "first author et al."
+\bstctlcite{IEEEexample:BSTcontrol}
+
+\title{BeaconMind: Can a Large Language Model Own Landmark SLAM?\\
+%{\footnotesize \textsuperscript{*}Note: Sub-titles are not captured %in Xplore and
+%should not be used}
+%\thanks{Identify applicable funding agency here. If none, delete this.}
+}
+
+\author{\IEEEauthorblockN{Xiaohui Chen}
+\IEEEauthorblockA{\textit{Engineering for Professionals, Whiting School of Engineering} \\
+\textit{Johns Hopkins University}\\
+Baltimore, United States \\
+EN.665.715 Embodied Agentic AI for Robotic Control (individual project)}
+}
+
+\maketitle
+
+\begin{abstract}
+Reserved for a later draft. This submission covers only Section~\ref{sec:related}
+(Related Works) and the References; the other sections are placeholders.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Reserved for a later draft.
+\end{IEEEkeywords}
+
+\section{Introduction}
+\laterdraft
+
+\section{Related Works}\label{sec:related}
+BeaconMind, the system proposed in this project, asks which parts of landmark-based
+simultaneous localization and mapping (SLAM) a large language model (LLM) can own, that
+is, for which parts the model itself can make the estimation decisions. A low-cost
+differential-drive car with wheel encoders, an inertial measurement unit, and one
+monocular camera, but no range sensor, explores a walled arena whose only landmarks are
+AprilTags printed on paper and fixed to the walls. Each physical tag is a \emph{beacon};
+because tag identifiers may repeat in the benchmark, an identifier does not always name one
+beacon. The car moves in a stop-observe-decide-move cycle. At each stop, an LLM agent
+receives the odometry increment and the tag detections as text, obtains every geometric
+quantity from deterministic tools, and maintains its estimate of the car's pose (the pose
+belief) and the beacon map: it decides which detections to trust, which beacon a detection
+belongs to, whether a pose fix or a loop closure (a recognized revisit) is accepted, and
+which of a few fixed, short moves to make next. The project is at the design stage, so
+statements about BeaconMind describe the planned system and its planned evaluation, not
+results. Four strands of prior work shape the design; for each, this section summarizes
+what was shown, what it leaves open, and how BeaconMind differs.
+
+\subsection{Language-Conditioned Planning and Closed-Loop Agents}
+A first line of work made LLM plans executable by grounding them in what the robot can
+do. Huang \textit{et~al.} showed that a pretrained LLM decomposes a household task into
+plausible steps, but that naively generated plans often cannot be mapped to admissible
+actions~\cite{huang2022zeroshot}. SayCan addressed this by weighting each candidate skill
+with a learned affordance value; removing that grounding lowered planning success from
+84\% to 67\% over 101 instructions~\cite{ahn2022saycan}. Inner Monologue then returned
+success detection and scene descriptions to the planner as text and found that
+closed-loop language feedback significantly improves instruction
+completion~\cite{huang2023inner}. ReAct formulated the pattern in general form,
+interleaving reasoning, action, and observation, and outperformed imitation and
+reinforcement learning baselines on the ALFWorld and WebShop benchmarks by 34 and 10
+percentage points in success rate, respectively~\cite{yao2023react}. Kambhampati
+\textit{et~al.} argue that this line of work has a limit: LLMs can neither plan nor verify
+plans by themselves and, in what the authors call an LLM-Modulo framework, should generate
+candidates that external, sound verifiers check~\cite{kambhampati2024llmmodulo}.
+
+These ideas are now packaged for robot software. ROSA wraps the Robot Operating System
+(ROS) in a ReAct agent with predefined tools so that operators can command robots in
+natural language~\cite{royce2025rosa}, and the survey by Salimpour \textit{et~al.}
+classifies such integrations from single-shot protocol translation, through ReAct-style
+agentic interfaces and orchestration, to end-to-end embedded
+policies~\cite{salimpour2025towards}. Benchmarks quantify what still fails. The Embodied
+Agent Interface reports that trajectory-feasibility errors are common (45.2\%), a large
+portion of them missing-step and additional-step errors~\cite{li2024embodied}, and in
+SafeAgentBench the most safety-conscious agent rejects only 10\% of detailed hazardous
+tasks~\cite{yin2025safeagentbench}.
+
+\begin{table*}[t]
+\caption{Division of Labor Between the Language Model and Classical Geometry in Representative Prior Systems and in BeaconMind}
+\label{tab:division}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{p{0.17\textwidth} p{0.36\textwidth} p{0.40\textwidth}}
+\hline
+\textbf{System} & \textbf{Pose and map supplied by} & \textbf{What the language model contributes} \\
+\hline
+SayPlan~\cite{rana2023sayplan} & Pre-constructed 3D scene graph & Task planning over the scene graph \\
+VLFM~\cite{yokoyama2024vlfm} & Odometry sensor; occupancy map built from depth & Scores which frontier to explore (vision-language model) \\
+L3MVN~\cite{yu2023l3mvn} & Odometry sensor; semantic map from RGB-D images & Selects the frontier relevant to the target object \\
+Lee \textit{et~al.}~\cite{lee2026spatial} & Cartographer SLAM (Nav2 executes the goals) & Picks goals from annotated map images; logs semantics \\
+Syarubany \textit{et~al.}~\cite{syarubany2026llm} & ORB-SLAM3 global pose; AprilTags as anchors & One constrained discrete command at each junction \\
+SEO-SLAM~\cite{hong2025seoslam} & Odometry, linear-assignment association, factor graph & Object verification, label refinement, and landmark merging \\
+Sandfuchs \textit{et~al.}~\cite{sandfuchs2026llms} & Oracle localization in a text gridworld & One grid move per step, to explore or to navigate \\
+\hline
+BeaconMind (this project, planned) & The LLM's pose belief and beacon map, updated at every stop with single-timestep geometry tools; in the primary design a classical factor graph serves only as the reference & Which detections to trust, data association under duplicated tag identifiers, acceptance of pose fixes and loop closures, map updates, and the choice of each move \\
+\hline
+\end{tabular}
+\end{table*}
+
+BeaconMind adopts these lessons. Its agent is a ReAct-style agentic interface in the
+survey's classification, and ROSA is its planned demonstration runtime; the benchmark will
+instead use a minimal harness that exposes only the project's own tools, because stock
+ROSA adds its own tools and fixed prompts to every call and would confound a comparison
+of models. Its actions are admissible by construction, because the agent may choose only
+from a small fixed set of short moves, and its loop is closed, because every decision
+starts from a fresh observation. The missing-step and additional-step errors that the
+Embodied Agent Interface reports cannot arise in that form, since the agent emits one
+move per observation instead of a multi-step plan. Following the LLM-Modulo argument, a
+deterministic validator between the model and the motors rejects any move outside that set
+or beyond the safety limits. Because the agent also accepts free-text operator requests,
+its refusal of unsafe ones is proposed to be measured with a fixed request suite and a
+rejection rate adapted from SafeAgentBench. The difference lies in what the model reasons
+about: the works above plan \emph{tasks} and take the robot's state as given, whereas
+BeaconMind asks the model to estimate that state, the pose and the map that such plans
+presuppose.
+
+\subsection{Language Models in Navigation, Mapping, and SLAM}
+In the language-driven navigation systems reviewed here, the geometry stays classical
+(Table~\ref{tab:division}). SayPlan plans over a pre-constructed 3D scene graph and
+delegates path planning to Dijkstra's algorithm; its authors report that the LLM fails at
+simple distance-based reasoning and name the pre-built, static graph as a
+limitation~\cite{rana2023sayplan}, whereas BeaconMind's map does not exist before the run
+and is built by the agent. For unknown spaces, VLFM builds an occupancy map from depth
+observations and uses a vision-language model to score frontiers (the boundaries between
+explored and unexplored space) and pick the next one to visit~\cite{yokoyama2024vlfm},
+and L3MVN has an LLM select the relevant frontier from a semantic map built from RGB-D
+images~\cite{yu2023l3mvn}; both report strong object-goal navigation results in
+simulation and a real-robot demonstration. Both also need depth to build the map and take
+the robot's position from an odometry sensor; BeaconMind has no range sensor, so its map
+is a set of beacon coordinates, not an occupancy grid. Lee \textit{et~al.} connect LLMs to
+ROS through Model Context Protocol tools that render the occupancy grid as annotated
+images; with Cartographer for SLAM and Nav2 for navigation in Isaac Sim, Claude Sonnet 4.6
+and GPT-5.5 reach 97.8\% and 99.8\% map coverage and succeed in 26 and 28 of 30
+spatial-reasoning navigation trials, respectively~\cite{lee2026spatial}. The closest
+system identified in the literature search is that of Syarubany \textit{et~al.}: an LLM
+issues one constrained discrete command at each corridor junction, and AprilTags serve as
+stable anchors, but ORB-SLAM3 provides the global pose and the evaluation of the
+integrated system is qualitative~\cite{syarubany2026llm}.
+
+Where language models come closer to SLAM itself, they supply semantics or discrete
+choices, not estimates. SEO-SLAM assigns multimodal LLM agents to object verification,
+label refinement, and landmark merging, and reports higher semantic accuracy and fewer
+false positives than its baselines, while data association (deciding which landmark an
+observation belongs to) is solved as a linear assignment problem over semantic and
+Mahalanobis distances and the map comes from factor-graph optimization, the standard
+graph-based formulation of SLAM~\cite{hong2025seoslam}. Lyu \textit{et~al.} let a
+multimodal LLM make the final choice among place-recognition candidates retrieved by a
+vision foundation model~\cite{lyu2024tell}; this is a language-based form of the place
+recognition behind loop closure, but its output is a choice among images, not a pose.
+Sandfuchs \textit{et~al.} evaluate nine LLMs as text-only controllers in partially
+observable gridworlds in which the agent's coordinates are always known, and they state
+the boundary explicitly: ``This is not SLAM: the uncertainty is in the map, not in
+pose''~\cite{sandfuchs2026llms}. The strongest reasoning-tuned models (GPT-5 and
+GPT-OSS-120B) reach the goal in all three layouts, but with the pose supplied, which is
+the condition BeaconMind removes. Learned visual navigation policies such as NoMaD
+sidestep metric estimation altogether: they use no language model, turn camera images
+directly into actions and, for long horizons, rely on a topological graph of past
+observations instead of a metric map~\cite{sridhar2024nomad}. BeaconMind lists such a
+policy as a candidate exploration baseline; it cannot be scored on pose or map error,
+because it yields no metric pose or map.
+
+In none of the language-model systems above is the robot's pose estimate in the model's
+hands. SEO-SLAM comes closest on the map side: its agents prune and merge object landmarks
+produced by a conventional detection, association, and factor-graph pipeline and feed
+those edits back into the graph. The paper scores the semantic precision and recall of
+the resulting map and the absolute pose error of the optimized trajectory, but the
+estimate remains the optimizer's. None of these systems can say how accurate a pose or a
+geometric map maintained by a language model would be. BeaconMind moves that responsibility to the LLM: deterministic tools still
+do the arithmetic, but the LLM decides at every stop which results enter the pose belief
+and the beacon map. In the primary design the classical estimator is kept only as a
+reference (variants with no tools, or with the LLM on top of the classical estimator, are
+proposed as stretch conditions), and the LLM's belief is scored against ground truth at every stop. To
+my knowledge, no prior study reports a trajectory or map error for a landmark-SLAM
+estimate maintained by an LLM. That measurement is the gap this project targets, and a
+negative outcome would still be informative.
+
+\subsection{Limits of LLM Spatial Reasoning and the Case for Tools}
+Recent diagnostics show why handing estimation to a language model is risky, and they
+shape how BeaconMind does it. Jiang \textit{et~al.} find that single-call, whole-route
+maze navigation by GPT-4o, DeepSeek-V3, and Llama-3.3-70B falls to near-zero success by
+$10\times10$ mazes; that structured coordinate text is the most navigable input format,
+far ahead of rendered images; and that handing corridor walking and dead-end retreat to a
+deterministic walker, with the model queried only at junctions through an explicit
+cell-type prompt, lifts GPT-4o's success by up to 92 percentage points at mid sizes,
+although the collapse returns by $30\times30$~\cite{jiang2026lost}. Li \textit{et~al.}
+find that models treat each spatial question independently instead of building cumulative
+spatial knowledge, and that accuracy depends on the representation: Gemini-2.5-Flash with
+chain-of-thought prompting reaches \mbox{80--86\%} on small mazes given as adjacency lists
+but \mbox{16--34\%} when they are given as visual character grids~\cite{li2026llms}. For
+perception, Deng \textit{et~al.} show that the best vision-language model reaches a
+macro-F1 of 0.66 on relative camera pose estimation, where a geometric pipeline (LoFTR)
+reaches 0.99 and humans 0.91~\cite{deng2026lost}. These results do not contradict Lee
+\textit{et~al.}, whose models read annotated map images to pick goal positions and judge
+coverage while a classical planner executed every path. On the constructive side, PAL
+shows that LLMs decompose problems well but make arithmetic mistakes even when the
+decomposition is correct, and that off-loading the solution step to a program interpreter
+gives more accurate results than much larger models~\cite{gao2023pal}.
+
+BeaconMind is designed around these findings. The model receives the tag detector's output
+(identifier, range, bearing, and a quality score) as structured text rather than pixels,
+with raw-image input kept as a separate planned ablation, and it keeps its state in
+explicit coordinates. As in PAL, every geometric quantity comes from a deterministic tool;
+unlike PAL's interpreter, which solves the whole problem, each tool is restricted to a
+single timestep: it is a function of one stop's detections, the previous belief, and a
+few harness counters, for example composing one odometry increment, converting one range
+and bearing into a map point, or fixing the pose from the beacons seen at that stop. None
+optimizes over the observation history. The system prompt prescribes a per-step procedure
+(predict, associate, correct the pose, update the map, check loop closure, choose a move),
+and the model carries it out by calling the tools and acting on their results, so
+trusting, matching, and accepting remain steps that the model must execute correctly.
+Because that procedure can also be run as ordinary code, a rule-program baseline is
+proposed to measure what executing it with an LLM costs in accuracy, time, and money; what
+the LLM adds beyond the procedure, such as handling free-text requests and refusing or
+asking, would be scored by the request suite. Each
+decision is a fresh, stateless conversation that carries only the mission, any operator
+request, the model's previous report, and the new observation. Every step is thus posed as an isolated
+decision, which Jiang \textit{et~al.} measured to be more reliable than the same decision
+made inside a long plan. Whether that is enough is open: in their study the collapse
+returned even with per-junction queries, and the maze studies used symbolic grids with
+perfect observations, whereas BeaconMind poses a physical estimation problem with noisy
+odometry and noisy range and bearing measurements.
+
+\subsection{Fiducial Landmark SLAM and Evaluation Practice}
+Fiducial SLAM supplies both the landmarks and the reference solution. AprilTag is a visual
+fiducial system that gives a tag's identity and its full 6-DOF pose relative to the camera
+from a single image~\cite{olson2011apriltag}. TagSLAM builds a factor graph over tags,
+cameras, and bodies on the GTSAM factor-graph library and observes that, with a small set
+of artificial landmarks, ``loop closure is guaranteed once a tag is successfully
+decoded''~\cite{pfrommer2019tagslam}; iSAM2 solves such graphs incrementally through the
+Bayes tree~\cite{kaess2012isam2}. For evaluation, Sturm \textit{et~al.} formalize the
+absolute trajectory error (ATE) and the relative pose error (RPE) as the trajectory
+metrics of their SLAM benchmark~\cite{sturm2012benchmark}, and Anderson \textit{et~al.}
+recommend that a navigation agent signal completion with an explicit ``DONE'' action and
+be scored by success weighted by path length (SPL)~\cite{anderson2018evaluation}.
+
+BeaconMind uses this body of work in two ways. First, fiducial SLAM supplies the
+yardstick: a GTSAM/iSAM2 planar factor graph is the best-case reference and dead reckoning
+(odometry alone) is the floor, and the LLM's ATE, RPE, and beacon-map error will be
+reported against both on identical replayed logs from simulation and from the real car. In
+replay the moves are those recorded in the log and the model only estimates; move choice
+is evaluated separately in closed loop, where navigation with the finished map will be
+scored by ground-truth success at ``DONE'' and by SPL. Second, BeaconMind removes the
+assumption that makes data association in fiducial SLAM trivial. TagSLAM requires unique
+identifiers, so decoding a tag settles data association and, with it, loop closure.
+BeaconMind's benchmark adds a condition in which identifiers are duplicated on purpose, so
+that association and, when a revisit occurs, loop closure require reasoning over geometry
+and the map built so far. For that condition it is proposed that the reference receive the
+true association, which makes it an upper bound on achievable accuracy, not a like-for-like
+competitor. The systems in Table~\ref{tab:division} either face no landmark association or
+solve it in classical code. SEO-SLAM is a partial exception: its measurement-to-landmark
+association is a linear assignment, but its language-model agents afterwards merge
+duplicate landmarks and remove erroneous ones. Whether an LLM can make these decisions
+with useful precision, and at what latency and cost, is the question BeaconMind is built
+to answer.
+
+\section{System Overview}\label{sytem_overview}
+\laterdraft
+
+\section{Experiments}\label{experiments}
+\laterdraft
+
+\section{Results and Evaluation}\label{results}
+\laterdraft
+
+\section{Conclusion}
+\laterdraft
+
+\section*{Generative AI Disclosure}
+Claude Fable 5.1 (Anthropic), used through Claude Code, assisted with this draft: it
+searched for and retrieved the cited papers, checked each summarized claim against the
+paper's text, drafted the wording of Section~\ref{sec:related} and
+Table~\ref{tab:division}, prepared the \BibTeX{} entries and the \LaTeX{} source, and ran
+an adversarial review of the draft. Many of the sources were first identified in the
+project's earlier AI-assisted literature searches (Claude Opus 5.5 in Claude Code and in
+Cursor, with citations re-checked by Grok 4.6). The project's design documents, on which
+the descriptions of BeaconMind rest, were drafted, and many of their detailed design
+choices made, by Claude Opus 5.5 under the author's delegation; the author's review of
+some of those choices is still in progress. The author chose the project direction,
+reviews all AI-assisted content against the sources before submission, and is responsible
+for its accuracy and originality.
+
+%\section*{Acknowledgment}
+
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,mybibfile}
+
+\end{document}

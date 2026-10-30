@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.move-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C2.",
+  "title": "bm.move/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "cmd_seq",
+    "obs_id",
+    "action",
+    "distance_m",
+    "angle_deg",
+    "v_max_mps",
+    "w_max_dps",
+    "timeout_s"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bm.move/1"
+    },
+    "cmd_seq": {
+      "type": "integer"
+    },
+    "obs_id": {
+      "type": "string"
+    },
+    "action": {
+      "enum": [
+        "FORWARD_25",
+        "FORWARD_10",
+        "BACKWARD_10",
+        "TURN_LEFT_30",
+        "TURN_RIGHT_30"
+      ]
+    },
+    "distance_m": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 0.25
+    },
+    "angle_deg": {
+      "type": "number",
+      "minimum": -30,
+      "maximum": 30
+    },
+    "v_max_mps": {
+      "type": "number"
+    },
+    "w_max_dps": {
+      "type": "number"
+    },
+    "timeout_s": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 5
+    }
+  }
+}

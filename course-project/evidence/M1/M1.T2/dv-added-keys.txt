@@ -1,0 +1,22 @@
+Keys added in M1.T2 beyond plan/README.md C0. Values are the literals in the vendored
+l2_geometry.py; they were not changed. Line numbers are that file.
+
+AI-assisted: Grok 4.7 via Cursor, 2026-10-06: listed the literals moved into configs/dv.json.
+
+- gate_travel_cap_m = 3.0, unit m. Line 78: t = min(max(travel_since_fix_m, 0.0), 3.0)
+- sigma_range_a_m = 0.05, unit m. Line 25: SIGMA_RANGE_M = lambda r: 0.05 + 0.05 * r
+- sigma_range_b_per_m = 0.05, unit m/m. Line 25, the second 0.05 (metres of sigma per metre of range). The step-2 key table labels this unit "1"; the ordered unit rule in the same step matches any other key ending _per_m to m/m, and test_dv_units_match_suffix checks that rule, so the file uses m/m.
+- sigma_bearing_deg = 2.0, unit deg. Line 26: SIGMA_BEARING_DEG = 2.0
+- near_blocked_deg = 30.0, unit deg. Line 64: abs(wrap_deg(...)) <= 30.0. Also used for the exploration blocked-heading window (line 210), which is the same 30 degree test.
+- sector_width_deg = 30.0, unit deg. Lines 204 (k * 30.0), 207 (beacon window <= 30.0) and 217 (turns / 30.0). Twelve sectors is 360 / this width.
+- sector_wall_clearance_m = 0.60, unit m. Line 209: (wall - 0.60) / 0.25
+- sector_leg_step_m = 0.25, unit m. Line 209, the 0.25 divisor.
+- sector_max_leg_moves = 3, unit 1. Line 209: min(3, ...)
+- sector_unknown_leg_moves = 1, unit 1. Line 209: moves = 1 if wall is None. Not in the step-2 table; it is a used literal, so it was added the same way.
+- leg_lookahead_m = 0.75, unit m. Line 31: LEG_LOOKAHEAD_M = 0.75, used at lines 211-213.
+- scan_point_ignore_m = 0.10, unit m. Line 196: scan points with hypot > 0.10. The same 0.10 guards the centroid distance at line 214.
+- interior_weight = 0.5, unit 1. Line 216: score = nov + 0.5 * interior
+
+Not added:
+- SECTOR_BLOCK_DIST_M = 0.80 and SECTOR_BLOCK_HALF_DEG = 20.0 (lines 29-30) are defined and unused.
+- The 1e-12 determinant floor in _sigma (line 123) is a numeric guard, not a design threshold.

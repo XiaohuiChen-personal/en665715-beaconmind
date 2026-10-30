@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.dv-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C0.",
+  "title": "bm.dv/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "values"
+  ],
+  "properties": {
+    "$comment": {
+      "type": "string"
+    },
+    "schema": {
+      "const": "bm.dv/1"
+    },
+    "values": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "value",
+          "unit",
+          "status",
+          "source",
+          "evidence",
+          "updated"
+        ],
+        "properties": {
+          "value": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "DV",
+              "measured"
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          }
+        }
+      }
+    }
+  }
+}

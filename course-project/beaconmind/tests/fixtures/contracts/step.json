@@ -1,0 +1,57 @@
+{
+  "mission": "EXPLORE",
+  "operator_request": null,
+  "OBSERVATION": {
+    "obs_id": "ep03-s014",
+    "step": 14,
+    "source": "sim",
+    "mode": "closed_loop",
+    "status": "ok",
+    "error": null,
+    "sensors": {
+      "camera": "ok",
+      "imu": "ok",
+      "pico": "armed"
+    },
+    "odometry": {
+      "forward_m": 0.25,
+      "left_m": 0.0,
+      "dtheta_deg": 0.4,
+      "quality": "ok"
+    },
+    "last_move": {
+      "action": "FORWARD_25",
+      "result": "done"
+    },
+    "counters": {
+      "steps_left": 136,
+      "odometer_m": 0.5,
+      "travel_since_fix_m": 0.5,
+      "turns_since_fix": 12,
+      "consecutive_contacts": 0,
+      "consecutive_slips": 0,
+      "consecutive_errors": 0,
+      "latched": false
+    },
+    "safety": {
+      "forward_allowed": [
+        "FORWARD_25",
+        "FORWARD_10"
+      ],
+      "backward_allowed": true,
+      "turn_allowed": true,
+      "scan_allowed": true,
+      "done_range_m": 0.55
+    },
+    "detections": [
+      {
+        "det": 0,
+        "id": 1,
+        "range_m": 1.02,
+        "bearing_deg": 17.0,
+        "quality": 0.86
+      }
+    ]
+  },
+  "PREVIOUS_REPORT": null
+}

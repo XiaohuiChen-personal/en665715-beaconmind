@@ -1,0 +1,124 @@
+one-graph start 2026-10-06T20:52:52-05:00
+shm_port_count_before 72
+stamp_before 2026-10-06 20:52:52
+=== pre-kit procs ===
+592 /opt/ros/humble/lib/apriltag_ros/apriltag_node --ros-args -r __node:=apriltag --params-file /workspace/course-project/ros2_ws/install/beaconmind_bringup/share/beaconmind_bringup/config/apriltag.yaml -r image_rect:=/camera/image_rect -r camera_info:=/camera/camera_info -r detections:=/apriltag/detections
+568 python3 /workspace/course-project/tools/publish_test_image.py /workspace/course-project/data/frames/synthetic/tag36h11_3_canvas800x600_tag160px.png --fx 693 --fy 693 --cx 400 --cy 300 --width 800 --height 600 --seconds 600
+=== launch kit 2026-10-06T20:52:56-05:00 ===
+Isaac Fast DDS: UDP-only (SHM disabled) via /home/xiaohui_chen/Projects/EN.665.715/discussions/module2/sim/fastdds_udp.xml
+kit clear
+sim_server pid 1508974 log /home/xiaohui_chen/Projects/EN.665.715/discussions/module2/video/sim_server.log
+ready=1 loops=18 2026-10-06T20:53:30-05:00
+shm_port_count_after_ready 72
+shm_port_files_newer_than_stamp 0
+=== sim procs at ready ===
+1508974 timeout --kill-after=60 480 ./python.sh /home/xiaohui_chen/Projects/EN.665.715/discussions/module2/sim/sim_server.py --hold-seconds 300 --robot ros
+1508977 /bin/bash ./python.sh /home/xiaohui_chen/Projects/EN.665.715/discussions/module2/sim/sim_server.py --hold-seconds 300 --robot ros
+1508983 /home/xiaohui_chen/IsaacSim/_build/linux-aarch64/release/kit/python/bin/python3 /home/xiaohui_chen/Projects/EN.665.715/discussions/module2/sim/sim_server.py --hold-seconds 300 --robot ros
+=== graph 2026-10-06T20:53:30-05:00 ===
+=== node list ===
+/apriltag
+/bm_test_image
+=== topic list ===
+/apriltag/detections
+/back_stereo_imu/imu
+/camera/camera_info
+/camera/image_rect
+/chassis/imu
+/chassis/odom
+/cmd_vel
+/front_stereo_imu/imu
+/left_stereo_imu/imu
+/parameter_events
+/right_stereo_imu/imu
+/rosout
+/tf
+=== hz ===
+average rate: 16.264
+	min: 0.055s max: 0.068s std dev: 0.00377s window: 18
+average rate: 16.091
+	min: 0.055s max: 0.068s std dev: 0.00358s window: 34
+average rate: 16.255
+	min: 0.053s max: 0.068s std dev: 0.00380s window: 51
+average rate: 16.179
+	min: 0.053s max: 0.069s std dev: 0.00370s window: 67
+average rate: 16.236
+	min: 0.053s max: 0.069s std dev: 0.00379s window: 84
+average rate: 16.192
+	min: 0.053s max: 0.069s std dev: 0.00381s window: 100
+average rate: 16.147
+	min: 0.053s max: 0.069s std dev: 0.00379s window: 116
+average rate: 16.218
+	min: 0.053s max: 0.069s std dev: 0.00390s window: 133
+average rate: 16.215
+	min: 0.053s max: 0.069s std dev: 0.00398s window: 150
+average rate: 16.192
+	min: 0.053s max: 0.070s std dev: 0.00403s window: 167
+average rate: 16.211
+	min: 0.053s max: 0.070s std dev: 0.00408s window: 184
+average rate: 16.197
+	min: 0.053s max: 0.070s std dev: 0.00413s window: 201
+average rate: 16.207
+	min: 0.053s max: 0.070s std dev: 0.00406s window: 218
+HZ_EXIT:124
+=== stop sim 2026-10-06T20:53:46-05:00 ===
+sim pids: 1508974
+1508977
+1508983
+kill -9 1508983
+sim stopped
+one-graph done 2026-10-06T20:54:48-05:00
+
+=== second capture 2026-10-06T20:55:18-05:00: default node list hides names that start with underscore ===
+The daemon has been stopped
+Isaac Fast DDS: UDP-only (SHM disabled) via /home/xiaohui_chen/Projects/EN.665.715/discussions/module2/sim/fastdds_udp.xml
+kit clear
+sim_server pid 1510219 log /home/xiaohui_chen/Projects/EN.665.715/discussions/module2/video/sim_server.log
+ready=1 loops=17 2026-10-06T20:55:55-05:00
+=== graph with daemon stopped 2026-10-06T20:55:55-05:00 ===
+=== node list ===
+/apriltag
+/bm_test_image
+=== node list -a ===
+/_Robots_Robot_0_back_hawk_ros2_publish_imu
+/_Robots_Robot_0_chassis_imu_ros2_publish_imu
+/_Robots_Robot_0_differential_drive_ros2_subscribe_twist
+/_Robots_Robot_0_front_hawk_ros2_publish_imu
+/_Robots_Robot_0_left_hawk_ros2_publish_imu
+/_Robots_Robot_0_right_hawk_ros2_publish_imu
+/_Robots_Robot_0_transform_tree_odometry_ros2_publish_odometry
+/_Robots_Robot_0_transform_tree_odometry_ros2_publish_raw_transform_tree
+/_Robots_Robot_0_transform_tree_odometry_tf_tree_base_link_to_chassis
+/_Robots_Robot_0_transform_tree_odometry_tf_tree_base_link_to_sensors
+/_Robots_Robot_0_transform_tree_odometry_tf_tree_base_link_to_wheel_base
+/_ros2cli_862
+/apriltag
+/bm_test_image
+=== topic info odom ===
+Type: nav_msgs/msg/Odometry
+
+Publisher count: 1
+
+Node name: _Robots_Robot_0_transform_tree_odometry_ros2_publish_odometry
+Node namespace: /
+Topic type: nav_msgs/msg/Odometry
+Endpoint type: PUBLISHER
+GID: 01.0f.47.92.54.0b.7c.5c.05.00.00.00.00.00.04.03.00.00.00.00.00.00.00.00
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 0
+
+=== stop sim 2026-10-06T20:56:02-05:00 ===
+sim pids: 1510219
+1510222
+1510228
+kill -9 1510228
+sim stopped
+second capture done 2026-10-06T20:57:04-05:00

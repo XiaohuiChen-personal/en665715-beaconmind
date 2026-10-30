@@ -1,0 +1,14 @@
+{
+  "schema": "bm.move_result/1",
+  "cmd_seq": 17,
+  "result": "done",
+  "reason": null,
+  "boot_id": 3,
+  "duration_s": 1.92,
+  "enc_left_ticks": 1490,
+  "enc_right_ticks": 1502,
+  "gyro_dyaw_deg": 0.4,
+  "achieved_forward_m": 0.248,
+  "stall": false,
+  "bump": false
+}

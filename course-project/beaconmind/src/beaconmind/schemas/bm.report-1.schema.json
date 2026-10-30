@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.report-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C6.",
+  "title": "bm.report/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "step",
+    "mode",
+    "mission",
+    "pose",
+    "pose_source",
+    "associations",
+    "loop_closure",
+    "map",
+    "memory",
+    "decision",
+    "move_result",
+    "requested_mission",
+    "message",
+    "note"
+  ],
+  "properties": {
+    "step": {
+      "type": "integer"
+    },
+    "mode": {
+      "enum": [
+        "closed_loop",
+        "replay"
+      ]
+    },
+    "mission": {
+      "type": "string",
+      "pattern": "^(EXPLORE|RETURN_TO_START|REPORT|STOP|GO_TO_BEACON B[0-9]+b?)$"
+    },
+    "pose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x_m",
+        "y_m",
+        "theta_deg"
+      ],
+      "properties": {
+        "x_m": {
+          "type": "number"
+        },
+        "y_m": {
+          "type": "number"
+        },
+        "theta_deg": {
+          "type": "number"
+        }
+      }
+    },
+    "pose_source": {
+      "enum": [
+        "beacon_fix",
+        "relocalised",
+        "position_fix",
+        "prior_kept",
+        "odometry"
+      ]
+    },
+    "associations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "det",
+          "id",
+          "beacon",
+          "result"
+        ],
+        "properties": {
+          "det": {
+            "type": "integer"
+          },
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "beacon": {
+            "type": "string",
+            "pattern": "^(B[0-9]+b?|U[0-9]+)$"
+          },
+          "result": {
+            "enum": [
+              "matched",
+              "new",
+              "ambiguous",
+              "rejected"
+            ]
+          }
+        }
+      }
+    },
+    "loop_closure": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "beacon",
+          "accepted",
+          "reason"
+        ],
+        "properties": {
+          "beacon": {
+            "type": "string",
+            "pattern": "^(B[0-9]+b?|U[0-9]+)$"
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "map": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "beacon",
+          "id",
+          "x_m",
+          "y_m",
+          "n_obs",
+          "state",
+          "first_seen_from",
+          "first_seen_scan",
+          "odo_last_seen_m",
+          "conflicts",
+          "suspect"
+        ],
+        "properties": {
+          "beacon": {
+            "type": "string",
+            "pattern": "^(B[0-9]+b?|U[0-9]+)$"
+          },
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "x_m": {
+            "type": "number"
+          },
+          "y_m": {
+            "type": "number"
+          },
+          "n_obs": {
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "tentative",
+              "confirmed"
+            ]
+          },
+          "first_seen_from": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          },
+          "first_seen_scan": {
+            "type": "integer"
+          },
+          "odo_last_seen_m": {
+            "type": "number"
+          },
+          "conflicts": {
+            "type": "integer"
+          },
+          "suspect": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scan_points",
+        "scan_index",
+        "scan_turns_left",
+        "scan_added",
+        "scans_without_new",
+        "legs_since_scan",
+        "target_heading_deg",
+        "leg_moves_left",
+        "blocked_heading_deg",
+        "recovery",
+        "stuck"
+      ],
+      "properties": {
+        "scan_points": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "scan_index": {
+          "type": "integer"
+        },
+        "scan_turns_left": {
+          "type": "integer"
+        },
+        "scan_added": {
+          "type": "integer"
+        },
+        "scans_without_new": {
+          "type": "integer"
+        },
+        "legs_since_scan": {
+          "type": "integer"
+        },
+        "target_heading_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "leg_moves_left": {
+          "type": "integer"
+        },
+        "blocked_heading_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "recovery": {
+          "enum": [
+            "none",
+            "backed_off"
+          ]
+        },
+        "stuck": {
+          "type": "integer"
+        }
+      }
+    },
+    "decision": {
+      "enum": [
+        "FORWARD_25",
+        "FORWARD_10",
+        "BACKWARD_10",
+        "TURN_LEFT_30",
+        "TURN_RIGHT_30",
+        "DONE",
+        "NONE",
+        "STOPPED",
+        "ASK",
+        "REFUSED"
+      ]
+    },
+    "move_result": {
+      "enum": [
+        "done",
+        "stalled",
+        "bumped",
+        "timeout",
+        "link_lost",
+        "refused",
+        "not_called"
+      ]
+    },
+    "requested_mission": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^(EXPLORE|RETURN_TO_START|REPORT|STOP|GO_TO_BEACON B[0-9]+b?)$"
+        }
+      ]
+    },
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "note": {
+      "type": "string"
+    }
+  }
+}

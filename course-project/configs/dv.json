@@ -1,0 +1,534 @@
+{
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote configs/dv.json from plan/README.md C0 plus l2_geometry.py literals.",
+  "schema": "bm.dv/1",
+  "values": {
+    "gate_range_m": {
+      "value": 0.3,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 gate_detection; l2_geometry.py",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_bearing_deg": {
+      "value": 15.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 gate_detection; l2_geometry.py",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_widen_range_per_m": {
+      "value": 0.1,
+      "unit": "m/m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_widen_bearing_per_m": {
+      "value": 5.0,
+      "unit": "deg/m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_widen_bearing_per_turn_deg": {
+      "value": 1.0,
+      "unit": "deg/turn",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_cap_range_m": {
+      "value": 0.6,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_cap_bearing_deg": {
+      "value": 30.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "revisit_travel_m": {
+      "value": 1.5,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "prior_gate_m": {
+      "value": 0.5,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 fix_pose",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "prior_gate_deg": {
+      "value": 20.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 fix_pose",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "position_fix_gate_m": {
+      "value": 0.3,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 fix_pose",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "heading_safe_deg": {
+      "value": 3.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 fix_pose",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "well_cond_sigma_xy_m": {
+      "value": 0.15,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "well_cond_sigma_theta_deg": {
+      "value": 8.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reloc_min_beacons": {
+      "value": 3,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reloc_residual_m": {
+      "value": 0.1,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reloc_sigma_xy_m": {
+      "value": 0.25,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reloc_sigma_theta_deg": {
+      "value": 10.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "confirm_n_obs": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "confirm_baseline_m": {
+      "value": 0.4,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "suspect_conflicts": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reject_quality_below": {
+      "value": 0.5,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 3",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reject_range_above_m": {
+      "value": 2.0,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 3",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "conflict_radius_m": {
+      "value": 1.0,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 3",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "new_place_m": {
+      "value": 0.5,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5, D7 E4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "scan_turns": {
+      "value": 12,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5, D7 E4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "v_max_mps": {
+      "value": 0.15,
+      "unit": "m/s",
+      "status": "DV",
+      "source": "AGENT-DESIGN D4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "move_timeout_s": {
+      "value": 5.0,
+      "unit": "s",
+      "status": "DV",
+      "source": "AGENT-DESIGN D4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "turn_rate_dps": {
+      "value": 45.0,
+      "unit": "deg/s",
+      "status": "DV",
+      "source": "proposed default (M3.T4 confirms); AGENT-DESIGN D4 leaves it to W3",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "steps_explore": {
+      "value": 150,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "steps_navigation": {
+      "value": 60,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "done_range_m": {
+      "value": 0.55,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D2; placeholder until M1.T9/M1.T8 (talk track)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "success_margin_beacon_m": {
+      "value": 0.15,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D2 T4 scoring",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "success_bearing_deg": {
+      "value": 25.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D2 T4 scoring",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "success_start_m": {
+      "value": 0.3,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D2 T4 scoring",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_yaw_disagree_deg": {
+      "value": 10.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_range_min_m": {
+      "value": 0.08,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_range_frac": {
+      "value": 0.3,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_ahead_deg": {
+      "value": 30.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_dropout_m": {
+      "value": 0.8,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "autolatch_contacts": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 validator",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "autolatch_slips": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 validator",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "autolatch_errors": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 validator",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "stall_grace_ms": {
+      "value": 200,
+      "unit": "ms",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W motion",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "stall_window_ms": {
+      "value": 200,
+      "unit": "ms",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W motion",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "stall_frac": {
+      "value": 0.5,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W motion",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "estop_max_s": {
+      "value": 0.2,
+      "unit": "s",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W wheels-down gate",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "watchdog_ms": {
+      "value": 500,
+      "unit": "ms",
+      "status": "DV",
+      "source": "proposed default (M3.T7 confirms from the measured p99 link latency)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "obs_frames": {
+      "value": 5,
+      "unit": "1",
+      "status": "DV",
+      "source": "proposed default (M1.T8 confirms)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "obs_min_frames": {
+      "value": 3,
+      "unit": "1",
+      "status": "DV",
+      "source": "proposed default (M1.T8 confirms)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "obs_settle_s": {
+      "value": 0.3,
+      "unit": "s",
+      "status": "DV",
+      "source": "proposed default (M1.T8 confirms)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "forward_wall_limit_m": {
+      "value": 0.35,
+      "unit": "m",
+      "status": "DV",
+      "source": "tools/backstory_sim.py WALL_LIMIT_M; proposed default (M1.T9 confirms)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "pack_min_v": {
+      "value": 5.5,
+      "unit": "V",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W operator procedure",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_travel_cap_m": {
+      "value": 3.0,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sigma_range_a_m": {
+      "value": 0.05,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sigma_range_b_per_m": {
+      "value": 0.05,
+      "unit": "m/m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sigma_bearing_deg": {
+      "value": 2.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "near_blocked_deg": {
+      "value": 30.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_width_deg": {
+      "value": 30.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_wall_clearance_m": {
+      "value": 0.6,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_leg_step_m": {
+      "value": 0.25,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_max_leg_moves": {
+      "value": 3,
+      "unit": "1",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_unknown_leg_moves": {
+      "value": 1,
+      "unit": "1",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "leg_lookahead_m": {
+      "value": 0.75,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "scan_point_ignore_m": {
+      "value": 0.1,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "interior_weight": {
+      "value": 0.5,
+      "unit": "1",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    }
+  }
+}

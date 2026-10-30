@@ -1,0 +1,64 @@
+# M1.T9 car measurement template (course-project/plan/M1-foundations.md, M1.T9 step 2). Copy it, fill it, keep the copy as evidence.
+# Measured by: ________ (the measurements are Xiaohui Chen's; say so here)   Date: YYYY-MM-DD   Instruments: ________
+# Car on a flat floor, battery switch OFF, camera and its USB cable fitted as in operation. Mark the axle midpoint first (M1.T7 step 8).
+# Frame: x from the drive-wheel axle line, + toward the camera lens / caster end (the front); y from the centre line, + to the robot's LEFT.
+# Heights are from the FLOOR unless the row says otherwise (imu_z_m is from the AXLE). Write the unit you used: mm or m, g or kg.
+# Each quantity three times (reading_1..reading_3). Pass: the three agree within 2 mm (lengths up to 0.5 m) or 5 mm (longer).
+# Write the word 'around' in notes only for a rough reading: the writer then uses 5 mm as its uncertainty instead of 2 mm.
+# Every x measured from the axle line (front/rear overhang, caster_x, lens_x, imu_x, B1, B2, C2b) gets at least 3 mm, because the
+#   axle line itself is located to about 3 mm (assignments/assignment6/review/MEASUREMENT-REVIEW.md #15). Units do not change this.
+# A later re-reading goes in a NEW row named <quantity>_remeasure (or _recheck, _corrected); it replaces the earlier row.
+# A row whose notes start with SUPERSEDED is not an input. Rows left blank are omitted from car.json, never invented.
+# Not reading rows (write_car_json.py derives them):
+#   corners          = plan-view extreme points from front_overhang_m, rear_overhang_m, track_outer_m, the wheel diameter
+#                      and the B1, B2, B5, B5b, B14 and C2b rows below (ESP32-CAM and plate-front corners assume those
+#                      parts are centred on y = 0; with P1 and P2 filled, the plate-front corners follow the rounded front
+#                      edge instead of a square corner); sweep_radius_m = the largest distance over corners
+# A value read off the plate's CAD (the private course repo (plate CAD is not published here)) goes in with instrument "CAD ...": the writer
+#   then uses 0.5 mm as its uncertainty instead of the ruler's 2 mm.
+#   chassis_length_m = front_overhang_m + rear_overhang_m
+#   chassis_height_m = B10_battery_holder_top_h - B9_lowest_body_h (main body without the camera stand)
+#   NOTE: M1.T9 step 3 defines chassis_length/width/height as the WHOLE car's bounding box; car.json (2026-10-10) holds
+#   the main body instead (evidence/M1/M1.T9/README.md, deviation 7), pending Xiaohui's decision.
+# Build car.json (Mac, repository root): course-project/.venv/bin/python course-project/tools/write_car_json.py <filled.csv>
+#   --measured <measured.json> --updated <YYYY-MM-DD> --out course-project/configs/car.json
+# Keep the filled copy in course-project/evidence/M1/M1.T9/ under the name you pass: car.json names it there and the URDF
+#   tests (test_urdf.py) read it from there. Then run gen_props.py (M2.T4 step 7) and, for every re-measured row that
+#   car_geometry_extras.xacro uses (B1, B2, B5 narrow, B5b, B14, B9, B10, ...), edit that file by hand
+#   (evidence/M2/M2.T4/README.md lists them).
+# AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-10: wrote this template from M1.T9 steps 2-3 and the rows
+#   write_car_json.py reads (its RAW_KEYS, TEXT_KEYS and EXTRA_ROWS); after a second review, added the axle-datum line above;
+#   after a third review, added the lines on where to keep the filled copy and the hand edits of car_geometry_extras.xacro;
+#   2026-10-16: added the CAD instrument line and the plate-front outline rows P1 and P2.
+quantity,reading_1,reading_2,reading_3,unit,instrument,notes
+rollout_left_m,,,,mm,tape,"LEFT wheel, 5 revolutions: floor distance from the start mark to the 5th touch of that tyre's mark; push the car slowly and straight by the chassis, never by the wheels"
+rollout_right_m,,,,mm,tape,"RIGHT wheel, 5 revolutions, same way (its 5th touch is at a slightly different place)"
+wheel_width_m,,,,mm,ruler,ruler across one tyre tread
+track_outer_m,,,,mm,ruler,"outer tyre face to outer tyre face, at floor level"
+track_inner_m,,,,mm,ruler,"inner tyre face to inner tyre face, at floor level"
+caster_x_m,,,,mm,ruler,"axle line to the caster wheel's floor contact along +x, caster TRAILING (car last pushed forward)"
+caster_diameter_m,,,,mm,ruler,caster wheel diameter
+front_overhang_m,,,,mm,ruler,"axle line to the front-most point INCLUDING the camera bracket, its USB-C plug and the cable bend; say which cable is fitted (re-measure in M3.T1 with the power-bank cable)"
+rear_overhang_m,,,,mm,ruler,"axle line to the rear-most point (plate, battery holder, wires), as a positive number"
+chassis_width_m,,,,mm,ruler,"widest point of the BODY, tyres excluded (2026-10-10 convention, deviation 7; the plan's whole-car width over the tyres is track_outer_m); blank = use B5_plate_width_max"
+lens_x_m,,,,mm,ruler,copy camera.json extrinsics x_m if M1.T7 is done; else axle line to the lens centre along +x
+lens_y_m,,,,mm,ruler,"copy camera.json extrinsics y_m if M1.T7 is done; else centre line to the lens centre, + = robot left"
+lens_z_m,,,,mm,ruler,copy camera.json extrinsics z_m if M1.T7 is done; else lens centre height above the FLOOR (M1.T7 step 8)
+imu_x_m,,,,mm,ruler,"axle line to the BNO055 board centre, + toward the front (negative behind the axle)"
+imu_y_m,,,,mm,ruler,"centre line to the BNO055 board centre, + = robot LEFT"
+imu_z_m,,,,mm,ruler,BNO055 board TOP surface above the AXLE (= its height above the floor minus the wheel radius); simpler: leave blank and fill S1_imu_board_top_h
+imu_axes,,,,text,photo,"write in reading_1 which way the board's printed x and y arrows point relative to the car (e.g. x toward the camera, y to the robot left); photo imu-orientation.jpg"
+mass_kg,,,,g,kitchen scale,"car complete with batteries; caster on one scale and both drive wheels on an identical scale at the same height: write the SUM, and the two parts here in notes"
+W1_tyre_diameter_direct,,,,mm,ruler,ONLY if there is no roll-out: tyre diameter read directly (unloaded); car.json then labels wheel_diameter_m NOT a roll-out
+B1_plate_front_x,,,,mm,ruler,axle line to the plate's front edge (corners)
+B2_plate_rear_x,,,,mm,ruler,"axle line to the plate's rear edge, as a positive number (corners: rear wing tips)"
+B5_plate_width_narrow,,,,mm,ruler,"width of the narrow plate strip that runs to the front (corners: plate-front corners, strip assumed centred)"
+B5_plate_width_max,,,,mm,ruler,"widest plate point, the rear wing (corners: rear wing tips; chassis_width_m when that row is blank)"
+B5b_wing_depth_centre,,,,mm,ruler,"plate rear edge to where the plate narrows, on the centre line (corners: rear wing tips)"
+B9_lowest_body_h,,,,mm,ruler,"lowest body point above the floor, the motor gearbox bottoms (chassis_height_m)"
+B10_battery_holder_top_h,,,,mm,ruler,battery-holder top above the floor (chassis_height_m)
+B14_esp32cam_width,,,,mm,ruler,"ESP32-CAM board stack side to side (corners: ESP32-CAM front corners, board assumed centred)"
+C2b_caster_front_swung_x,,,,mm,ruler,"push the car backwards so the caster swings fully forward, then axle line to the caster wheel's front (corners)"
+S1_imu_board_top_h,,,,mm,ruler,BNO055 board top above the FLOOR; the writer computes imu_z_m = this - wheel diameter / 2 when imu_z_m is blank
+P1_plate_front_arc_radius,,,,mm,CAD,"radius of the arc that forms the plate's front edge (Emo plate CAD: 135.14 mm); fill with P2, else the plate-front corners are square at B1"
+P2_plate_front_corner_radius,,,,mm,CAD,"radius of the two fillets that join the front arc to the plate's sides (Emo plate CAD: 8 mm); fill with P1"

@@ -1,0 +1,87 @@
+isaac script start 2026-10-06T20:46:47-05:00
+beaconmind-ros Up 2 hours
+rosa-ros2 Exited (137) 2 days ago
+vllm-rosa Up 2 hours
+=== odom attempt 1 2026-10-06T20:46:47-05:00 ===
+Isaac Fast DDS: UDP-only (SHM disabled) via /home/xiaohui_chen/Projects/EN.665.715/discussions/module2/sim/fastdds_udp.xml
+kit clear
+sim_server pid 1507349 log /home/xiaohui_chen/Projects/EN.665.715/discussions/module2/video/sim_server.log
+ready=1 loops=5
+2026-10-07T01:47:21Z [33,518ms] [Warning] [omni.syntheticdata.plugin] OgnSdPostRenderVarToHost : rendervar copy from texture directly to host buffer is counter-performant. Please use copy from texture to device buffer first.
+[sim_server +  35.6s] warmup still mean=95.6
+2026-10-07T01:47:24Z [36,295ms] [Warning] [carb] Client gpu.foundation.plugin has acquired [gpu::unstable::IMemoryBudgetManagerFactory v0.1] 100 times. Consider accessing this interface with carb::getCachedInterface() (Performance warning)
+[sim_server +  37.7s] kit bundled-humble /chassis/odom n=25 dt=2.01s hz=12.46
+READY: sim server on :8100  curl -s localhost:8100/state
+shm_fastrtps_port_count 72
+kit_alive no
+average rate: 15.681
+	min: 0.058s max: 0.068s std dev: 0.00299s window: 17
+average rate: 15.691
+	min: 0.056s max: 0.069s std dev: 0.00335s window: 33
+average rate: 15.727
+	min: 0.056s max: 0.069s std dev: 0.00329s window: 49
+average rate: 16.028
+	min: 0.053s max: 0.069s std dev: 0.00400s window: 66
+average rate: 15.970
+	min: 0.053s max: 0.069s std dev: 0.00395s window: 82
+average rate: 15.933
+	min: 0.053s max: 0.069s std dev: 0.00384s window: 98
+average rate: 16.027
+	min: 0.053s max: 0.069s std dev: 0.00401s window: 115
+average rate: 16.053
+	min: 0.053s max: 0.069s std dev: 0.00405s window: 132
+average rate: 16.079
+	min: 0.053s max: 0.069s std dev: 0.00409s window: 149
+average rate: 16.109
+	min: 0.053s max: 0.069s std dev: 0.00408s window: 166
+average rate: 16.185
+	min: 0.053s max: 0.069s std dev: 0.00414s window: 183
+average rate: 16.233
+	min: 0.052s max: 0.069s std dev: 0.00414s window: 200
+average rate: 16.256
+	min: 0.052s max: 0.069s std dev: 0.00414s window: 217
+average rate: 16.268
+	min: 0.052s max: 0.069s std dev: 0.00417s window: 234
+average rate: 16.292
+	min: 0.052s max: 0.069s std dev: 0.00413s window: 251
+average rate: 16.322
+	min: 0.052s max: 0.069s std dev: 0.00415s window: 268
+average rate: 16.330
+	min: 0.052s max: 0.069s std dev: 0.00410s window: 285
+average rate: 16.335
+	min: 0.052s max: 0.069s std dev: 0.00415s window: 302
+HZ_EXIT:124
+header:
+  stamp:
+    sec: 9
+    nanosec: 599999785
+  frame_id: odom
+child_frame_id: base_link
+pose:
+  pose:
+    position:
+      x: 0.01269124379193299
+      y: 2.3491917786448245e-06
+      z: -1.9847893301894568e-05
+    orientation:
+      x: 3.4436437861378897e-07
+      y: 1.487088191712846e-07
+      z: -3.650063794026546e-05
+      w: 0.9999999993337814
+  covariance:
+  - 0.0
+  - 0.0
+ECHO_EXIT:0
+attempt 1 non-zero rate
+=== stop kit 2026-10-06T20:47:49-05:00 ===
+kit pids: none
+kit clear
+isaac script done 2026-10-06T20:47:49-05:00
+
+=== shm litmus note (2026-10-06, after the probe) ===
+The line shm_fastrtps_port_count 72 is every /dev/shm name containing fastrtps_port.
+find /dev/shm -name 'fastrtps_port*' -newermt '2026-10-06' printed 0 files.
+The newest fastrtps_port file is dated Oct 4 03:50, before this launch.
+fuser on a sample of those port files showed no process holding them.
+This launch's newest /dev/shm entries were carb/carbonite files, not fastrtps_port.
+Isaac's live process was kit/python/bin/python3 running sim_server.py (pid 1507358), so pgrep -f kit/kit did not see it and the script's stop found no pid. It was stopped afterwards by killing 1507349, 1507353, and 1507358.

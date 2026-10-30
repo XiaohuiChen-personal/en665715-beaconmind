@@ -1,0 +1,7 @@
+TU: error: ../src/freedreno/vulkan/tu_knl.cc:387: failed to open device /dev/dri/renderD128 (VK_ERROR_INCOMPATIBLE_DRIVER)
+READY 6.8
+png /home/xiaohui_chen/Projects/EN.665.715/course-project/data/renders/spike-20261007-001302/tag3_d0.5.png mean=195.6 std=59.1
+png /home/xiaohui_chen/Projects/EN.665.715/course-project/data/renders/spike-20261007-001302/tag3_d1.0.png mean=204.7 std=35.8
+png /home/xiaohui_chen/Projects/EN.665.715/course-project/data/renders/spike-20261007-001302/tag3_d1.5.png mean=206.4 std=29.3
+png /home/xiaohui_chen/Projects/EN.665.715/course-project/data/renders/spike-20261007-001302/tag3_d2.0.png mean=207.0 std=26.7
+DONE

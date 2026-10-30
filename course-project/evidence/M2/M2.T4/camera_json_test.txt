@@ -1,0 +1,81 @@
+# M2.T4: test_optical_frame_matches_camera_json exercised with SYNTHETIC camera.json files (2026-10-10, ~08:05 CDT).
+# These camera.json files are test inputs written for this check, NOT calibrations; configs/camera.json does not exist.
+# Host spark-2a60, container beaconmind-ros (Humble, pytest 9.1.1, PYTEST_DISABLE_PLUGIN_AUTOLOAD=1).
+# Scratch folder (git-ignored): course-project/data/m2t4-round2/camtest/
+#   match/    car.json (copy of configs/car.json) + camera.json with the measured lens pose:
+#             {"x_m": 0.12, "y_m": 0.0, "z_m": 0.075, "roll_deg": -90.0, "pitch_deg": 0.0, "yaw_deg": -90.0}
+#   mismatch/ car.json + camera.json with z_m 0.080 and yaw_deg -88.0 (everything else as match/)
+#   pkg/      a copy of the package whose test file has CAMERA_CONVENTION_SETTLED = True (cases 4-5 only; the
+#             package source keeps False)
+# The test finds camera.json next to the car.json that BM_CAR_JSON names. Each case ran:
+#   docker exec beaconmind-ros bash -lc "source /opt/ros/humble/setup.bash && cd /workspace/course-project && \
+#     BM_CAR_JSON=<car.json> PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q -p no:cacheprovider -rs \
+#     <test file>::test_optical_frame_matches_camera_json"
+# filtered to the pass/fail/skip lines and the failure messages (cut at 600 characters). Expected: 1 skip, 2 fail
+# (convention not settled, whether or not the numbers match), 4 pass, 5 fail (numbers differ).
+ros2_ws/src/beaconmind_description/test/test_urdf.py:20:CAMERA_CONVENTION_SETTLED is False: the plan's camera conventions conflict (M1.T7 step 8 z_m above the floor vs
+ros2_ws/src/beaconmind_description/test/test_urdf.py:374:CAMERA_CONVENTION_SETTLED = False
+data/m2t4-round2/camtest/pkg/beaconmind_description/test/test_urdf.py:20:CAMERA_CONVENTION_SETTLED is False: the plan's camera conventions conflict (M1.T7 step 8 z_m above the floor vs
+data/m2t4-round2/camtest/pkg/beaconmind_description/test/test_urdf.py:374:CAMERA_CONVENTION_SETTLED = True
+### 1. no camera.json (the real configs/)
+1 skipped in 0.07s
+### 2. matching camera.json, convention NOT settled (the file as committed)
+E           Failed: /workspace/course-project/data/m2t4-round2/camtest/match/camera.json exists, but its conventions are not settled (plan conflict, CONTEXT.md 2026-10-10): is extrinsics z_m above the floor or above the axle, and are roll/pitch/yaw the full base_link -> camera_optical_frame rotation or small mount angles? Under the reading gen_props.py uses now (floor; full rotation) the comparison gives: a match within 1e-6. Once Xiaohui decides, set CAMERA_CONVENTION_SETTLED = True in this file (and adjust the expected values if the decision differs).
+1 failed in 0.10s
+### 3. mismatching camera.json (z_m 0.080, yaw -88), NOT settled
+E           Failed: /workspace/course-project/data/m2t4-round2/camtest/mismatch/camera.json exists, but its conventions are not settled (plan conflict, CONTEXT.md 2026-10-10): is extrinsics z_m above the floor or above the axle, and are roll/pitch/yaw the full base_link -> camera_optical_frame rotation or small mount angles? Under the reading gen_props.py uses now (floor; full rotation) the comparison gives: translation [0.12, 0.0, 0.0415] m, camera.json gives [0.12, 0.0, 0.0465] m (z_m - wheel_radius 0.0335); rotation [[6.123233995736766e-17, 6.123233995736766e-17, 1.0], [-1.0, 3.749399456654
+1 failed in 0.09s
+### 4. matching camera.json, settled (scratch copy with the flag True)
+1 passed in 0.09s
+### 5. mismatching camera.json, settled (scratch copy with the flag True)
+E       AssertionError: translation [0.12, 0.0, 0.0415] m, camera.json gives [0.12, 0.0, 0.0465] m (z_m - wheel_radius 0.0335); rotation [[6.123233995736766e-17, 6.123233995736766e-17, 1.0], [-1.0, 3.749399456654644e-33, 6.123233995736766e-17], [0.0, -1.0, 6.123233995736766e-17]], camera.json rpy (-90.0, 0.0, -88.0) deg gives [[0.03489949670250108, 6.119503887030809e-17, 0.9993908270190958], [-0.9993908270190958, 2.136977846428578e-18, 0.03489949670250108], [-0.0, -1.0, 6.123233995736766e-17]]
+E       assert not ['translation [0.12, 0.0, 0.0415] m, camera.json gives [0.12, 0.0, 0.0465] m (z_m - wheel_radius 0.0335)', 'rotation [...08270190958], [-0.9993908270190958, 2.136977846428578e-18, 0.03489949670250108], [-0.0, -1.0, 6.123233995736766e-17]]']
+data/m2t4-round2/camtest/pkg/beaconmind_description/test/test_urdf.py:423: AssertionError
+1 failed in 0.10s
+
+# ================================================================================================================
+# THIRD REVIEW (2026-10-10, ~09:00 CDT), defect 1: the FULL suite with a regenerated car_props.xacro and a SYNTHETIC
+# calibrated camera.json. Cases 1-5 above ran only test_optical_frame_matches_camera_json and did not regenerate the
+# props, so they could not show that test_optical_frame_pose_from_measurements (which compared the pose with the
+# 2026-10-10 ruler lens readings and required camera rpy 0) fails once gen_props.py takes the pose from camera.json.
+# Host spark-2a60, container beaconmind-ros; env ROS_DOMAIN_ID=141 ROS_LOCALHOST_ONLY=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
+# PYTHONDONTWRITEBYTECODE=1; no ROS node started. Scratch (git-ignored): course-project/data/m2t4-round4/ (before.sh,
+# after.sh; full output before.txt / after.txt there). SYNTHETIC inputs (not calibrations):
+#   inputs/camera-full.json  extrinsics base_link -> camera_optical_frame x 0.118, y 0.001, z 0.0765 m, rpy (-90, 0, -93) deg
+#   inputs/camera-xyz.json   the same x/y/z, roll/pitch/yaw null
+# Each case: a copy of the package (before/<case>/pkg or after/<case>/pkg) whose car_props.xacro gen_props.py regenerated
+# from a copy of configs/car.json with that camera.json next to it; BM_CAR_JSON names that car.json; the whole test
+# folder runs (python3 -m pytest -q -p no:cacheprovider -rfs), filtered to the result lines.
+
+### 6. BEFORE the fix (test_urdf.py fdbe3187...): camera-full.json, props regenerated, CAMERA_CONVENTION_SETTLED = True
+###    (the route the README gave to M2.T4 done)
+21:CAMERA_CONVENTION_SETTLED is False: the plan's camera conventions conflict (M1.T7 step 8 z_m above the floor vs
+375:CAMERA_CONVENTION_SETTLED = True
+wrote /workspace/course-project/data/m2t4-round4/before/d1/pkg/beaconmind_description/urdf/car_props.xacro from /workspace/course-project/data/m2t4-round4/before/d1/configs/car.json (camera.json present; camera x/y/z from camera.json extrinsics; camera angles from camera.json extrinsics)
+57:  <xacro:property name="camera_x" value="0.118"/>
+59:  <xacro:property name="camera_y" value="0.001"/>
+61:  <xacro:property name="camera_h" value="0.0765"/>
+69:  <xacro:property name="camera_yaw" value="-0.052359877559829966"/>
+E       AssertionError: optical frame at [0.118, 0.001, 0.043], measured lens at [0.12, 0.0, 0.041499999999999995]
+E       assert False
+FAILED data/m2t4-round4/before/d1/pkg/beaconmind_description/test/test_urdf.py::test_optical_frame_pose_from_measurements
+1 failed, 19 passed in 0.11s
+### 7. AFTER the fix (test_urdf.py b81f8d74...): the same inputs and flag. test_optical_frame_pose_from_measurements
+###    checks the fixed REP 103 joint and skips, because gen_props.extrinsics_used() says camera.json supplied all six
+SKIPPED [1] data/m2t4-round4/after/d1/pkg/beaconmind_description/test/test_urdf.py:517: /workspace/course-project/data/m2t4-round4/after/d1/configs/camera.json supplies x/y/z and roll/pitch/yaw (gen_props.extrinsics_used), so the camera pose is the calibration's, not the car.json lens readings': test_optical_frame_matches_camera_json checks it (the fixed REP 103 optical joint was checked here)
+19 passed, 1 skipped in 0.10s
+### 8. AFTER the fix, the same camera.json with the flag still False (between M1.T7 and Xiaohui's decision): the
+###    camera.json test fails BY DESIGN (convention not settled); nothing else fails
+E           Failed: /workspace/course-project/data/m2t4-round4/after/d1u/configs/camera.json exists, but its conventions are not settled (plan conflict, CONTEXT.md 2026-10-10): is extrinsics z_m above the floor or above the axle, and are roll/pitch/yaw the full base_link -> camera_optical_frame rotation or small mount angles? Under the reading gen_props.py uses now (floor; full rotation) the comparison gives: a match
+FAILED data/m2t4-round4/after/d1u/pkg/beaconmind_description/test/test_urdf.py::test_optical_frame_matches_camera_json
+SKIPPED [1] data/m2t4-round4/after/d1u/pkg/beaconmind_description/test/test_urdf.py:517: /workspace/course-project/data/m2t4-round4/after/d1u/configs/camera.json supplies x/y/z and roll/pitch/yaw (gen_props.extrinsics_used), so the camera pose is the calibration's, not the car.json lens readings': test_optical_frame_matches_camera_json checks it (the fixed REP 103 optical joint was checked here)
+1 failed, 18 passed, 1 skipped in 0.11s
+### 9. AFTER the fix, camera-xyz.json (angles null), flag True: the pose test compares only the rotation (ASSUMED level)
+###    and passes; the camera.json test fails BY DESIGN because the extrinsics lack the angles
+E       AssertionError: /workspace/course-project/data/m2t4-round4/after/d1xyz/configs/camera.json extrinsics lack numbers for ['roll_deg', 'pitch_deg', 'yaw_deg']
+FAILED data/m2t4-round4/after/d1xyz/pkg/beaconmind_description/test/test_urdf.py::test_optical_frame_matches_camera_json
+1 failed, 19 passed in 0.13s
+# Expected once M1.T7 writes a complete camera.json, gen_props.py is run again and the flag is set: colcon test-result
+# 20 tests, 0 errors, 0 failures, 1 skipped (the skip is test_optical_frame_pose_from_measurements). Case 7 is that
+# state with synthetic numbers.
+# AI-assisted: Claude Opus 5.5 (xhigh effort) via Claude Code, 2026-10-10: ran cases 6-9 and appended them.

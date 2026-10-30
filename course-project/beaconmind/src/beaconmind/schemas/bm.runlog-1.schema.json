@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.runlog-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C9.2.",
+  "title": "bm.runlog/1",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "schema",
+        "run_id",
+        "episode_id",
+        "step",
+        "obs_id",
+        "mode",
+        "source",
+        "mission",
+        "operator_request",
+        "step_message",
+        "llm_turns",
+        "final_text",
+        "report",
+        "report_corrected",
+        "violations",
+        "executed_move",
+        "decision_latency_s",
+        "cost_usd",
+        "gt_pose_map",
+        "det_truth",
+        "error"
+      ],
+      "properties": {
+        "type": {
+          "const": "step"
+        },
+        "schema": {
+          "const": "bm.runlog/1"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "episode_id": {
+          "type": "string"
+        },
+        "step": {
+          "type": "integer"
+        },
+        "obs_id": {
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "closed_loop",
+            "replay"
+          ]
+        },
+        "source": {
+          "enum": [
+            "sim",
+            "kinsim",
+            "real"
+          ]
+        },
+        "mission": {
+          "type": "string",
+          "pattern": "^(EXPLORE|RETURN_TO_START|REPORT|STOP|GO_TO_BEACON B[0-9]+b?)$"
+        },
+        "operator_request": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "step_message": true,
+        "llm_turns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "turn",
+              "t_start",
+              "latency_s",
+              "finish_reason",
+              "tokens_in",
+              "tokens_out",
+              "tokens_reasoning",
+              "tokens_cached_in",
+              "tool_calls"
+            ],
+            "properties": {
+              "turn": {
+                "type": "integer"
+              },
+              "t_start": {
+                "type": "number"
+              },
+              "latency_s": {
+                "type": "number"
+              },
+              "finish_reason": {
+                "type": "string"
+              },
+              "tokens_in": {
+                "type": "integer"
+              },
+              "tokens_out": {
+                "type": "integer"
+              },
+              "tokens_reasoning": {
+                "type": "integer"
+              },
+              "tokens_cached_in": {
+                "type": "integer"
+              },
+              "tool_calls": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "name",
+                    "args",
+                    "result",
+                    "error"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "args": true,
+                    "result": true,
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "final_text": {
+          "type": "string"
+        },
+        "report": true,
+        "report_corrected": true,
+        "violations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "detail"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "executed_move": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "command",
+                "result"
+              ],
+              "properties": {
+                "command": {
+                  "$ref": "https://schemas.beaconmind.invalid/bm.move-1.schema.json"
+                },
+                "result": {
+                  "$ref": "https://schemas.beaconmind.invalid/bm.move_result-1.schema.json"
+                }
+              }
+            }
+          ]
+        },
+        "decision_latency_s": {
+          "type": "number"
+        },
+        "cost_usd": {
+          "type": "number"
+        },
+        "gt_pose_map": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "x_m",
+                "y_m",
+                "theta_deg"
+              ],
+              "properties": {
+                "x_m": {
+                  "type": "number"
+                },
+                "y_m": {
+                  "type": "number"
+                },
+                "theta_deg": {
+                  "type": "number"
+                }
+              }
+            }
+          ]
+        },
+        "det_truth": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "det",
+              "uid"
+            ],
+            "properties": {
+              "det": {
+                "type": "integer"
+              },
+              "uid": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "steps",
+        "ended_by",
+        "detail",
+        "totals"
+      ],
+      "properties": {
+        "type": {
+          "const": "episode_footer"
+        },
+        "steps": {
+          "type": "integer"
+        },
+        "ended_by": {
+          "enum": [
+            "DONE",
+            "budget",
+            "latch",
+            "error",
+            "STOPPED"
+          ]
+        },
+        "detail": {
+          "type": "string"
+        },
+        "totals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tokens",
+            "cost_usd",
+            "wall_s"
+          ],
+          "properties": {
+            "tokens": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "object"
+                }
+              ]
+            },
+            "cost_usd": {
+              "type": "number"
+            },
+            "wall_s": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

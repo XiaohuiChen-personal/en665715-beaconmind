@@ -1,0 +1,238 @@
+# raw capture 1: m1t6-usb-load.sh
+===== when =====
+2026-10-07T00:13:17Z
+
+===== uptime =====
+ 19:13:17 up 25 days,  9:36,  4 users,  load average: 2.05, 2.03, 1.61
+
+===== free -h =====
+               total        used        free      shared  buff/cache   available
+Mem:           121Gi        80Gi       2.4Gi       104Mi        39Gi        40Gi
+Swap:           15Gi       927Mi        15Gi
+
+===== nvidia-smi which =====
+/usr/bin/nvidia-smi
+
+===== nvidia-smi query =====
+name, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB], temperature.gpu
+NVIDIA GB10, 96 %, 0 %, [N/A], [N/A], 68
+nvidia-smi query exit: 0
+
+===== nvidia-smi =====
+Tue Oct  6 19:13:17 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.159.03             Driver Version: 580.159.03     CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GB10                    On  |   0000000F:01:00.0 Off |                  N/A |
+| N/A   68C    P0             36W /  N/A  | Not Supported          |     96%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            3217      G   /usr/lib/xorg/Xorg                       18MiB |
+|    0   N/A  N/A            3668      G   /usr/bin/gnome-shell                      6MiB |
+|    0   N/A  N/A         1379319      C   VLLM::EngineCore                      74366MiB |
++-----------------------------------------------------------------------------------------+
+nvidia-smi exit: 0
+
+===== docker ps -a =====
+beaconmind-ros	Up 20 minutes	beaconmind-ros:humble
+rosa-ros2	Exited (137) 2 days ago	ollama-ros2
+vllm-rosa	Up 23 minutes	vllm-node-qwen35:latest
+deploy-comfyui-1	Exited (137) 5 weeks ago	h3-spark:local
+scara-llm-pick-place-scara-ros-1	Exited (255) 5 months ago	scara-llm-pick-place/scara-ros:dev
+scara-llm-pick-place-llama-server-1	Exited (0) 5 months ago	ghcr.io/ggml-org/llama.cpp:server-cuda
+scara-llm-pick-place-model-fetcher-1	Exited (0) 5 months ago	python:3.12-slim
+docker ps exit: 0
+
+===== docker command inspect (selected running) =====
+-- beaconmind-ros --
+/beaconmind-ros running=true status=running image=beaconmind-ros:humble cmd=["bash","-lc","mkdir -p /tmp/bmhome && exec sleep infinity"] entrypoint=["/ros_entrypoint.sh"]
+
+-- vllm-rosa --
+/vllm-rosa running=true status=running image=vllm-node-qwen35:latest cmd=["bash","-c","-i","vllm serve Qwen/Qwen3.5-35B-A3B         --tensor-parallel-size 1         --max-model-len 131072         --max-num-seqs 4         --max-num-batched-tokens 4096         --gpu-memory-utilization 0.60         --kv-cache-dtype fp8         --enable-auto-tool-choice         --tool-call-parser qwen3_coder         --reasoning-parser qwen3         --enable-prefix-caching         --port 8000 --host 127.0.0.1"] entrypoint=["/opt/nvidia/nvidia_entrypoint.sh"]
+
+-- extra beaconmind-ros (beaconmind-ros:humble) --
+cmd=["bash","-lc","mkdir -p /tmp/bmhome && exec sleep infinity"]
+
+-- extra vllm-rosa (vllm-node-qwen35:latest) --
+cmd=["bash","-c","-i","vllm serve Qwen/Qwen3.5-35B-A3B         --tensor-parallel-size 1         --max-model-len 131072         --max-num-seqs 4         --max-num-batched-tokens 4096         --gpu-memory-utilization 0.60         --kv-cache-dtype fp8         --enable-auto-tool-choice         --tool-call-parser qwen3_coder         --reasoning-parser qwen3         --enable-prefix-caching         --port 8000 --host 127.0.0.1"]
+
+
+===== ps top rss =====
+    PID %CPU %MEM   RSS     ELAPSED CMD
+1379319  182  2.0 2669864     23:11 VLLM::EngineCore
+1378962  3.2  1.1 1463028     23:34 /usr/bin/python /usr/local/bin/vllm serve Qwen/Qwen3.5-35B-A3B --tensor-parallel-size 1 --max-model-len 131072 --max-num-seqs 4 --max-num-batched-tokens 4096 --gpu-memory-utilization 0.60 --kv-cache-dtype fp8 --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --enable-prefix-caching --port 8000 --host 127.0.0.1
+   2459  0.0  0.2 367920 25-09:35:49 /usr/local/bin/ollama serve
+    746  0.0  0.1 181468 25-09:35:54 /usr/lib/systemd/systemd-journald
+   3668  0.1  0.1 144444 25-09:35:47 /usr/bin/gnome-shell
+   2782  0.0  0.0 88588 25-09:35:49 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+1384001  0.0  0.0 67764       20:39 python3 smoke_test.py ../evidence/print-output.txt /home/xiaohui_chen/Projects/EN.665.715/course-project/data/latency/20261006-185238-think.jsonl 5 1
+1386770  0.0  0.0 53320       16:09 /usr/bin/python3 -c from ros2cli.daemon.daemonize import main; main() --name ros2-daemon --ros-domain-id 0 --rmw-implementation rmw_fastrtps_cpp
+   2471  0.1  0.0 50732 25-09:35:49 /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641
+2104890  0.0  0.0 37824  3-21:50:42 /snap/snapd/current/usr/lib/snapd/snapd
+   2479  0.1  0.0 29516 25-09:35:49 /usr/bin/containerd
+   1907  0.0  0.0 25112 25-09:35:52 /usr/lib/polkit-1/polkitd --no-debug
+    783  0.0  0.0 24452 25-09:35:54 /sbin/multipathd -d -s
+  10482  0.0  0.0 23528 25-09:34:22 /usr/libexec/fwupd/fwupd
+1392901  0.0  0.0 20804       00:00 /usr/sbin/tailscaled be-child ssh --login-shell=/bin/bash --uid=1000 --gid=1000 --groups=1000,4,20,27,29,30,46,100,988,122,983 --local-user=xiaohui_chen --home-dir=/home/xiaohui_chen --remote-user=<redacted> --remote-ip=<redacted> --has-tty=false --tty-name= --force-v1-behavior --cmd=bash -s
+1384706  0.0  0.0 20536       19:07 /usr/sbin/tailscaled be-child ssh --login-shell=/bin/bash --uid=1000 --gid=1000 --groups=1000,4,20,27,29,30,46,100,988,122,983 --local-user=xiaohui_chen --home-dir=/home/xiaohui_chen --remote-user=<redacted> --remote-ip=<redacted> --has-tty=false --tty-name= --force-v1-behavior --cmd=bash -s
+   1888  0.0  0.0 16860 25-09:35:52 /usr/libexec/bluetooth/bluetoothd
+3083722  0.0  0.0 15136  2-19:19:36 /usr/bin/wireplumber
+   3217  0.0  0.0 13580 25-09:35:48 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -nolisten tcp -background none -noreset -keeptty -novtswitch -verbose 3
+ 692760  0.0  0.0 13452    19:13:16 /usr/sbin/cups-browsed
+   2081  0.0  0.0 12228 25-09:35:52 /usr/sbin/NetworkManager --no-daemon
+      1  0.0  0.0 11972 25-09:36:00 /sbin/init splash
+1383911  0.0  0.0 10948       20:43 /usr/bin/containerd-shim-runc-v2 -namespace moby -id eb7dd5d149de19c7b553fc3a67192c9fa5b25084acc6d120380da282d18d84ee -address /run/containerd/containerd.sock
+3083703  0.0  0.0 10360  2-19:19:36 /usr/lib/systemd/systemd --user
+2364347  0.0  0.0  9920  8-10:25:38 cups-proxyd /var/snap/cups/common/run/cups.sock /run/cups/cups.sock -l --logdir /var/snap/cups/1261/var/log
+1379318  0.0  0.0  9760       23:11 /usr/bin/python -c from multiprocessing.resource_tracker import main;main(44)
+ 692757  0.0  0.0  9500    19:13:17 /usr/sbin/cupsd -l
+3083733  0.0  0.0  9464  2-19:19:36 tmux new-session -d -s m5d -n agent -x 110 -y 30 -c /home/xiaohui_chen/Projects/EN.665.715/assignments/assignment2/ollama
+   3057  0.0  0.0  9216 25-09:35:48 /usr/lib/systemd/systemd --user
+
+===== notable processes =====
+1379319  182  2.0 2669864     23:11 VLLM::EngineCore
+1378962  3.2  1.1 1463028     23:34 /usr/bin/python /usr/local/bin/vllm serve Qwen/Qwen3.5-35B-A3B --tensor-parallel-size 1 --max-model-len 131072 --max-num-seqs 4 --max-num-batched-tokens 4096 --gpu-memory-utilization 0.60 --kv-cache-dtype fp8 --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --enable-prefix-caching --port 8000 --host 127.0.0.1
+1384000  0.1  0.0  3772       20:39 bash /home/xiaohui_chen/Projects/EN.665.715/course-project/tools/vllm_queue_probe.sh /home/xiaohui_chen/Projects/EN.665.715/course-project/data/latency/20261006-185238-probe.log
+1384001  0.0  0.0 67764       20:39 python3 smoke_test.py ../evidence/print-output.txt /home/xiaohui_chen/Projects/EN.665.715/course-project/data/latency/20261006-185238-think.jsonl 5 1
+   1907  0.0  0.0 25112 25-09:35:52 /usr/lib/polkit-1/polkitd --no-debug
+3083733  0.0  0.0  9464  2-19:19:36 tmux new-session -d -s m5d -n agent -x 110 -y 30 -c /home/xiaohui_chen/Projects/EN.665.715/assignments/assignment2/ollama
+   2459  0.0  0.2 367920 25-09:35:49 /usr/local/bin/ollama serve
+   3233  0.0  0.0  2932 25-09:35:48 /usr/libexec/rtkit-daemon
+1383994  0.0  0.0  2868       20:39 bash -c bash ~/Projects/EN.665.715/course-project/tools/run_latency.sh 20261006-185238 > ~/Projects/EN.665.715/course-project/data/latency/20261006-185238-runner.log 2>&1
+1383995  0.0  0.0  2944       20:39 bash /home/xiaohui_chen/Projects/EN.665.715/course-project/tools/run_latency.sh 20261006-185238
+
+===== tmux =====
+bm-m1t4: 1 windows (created Tue Oct  6 18:52:38 2026)
+m5d: 5 windows (created Sat Oct  3 23:53:40 2026)
+
+===== ollama api/ps =====
+{"models":[]}
+
+===== port 8000 =====
+{"object":"list","data":[{"id":"Qwen/Qwen3.5-35B-A3B","object":"model","created":1791331997,"owned_by":"vllm","root":"Qwen/Qwen3.5-35B-A3B","parent":null,"max_model_len":131072,"permission":[{"id":"modelperm-ba8b2e98803f2838","object":"model_permission","created":1791331997,"allow_create_engine":false,"allow_sampling":true,"allow_logprobs":true,"allow_search_indices":false,"allow_view":true,"allow
+port 8000: answered
+
+===== lsusb =====
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 003 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 003 Device 002: ID 0843:5740 FIREPHX USB SER
+Bus 004 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 005 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 006 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 007 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 008 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 009 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 010 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 011 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 011 Device 002: ID 13d3:3630 IMC Networks Wireless_Device
+Bus 012 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+
+===== serial by-id =====
+total 0
+lrwxrwxrwx 1 root root 13 Oct  6 19:10 usb-FIREPHX_USB_SER_FX2348N-if00 -> ../../ttyACM0
+
+===== tty nodes =====
+crw-rw---- 1 root dialout 166, 0 Oct  6 19:10 /dev/ttyACM0
+none
+
+===== video nodes =====
+no video nodes
+
+===== recent kernel usb (filtered) =====
+2026-10-06T19:10:33-05:00 spark-2a60 kernel: usb 3-1: new full-speed USB device number 2 using xhci-hcd
+2026-10-06T19:10:33-05:00 spark-2a60 kernel: usb 3-1: New USB device found, idVendor=0843, idProduct=5740, bcdDevice= 1.00
+2026-10-06T19:10:33-05:00 spark-2a60 kernel: usb 3-1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+2026-10-06T19:10:33-05:00 spark-2a60 kernel: usb 3-1: Product: USB SER
+2026-10-06T19:10:33-05:00 spark-2a60 kernel: usb 3-1: Manufacturer: FIREPHX
+2026-10-06T19:10:33-05:00 spark-2a60 kernel: usb 3-1: SerialNumber: FX2348N
+2026-10-06T19:10:33-05:00 spark-2a60 kernel: cdc_acm 3-1:1.0: ttyACM0: USB ACM device
+journal exit: 0
+
+===== evidence markers =====
+EXISTS /home/xiaohui_chen/Projects/EN.665.715/course-project/evidence/M1/M1.T4/gpu-hold.txt
+mtime=2026-10-06 18:49:26.986945461 -0500 size=26
+--- contents (first 20 lines) ---
+2026-10-06T23:49:26Z hold
+--- end ---
+MISSING /home/xiaohui_chen/Projects/EN.665.715/course-project/evidence/M1/M1.T4/gpu-free.txt
+EXISTS /home/xiaohui_chen/Projects/EN.665.715/course-project/evidence/M1/M1.T3/build-tail.txt
+mtime=2026-10-06 18:52:33.848741251 -0500 size=1822
+--- contents (first 20 lines) ---
+#7 2.676       Successfully uninstalled attrs-21.2.0
+#7 2.802   Attempting uninstall: pytest
+#7 2.802     Found existing installation: pytest 6.2.5
+#7 2.803     Uninstalling pytest-6.2.5:
+#7 2.934       Successfully uninstalled pytest-6.2.5
+#7 4.193 
+#7 4.195 Successfully installed annotated-types-0.8.0 anthropic-1.11.0 anyio-4.15.1 attrs-26.1.0 docstring-parser-0.18.0 exceptiongroup-1.3.1 h11-0.16.0 httpcore2-2.13.1 httpx2-2.13.1 idna-3.20 jiter-0.17.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 openai-3.26.0 packaging-26.3 pluggy-1.6.0 pydantic-2.13.5 pydantic-core-2.46.5 pytest-9.1.1 referencing-0.37.0 rpds-py-0.30.0 sniffio-1.3.1 tomli-2.4.1 truststore-0.10.4 typing-extensions-4.16.0 typing-inspection-0.4.4
+#7 4.195 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#7 DONE 4.3s
+
+#8 [4/6] RUN echo "source /opt/ros/humble/setup.bash" >> /etc/bash.bashrc
+#8 DONE 0.2s
+
+#9 [5/6] RUN printf '#!/bin/sh\nexec python3 -m beaconmind.validator clear-latch "$@"\n' > /usr/local/bin/bm-clear-latch     && chmod 755 /usr/local/bin/bm-clear-latch
+#9 DONE 0.2s
+
+#10 [6/6] WORKDIR /workspace/course-project
+#10 DONE 0.1s
+
+#11 exporting to image
+--- end ---
+
+===== latency / t3 artifacts (names only) =====
+total 60
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen 18941 Oct  6 19:13 20261006-185238-probe.log
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen  1297 Oct  6 19:10 20261006-185238-runner.log
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen  1297 Oct  6 19:10 20261006-185238-think.log
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen 27528 Oct  6 19:10 20261006-185238-think.jsonl
+
+total 36
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen   11 Oct  6 18:57 apriltag-tf-frame.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen 2379 Oct  6 18:57 apriltag-params.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen  897 Oct  6 18:57 apriltag-detection.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen  492 Oct  6 18:57 colcon-test.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen   49 Oct  6 18:56 make-tags-selftest.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen   99 Oct  6 18:56 pytest-py310.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen 1270 Oct  6 18:55 container-versions.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen 1822 Oct  6 18:52 build-tail.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen 1352 Oct  6 18:49 apt-policy.txt
+
+total 16
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen  16 Oct  6 18:52 stamp.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen 330 Oct  6 18:52 metric-names.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen 872 Oct  6 18:52 server-args.txt
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen  26 Oct  6 18:49 gpu-hold.txt
+
+===== docker build processes =====
+
+===== done =====
+2026-10-07T00:13:17Z
+
+# raw capture 2: latency progress
+===== jsonl counts =====
+4 /home/xiaohui_chen/Projects/EN.665.715/course-project/data/latency/20261006-185238-think.jsonl
+===== think.log tail =====
+S1_duplicate_new 1 thinking 405.8s 7 tool calls PASS {} 
+S1_duplicate_new 2 thinking 432.6s 5 tool calls FAIL {'tools used (compose_odometry called)': False, 'pose_source=position_fix': False, 'pose = the position fix': False, 'B1b at map_point from the fix': False, 'B1b new-entry fields (tentative, n_obs 1, from the fix, odo, 0 conflicts)': False, 'decision FORWARD_25 executed': False, 'all_pass': False} 
+S1_duplicate_new 3 thinking 41.5s 0 tool calls FAIL {'tools used (compose_odometry called)': False, 'fix_pose called with the B5 match': False, 'pose_source=position_fix': False, 'pose = the position fix': False, 'B5 unchanged but odo_last_seen_m refreshed': False, 'B1b at map_point from the fix': False, 'B1b new-entry fields (tentative, n_obs 1, from the fix, odo, 0 conflicts)': False, 'decision FORWARD_25 executed': False, 'no loop closure': False, "det 1 gated against its id's entries": False, 'map_point called on det 1': False, 'all_pass': False} 
+S1_duplicate_new 4 thinking 181.6s 8 tool calls FAIL {'fix_pose called with the B5 match': False, 'pose = the position fix': False, 'B5 unchanged but odo_last_seen_m refreshed': False, 'B1b at map_point from the fix': False, 'B1b new-entry fields (tentative, n_obs 1, from the fix, odo, 0 conflicts)': False, 'all_pass': False} 
+===== nothink present =====
+no nothink files
+===== probe tail =====
+1791331991 running=1 waiting=0
+1791331993 running=1 waiting=0
+1791331995 running=1 waiting=0
+===== isaac/kit =====
+no isaac/kit/colcon/docker-build

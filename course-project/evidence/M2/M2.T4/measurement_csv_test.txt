@@ -1,0 +1,94 @@
+# M2.T4 third review, defect 2: test_urdf.py's measurement-based tests were tied to the 2026-10-10 row names of
+# assignments/assignment6/measurements.csv (W1_..., W2_..., K1_...). Every CSV and car.json below is SYNTHETIC check
+# input (the 2026-10-10 readings of Xiaohui Chen re-typed into tools/car_measurements_template.csv), not a measurement.
+# Host spark-2a60, container beaconmind-ros (Humble, Python 3.10.12, pytest 9.1.1), 2026-10-10; env for every pytest:
+#   ROS_DOMAIN_ID=141 ROS_LOCALHOST_ONLY=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1; no ROS node started.
+# Scratch (git-ignored): course-project/data/m2t4-round4/ (inputs/make_inputs.py wrote the inputs; before.sh, b2a.sh,
+#   after.sh ran the cases; their full output is before.txt, b2a.txt, after.txt there).
+#   inputs/filled.csv          the template's rows filled with the 2026-10-10 readings, in m and kg
+#   inputs/filled-rollout.csv  the same with rollout_left_m = rollout_right_m = 1.040338 m (diameter 0.066230 m), W1 blank
+#   inputs/filled-mut.csv      filled.csv with wheel_width_m 0.030 m and mass_kg 0.510 kg
+# Each case: python3 -m pytest -q -p no:cacheprovider -rfs <package test folder>, filtered to the result lines.
+
+## BEFORE the fix (test_urdf.py sha256 fdbe3187...)
+### B2a. the real package, BM_MEASUREMENTS_CSV = inputs/filled.csv (the same readings under the plan key names)
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_wheel_separation_equals_track_width
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_wheel_radius_half_diameter
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_optical_frame_pose_from_measurements
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_caster_touches_floor
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_total_mass_matches_car_json
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_imu_pose_from_measurements
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_com_matches_lever_rule
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_chassis_boxes_clear_floor_and_tyres
+SKIPPED [1] ros2_ws/src/beaconmind_description/test/test_urdf.py:397: /workspace/course-project/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUMED 0) meanwhile
+8 failed, 11 passed, 1 skipped in 0.18s
+### B2a failure reasons (b2a.sh: the pre-fix test_urdf.py in a copy of the real package; grep '^E +KeyError' | sort | uniq -c)
+      1 8 failed, 11 passed, 1 skipped in 0.18s
+      1 E       KeyError: 'C1_caster_wheel_diameter'
+      2 E       KeyError: 'K1_total_mass'
+      1 E       KeyError: 'S1_imu_board_centre_x'
+      1 E       KeyError: 'S3_lens_x'
+      1 E       KeyError: 'W2_tyre_width'
+      1 E       KeyError: 'W3_track_inner'
+      1 E       KeyError: 'W3_track_outer'
+### B2b setup: car.json built by tools/write_car_json.py from filled-rollout.csv (copied to data/m2t4-round4/before/d2b/
+###   evidence/M1/M1.T9/), car_props.xacro regenerated from it by gen_props.py (no camera.json)
+wheel_diameter_left_m    0.066230 m  +- 0.0001  rollout_left_m / (5 pi)
+wheel_diameter_right_m   0.066230 m  +- 0.0001  rollout_right_m / (5 pi)
+wheel_diameter_m         0.066230 m  +- 0.0001  mean of the two wheels
+imu_z_m                  0.026885 m  +- 0.0020  row S1_imu_board_top_h (2 mm ruler rule; instrument: ruler) - wheel_diameter_m / 2; board top above the AXLE
+omitted (no reading in the CSV): counts_per_rev_left, counts_per_rev_right, imu_axes, ticks_per_wheel_rev
+bm.car-1 validation: OK
+wrote /workspace/course-project/data/m2t4-round4/before/d2b/pkg/beaconmind_description/urdf/car_props.xacro from /workspace/course-project/data/m2t4-round4/before/d2b/configs/car.json (camera.json absent)
+32:  <xacro:property name="wheel_diameter" value="0.06623"/>
+### B2b. that package copy, BM_CAR_JSON = its car.json, default CSV (then: assignments/assignment6/measurements.csv, W1 67 mm)
+FAILED data/m2t4-round4/before/d2b/pkg/beaconmind_description/test/test_urdf.py::test_wheel_radius_half_diameter
+FAILED data/m2t4-round4/before/d2b/pkg/beaconmind_description/test/test_urdf.py::test_optical_frame_pose_from_measurements
+FAILED data/m2t4-round4/before/d2b/pkg/beaconmind_description/test/test_urdf.py::test_caster_touches_floor
+FAILED data/m2t4-round4/before/d2b/pkg/beaconmind_description/test/test_urdf.py::test_imu_pose_from_measurements
+SKIPPED [1] data/m2t4-round4/before/d2b/pkg/beaconmind_description/test/test_urdf.py:397: /workspace/course-project/data/m2t4-round4/before/d2b/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUME
+4 failed, 15 passed, 1 skipped in 0.12s
+
+## AFTER the fix (test_urdf.py sha256 b81f8d74...): fixture `meas` reads the CSV that car.json's evidence fields name
+##   (resolved from the course-project folder above configs/car.json), through write_car_json.read_csv and ROW_FOR_KEY;
+##   the wheel diameter is the roll-out mean when both roll-outs exist; test_com_matches_lever_rule reads the extras source
+##   CSV (fixture `extras_meas`, assignments/assignment6/measurements.csv).
+### A2a. the real package, BM_MEASUREMENTS_CSV = inputs/filled.csv
+SKIPPED [1] ros2_ws/src/beaconmind_description/test/test_urdf.py:463: /workspace/course-project/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUMED 0) meanwhile
+19 passed, 1 skipped in 0.11s
+### A2b. car.json from filled-rollout.csv (data/m2t4-round4/after/d2b, built and regenerated as in B2b), DEFAULT CSV.
+###   Its car.json names "evidence/M1/M1.T9/filled-rollout.csv", which the test resolves to after/d2b/evidence/M1/M1.T9/filled-rollout.csv
+SKIPPED [1] data/m2t4-round4/after/d2b/pkg/beaconmind_description/test/test_urdf.py:463: /workspace/course-project/data/m2t4-round4/after/d2b/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUMED 0) meanwhile
+19 passed, 1 skipped in 0.10s
+### A2b-control. the same package and car.json, but BM_MEASUREMENTS_CSV = the 2026-10-10 CSV (W1 67 mm): the tests
+###   must see that the URDF's 66.23 mm wheel is not that CSV's wheel (shows the default really read filled-rollout.csv)
+E           AssertionError: assert 0.0003850000000000034 <= 2e-06
+E           AssertionError: optical frame at [0.12, 0.0, 0.041885], measured lens at [0.12, 0.0, 0.041499999999999995]
+E       AssertionError: imu_link at [-0.061, 0.02, 0.026885], measured board centre at [-0.061, 0.02, 0.026499999999999996]
+FAILED data/m2t4-round4/after/d2b/pkg/beaconmind_description/test/test_urdf.py::test_wheel_radius_half_diameter
+FAILED data/m2t4-round4/after/d2b/pkg/beaconmind_description/test/test_urdf.py::test_optical_frame_pose_from_measurements
+FAILED data/m2t4-round4/after/d2b/pkg/beaconmind_description/test/test_urdf.py::test_caster_touches_floor
+FAILED data/m2t4-round4/after/d2b/pkg/beaconmind_description/test/test_urdf.py::test_imu_pose_from_measurements
+SKIPPED [1] data/m2t4-round4/after/d2b/pkg/beaconmind_description/test/test_urdf.py:463: /workspace/course-project/data/m2t4-round4/after/d2b/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUMED 0) meanwhile
+4 failed, 15 passed, 1 skipped in 0.15s
+### A3 (mutation). the real package and car.json, BM_MEASUREMENTS_CSV = inputs/filled-mut.csv (wheel_width_m 0.030 m,
+###   mass_kg 0.510 kg): a CSV that disagrees with car.json must fail the wheel and mass tests
+E           AssertionError: assert 0.002999999999999999 <= 2e-06
+E       AssertionError: sum of link masses 0.506 kg, filled-mut.csv mass 0.51 kg
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_wheel_radius_half_diameter
+FAILED ros2_ws/src/beaconmind_description/test/test_urdf.py::test_total_mass_matches_car_json
+SKIPPED [1] ros2_ws/src/beaconmind_description/test/test_urdf.py:463: /workspace/course-project/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUMED 0) meanwhile
+2 failed, 17 passed, 1 skipped in 0.12s
+### A4 (extras coupling). car.json rebuilt from filled-mut.csv (mass 0.510 kg, as if re-weighed) and car_props.xacro
+###   regenerated, default CSV: the URDF follows the new car.json, but car_geometry_extras.xacro still holds caster_load
+###   142 g from the 506 g weighing, so the lever-rule test must fail with its hand-update message
+E       AssertionError: sum of link masses 0.51 kg (car.json mass_kg) is not the mass 0.506 kg of measurements.csv, the weighing that gave car_geometry_extras.xacro its caster_load: re-weigh both parts and update caster_load / drive_wheels_load there by hand
+FAILED data/m2t4-round4/after/d4/pkg/beaconmind_description/test/test_urdf.py::test_com_matches_lever_rule
+SKIPPED [1] data/m2t4-round4/after/d4/pkg/beaconmind_description/test/test_urdf.py:463: /workspace/course-project/data/m2t4-round4/after/d4/configs/camera.json (M1.T7 calibration) does not exist yet; test_optical_frame_pose_from_measurements checks the measured lens position (mount angles ASSUMED 0) meanwhile
+1 failed, 18 passed, 1 skipped in 0.12s
+
+## Result: B2a 8 failed (KeyError on the 2026-10-10 row names) and B2b 4 failed before the fix, as the review reported;
+##   after it A2a and A2b give the same result as the real configuration (19 passed, 1 skipped), and the control and
+##   mutation cases still fail where they must (A2b-control 4, A3 2, A4 1: test_com_matches_lever_rule).
+## AI-assisted: Claude Opus 5.5 (xhigh effort) via Claude Code, 2026-10-10: wrote the scratch scripts, ran the cases
+##   and assembled this file from their output.

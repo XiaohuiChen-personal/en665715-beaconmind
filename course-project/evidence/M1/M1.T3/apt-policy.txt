@@ -1,0 +1,44 @@
+=== docker image inspect ros:humble-ros-base ===
+arm64 linux
+=== apt-cache policy ===
+ros-humble-apriltag-ros:
+  Candidate: 3.4.0-1jammy.20260909.232312
+ros-humble-apriltag-msgs:
+  Candidate: 2.0.2-1jammy.20260907.213324
+ros-humble-image-proc:
+  Candidate: 3.0.9-1jammy.20260908.051808
+ros-humble-image-transport:
+  Candidate: 3.1.13-1jammy.20260908.042813
+ros-humble-compressed-image-transport:
+  Candidate: 2.5.5-1jammy.20260909.231224
+ros-humble-cv-bridge:
+  Candidate: 3.2.1-1jammy.20260907.222938
+ros-humble-camera-calibration-parsers:
+  Candidate: 3.1.13-1jammy.20260908.011532
+ros-humble-tf2-ros:
+  Candidate: 0.25.23-1jammy.20260908.042633
+ros-humble-tf2-tools:
+  Candidate: 0.25.23-1jammy.20260907.233925
+ros-humble-robot-state-publisher:
+  Candidate: 3.0.3-2jammy.20260908.051617
+ros-humble-xacro:
+  Candidate: 2.1.1-1jammy.20260307.132851
+ros-humble-rmw-fastrtps-cpp:
+  Candidate: 6.2.10-1jammy.20260907.212405
+ros-humble-fastrtps:
+  Candidate: 2.6.12-1jammy.20260725.060440
+python3-opencv:
+  Candidate: 4.5.4+dfsg-9ubuntu4
+python3-colcon-common-extensions:
+  Candidate: 0.3.0-100
+python3-pip:
+  Candidate: 22.0.2+dfsg-1ubuntu0.7
+python3-numpy:
+  Candidate: 1:1.21.5-1ubuntu22.04.1
+tmux:
+  Candidate: 3.2a-4ubuntu0.2
+curl:
+  Candidate: 7.81.0-1ubuntu1.29
+iproute2:
+  Candidate: 5.15.0-1ubuntu2.2
+=== STEP2 DONE 2026-10-06T18:49:34-05:00 ===

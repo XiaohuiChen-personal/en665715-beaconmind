@@ -1,0 +1,36 @@
+# M1.T6 toolchain. Upload was not run.
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: recorded the pinned builder image and the board menu. No baud or flash voltage was selected.
+
+Pinned rebuild of bm-esp32-builder: EXIT:0
+Image id: sha256:a17e85dbf1c11c724dc8cd44bfeb1bd3b66b1bbab4c63934d4e3280080a419e4
+Dockerfile pin: arduino-cli_1.5.2-rc.1_Linux_ARM64.tar.gz (HTTP 200 before the rebuild); esp32:esp32@3.3.12
+
+arduino-cli version (docker run --rm bm-esp32-builder arduino-cli version):
+arduino-cli  Version: 1.5.2-rc.1 Commit: fef6e48df Date: 2026-07-23T11:13:45Z
+
+arduino-cli core list:
+ID          Installed Latest Name
+esp32:esp32 3.3.12    3.3.12 esp32
+
+Board (arduino-cli board listall | grep -i -E "esp32cam|ai.?thinker"):
+AI Thinker ESP32-CAM                        esp32:esp32:esp32cam
+FQBN: esp32:esp32:esp32cam
+Programmer: esptool
+
+Checked menu defaults from `arduino-cli board details -b esp32:esp32:esp32cam` (not passed on a command line; nothing was uploaded):
+- CPUFreq=240
+- FlashFreq=80
+- FlashMode=qio
+- PartitionScheme=huge_app
+- DebugLevel=none
+- EraseFlash=none
+
+The same board details list has no USB, CDC, or ACM option, no upload-speed menu, and no flash-voltage option.
+`boards.txt` for this FQBN has fixed properties upload.speed=460800, serial.disableDTR=true, serial.disableRTS=true, and upload.flags empty.
+The QIO menu item sets build.flash_mode=dio and build.boot=qio. That line was read and not overridden.
+No esp32cam key contains "voltage".
+
+Host serial, not opened: /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00 -> ttyACM0, USB id 0843:5740, driver cdc_acm.
+The CH340 (1a86) and CP210x (10c4) by-id globs do not match this node.
+
+Stop: the core has no board option for an ESP32-CAM on a CDC ACM serial. No upload flags were invented. The serial port was not opened.

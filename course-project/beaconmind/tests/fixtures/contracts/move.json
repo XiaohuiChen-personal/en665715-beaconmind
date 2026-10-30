@@ -1,0 +1,11 @@
+{
+  "schema": "bm.move/1",
+  "cmd_seq": 17,
+  "obs_id": "sim-dup-s1003-EXPLORE-k0-s014",
+  "action": "FORWARD_25",
+  "distance_m": 0.25,
+  "angle_deg": 0.0,
+  "v_max_mps": 0.15,
+  "w_max_dps": 45.0,
+  "timeout_s": 5.0
+}

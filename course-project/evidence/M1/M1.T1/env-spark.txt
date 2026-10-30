@@ -1,0 +1,23 @@
+== date
+Tue Oct  6 18:42:56 CDT 2026
+== python3
+Python 3.12.3
+== venv
+Python 3.12.3
+== cc
+cc (Ubuntu 11.5.0-1ubuntu1~24.04.1) 11.5.0
+== docker compose
+Docker Compose version v5.0.2
+== docker ps
+rosa-ros2 Exited (137) 2 days ago
+vllm-rosa Exited (137) 2 days ago
+deploy-comfyui-1 Exited (137) 5 weeks ago
+scara-llm-pick-place-scara-ros-1 Exited (255) 5 months ago
+scara-llm-pick-place-llama-server-1 Exited (0) 5 months ago
+scara-llm-pick-place-model-fetcher-1 Exited (0) 5 months ago
+== vllm
+vLLM not serving
+== serial
+no serial devices
+== ip
+    inet 192.168.5.1/22 brd 192.168.7.255 scope global dynamic noprefixroute enP7s7

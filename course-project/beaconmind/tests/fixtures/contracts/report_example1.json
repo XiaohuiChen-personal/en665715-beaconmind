@@ -1,0 +1,102 @@
+{
+  "step": 41,
+  "mode": "closed_loop",
+  "mission": "EXPLORE",
+  "pose": {
+    "x_m": -0.12,
+    "y_m": 0.65,
+    "theta_deg": 22.9
+  },
+  "pose_source": "beacon_fix",
+  "associations": [
+    {
+      "det": 0,
+      "id": 1,
+      "beacon": "B1",
+      "result": "matched"
+    },
+    {
+      "det": 1,
+      "id": 5,
+      "beacon": "B5",
+      "result": "matched"
+    }
+  ],
+  "loop_closure": [
+    {
+      "beacon": "B1",
+      "accepted": true,
+      "reason": "revisit in beacon_fix"
+    },
+    {
+      "beacon": "B5",
+      "accepted": true,
+      "reason": "revisit in beacon_fix"
+    }
+  ],
+  "map": [
+    {
+      "beacon": "B1",
+      "id": 1,
+      "x_m": 1.27,
+      "y_m": 0.63,
+      "n_obs": 3,
+      "state": "confirmed",
+      "first_seen_from": [
+        0,
+        0
+      ],
+      "first_seen_scan": 1,
+      "odo_last_seen_m": 3.1,
+      "conflicts": 0,
+      "suspect": false
+    },
+    {
+      "beacon": "B5",
+      "id": 5,
+      "x_m": 0.42,
+      "y_m": 1.22,
+      "n_obs": 2,
+      "state": "confirmed",
+      "first_seen_from": [
+        0,
+        0
+      ],
+      "first_seen_scan": 1,
+      "odo_last_seen_m": 3.1,
+      "conflicts": 0,
+      "suspect": false
+    }
+  ],
+  "memory": {
+    "scan_points": [
+      [
+        0,
+        0
+      ],
+      [
+        -0.6,
+        0.1
+      ],
+      [
+        -0.12,
+        0.65
+      ]
+    ],
+    "scan_index": 3,
+    "scan_turns_left": 11,
+    "scan_added": 0,
+    "scans_without_new": 1,
+    "legs_since_scan": 0,
+    "target_heading_deg": null,
+    "leg_moves_left": 0,
+    "blocked_heading_deg": null,
+    "recovery": "none",
+    "stuck": 0
+  },
+  "decision": "TURN_LEFT_30",
+  "move_result": "done",
+  "requested_mission": null,
+  "message": null,
+  "note": "I fixed my pose from B1+B5 (residual 0.02 m), closed both revisits and started scan 3 at a new place."
+}

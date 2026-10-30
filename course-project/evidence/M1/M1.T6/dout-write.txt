@@ -1,0 +1,47 @@
+# DOUT bootloader write only. Offset 0x1000. No app, partitions, boot_app0, or status register.
+# --before no-reset --after no-reset. No DTR/RTS pulse. No reset after the verified write.
+# Device: /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00 -> /dev/ttyACM0
+# Image: bm_cam/build/bm_cam.ino.bootloader.bin (DIO rebuild, bootloader_dio_40m), 23520 bytes.
+# sha256 f7ec7b7d9026e12dd3616bf79cee0e78974a2605afbc2863fcfb0ac9aeb159d4 before and after.
+# Esptool was given a /tmp copy of that file. The build-dir original was not modified.
+# bm-esp32-builder esptool v5.3.1. WRITE_EXIT:0. Staying in bootloader.
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: saved this esptool result from the Spark.
+
+PORT=/dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00
+DEV=/dev/ttyACM0
+SRC=/home/xiaohui_chen/Projects/EN.665.715/course-project/firmware/esp32cam/bm_cam/build/bm_cam.ino.bootloader.bin
+SIZE_SRC=23520
+SHA_BEFORE
+f7ec7b7d9026e12dd3616bf79cee0e78974a2605afbc2863fcfb0ac9aeb159d4  bm_cam.ino.bootloader.bin
+
+COMMAND: esptool --chip esp32 --port /dev/ttyACM0 --before no-reset --after no-reset write-flash --flash-mode dout --flash-freq 40m --flash-size keep 0x1000 /bootloader_dio_40m.bin
+
+=== write-flash ===
+esptool v5.3.1
+Serial port /dev/ttyACM0:
+Note: Pre-connection option "no-reset" was selected. Connection may fail if the chip is not in bootloader or flasher stub mode.
+Connecting...
+Connected to ESP32 on /dev/ttyACM0:
+Chip type:          ESP32-D0WD-V3 (revision v3.1)
+Features:           Wi-Fi, BT, Dual Core + LP Core, 240MHz, Vref calibration in eFuse, Coding Scheme None
+Crystal frequency:  40MHz
+MAC:                <redacted>
+
+Stub flasher is already running. No upload is necessary.
+
+Configuring flash size...
+Flash parameters set to 0x0320.
+SHA digest in image updated.
+Flash will be erased from 0x00001000 to 0x00006fff...
+Compressed 23520 bytes to 15099...
+Writing at 0x00001000 [                              ]   0.0% 0/15099 bytes... 
+Writing at 0x00006be0 [==============================] 100.0% 15099/15099 bytes... 
+Wrote 23520 bytes (15099 compressed) at 0x00001000 in 1.5 seconds (124.0 kbit/s).
+Verifying written data...
+Hash of data verified.
+
+Staying in bootloader.
+WRITE_EXIT:0
+SHA_AFTER
+f7ec7b7d9026e12dd3616bf79cee0e78974a2605afbc2863fcfb0ac9aeb159d4  bm_cam.ino.bootloader.bin
+SIZE_AFTER_SRC=23520

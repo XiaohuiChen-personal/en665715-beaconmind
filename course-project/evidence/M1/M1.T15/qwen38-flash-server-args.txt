@@ -1,0 +1,11 @@
+checkpoint=nvidia/Qwen3.8-Flash-Next-NVFP4
+snapshot=fc694b54fb0174e0913e6adf86691ef85a4ead47
+recipe=https://github.com/blazux/qwen3.8-Flash-DGX
+recipe_commit=5d944b3
+container=qwen38-flash
+served_model_name=Qwen/Qwen3.5-35B-A3B
+note=served name matches the unchanged smoke harness; weights are the NVFP4 checkpoint above
+["/hf/hub/models--nvidia--Qwen3.8-Flash-Next-NVFP4/snapshots/fc694b54fb0174e0913e6adf86691ef85a4ead47-fp8hybrid","--served-model-name","Qwen/Qwen3.5-35B-A3B","--host","0.0.0.0","--port","8000","--load-format","safetensors","--max-model-len","500000","--max-num-seqs","8","--gpu-memory-utilization","0.80","--enable-prefix-caching","--enable-prompt-tokens-details","--enable-chunked-prefill","--max-num-batched-tokens","8192","-cc.cudagraph_mode=PIECEWISE","-cc.splitting_ops=[\"vllm::unified_attention_with_output\",\"vllm::unified_mla_attention_with_output\",\"vllm::mamba_mixer2\",\"vllm::mamba_mixer\",\"vllm::short_conv\",\"vllm::qwen4_exp_ple_short_conv\",\"vllm::qwen4_exp_qsa_with_output\",\"vllm::linear_attention\",\"vllm::qwen_gdn_attention_core\",\"vllm::qwen_gdn_attention_core_fused_norm_packed\",\"vllm::gdn_attention_core_xpu\",\"vllm::olmo_hybrid_gdn_full_forward\",\"vllm::sparse_attn_indexer\",\"vllm::rocm_aiter_sparse_attn_indexer\",\"vllm::deepseek_v4_attention\",\"vllm::hpc_rope_norm_forward\",\"vllm::unified_kv_cache_update\",\"vllm::unified_mla_kv_cache_update\",\"vllm::ple_mmap_lookup_ids\"]","--no-enable-flashinfer-autotune","--kv-cache-dtype","auto","--hf-overrides","{\"text_config\": {\"rope_parameters\": {\"mrope_interleaved\": true, \"mrope_section\": [11, 11, 10], \"rope_type\": \"yarn\", \"rope_theta\": 10000000, \"partial_rotary_factor\": 0.25, \"factor\": 4.0, \"original_max_position_embeddings\": 262144}}}","--enable-auto-tool-choice","--tool-call-parser","qwen3_coder","--reasoning-parser","qwen3","--chat-template","/qwen38/chat_template.jinja","--speculative-config","{\"method\":\"mtp\",\"num_speculative_tokens\":2,\"max_model_len\":500000}"]
+
+{"8000/tcp":[{"HostIp":"127.0.0.1","HostPort":"8000"}]}
+

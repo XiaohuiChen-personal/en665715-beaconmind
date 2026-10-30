@@ -1,0 +1,13 @@
+HTTP/1.1 200 OK
+Content-Type: image/jpeg
+Content-Length: 126024
+Content-Disposition: inline; filename=capture.jpg
+Cache-Control: no-store
+Access-Control-Allow-Origin: *
+X-BM-Seq: 3
+X-BM-Capture-Us: 187482021
+X-BM-Frame-Us: 187263160
+X-BM-Uptime-Ms: 187482
+X-BM-Width: 640
+X-BM-Height: 480
+

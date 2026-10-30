@@ -1,0 +1,6 @@
+# Spark host system python3, 2026-10-07. Command:
+# python3 ~/Projects/EN.665.715/course-project/tools/detect_tags_offline.py --selftest
+
+selftest ok: id 3, range 0.697 m (pinhole 0.693 m), bearing -0.0 deg
+
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: recorded the Qwen3.8 pin, deferred Bonsai, and started M1.T5.

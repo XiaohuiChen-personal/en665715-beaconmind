@@ -1,0 +1,7 @@
+checkpoint=prism-ml/Ternary-Bonsai-2-27B-gguf
+file=Ternary-Bonsai-2-27B-PTQ1_0.gguf
+server=PrismML llama.cpp prism-b10754-2459f68 ubuntu-arm64 CPU
+url=https://github.com/PrismML-Eng/llama.cpp/releases/download/prism-b10754-2459f68/llama-prism-b10754-2459f68-bin-ubuntu-arm64.tar.gz
+ctx=65536 ngl=0 parallel=1 threads=18
+served_alias=Qwen/Qwen3.5-35B-A3B
+metrics_http=501 no vllm queue metrics; probe counts /slots is_processing

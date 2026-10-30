@@ -1,0 +1,54 @@
+=== detections ===
+header:
+  stamp:
+    sec: 1791331028
+    nanosec: 794890923
+  frame_id: camera_optical_frame
+detections:
+- family: tag36h11
+  id: 3
+  hamming: 0
+  goodness: 0.0
+  decision_margin: 239.0625
+  centre:
+    x: 400.0
+    y: 300.0
+  corners:
+  - x: 480.0
+    y: 220.0
+  - x: 320.0
+    y: 220.0
+  - x: 320.0
+    y: 380.0
+  - x: 480.0
+    y: 380.0
+  homography:
+  - -80.0
+  - -4.898587196589413e-15
+  - 400.0
+  - 4.898587196589413e-15
+  - -80.0
+  - 300.0
+  - 0.0
+  - 0.0
+  - 1.0
+---
+=== tf ===
+transforms:
+- header:
+    stamp:
+      sec: 1791331030
+      nanosec: 194851782
+    frame_id: camera_optical_frame
+  child_frame_id: tag36h11:3
+  transform:
+    translation:
+      x: -8.751605562425819e-26
+      y: -1.4191375902985229e-22
+      z: 0.6929999999851701
+    rotation:
+      x: 6.563907207676461e-25
+      y: 1.0
+      z: -7.690648308018177e-21
+      w: 6.123233995736766e-17
+---

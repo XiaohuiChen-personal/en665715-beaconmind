@@ -1,0 +1,45 @@
+# M1.T5 step 3 — how this Isaac 5.1.0-rc.19 build creates and binds an MDL material
+# Searched 2026-10-07 00:02 CT on spark-2a60.
+# The build tree's Python is symlinked into ~/IsaacSim/source. grep of
+# _build/linux-aarch64/release/exts does not follow those links, so the hits below are in source.
+
+VERSION
+5.1.0-rc.19+main.0.aa503a9b.local
+
+CreateMdlMaterialPrim (first hits):
+~/IsaacSim/source/extensions/isaacsim.replicator.behavior/isaacsim/replicator/behavior/utils/scene_utils.py:379
+    omni.kit.commands.execute("CreateMdlMaterialPrim", mtl_url=mtl_url, mtl_name=mtl_name, mtl_path=mtl_path)
+~/IsaacSim/source/extensions/isaacsim.gui.menu/isaacsim/gui/menu/create_menu.py:68
+    "CreateMdlMaterialPrim" inside create_apriltag (lines 55-76)
+
+Shipped AprilTag material (the pattern this spike follows; reimplemented, not pasted):
+create_menu.py:55 def create_apriltag(usd_path, shader_name, stage_path, tag_path)
+create_menu.py:287-291 the menu passes:
+    usd_path = "/Isaac/Materials/AprilTag/AprilTag.mdl"
+    shader_name = "AprilTag"
+    stage_path = "/Looks/AprilTag"
+    tag_path = "/Isaac/Materials/AprilTag/Textures/tag36h11.png"
+create_menu.py:66-75 CreateMdlMaterialPrim(mtl_url=assets_root_path + usd_path, mtl_name=shader_name, mtl_path=stage_path)
+create_menu.py:73-75 shader prim at stage_path + "/Shader", attribute inputs:tag_mosaic set to the texture asset.
+
+Bind:
+~/IsaacSim/source/extensions/isaacsim.gui.menu/isaacsim/gui/menu/tests/test_menu.py:160
+    omni.kit.commands.execute("BindMaterial", material_path="/Looks/AprilTag", prim_path=["/Cube"], strength=["weakerThanDescendants"])
+
+MaterialBindingAPI in isaacsim.core.api is only the physics-scene bind:
+~/IsaacSim/source/extensions/isaacsim.core.api/python/impl/physics_context/physics_context.py:200
+    UsdShade.MaterialBindingAPI.Apply(self._physics_scene.GetPrim())
+The AprilTag test uses the BindMaterial command, so the spike uses that command.
+
+Camera aperture (stage units; the USD attribute is tenths):
+~/IsaacSim/source/extensions/isaacsim.sensors.camera/isaacsim/sensors/camera/camera.py:73
+    USD_CAMERA_TENTHS_TO_STAGE_UNIT = 10.0
+camera.py:1198 set_focal_length, camera.py:1253 set_horizontal_aperture, camera.py:1300 set_clipping_range
+
+Material source for the first render: asset server, get_assets_root_path() + the two paths above.
+The MDL default for tag_mosaic is an empty texture_2d(), so the texture path is set explicitly.
+Local copies, used only if that load fails:
+~/Projects/EN.665.715/course-project/data/renders/apriltag-assets/AprilTag.mdl
+~/Projects/EN.665.715/course-project/data/renders/apriltag-assets/tag36h11.png
+
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: recorded the Qwen3.8 pin, deferred Bonsai, and started M1.T5.

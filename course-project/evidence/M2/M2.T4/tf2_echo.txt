@@ -1,0 +1,170 @@
+# M2.T4 step 9 smoke test. Host spark-2a60, container beaconmind-ros. 2026-10-10T07:34:23-05:00
+# ROS_DOMAIN_ID=47 ROS_LOCALHOST_ONLY=1 (private domain, localhost only); started here, stopped at the end.
+# CORRECTION added by the review fix (~07:52): the launch was stopped at the end, but the ROS 2 CLI daemon that this
+# run's ros2 calls started (container pid 1682, domain 47) was not; it was stopped at ~07:52 (daemon_stop.txt).
+
+## expanded URDF for Isaac: xacro /workspace/course-project/ros2_ws/src/beaconmind_description/urdf/beaconmind_car.urdf.xacro > /workspace/course-project/sim/isaac/assets/beaconmind_car.urdf
+# xacro exit status: 0
+81a7d617bd8c1ada5008a05f83047d21f2f36aedca25631bc308d5c984826383  course-project/sim/isaac/assets/beaconmind_car.urdf
+17315 course-project/sim/isaac/assets/beaconmind_car.urdf
+
+## before the launch: robot_state_publisher processes in beaconmind-ros, and the nodes on domain 47
+(none)
+(end of node list)
+
+## launch (background): ros2 launch beaconmind_description description.launch.py
+1542 /usr/bin/python3 /opt/ros/humble/bin/ros2 launch beaconmind_description description.launch.py
+1571 /opt/ros/humble/lib/robot_state_publisher/robot_state_publisher --ros-args --params-file /tmp/launch_params_2a7dtj16
+/robot_state_publisher
+
+## timeout 5 ros2 run tf2_ros tf2_echo base_link camera_optical_frame -p 6
+[INFO] [1791635670.634599555] [tf2_echo]: Waiting for transform base_link ->  camera_optical_frame: Invalid frame ID "base_link" passed to canTransform argument target_frame - frame does not exist
+At time 0.0
+- Translation: [0.120000, 0.000000, 0.041500]
+- Rotation: in Quaternion (xyzw) [-0.500000, 0.500000, -0.500000, 0.500000]
+- Rotation: in RPY (radian) [-1.570796, -0.000000, -1.570796]
+- Rotation: in RPY (degree) [-90.000000, -0.000000, -90.000000]
+- Matrix:
+ 0.000000 0.000000 1.000000 0.120000
+ -1.000000 0.000000 0.000000 0.000000
+ 0.000000 -1.000000 0.000000 0.041500
+ 0.000000 0.000000 0.000000 1.000000
+At time 0.0
+- Translation: [0.120000, 0.000000, 0.041500]
+- Rotation: in Quaternion (xyzw) [-0.500000, 0.500000, -0.500000, 0.500000]
+- Rotation: in RPY (radian) [-1.570796, -0.000000, -1.570796]
+- Rotation: in RPY (degree) [-90.000000, -0.000000, -90.000000]
+- Matrix:
+ 0.000000 0.000000 1.000000 0.120000
+ -1.000000 0.000000 0.000000 0.000000
+ 0.000000 -1.000000 0.000000 0.041500
+ 0.000000 0.000000 0.000000 1.000000
+At time 0.0
+- Translation: [0.120000, 0.000000, 0.041500]
+- Rotation: in Quaternion (xyzw) [-0.500000, 0.500000, -0.500000, 0.500000]
+- Rotation: in RPY (radian) [-1.570796, -0.000000, -1.570796]
+- Rotation: in RPY (degree) [-90.000000, -0.000000, -90.000000]
+- Matrix:
+ 0.000000 0.000000 1.000000 0.120000
+ -1.000000 0.000000 0.000000 0.000000
+ 0.000000 -1.000000 0.000000 0.041500
+ 0.000000 0.000000 0.000000 1.000000
+At time 0.0
+- Translation: [0.120000, 0.000000, 0.041500]
+- Rotation: in Quaternion (xyzw) [-0.500000, 0.500000, -0.500000, 0.500000]
+- Rotation: in RPY (radian) [-1.570796, -0.000000, -1.570796]
+- Rotation: in RPY (degree) [-90.000000, -0.000000, -90.000000]
+- Matrix:
+ 0.000000 0.000000 1.000000 0.120000
+ -1.000000 0.000000 0.000000 0.000000
+ 0.000000 -1.000000 0.000000 0.041500
+ 0.000000 0.000000 0.000000 1.000000
+[INFO] [1791635675.550108221] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+# exit status: 124 (124 = stopped by timeout, as intended)
+
+## full-precision cross-check: ros2 topic echo --once /tf_static (transient_local, reliable)
+transforms:
+- header:
+    stamp:
+      sec: 1791635665
+      nanosec: 656068187
+    frame_id: base_link
+  child_frame_id: camera_link
+  transform:
+    translation:
+      x: 0.12
+      y: 0.0
+      z: 0.0415
+    rotation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+- header:
+    stamp:
+      sec: 1791635665
+      nanosec: 656068187
+    frame_id: camera_link
+  child_frame_id: camera_optical_frame
+  transform:
+    translation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    rotation:
+      x: 0.5
+      y: -0.4999999999999999
+      z: 0.5
+      w: -0.5000000000000001
+- header:
+    stamp:
+      sec: 1791635665
+      nanosec: 656068187
+    frame_id: base_link
+  child_frame_id: caster_link
+  transform:
+    translation:
+      x: 0.1
+      y: 0.0
+      z: -0.021
+    rotation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+- header:
+    stamp:
+      sec: 1791635665
+      nanosec: 656068187
+    frame_id: base_link
+  child_frame_id: chassis_link
+  transform:
+    translation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    rotation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+- header:
+    stamp:
+      sec: 1791635665
+      nanosec: 656068187
+    frame_id: base_link
+  child_frame_id: imu_link
+  transform:
+    translation:
+      x: -0.061
+      y: 0.02
+      z: 0.0265
+    rotation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+---
+# exit status: 0
+
+## stop: pkill -INT -f 'ros2 launch beaconmind_description' (run directly, not inside bash -lc)
+# pkill exit status: 0
+## after the stop: robot_state_publisher / launch processes in beaconmind-ros
+(none)
+
+## launch log (/workspace/course-project/data/m2t4-description-launch.log)
+[INFO] [launch]: All log files can be found below /tmp/bmhome/ros_log/2026-10-10-12-34-25-560296-spark-2a60-1542
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [robot_state_publisher-1]: process started with pid [1571]
+[robot_state_publisher-1] [INFO] [1791635665.655617162] [robot_state_publisher]: got segment base_link
+[robot_state_publisher-1] [INFO] [1791635665.655662682] [robot_state_publisher]: got segment camera_link
+[robot_state_publisher-1] [INFO] [1791635665.655666298] [robot_state_publisher]: got segment camera_optical_frame
+[robot_state_publisher-1] [INFO] [1791635665.655668682] [robot_state_publisher]: got segment caster_link
+[robot_state_publisher-1] [INFO] [1791635665.655670714] [robot_state_publisher]: got segment chassis_link
+[robot_state_publisher-1] [INFO] [1791635665.655672682] [robot_state_publisher]: got segment imu_link
+[robot_state_publisher-1] [INFO] [1791635665.655674650] [robot_state_publisher]: got segment left_wheel_link
+[robot_state_publisher-1] [INFO] [1791635665.655676810] [robot_state_publisher]: got segment right_wheel_link
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [robot_state_publisher-1]: sending signal 'SIGINT' to process[robot_state_publisher-1]
+[robot_state_publisher-1] [INFO] [1791635676.820780951] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [robot_state_publisher-1]: process has finished cleanly [pid 1571]

@@ -1,0 +1,66 @@
+# Read-only. One esptool normal-reset attempt. No write-flash, erase-flash, or write-flash-status.
+# /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00 resolved to /dev/ttyACM0.
+# bm-esp32-builder esptool v5.3.1:
+# /root/.arduino15/packages/esp32/tools/esptool_py/5.3.1/esptool --chip esp32 --port /dev/ttyACM0 flash-id
+# read-flash-status was not run: flash-id failed to connect.
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: saved this esptool result from the Spark.
+
+PORT=/dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00
+DEV=/dev/ttyACM0
+lrwxrwxrwx 1 root root 13 Oct  6 19:10 /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00 -> ../../ttyACM0
+=== flash-id ===
+esptool v5.3.1
+Serial port /dev/ttyACM0:
+Connecting......................................
+
+A fatal error occurred: Failed to connect to ESP32: Wrong boot mode detected (0x12)! The chip needs to be in download mode.
+For troubleshooting steps visit: https://docs.espressif.com/projects/esptool/en/latest/troubleshooting.html
+FLASH_ID_EXIT:2
+
+# Download mode already entered. --before no-reset --after no-reset (v5.3.1 hyphen spelling).
+# No DTR/RTS reset. No write-flash, erase-flash, or write-flash-status.
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: saved this esptool result from the Spark.
+
+PORT=/dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00
+DEV=/dev/ttyACM0
+=== flash-id ===
+esptool v5.3.1
+Serial port /dev/ttyACM0:
+Note: Pre-connection option "no-reset" was selected. Connection may fail if the chip is not in bootloader or flasher stub mode.
+Connecting....
+Connected to ESP32 on /dev/ttyACM0:
+Chip type:          ESP32-D0WD-V3 (revision v3.1)
+Features:           Wi-Fi, BT, Dual Core + LP Core, 240MHz, Vref calibration in eFuse, Coding Scheme None
+Crystal frequency:  40MHz
+MAC:                <redacted>
+
+Uploading stub flasher...
+Running stub flasher...
+Stub flasher running.
+
+Flash Memory Information:
+=========================
+Manufacturer: a1
+Device: 4016
+Detected flash size: 4MB
+Flash voltage set by a strapping pin: 3.3V
+
+Staying in bootloader.
+FLASH_ID_EXIT:0
+=== read-flash-status ===
+esptool v5.3.1
+Serial port /dev/ttyACM0:
+Note: Pre-connection option "no-reset" was selected. Connection may fail if the chip is not in bootloader or flasher stub mode.
+Connecting...
+Connected to ESP32 on /dev/ttyACM0:
+Chip type:          ESP32-D0WD-V3 (revision v3.1)
+Features:           Wi-Fi, BT, Dual Core + LP Core, 240MHz, Vref calibration in eFuse, Coding Scheme None
+Crystal frequency:  40MHz
+MAC:                <redacted>
+
+Stub flasher is already running. No upload is necessary.
+
+Flash memory status: 0x7afc
+
+Staying in bootloader.
+STATUS_EXIT:0

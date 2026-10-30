@@ -1,0 +1,12 @@
+# Spark host, 2026-10-07. Read-only. Isaac 6.0 was not built.
+# git ls-remote --tags https://github.com/isaac-sim/IsaacSim | grep -E "refs/tags/v?6\.0" | head
+
+40316786340b3f034a229d9e12650df1ac0b68ab	refs/tags/v6.0.0
+e52e6dcb2f6892752aafee2209aabf1ade2c7058	refs/tags/v6.0.0-dev
+befdb80c7bb90e9bcd5460e16436e95498a930fb	refs/tags/v6.0.0-dev2
+045ca8b59622b99a408092124377c66346e8d9c2	refs/tags/v6.0.1
+
+# df -h /home | tail -1
+/dev/nvme0n1p2  3.7T  1.4T  2.2T  39% /
+
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: recorded the Qwen3.8 pin, deferred Bonsai, and started M1.T5.

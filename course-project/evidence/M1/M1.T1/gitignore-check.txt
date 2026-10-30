@@ -1,0 +1,17 @@
+.gitignore:98:course-project/data/	course-project/data/x
+.gitignore:99:course-project/**/wifi_config.h	course-project/firmware/esp32cam/bm_cam/wifi_config.h
+.gitignore:100:course-project/**/secrets*.env	course-project/x/secrets.env
+.gitignore:101:course-project/firmware/**/build/	course-project/firmware/pico/beaconmind_fw/build/x
+.gitignore:102:course-project/sim/isaac/_out/	course-project/sim/isaac/_out/x
+.gitignore:103:course-project/**/*.egg-info/	course-project/beaconmind/src/beaconmind.egg-info/x
+ M course-project/plan/M1-foundations.md
+?? course-project/beaconmind/
+?? course-project/configs/
+?? course-project/docker/
+?? course-project/evidence/
+?? course-project/firmware/
+?? course-project/preregistration/
+?? course-project/presentation/
+?? course-project/ros2_ws/
+?? course-project/sim/
+?? course-project/tools/

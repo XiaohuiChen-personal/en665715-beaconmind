@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.move_result-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C2.",
+  "title": "bm.move_result/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "cmd_seq",
+    "result",
+    "reason",
+    "boot_id",
+    "duration_s",
+    "enc_left_ticks",
+    "enc_right_ticks",
+    "gyro_dyaw_deg",
+    "achieved_forward_m",
+    "stall",
+    "bump"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bm.move_result/1"
+    },
+    "cmd_seq": {
+      "type": "integer"
+    },
+    "result": {
+      "enum": [
+        "done",
+        "stalled",
+        "bumped",
+        "timeout",
+        "link_lost",
+        "refused",
+        "not_called"
+      ]
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "boot_id": {
+      "type": "integer"
+    },
+    "duration_s": {
+      "type": "number"
+    },
+    "enc_left_ticks": {
+      "type": "integer"
+    },
+    "enc_right_ticks": {
+      "type": "integer"
+    },
+    "gyro_dyaw_deg": {
+      "type": "number"
+    },
+    "achieved_forward_m": {
+      "type": "number"
+    },
+    "stall": {
+      "type": "boolean"
+    },
+    "bump": {
+      "type": "boolean"
+    }
+  }
+}

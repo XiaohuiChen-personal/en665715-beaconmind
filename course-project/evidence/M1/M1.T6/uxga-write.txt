@@ -1,0 +1,60 @@
+# UXGA app write only. Offset 0x10000. No bootloader, partitions, or boot_app0.
+# Did not write 0x1000, 0x8000, or 0xe000. Did not use arduino-cli upload.
+# --before no-reset --after no-reset. No retry. No boot-log read. No reset after the verified write.
+# Device: /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00 -> /dev/ttyACM0
+# The by-id path was visible inside the container (VIS=BYID), so that path was --device and --port.
+# App: bm_cam/build/bm_cam.ino.bin, 1027088 bytes.
+# sha256 f724e0c459d64ccad363c81716d1f062acef64d5dae77da7f1f35a1d515a7647 before and after
+# (matches uxga-build.txt). bm-esp32-builder esptool v5.3.1. WRITE_EXIT:0. Staying in bootloader.
+# esptool printed "Failed to get VID/PID ... using standard reset sequence" because the
+# by-id node has no USB ids. The flags stayed no-reset; the log ends with "Staying in bootloader."
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: saved this esptool result from the Spark.
+
+BYTES=1027088
+SHA_BEFORE
+f724e0c459d64ccad363c81716d1f062acef64d5dae77da7f1f35a1d515a7647  /home/xiaohui_chen/Projects/EN.665.715/course-project/firmware/esp32cam/bm_cam/build/bm_cam.ino.bin
+LINK_TARGET=/dev/ttyACM0
+VIS=BYID
+PORT_USED=/dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00
+ONLY_OFFSET=0x10000
+COMMAND: esptool --chip esp32 --port /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00 --baud 460800 --before no-reset --after no-reset write-flash -z --flash-mode keep --flash-freq keep --flash-size keep 0x10000 /src/bm_cam/build/bm_cam.ino.bin
+
+=== write-flash ===
+esptool v5.3.1
+Serial port /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00:
+Note: Pre-connection option "no-reset" was selected. Connection may fail if the chip is not in bootloader or flasher stub mode.
+Connecting...
+Failed to get VID/PID of a device on /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00, using standard reset sequence.
+
+Failed to get VID/PID of a device on /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00, using standard reset sequence.
+.
+Connected to ESP32 on /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00:
+Chip type:          ESP32-D0WD-V3 (revision v3.1)
+Features:           Wi-Fi, BT, Dual Core + LP Core, 240MHz, Vref calibration in eFuse, Coding Scheme None
+Crystal frequency:  40MHz
+
+Failed to get VID/PID of a device on /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00, using standard reset sequence.
+
+Failed to get VID/PID of a device on /dev/serial/by-id/usb-FIREPHX_USB_SER_FX2348N-if00, using standard reset sequence.
+MAC:                <redacted>
+
+Uploading stub flasher...
+Running stub flasher...
+Stub flasher running.
+Changing baud rate to 460800...
+Changed.
+
+Configuring flash size...
+Flash will be erased from 0x00010000 to 0x0010afff...
+Compressed 1027088 bytes to 663052...
+Writing at 0x00010000 [                              ]   0.0% 0/663052 bytes...
+Writing at 0x0010ac10 [==============================] 100.0% 663052/663052 bytes...
+Wrote 1027088 bytes (663052 compressed) at 0x00010000 in 18.0 seconds (457.5 kbit/s).
+Verifying written data...
+Hash of data verified.
+
+Staying in bootloader.
+WRITE_EXIT:0
+SHA_AFTER
+f724e0c459d64ccad363c81716d1f062acef64d5dae77da7f1f35a1d515a7647  /home/xiaohui_chen/Projects/EN.665.715/course-project/firmware/esp32cam/bm_cam/build/bm_cam.ino.bin
+BYTES_AFTER=1027088

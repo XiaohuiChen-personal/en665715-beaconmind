@@ -1,0 +1,5 @@
+# Compile of bm_cam.ino succeeded. The upload did not. Bare FQBN esp32:esp32:esp32cam.
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: saved the size summary from the Spark build log.
+
+Sketch uses 1026609 bytes (32%) of program storage space. Maximum is 3145728 bytes.
+Global variables use 59312 bytes (18%) of dynamic memory, leaving 268368 bytes for local variables. Maximum is 327680 bytes.

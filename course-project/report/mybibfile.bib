@@ -1,0 +1,250 @@
+% mybibfile.bib -- references for the BeaconMind class project report (EN.665.715).
+%
+% Every entry was checked on 2026-10-01 against the paper itself (the PDF's first page)
+% and against the publisher's own record: the PMLR proceedings page, Crossref, or the
+% arXiv listing. Entries are grouped in the order of the Related Works section.
+% AI assistance: Claude Fable 5.1 via Claude Code retrieved and formatted these entries;
+% see the disclosure at the end of the report.
+
+% IEEEtran.bst control entry: IEEE style lists up to six authors and uses
+% "first author et al." beyond that. Activated by \bstctlcite in the .tex file.
+@IEEEtranBSTCTL{IEEEexample:BSTcontrol,
+  CTLuse_forced_etal       = "yes",
+  CTLmax_names_forced_etal = "6",
+  CTLnames_show_etal       = "1"
+}
+
+% ---------- A. Language-conditioned planning and closed-loop agents ----------
+
+@inproceedings{huang2022zeroshot,
+  title={Language models as zero-shot planners: Extracting actionable knowledge for embodied agents},
+  author={Huang, Wenlong and Abbeel, Pieter and Pathak, Deepak and Mordatch, Igor},
+  booktitle={Proceedings of the 39th International Conference on Machine Learning},
+  volume={162},
+  pages={9118--9147},
+  year={2022},
+  publisher={PMLR}
+}
+
+@article{ahn2022saycan,
+  title={Do as {I} can, not as {I} say: Grounding language in robotic affordances},
+  author={Ahn, Michael and Brohan, Anthony and Brown, Noah and Chebotar, Yevgen and Cortes, Omar and David, Byron and Finn, Chelsea and Fu, Chuyuan and Gopalakrishnan, Keerthana and Hausman, Karol and others},
+  journal={arXiv preprint arXiv:2204.01691},
+  year={2022},
+  note={also in {Proc.} 6th {Conf.} {Robot} {Learning} ({CoRL}), {PMLR} vol.~205, pp.~287--318, 2023}
+}
+
+@inproceedings{huang2023inner,
+  title={{Inner Monologue}: Embodied reasoning through planning with language models},
+  author={Huang, Wenlong and Xia, Fei and Xiao, Ted and Chan, Harris and Liang, Jacky and Florence, Pete and Zeng, Andy and Tompson, Jonathan and Mordatch, Igor and Chebotar, Yevgen and others},
+  booktitle={Proceedings of the 6th Conference on Robot Learning},
+  volume={205},
+  pages={1769--1782},
+  year={2023},
+  publisher={PMLR}
+}
+
+@inproceedings{yao2023react,
+  title={{ReAct}: Synergizing reasoning and acting in language models},
+  author={Yao, Shunyu and Zhao, Jeffrey and Yu, Dian and Du, Nan and Shafran, Izhak and Narasimhan, Karthik and Cao, Yuan},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2023}
+}
+
+@inproceedings{kambhampati2024llmmodulo,
+  title={Position: {LLMs} can't plan, but can help planning in {LLM-Modulo} frameworks},
+  author={Kambhampati, Subbarao and Valmeekam, Karthik and Guan, Lin and Verma, Mudit and Stechly, Kaya and Bhambri, Siddhant and Saldyt, Lucas and Murthy, Anil},
+  booktitle={Proceedings of the 41st International Conference on Machine Learning},
+  volume={235},
+  pages={22895--22907},
+  year={2024},
+  publisher={PMLR}
+}
+
+@inproceedings{royce2025rosa,
+  title={Enabling novel mission operations and interactions with {ROSA}: The {Robot Operating System Agent}},
+  author={Royce, Rob and Kaufmann, Marcel and Becktor, Jonathan and Moon, Sangwoo and Carpenter, Kalind and Pak, Kai and Towler, Amanda and Thakker, Rohan and Khattak, Shehryar},
+  booktitle={2025 IEEE Aerospace Conference},
+  pages={1--16},
+  year={2025},
+  doi={10.1109/AERO63441.2025.11068426}
+}
+
+@article{salimpour2025towards,
+  title={Towards embodied agentic {AI}: Review and classification of {LLM}- and {VLM}-driven robot autonomy and interaction},
+  author={Salimpour, Sahar and Fu, Lei and Rachwa{\l}, Kajetan and Bertrand, Pascal and O'Sullivan, Kevin and Jakob, Robert and Keramat, Farhad and Militano, Leonardo and Toffetti, Giovanni and Edelman, Harry and {Pe{\~n}a Queralta}, Jorge},
+  journal={arXiv preprint arXiv:2508.05294},
+  year={2025}
+}
+
+@inproceedings{li2024embodied,
+  title={{Embodied Agent Interface}: Benchmarking {LLMs} for embodied decision making},
+  author={Li, Manling and Zhao, Shiyu and Wang, Qineng and Wang, Kangrui and Zhou, Yu and Srivastava, Sanjana and Gokmen, Cem and Lee, Tony and Li, Li Erran and Zhang, Ruohan and Liu, Weiyu and Liang, Percy and Fei-Fei, Li and Mao, Jiayuan and Wu, Jiajun},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
+  volume={37},
+  pages={100428--100534},
+  year={2024}
+}
+
+@article{yin2025safeagentbench,
+  title={{SafeAgentBench}: A benchmark for safe task planning of embodied {LLM} agents},
+  author={Yin, Sheng and Pang, Xianghe and Ding, Yuanzhuo and Chen, Menglan and Bi, Yutong and Xiong, Yichen and Huang, Wenhao and Xiang, Zhen and Shao, Jing and Chen, Siheng},
+  journal={arXiv preprint arXiv:2412.13178v5},
+  year={2025}
+}
+
+% ---------- B. Language models in navigation, mapping, and SLAM ----------
+
+@inproceedings{rana2023sayplan,
+  title={{SayPlan}: Grounding large language models using {3D} scene graphs for scalable robot task planning},
+  author={Rana, Krishan and Haviland, Jesse and Garg, Sourav and Abou-Chakra, Jad and Reid, Ian and S{\"u}nderhauf, Niko},
+  booktitle={Proceedings of the 7th Conference on Robot Learning},
+  volume={229},
+  pages={23--72},
+  year={2023},
+  publisher={PMLR}
+}
+
+@inproceedings{yokoyama2024vlfm,
+  title={{VLFM}: Vision-language frontier maps for zero-shot semantic navigation},
+  author={Yokoyama, Naoki and Ha, Sehoon and Batra, Dhruv and Wang, Jiuguang and Bucher, Bernadette},
+  booktitle={2024 IEEE International Conference on Robotics and Automation (ICRA)},
+  pages={42--48},
+  year={2024},
+  doi={10.1109/ICRA57147.2024.10610712}
+}
+
+@inproceedings{yu2023l3mvn,
+  title={{L3MVN}: Leveraging large language models for visual target navigation},
+  author={Yu, Bangguo and Kasaei, Hamidreza and Cao, Ming},
+  booktitle={2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  pages={3554--3560},
+  year={2023},
+  doi={10.1109/IROS55552.2023.10342512}
+}
+
+@article{lee2026spatial,
+  title={Spatial and semantic reasoning for {LLM}-driven robot navigation via {MCP}},
+  author={Lee, Jungsoo and Park, Jaegyun and Kim, Wansoo},
+  journal={arXiv preprint arXiv:2609.27340},
+  year={2026}
+}
+
+@article{syarubany2026llm,
+  title={{LLM}-based agentic exploration for robot navigation \& manipulation with skill orchestration},
+  author={Syarubany, Abu Hanif Muhammad and Rahmani, Farhan Zaki and Widianto, Trio},
+  journal={arXiv preprint arXiv:2601.00555},
+  year={2026}
+}
+
+@inproceedings{hong2025seoslam,
+  title={Semantic enhancement for object {SLAM} with heterogeneous multimodal large language model agents},
+  author={Hong, Jungseok and Choi, Ran and Leonard, John J.},
+  booktitle={2025 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  pages={9036--9043},
+  year={2025},
+  doi={10.1109/IROS60139.2025.11246672}
+}
+
+@article{lyu2024tell,
+  title={Tell me where you are: Multimodal {LLMs} meet place recognition},
+  author={Lyu, Zonglin and Zhang, Juexiao and Lu, Mingxuan and Li, Yiming and Feng, Chen},
+  journal={arXiv preprint arXiv:2406.17520},
+  year={2024}
+}
+
+@article{sandfuchs2026llms,
+  title={{LLMs} for text-based exploration and navigation under partial observability},
+  author={Sandfuchs, Stephan and Melchert, Maximilian and Frochte, J{\"o}rg},
+  journal={arXiv preprint arXiv:2604.09604},
+  year={2026}
+}
+
+@inproceedings{sridhar2024nomad,
+  title={{NoMaD}: Goal masked diffusion policies for navigation and exploration},
+  author={Sridhar, Ajay and Shah, Dhruv and Glossop, Catherine and Levine, Sergey},
+  booktitle={2024 IEEE International Conference on Robotics and Automation (ICRA)},
+  pages={63--70},
+  year={2024},
+  doi={10.1109/ICRA57147.2024.10610665}
+}
+
+% ---------- C. Limits of LLM spatial reasoning and the case for tools ----------
+
+@article{jiang2026lost,
+  title={Lost in aggregation: A multi-scale diagnostic benchmark for {LLM} spatial navigation},
+  author={Jiang, Yuhan and Luo, Peng and Meng, Liqiu},
+  journal={arXiv preprint arXiv:2606.22219},
+  year={2026}
+}
+
+@article{li2026llms,
+  title={Do {LLMs} build spatial world models? {E}vidence from grid-world maze tasks},
+  author={Li, Weijiang and Zhu, Yilin and Das, Rajarshi and Dube, Parijat},
+  journal={arXiv preprint arXiv:2604.10690},
+  year={2026},
+  note={{ICLR} 2026 {Workshop} on {World} {Models}}
+}
+
+@article{deng2026lost,
+  title={Lost in space? {V}ision-language models struggle with relative camera pose estimation},
+  author={Deng, Ken and Qiu, Yifu and Kasten, Yoni and Cohen, Shay B. and Ziser, Yftah},
+  journal={arXiv preprint arXiv:2601.22228v2},
+  year={2026}
+}
+
+@inproceedings{gao2023pal,
+  title={{PAL}: Program-aided language models},
+  author={Gao, Luyu and Madaan, Aman and Zhou, Shuyan and Alon, Uri and Liu, Pengfei and Yang, Yiming and Callan, Jamie and Neubig, Graham},
+  booktitle={Proceedings of the 40th International Conference on Machine Learning},
+  volume={202},
+  pages={10764--10799},
+  year={2023},
+  publisher={PMLR}
+}
+
+% ---------- D. Fiducial landmark SLAM and evaluation practice ----------
+
+@inproceedings{olson2011apriltag,
+  title={{AprilTag}: A robust and flexible visual fiducial system},
+  author={Olson, Edwin},
+  booktitle={2011 IEEE International Conference on Robotics and Automation},
+  pages={3400--3407},
+  year={2011},
+  doi={10.1109/ICRA.2011.5979561}
+}
+
+@article{pfrommer2019tagslam,
+  title={{TagSLAM}: Robust {SLAM} with fiducial markers},
+  author={Pfrommer, Bernd and Daniilidis, Kostas},
+  journal={arXiv preprint arXiv:1910.00679},
+  year={2019}
+}
+
+@article{kaess2012isam2,
+  title={{iSAM2}: Incremental smoothing and mapping using the {Bayes} tree},
+  author={Kaess, Michael and Johannsson, Hordur and Roberts, Richard and Ila, Viorela and Leonard, John J. and Dellaert, Frank},
+  journal={The International Journal of Robotics Research},
+  volume={31},
+  number={2},
+  pages={216--235},
+  year={2012},
+  publisher={SAGE Publications},
+  doi={10.1177/0278364911430419}
+}
+
+@inproceedings{sturm2012benchmark,
+  title={A benchmark for the evaluation of {RGB-D} {SLAM} systems},
+  author={Sturm, J{\"u}rgen and Engelhard, Nikolas and Endres, Felix and Burgard, Wolfram and Cremers, Daniel},
+  booktitle={2012 IEEE/RSJ International Conference on Intelligent Robots and Systems},
+  pages={573--580},
+  year={2012},
+  doi={10.1109/IROS.2012.6385773}
+}
+
+@article{anderson2018evaluation,
+  title={On evaluation of embodied navigation agents},
+  author={Anderson, Peter and Chang, Angel and Chaplot, Devendra Singh and Dosovitskiy, Alexey and Gupta, Saurabh and Koltun, Vladlen and Kosecka, Jana and Malik, Jitendra and Mottaghi, Roozbeh and Savva, Manolis and Zamir, Amir R.},
+  journal={arXiv preprint arXiv:1807.06757},
+  year={2018}
+}

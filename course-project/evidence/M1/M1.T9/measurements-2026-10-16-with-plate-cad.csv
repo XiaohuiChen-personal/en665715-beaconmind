@@ -1,0 +1,59 @@
+# Measurements are Xiaohui's (measured by Xiaohui Chen). Heights from the FLOOR. Battery OFF.
+# FRAME (confirmed by Xiaohui 2026-10-10): front / +x = the direction the camera lens faces = caster/ESP32-CAM USB-C end. Left/+y = robot left when facing that way.
+# 2026-10-16 (this file): the 2026-10-10 rows above are unchanged (copy of measurements-xiaohui-chen-2026-10-10.csv);
+#   the rows at the end come from a classmate's CAD of the same Emo chassis plate (shared with the instructor's
+#   permission; the private course repo (plate CAD is not published here)) or from fitting B1/B2 to its length. Instrument "CAD ..." rows
+#   are the classmate's model, NOT Xiaohui's readings; "fit ..." rows are arithmetic on Xiaohui's readings.
+quantity,reading_1,reading_2,reading_3,unit,instrument,notes
+W1_tyre_diameter_direct,67,,,mm,not stated,"student chose direct diameter instead of 5-rev roll-out (2026-10-10); single value reported"
+W2_tyre_width,27,,,mm,not stated,"single value reported 2026-10-10"
+W3_track_outer,160,,,mm,not stated,"single value reported 2026-10-10"
+W3_track_inner,107,,,mm,not stated,"single value reported 2026-10-10; outer-inner=53 vs 2*W2=54 (1 mm, consistent)"
+B1_plate_front_x,131,,,mm,not stated,"axle line to plate front edge (caster/camera end assumed = front); reported 2026-10-10"
+B2_plate_rear_x,77,,,mm,not stated,"axle line to plate rear edge (Pico/breadboard end); reported 2026-10-10"
+B3_front_most_x,138,,,mm,not stated,"axle line to front-most point of whole car = ESP32-CAM module, USB-C side (7 mm past plate edge); NO cable plugged in - re-measure with the operating cable for the project (M3.T1); reported 2026-10-10"
+B4_rear_most_x,77,,,mm,not stated,"student: rear-most point = plate rear edge (B2); reported 2026-10-10"
+B5_plate_width_max,150,,,mm,not stated,"widest point = curved wing at the REAR (wheel/breadboard end), behind the tyres; photo photos/IMG_7436-bottom-view.jpg; reported 2026-10-10"
+B5_plate_width_narrow,100,,,mm,not stated,"narrow section from between the wheels to the FRONT (caster/camera end); fits inside tyre inner gap 107; reported 2026-10-10"
+C0_caster_type,swivel,,,text,photo,"swivel caster: white wheel in a metal fork with a top plate, screwed under the front of the plate (IMG_7436); confirmed from photo 2026-10-10"
+B9_lowest_body_h,30,,,mm,ruler,"lowest body point = TT motor gearbox bottom; re-measured on request 2026-10-10 (first said 3m); 3.5 mm below axle centre (r=33.5) | review #2: photo IMG_7444 gives ~31 mm (gearbox bottom level with hub) - reading upheld"
+B10_camera_stand_top_h,100,,,mm,ruler,"top of grey LEGO Technic camera stand (added to keep the lens facing front); 'around 10 cm'; photo photos/IMG_7437-camera-stand-front.jpg; 2026-10-10"
+B10_battery_holder_top_h,66,,,mm,ruler,"top of 4xAA battery holder, which sits ON TOP of the plate at the front/caster end beside the ESP32-CAM; photo photos/IMG_7438-battery-holder-side.jpg; 2026-10-10"
+B10_breadboard_top_h,55,,,mm,ruler,"top of breadboard (on the rear wing); photo photos/IMG_7439-breadboard-rear-side.jpg; 2026-10-10"
+S3_lens_x,120,,,mm,not stated,"'around 12 cm' ahead of axle line; single reading; 2026-10-10"
+S3_lens_y,0,,,mm,not stated,"on centre line; 2026-10-10"
+S3_lens_centre_h,75,,,mm,not stated,"lens centre above floor; single reading; 2026-10-10"
+B8_plate_underside_h_front,46,,,mm,not stated,"plate underside above floor at front/caster end; 2026-10-10"
+B8_plate_underside_h_rear,43,,,mm,not stated,"plate underside above floor at rear/wing end; 2026-10-10"
+B5b_wing_depth_centre,40,,,mm,not stated,"rear edge to where the plate narrows, on the centre line; the wing's rear edge is a CURVE (arc) from corner to corner (IMG_7436); circular fit chord 150 / sagitta 40 -> R ~90 mm; 2026-10-10"
+B5c_wing_width_20mm_in,,,,mm,not stated,"SUPERSEDED - NOT A MODEL INPUT: student reported 151 mm '2 cm in from the rear edge'; review round 1 (review/MEASUREMENT-REVIEW.md #6): 151 ~= the 150 max, so it was almost certainly taken near the wing tips; photo traces IMG_7436/7440 give ~125-134 mm at 20 mm in; half-ellipse 40 x 75 kept; 2026-10-10"
+C1_caster_wheel_diameter,25,,,mm,not stated,"white swivel caster wheel; 2026-10-10"
+C2_caster_contact_x,100,,,mm,not stated,"'around 10 cm' axle line to caster floor contact, caster trailing; 2026-10-10"
+C2b_caster_front_swung_x,127,,,mm,not stated,"'around 12.7 cm' axle line to front of caster wheel, caster swung fully forward; inside plate front (131) and ESP32-CAM (138); 2026-10-10 | DISPUTED (review #4): implies only ~7 mm swivel offset; photos suggest ~20 mm; re-measure requested"
+S1_imu_board_centre_x,-61,,,mm,not stated,"BNO055 board centre, 6.1 cm BEHIND the axle line (rear/breadboard side); 2026-10-10"
+S1_imu_board_centre_y,,,,mm,not stated,"2 cm to the robot's RIGHT of the centre line; 2026-10-10 | SIGN DISPUTED (review #5): car-build-notes view puts the BNO055 on the robot LEFT (+y); confirm"
+S1_imu_board_top_h,60,,,mm,not stated,"top surface of the board above floor (breadboard top is 55); 2026-10-10"
+K1_total_mass,506,,,g,"two Pitney Bowes kitchen scales (5 kg x 1 g), same height","sum of K2 split: 142 + 364; batteries in, camera fitted, no cable; floor; photos IMG_7443/7444; 2026-10-10"
+K2_caster_load,142,,,g,Pitney Bowes kitchen scale 1 g,"caster alone on the left scale; both drive wheels on an identical right scale (same height, so car level); IMG_7443-scale.jpg; 2026-10-10 | NOTE (review #3): caster was turned sideways on the scale, so the lever arm is the swivel-axis x, not the trailing contact"
+K2_drive_wheels_load,364,,,g,Pitney Bowes kitchen scale 1 g,"both drive wheels on the right scale; IMG_7444-scale.jpg; 2026-10-10"
+C3_caster_swivel_axis_x,120,,,mm,not stated,"axle line to centre of the caster's round swivel plate (pivot); re-measure round 1, 2026-10-10"
+C2b_caster_front_swung_x_remeasure,135,,,mm,not stated,"after pushing the car backwards ~10 cm; axle line to front of caster wheel; 2026-10-10. CONFLICT: with pivot 120 and trailing contact 100 the offset is 20 mm, so a fully-led wheel front should be ~152; 135 implies offset ~2.5 mm. Asked to re-check"
+C1_caster_wheel_diameter_recheck,25,,,mm,not stated,"re-check confirms 25 mm; 2026-10-10"
+C2b_caster_front_swung_x_remeasure2,140,,,mm,not stated,"second re-check, caster swung fully ahead of pivot: around 14 cm; 2026-10-10. With pivot 120 this gives offset (140-12.5)-120 = 7.5 mm, vs 20 mm implied by C2=100 (around). OPEN: C2 likely the looser reading. Model: sphere at measured C2=0.100; sweep uses 140 (worst measured); COM uses pivot 120"
+S1_imu_board_centre_y_corrected,20,,,mm,student observation,"CORRECTION 2026-10-10: viewed from behind (camera pointing away) the BNO055 is LEFT of the centre line -> y = +20 (robot left). Supersedes S1_imu_board_centre_y = -20 (sign error); matches car-build-notes layout (review #5)"
+B12_breadboard_width,100,,,mm,not stated,"breadboard side to side; 2026-10-10"
+B12_breadboard_front_x,20,,,mm,not stated,"breadboard front edge 2 cm AHEAD of the axle line (+x); 2026-10-10"
+B12_breadboard_rear_x,-70,,,mm,not stated,"breadboard rear edge 7 cm BEHIND the axle line; inside plate rear apex -77; IMU centre (-61,+20) lies on it; 2026-10-10"
+B13_battery_holder_width,63,,,mm,not stated,"4xAA holder side to side; 2026-10-10"
+B13_battery_holder_front_x,100,,,mm,not stated,"holder front edge 10 cm ahead of axle line; 2026-10-10"
+B13_battery_holder_rear_x,40,,,mm,not stated,"holder rear edge 4 cm ahead of axle line (20 mm gap behind it to the breadboard front at +20); 2026-10-10"
+B14_esp32cam_width,20,,,mm,not stated,"ESP32-CAM board stack side to side, as measured by the student; 2026-10-10 (no recorded vendor dimension in the repo to compare)"
+B14_esp32cam_front_top_h,61,,,mm,not stated,"floor to highest point at the board's front edge; 2026-10-10"
+B5_plate_width_max_corrected,147.92,,,mm,CAD: Emo chassis plate model (a classmate; Onshape STEP + drawing DRW_MOBILE_ROBOT_CHASSIS 2026-10-13),2026-10-16: overall plate width over the rear wing = drawing dimension 147.92 (STEP outline x = +-73.954 mm). Supersedes the 150 mm ruler reading. The bottom-view photo mapped onto the CAD gives 146.3 mm (rounded tips; picks run short). the private course repo (plate CAD is not published here)
+B5_plate_width_narrow_corrected,100,,,mm,CAD: Emo chassis plate model (a classmate; Onshape STEP + drawing DRW_MOBILE_ROBOT_CHASSIS 2026-10-13),2026-10-16: narrow strip width = drawing dimension 100 (STEP sides at x = +-50.00 mm); the 100 mm ruler reading agrees
+B5b_wing_depth_centre_corrected,34.35,,,mm,CAD: Emo chassis plate model (a classmate; Onshape STEP + drawing DRW_MOBILE_ROBOT_CHASSIS 2026-10-13),"2026-10-16: rear apex to the wing shoulder on the centre line = the wing's half-ellipse semi-axis 34.35 mm (STEP ELLIPSE 74.04 x 34.35 mm; drawing 34.35). Xiaohui's plate on the bottom-view photo, mapped onto the CAD by a 16-feature plane homography (rms 1.34 px = 0.25 mm), gives 34.0 mm. Supersedes the 40 mm ruler reading (review #7 had flagged 35-37 mm from the photos)"
+P1_plate_front_arc_radius,135.14,,,mm,CAD: Emo chassis plate model (a classmate; Onshape STEP + drawing DRW_MOBILE_ROBOT_CHASSIS 2026-10-13),"2026-10-16: the plate's front edge is ONE arc of radius 135.14 mm (drawing R135.14; STEP CIRCLE centred 135.14 mm behind the front apex), not a straight edge"
+P2_plate_front_corner_radius,8,,,mm,CAD: Emo chassis plate model (a classmate; Onshape STEP + drawing DRW_MOBILE_ROBOT_CHASSIS 2026-10-13),2026-10-16: the front arc meets each plate side through a fillet of radius 8 mm (drawing R8; STEP CIRCLE r = 8 mm)
+B1_plate_front_x_corrected,130.49,,,mm,fit: 2026-10-10 ruler readings B1 + B2 constrained to the CAD plate length,"2026-10-16: B1 131 + B2 77 = 208 mm is 1.02 mm more than the CAD plate length 206.98 mm (drawing: wing apex to front apex). Both readings carry the same uncertainty, so least squares takes 0.51 mm off each: 131 - 0.51 = 130.49. The axle line then lies at STEP y = +26.86 mm (toward the wing), 1 mm from the centre line of the two cross-shaped cut-outs (STEP y = 25.9 mm); on the bottom-view photo the tyre centres line up with those cut-outs by eye (a rough check only: the tyres are not in the plate's plane)"
+B2_plate_rear_x_corrected,76.49,,,mm,fit: 2026-10-10 ruler readings B1 + B2 constrained to the CAD plate length,2026-10-16: 77 - 0.51 = 76.49 mm (see B1_plate_front_x_corrected)
+B4_rear_most_x_corrected,76.49,,,mm,fit: 2026-10-10 ruler readings B1 + B2 constrained to the CAD plate length,"2026-10-16: the rear-most point is the plate's rear apex (B4 = B2), so the same fitted value"

@@ -1,0 +1,1 @@
+selftest ok: 4/4 ids decoded, black side 1888 px

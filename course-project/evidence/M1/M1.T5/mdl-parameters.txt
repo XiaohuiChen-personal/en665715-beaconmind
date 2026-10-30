@@ -1,0 +1,26 @@
+# M1.T5 step 2 — AprilTag.mdl parameter identifiers
+# Spark host, 2026-10-07 00:01 CT (ssh). Asset URL:
+# https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Materials/AprilTag/AprilTag.mdl
+# HTTP HEAD: 200. file(1) called the MDL "Java source, ASCII text" (1685 bytes). It is MDL 1.6 source, not a binary and not an HTML error page.
+# Texture: tag36h11.png, 13546 bytes, PNG 263 x 274, 8-bit RGBA. PIL: (263, 274) RGBA.
+
+grep -n -E "export material|uniform|texture_2d|int |float " AprilTag.mdl | head -40
+
+12:export material AprilTag(
+13:    uniform texture_2d tag_mosaic = texture_2d()
+19:    int tag_size = int(10)
+25:    int tags_per_row = int(24)
+31:    int spacing = int(1)
+37:    int tag_id = int(0)
+
+# Identifiers (from the MDL source, not from the display names):
+# mosaic texture: tag_mosaic
+#   default is texture_2d() with no file. The display annotation says "Mosaic texture".
+#   The shipped menu sets inputs:tag_mosaic to Textures/tag36h11.png. This spike sets that path.
+# tag ID: tag_id (int, default 0). Display annotation: "Tag ID". Description: "Linear index of tag".
+# tags per row: tags_per_row (int, default 24)
+# tag size in the mosaic: tag_size (int, default 10). The description says "Tag size in pixels".
+# spacing: spacing (int, default 1). The description says "Spacing between tags in pixels".
+# Indexing in the same file: tag_offset = (tag_id % tags_per_row, tag_id / tags_per_row).
+
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: recorded the Qwen3.8 pin, deferred Bonsai, and started M1.T5.

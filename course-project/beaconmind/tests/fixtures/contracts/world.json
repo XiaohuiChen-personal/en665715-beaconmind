@@ -1,0 +1,159 @@
+{
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this fixture from plan/README.md C7, keeping T00 and adding nine tags.",
+  "schema": "bm.world/1",
+  "world_id": "sim-dup-s1003",
+  "source": "sim",
+  "seed": 1003,
+  "generator": {
+    "name": "beaconmind.worlds.generate",
+    "version": "1"
+  },
+  "condition": "duplicated",
+  "arena": {
+    "shape": "rect",
+    "size_m": [
+      2.25,
+      2.25
+    ],
+    "wall_height_m": 0.3,
+    "origin": "inside south-west corner; x along the south wall, y along the west wall"
+  },
+  "tags": [
+    {
+      "uid": "T00",
+      "id": 3,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "S",
+      "x_m": 0.4,
+      "y_m": 0.0,
+      "z_m": 0.12,
+      "normal_deg": 90.0
+    },
+    {
+      "uid": "T01",
+      "id": 0,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "S",
+      "x_m": 1.1,
+      "y_m": 0.0,
+      "z_m": 0.12,
+      "normal_deg": 90.0
+    },
+    {
+      "uid": "T02",
+      "id": 1,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "S",
+      "x_m": 1.8,
+      "y_m": 0.0,
+      "z_m": 0.12,
+      "normal_deg": 90.0
+    },
+    {
+      "uid": "T03",
+      "id": 4,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "E",
+      "x_m": 2.25,
+      "y_m": 0.4,
+      "z_m": 0.12,
+      "normal_deg": 180.0
+    },
+    {
+      "uid": "T04",
+      "id": 5,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "E",
+      "x_m": 2.25,
+      "y_m": 1.1,
+      "z_m": 0.12,
+      "normal_deg": 180.0
+    },
+    {
+      "uid": "T05",
+      "id": 6,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "E",
+      "x_m": 2.25,
+      "y_m": 1.8,
+      "z_m": 0.12,
+      "normal_deg": 180.0
+    },
+    {
+      "uid": "T06",
+      "id": 7,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "N",
+      "x_m": 1.8,
+      "y_m": 2.25,
+      "z_m": 0.12,
+      "normal_deg": -90.0
+    },
+    {
+      "uid": "T07",
+      "id": 8,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "N",
+      "x_m": 1.1,
+      "y_m": 2.25,
+      "z_m": 0.12,
+      "normal_deg": -90.0
+    },
+    {
+      "uid": "T08",
+      "id": 9,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "N",
+      "x_m": 0.4,
+      "y_m": 2.25,
+      "z_m": 0.12,
+      "normal_deg": -90.0
+    },
+    {
+      "uid": "T09",
+      "id": 3,
+      "family": "tag36h11",
+      "black_size_m": 0.16,
+      "border_size_m": 0.2,
+      "wall": "W",
+      "x_m": 0.0,
+      "y_m": 1.6,
+      "z_m": 0.12,
+      "normal_deg": 0.0
+    }
+  ],
+  "duplicates": [
+    [
+      "T00",
+      "T09"
+    ]
+  ],
+  "roof_tags": [
+    100,
+    101
+  ],
+  "start_pose": {
+    "x_m": 1.1,
+    "y_m": 0.95,
+    "theta_deg": 30.0
+  },
+  "measured": null
+}

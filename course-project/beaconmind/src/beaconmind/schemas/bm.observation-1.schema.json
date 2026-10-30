@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.observation-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C3.",
+  "title": "bm.observation/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "obs_id",
+    "step",
+    "source",
+    "mode",
+    "status",
+    "error",
+    "sensors",
+    "odometry",
+    "last_move",
+    "counters",
+    "safety",
+    "detections"
+  ],
+  "properties": {
+    "obs_id": {
+      "type": "string"
+    },
+    "step": {
+      "type": "integer"
+    },
+    "source": {
+      "enum": [
+        "sim",
+        "kinsim",
+        "real"
+      ]
+    },
+    "mode": {
+      "enum": [
+        "closed_loop",
+        "replay"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "error"
+      ]
+    },
+    "error": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sensors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "camera",
+        "imu",
+        "pico"
+      ],
+      "properties": {
+        "camera": {
+          "type": "string"
+        },
+        "imu": {
+          "type": "string"
+        },
+        "pico": {
+          "type": "string"
+        }
+      }
+    },
+    "odometry": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "forward_m",
+            "left_m",
+            "dtheta_deg",
+            "quality"
+          ],
+          "properties": {
+            "forward_m": {
+              "type": "number"
+            },
+            "left_m": {
+              "type": "number"
+            },
+            "dtheta_deg": {
+              "type": "number"
+            },
+            "quality": {
+              "enum": [
+                "ok",
+                "slip_suspected"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "last_move": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "result"
+      ],
+      "properties": {
+        "action": {
+          "enum": [
+            "FORWARD_25",
+            "FORWARD_10",
+            "BACKWARD_10",
+            "TURN_LEFT_30",
+            "TURN_RIGHT_30"
+          ]
+        },
+        "result": {
+          "enum": [
+            "done",
+            "stalled",
+            "bumped",
+            "timeout",
+            "link_lost",
+            "refused",
+            "not_called"
+          ]
+        }
+      }
+    },
+    "counters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "steps_left",
+        "odometer_m",
+        "travel_since_fix_m",
+        "turns_since_fix",
+        "consecutive_contacts",
+        "consecutive_slips",
+        "consecutive_errors",
+        "latched"
+      ],
+      "properties": {
+        "steps_left": {
+          "type": "integer"
+        },
+        "odometer_m": {
+          "type": "number"
+        },
+        "travel_since_fix_m": {
+          "type": "number"
+        },
+        "turns_since_fix": {
+          "type": "integer"
+        },
+        "consecutive_contacts": {
+          "type": "integer"
+        },
+        "consecutive_slips": {
+          "type": "integer"
+        },
+        "consecutive_errors": {
+          "type": "integer"
+        },
+        "latched": {
+          "type": "boolean"
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "forward_allowed",
+        "backward_allowed",
+        "turn_allowed",
+        "scan_allowed",
+        "done_range_m"
+      ],
+      "properties": {
+        "forward_allowed": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "FORWARD_25",
+              "FORWARD_10"
+            ]
+          }
+        },
+        "backward_allowed": {
+          "type": "boolean"
+        },
+        "turn_allowed": {
+          "type": "boolean"
+        },
+        "scan_allowed": {
+          "type": "boolean"
+        },
+        "done_range_m": {
+          "type": "number"
+        }
+      }
+    },
+    "detections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "det",
+          "id",
+          "range_m",
+          "bearing_deg",
+          "quality"
+        ],
+        "properties": {
+          "det": {
+            "type": "integer"
+          },
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "range_m": {
+            "type": "number"
+          },
+          "bearing_deg": {
+            "type": "number"
+          },
+          "quality": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    }
+  }
+}

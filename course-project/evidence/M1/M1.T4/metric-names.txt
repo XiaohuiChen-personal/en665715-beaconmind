@@ -1,0 +1,2 @@
+vllm:num_requests_running{engine="0",model_name="/root/.cache/huggingface/hub/models--Qwen--Qwen3.5-35B-A3B/snapshots/ec2d4ece1ffb563322cbee9a48fe0e3fcbce0307"} 0.0
+vllm:num_requests_waiting{engine="0",model_name="/root/.cache/huggingface/hub/models--Qwen--Qwen3.5-35B-A3B/snapshots/ec2d4ece1ffb563322cbee9a48fe0e3fcbce0307"} 0.0

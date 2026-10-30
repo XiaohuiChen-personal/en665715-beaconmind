@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<!-- AI-assisted: Claude Opus 5.5 (xhigh effort) via Claude Code, 2026-10-10: wrote the URDF/xacro, launch file and tests. -->
+<package format="3">
+  <name>beaconmind_description</name>
+  <version>0.1.0</version>
+  <description>URDF/xacro of Xiaohui Chen's two-wheel BeaconMind car (shared by the Module 6 Gazebo lab and the Isaac Sim twin) and a launch file that publishes its TF tree.</description>
+  <maintainer email="xhchen0328@utexas.edu">Xiaohui Chen</maintainer>
+  <license>Proprietary</license>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

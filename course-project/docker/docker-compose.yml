@@ -1,0 +1,26 @@
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote the beaconmind-ros compose service.
+# Project ROS 2 graph (plan/README.md L5). Never `docker compose down` rosa-ros2 or vllm-rosa from here.
+name: beaconmind        # explicit project name: the folder name "docker" is too generic to be safe
+services:
+  ros:
+    build: {context: ., dockerfile: Dockerfile}
+    image: beaconmind-ros:humble
+    container_name: beaconmind-ros
+    network_mode: host
+    user: "1000:1000"
+    env_file:
+      - path: /home/xiaohui_chen/.config/beaconmind/secrets.env
+        required: false
+    environment:
+      ROS_DOMAIN_ID: "0"
+      RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+      FASTRTPS_DEFAULT_PROFILES_FILE: /workspace/course-project/docker/fastdds_udp.xml
+      PYTHONPATH: /workspace/course-project/beaconmind/src
+      BM_COURSE_ROOT: /workspace/course-project
+      PYTHONDONTWRITEBYTECODE: "1"
+      HOME: /tmp/bmhome
+      ROS_LOG_DIR: /tmp/bmhome/ros_log
+    volumes:
+      - ../..:/workspace
+    command: ["bash", "-lc", "mkdir -p /tmp/bmhome && exec sleep infinity"]
+    restart: "no"

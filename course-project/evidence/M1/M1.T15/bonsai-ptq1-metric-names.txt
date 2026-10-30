@@ -1,0 +1,1 @@
+HTTP 501 from /metrics; no vllm:num_requests_running or vllm:num_requests_waiting

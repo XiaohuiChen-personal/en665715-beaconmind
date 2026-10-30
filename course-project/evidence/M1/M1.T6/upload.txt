@@ -1,0 +1,16 @@
+# Bare FQBN upload after manual download mode. No baud flag. No flash-voltage flag.
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: saved the esptool result from the Spark upload.
+
+esptool v5.3.1
+Serial port /dev/ttyACM0:
+Connected to ESP32 on /dev/ttyACM0:
+Chip type:          ESP32-D0WD-V3 (revision v3.1)
+Wrote 1026752 bytes (662893 compressed) at 0x00010000 in 18.1 seconds (453.5 kbit/s).
+Verifying written data...
+Hash of data verified.
+Hard resetting via RTS pin...
+FLASH_EXIT:0
+
+The 30 s serial capture after that reset, serial-boot.txt, is 0 bytes.
+A later 8 s sniff and a 10 s sniff were also 0 bytes.
+No HTTP request was made. A scan of 192.168.4.0/22 found no body containing bm_cam-0.1.

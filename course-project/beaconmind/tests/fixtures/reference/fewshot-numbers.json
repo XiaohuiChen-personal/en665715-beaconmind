@@ -1,0 +1,423 @@
+{
+ "example1": {
+  "truth_pose": {
+   "x_m": -0.15,
+   "y_m": 0.7,
+   "theta_deg": 20.0
+  },
+  "prev_pose": {
+   "x_m": -0.3,
+   "y_m": 0.55,
+   "theta_deg": 26.0
+  },
+  "odometry": {
+   "forward_m": 0.25,
+   "left_m": 0.0,
+   "dtheta_deg": -1.5
+  },
+  "odometer_m": 3.1,
+  "travel_since_fix_m": 0.5,
+  "detections": [
+   {
+    "range_m": 1.4,
+    "bearing_deg": -24.1
+   },
+   {
+    "range_m": 0.78,
+    "bearing_deg": 25.0
+   }
+  ],
+  "prior": {
+   "x_m": -0.08,
+   "y_m": 0.66,
+   "theta_deg": 24.5
+  },
+  "gate_B1": {
+   "beacon": "B1",
+   "pred_range_m": 1.35,
+   "pred_bearing_deg": -25.8,
+   "d_range_m": 0.05,
+   "d_bearing_deg": 1.7,
+   "point_distance_m": 0.07,
+   "in_gate": true,
+   "travel_since_seen_m": 1.85,
+   "revisit": true
+  },
+  "gate_B5": {
+   "beacon": "B5",
+   "pred_range_m": 0.75,
+   "pred_bearing_deg": 24.0,
+   "d_range_m": 0.03,
+   "d_bearing_deg": 1.0,
+   "point_distance_m": 0.03,
+   "in_gate": true,
+   "travel_since_seen_m": 2.1,
+   "revisit": true
+  },
+  "fix_full": {
+   "x_m": -0.116,
+   "y_m": 0.651,
+   "theta_deg": 22.9,
+   "residual_m": 0.016,
+   "sigma_xy_m": 0.123,
+   "sigma_theta_deg": 5.6,
+   "well_conditioned": true,
+   "delta_m": 0.042,
+   "delta_deg": -1.6,
+   "within_prior_gate": true,
+   "relocalisation_ok": false,
+   "n_beacons": 2
+  },
+  "pose": {
+   "x_m": -0.12,
+   "y_m": 0.65,
+   "theta_deg": 22.9
+  },
+  "target_sector_30": {
+   "heading_deg": 30.0,
+   "wall_est_m": 0.78,
+   "max_leg_moves": 0,
+   "blocked": true,
+   "novelty_m": 1.16,
+   "interior": 0.97,
+   "score": 1.64,
+   "turns": 0
+  },
+  "pose_error_vs_truth_m": 0.06,
+  "prior_error_vs_truth_m": 0.085
+ },
+ "example3": {
+  "world": [
+   {
+    "id": 2,
+    "x_m": -1.0,
+    "y_m": 0.8
+   },
+   {
+    "id": 6,
+    "x_m": 1.25,
+    "y_m": 0.2
+   },
+   {
+    "id": 2,
+    "x_m": 1.25,
+    "y_m": 0.9
+   }
+  ],
+  "seed": 27,
+  "truth_pose": {
+   "x_m": 0.12500000000000006,
+   "y_m": 0.46650635094610965,
+   "theta_deg": 0.0
+  },
+  "prev_pose": {
+   "x_m": 0.1,
+   "y_m": 0.46,
+   "theta_deg": -29.0
+  },
+  "odometry": {
+   "forward_m": 0.0,
+   "left_m": 0.0,
+   "dtheta_deg": 29.7
+  },
+  "odometer_m": 0.5,
+  "travel_since_fix_m": 0.5,
+  "turns_since_fix": 26,
+  "steps_left": 122,
+  "detections": [
+   {
+    "id": 6,
+    "range_m": 1.14,
+    "bearing_deg": -13.7,
+    "quality": 0.9,
+    "det": 0
+   },
+   {
+    "id": 2,
+    "range_m": 1.2,
+    "bearing_deg": 21.8,
+    "quality": 0.9,
+    "det": 1
+   }
+  ],
+  "prior": {
+   "x_m": 0.1,
+   "y_m": 0.46,
+   "theta_deg": 0.7
+  },
+  "gate_B6": {
+   "beacon": "B6",
+   "pred_range_m": 1.17,
+   "pred_bearing_deg": -13.5,
+   "d_range_m": -0.03,
+   "d_bearing_deg": -0.2,
+   "point_distance_m": 0.03,
+   "in_gate": true,
+   "travel_since_seen_m": 0.0,
+   "revisit": false
+  },
+  "gate_id2_vs_B2": {
+   "beacon": "B2",
+   "pred_range_m": 1.16,
+   "pred_bearing_deg": 163.8,
+   "d_range_m": 0.04,
+   "d_bearing_deg": -142.0,
+   "point_distance_m": 2.23,
+   "in_gate": false,
+   "travel_since_seen_m": 0.0,
+   "revisit": false
+  },
+  "fix_position": {
+   "x_m": 0.129,
+   "y_m": 0.456,
+   "theta_deg": 0.7,
+   "spread_m": 0.0,
+   "delta_m": 0.029,
+   "within_prior_gate": true,
+   "heading_safe": true
+  },
+  "pose": {
+   "x_m": 0.13,
+   "y_m": 0.46,
+   "theta_deg": 0.7
+  },
+  "B2b_point": {
+   "x_m": 1.24,
+   "y_m": 0.92
+  },
+  "B2b_error_vs_truth_m": 0.02,
+  "pose_error_vs_truth_m": 0.011,
+  "prior_error_vs_truth_m": 0.026,
+  "history": [
+   {
+    "step": 0,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": [
+     [
+      "B6",
+      "new"
+     ]
+    ]
+   },
+   {
+    "step": 1,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": [
+     [
+      "B6",
+      "matched"
+     ]
+    ]
+   },
+   {
+    "step": 2,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 3,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 4,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": [
+     [
+      "B2",
+      "new"
+     ]
+    ]
+   },
+   {
+    "step": 5,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": [
+     [
+      "B2",
+      "matched"
+     ]
+    ]
+   },
+   {
+    "step": 6,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 7,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 8,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 9,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 10,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 11,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 12,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": [
+     [
+      "B6",
+      "matched"
+     ]
+    ]
+   },
+   {
+    "step": 13,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": [
+     [
+      "B6",
+      "matched"
+     ]
+    ]
+   },
+   {
+    "step": 14,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 15,
+    "decision": "FORWARD_25",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 16,
+    "decision": "TURN_RIGHT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 17,
+    "decision": "FORWARD_25",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 18,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 19,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 20,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 21,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": [
+     [
+      "B2",
+      "matched"
+     ]
+    ]
+   },
+   {
+    "step": 22,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "position_fix",
+    "assoc": [
+     [
+      "B2",
+      "matched"
+     ]
+    ]
+   },
+   {
+    "step": 23,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 24,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 25,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 26,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": []
+   },
+   {
+    "step": 27,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "odometry",
+    "assoc": [
+     [
+      "B6",
+      "matched"
+     ]
+    ]
+   },
+   {
+    "step": 28,
+    "decision": "TURN_LEFT_30",
+    "pose_source": "position_fix",
+    "assoc": [
+     [
+      "B6",
+      "matched"
+     ],
+     [
+      "B2b",
+      "new"
+     ]
+    ]
+   }
+  ],
+  "output_json": "{\"step\":28,\"mode\":\"closed_loop\",\"mission\":\"EXPLORE\",\"pose\":{\"x_m\":0.13,\"y_m\":0.46,\"theta_deg\":0.7},\"pose_source\":\"position_fix\",\"associations\":[{\"det\":0,\"id\":6,\"beacon\":\"B6\",\"result\":\"matched\"},{\"det\":1,\"id\":2,\"beacon\":\"B2b\",\"result\":\"new\"}],\"loop_closure\":[],\"map\":[{\"beacon\":\"B6\",\"id\":6,\"x_m\":1.24,\"y_m\":0.2,\"n_obs\":5,\"state\":\"confirmed\",\"first_seen_from\":[0,0],\"first_seen_scan\":1,\"odo_last_seen_m\":0.5,\"conflicts\":0,\"suspect\":false},{\"beacon\":\"B2\",\"id\":2,\"x_m\":-1.02,\"y_m\":0.77,\"n_obs\":3,\"state\":\"confirmed\",\"first_seen_from\":[0,0],\"first_seen_scan\":1,\"odo_last_seen_m\":0.5,\"conflicts\":0,\"suspect\":false},{\"beacon\":\"B2b\",\"id\":2,\"x_m\":1.24,\"y_m\":0.92,\"n_obs\":1,\"state\":\"tentative\",\"first_seen_from\":[0.13,0.46],\"first_seen_scan\":2,\"odo_last_seen_m\":0.5,\"conflicts\":0,\"suspect\":false}],\"memory\":{\"scan_points\":[[0,0],[0.12,0.47]],\"scan_index\":2,\"scan_turns_left\":1,\"scan_added\":1,\"scans_without_new\":0,\"legs_since_scan\":0,\"target_heading_deg\":null,\"leg_moves_left\":0,\"blocked_heading_deg\":null,\"recovery\":\"none\",\"stuck\":0},\"decision\":\"TURN_LEFT_30\",\"move_result\":\"done\",\"requested_mission\":null,\"message\":null,\"note\":\"I fixed my position from B6, mapped an id-2 tag 2.23 m from B2 as tentative B2b and took the next scan turn.\"}"
+ }
+}

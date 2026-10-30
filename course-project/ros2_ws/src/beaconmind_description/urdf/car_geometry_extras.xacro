@@ -1,0 +1,211 @@
+<?xml version="1.0"?>
+<!--
+  AI-assisted: Claude Opus 5.5 (xhigh effort) via Claude Code, 2026-10-10: wrote the URDF/xacro, launch file and tests;
+  moved these properties out of the hand-written car_props.xacro (values and comments unchanged) when gen_props.py
+  took car_props.xacro over; after a third review, corrected the stated source of the stand-in masses (the comments
+  had credited all four to "project defaults, M2.T4"; camera and IMU are the Module 6 guide's). No value changed.
+  AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-16: took the plate outline from a classmate's CAD of the Emo chassis
+  plate (wing depth 40 -> 34.35 mm, plate ends fitted to the CAD length, CAD thickness, and the rounded front's two
+  radii); every other value is unchanged.
+
+  car_geometry_extras.xacro: the car geometry that configs/car.json (M1.T9, schema bm.car/1) does NOT carry, one
+  xacro:property per value. HAND-WRITTEN, not generated. gen_props.py writes car_props.xacro from car.json;
+  beaconmind_car.urdf.xacro includes car_props.xacro and then this file. No property may be defined in both files
+  (test_props_files_do_not_overlap), because a later xacro definition would silently replace the earlier one.
+
+  Sources: assignments/assignment6/measurements.csv (readings by Xiaohui Chen, 2026-10-10; unchanged copy in
+  course-project/evidence/M1/M1.T9/measurements-xiaohui-chen-2026-10-10.csv), the photos in assignments/assignment6/photos/
+  and the dispositions in assignments/assignment6/review/MEASUREMENT-REVIEW.md. Since 2026-10-16 the PLATE OUTLINE rows
+  (plate_front_x, plate_rear_x, plate_strip_width, wing_depth, plate_thickness, the two front radii) come from
+  course-project/evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv instead (a classmate's CAD of the plate,
+  and B1/B2 fitted to its length; the private course repo (plate CAD is not published here)), labelled CAD or fit below. Where the CSV has a later row for the
+  same quantity (suffix _corrected, _recheck, _remeasure, _remeasure2) the later row is used; rows marked SUPERSEDED are
+  not inputs; C3_caster_swivel_axis_x replaces the earlier photo estimate of the swivel x.
+  If a row used here is re-measured, edit this file by hand. Values that car.json carries are changed in car.json
+  (course-project/tools/write_car_json.py) and regenerated with gen_props.py, never here.
+
+  Conventions (M2.T4 / README C1), the same as car_props.xacro:
+    base_link = midpoint between the two drive-wheel centres, AT AXLE HEIGHT (z = 0 at the axle).
+    +x = toward the camera lens / caster end (the car's front). +y = robot left. +z = up.
+    model z = floor height - wheel_radius. Lengths in metres, masses in kg, angles in radians.
+    Values named *_h are heights above the FLOOR; the URDF converts them with "- wheel_radius".
+
+  Labels used below:
+    measured  = a row of measurements.csv (row name given), with its uncertainty.
+    CAD       = a dimension of the classmate's plate CAD (row of the 2026-10-16 CSV, instrument "CAD"), +-0.5 mm allowance.
+    fit       = a 2026-10-10 reading adjusted to agree with a CAD dimension (row of the 2026-10-16 CSV, instrument "fit").
+    derived   = arithmetic on measured rows (shown).
+    ESTIMATE  = read off a photo or a vendor-typical size; provisional, re-measure before trusting.
+    ASSUMED   = not measured at all; a placeholder.
+    stand-in  = a mass not weighed: wheels and caster as M2.T4 step 5 gives them; camera and IMU the Module 6 guide's
+                values (derived-values.md "guide defaults"; M2.T4 gives none). Details at the masses below.
+  Uncertainty: single ruler readings +-2 mm, "around" readings +-5 mm (review #11).
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ================= Plate (clear acrylic) ================= -->
+  <!-- The overall extents axle_to_front, axle_to_rear and body_width, and the main-body height chassis_height, come
+       from car.json through car_props.xacro. -->
+  <!-- 2026-10-16: the plate outline now follows a classmate's CAD of the same Emo chassis plate (Onshape STEP and
+       drawing DRW_MOBILE_ROBOT_CHASSIS, the private course repo (plate CAD is not published here)), whose hole pattern matches this car's
+       plate on the bottom-view photo to 0.25 mm rms (photo-check.txt there). The rows are in
+       course-project/evidence/M1/M1.T9/measurements-2026-10-16-with-plate-cad.csv (the CSV car.json names).
+       CAD = a dimension of the model, +-0.5 mm allowance; fit = the 2026-10-10 ruler readings B1/B2 fitted to the
+       CAD plate length 206.98 mm. -->
+  <!-- fit B1_plate_front_x_corrected = 130.49 mm: axle line to the plate's front apex (131 mm ruler reading, less half
+       of the 1.02 mm by which B1 + B2 exceeded the CAD length); +-3 mm (axle datum, review #15) -->
+  <xacro:property name="plate_front_x" value="0.13049"/>
+  <!-- fit B2_plate_rear_x_corrected = 76.49 mm (77 mm reading, same fit), written as a signed x coordinate; +-3 mm -->
+  <xacro:property name="plate_rear_x" value="-0.07649"/>
+  <!-- CAD B5_plate_width_narrow_corrected = 100 mm, the strip from the wing to the front (the ruler read 100 too);
+       +-0.5 mm -->
+  <xacro:property name="plate_strip_width" value="0.100"/>
+  <!-- CAD B5b_wing_depth_centre_corrected = 34.35 mm, rear apex to the wing shoulder (x -76.49 to -42.14); +-0.5 mm.
+       Replaces the 40 mm ruler reading (review #7 had flagged it; the photo, mapped onto the CAD, gives 34.0 mm). -->
+  <xacro:property name="wing_depth" value="0.03435"/>
+  <!-- The wing's rear edge is a half-ellipse with semi-axes wing_depth (x) by body_width / 2 (y): the CAD's ELLIPSE
+       74.04 x 34.35 mm, cut where it meets the shoulder fillets at |y| = 73.95 mm, so body_width / 2 = 73.96 mm (the
+       2026-10-10 photo fit IMG_7436/7440 had found the same shape). beaconmind_car.urdf.xacro draws it as
+       wing_slices stepped slices and COMPUTES each slice width from wing_depth and body_width (ellipse width at the
+       slice's mid-depth), so a re-measured wing needs no hand-typed widths. With 34.35 x 73.96 mm and 4 slices:
+       71.6 / 115.5 / 137.1 / 146.8 mm. -->
+  <xacro:property name="wing_slices" value="4"/>
+  <!-- CAD P1_plate_front_arc_radius = 135.14 mm and P2_plate_front_corner_radius = 8 mm: the plate's front edge is one
+       arc whose apex is plate_front_x, joined to each side of the strip by an 8 mm fillet; +-0.5 mm each.
+       beaconmind_car.urdf.xacro ends the full-width strip where the fillets start (x = 115.35 mm) and draws the
+       rounded front as front_slices stepped slices, each as wide as the outline at the slice's middle
+       (3 slices: 99.2 / 89.2 / 52.0 mm). -->
+  <xacro:property name="plate_front_arc_radius" value="0.13514"/>
+  <xacro:property name="plate_front_corner_radius" value="0.008"/>
+  <xacro:property name="front_slices" value="3"/>
+  <!-- measured B8_plate_underside_h_front = 46 mm (caster end) and B8_plate_underside_h_rear = 43 mm (wing end),
+       floor; +-2 mm each. -->
+  <xacro:property name="plate_underside_h_front" value="0.046"/>
+  <xacro:property name="plate_underside_h_rear" value="0.043"/>
+  <!-- derived: the plate is modelled LEVEL (the 0.8 +- 0.4 deg nose-up tilt is not significant, review #12) at the
+       MEAN of the two B8 readings, (46 + 43) / 2 = 44.5 mm floor; +-1.5 mm. The level plate is then within 1.5 mm
+       of both measured heights. -->
+  <xacro:property name="plate_underside_h" value="${round((plate_underside_h_front + plate_underside_h_rear) / 2, 6)}"/>
+  <!-- CAD: plate thickness 3.000 mm (STEP solid, z 0 to 3 mm; drawing "3"); +-0.5 mm. Until 2026-10-16 this was an
+       ESTIMATE from photos IMG_7437 / IMG_7438 (3 mm +-1 mm). -->
+  <xacro:property name="plate_thickness" value="0.003"/>
+  <!-- measured B9_lowest_body_h = 30 mm: bottom of the TT motor gearboxes (floor); re-measured, upheld by review #2; +-2 mm.
+       car.json chassis_height_m (= chassis_height) is B10_battery_holder_top_h 66 - B9 30 = 36 mm; beaconmind_car.urdf.xacro
+       stops if chassis_height and battery_top_h - lowest_body_h disagree. -->
+  <xacro:property name="lowest_body_h" value="0.030"/>
+
+  <!-- ================= Parts on and under the plate ================= -->
+  <!-- TT motor gearboxes (one per side), under the plate, long axis along x.
+       z: measured B9 (bottom 30 mm floor) to the plate underside (44.5 mm floor, derived above).
+       x: ESTIMATE (photo IMG_7436 bottom view, scaled from the shaft at the tyre centre) - provisional: gearbox rear
+          end about 16 mm behind the axle, encoder end about 58 mm ahead; +-6 mm.
+       y: ESTIMATE (IMG_7436 shows |y| about 27-52 mm; vendor-typical TT gearbox width 22 mm) - provisional:
+          |y| 29 to 51 mm, which stays 2.5 mm clear of the tyre inner face at |y| = 53.5 mm; +-4 mm. -->
+  <xacro:property name="motor_x_min" value="-0.016"/>
+  <xacro:property name="motor_x_max" value="0.058"/>
+  <xacro:property name="motor_y_inner" value="0.029"/>
+  <xacro:property name="motor_y_outer" value="0.051"/>
+
+  <!-- Breadboard: two 400-point boards snapped side by side, one rail strip removed
+       (reference/hardware/car-build-notes.md), on the plate over the rear wing; rows 1-30 run along x (row 1 at the
+       rear, row 30 over the motors).
+       top: measured B10_breadboard_top_h = 55 mm floor; +-2 mm. Bottom = plate top (44.5 + 3 mm).
+       x: measured B12_breadboard_rear_x = -70 mm and B12_breadboard_front_x = +20 mm; +-2 mm each.
+       width: measured B12_breadboard_width = 100 mm; +-2 mm.
+       y: ESTIMATE - provisional: centred on y = 0 (not measured; IMG_7436 suggests 2-4 mm to the robot's right). -->
+  <xacro:property name="breadboard_x_min" value="-0.070"/>
+  <xacro:property name="breadboard_x_max" value="0.020"/>
+  <xacro:property name="breadboard_width" value="0.100"/>
+  <xacro:property name="breadboard_top_h" value="0.055"/>
+
+  <!-- 4 x AA battery holder, flat, cells along x, on the plate at the front, between the breadboard and the ESP32-CAM.
+       top: measured B10_battery_holder_top_h = 66 mm floor; +-2 mm. Bottom = plate top.
+       x: measured B13_battery_holder_rear_x = +40 mm and B13_battery_holder_front_x = +100 mm; +-2 mm each.
+       width: measured B13_battery_holder_width = 63 mm; +-2 mm.
+       y: ESTIMATE - provisional: centred on y = 0 (not measured; IMG_7436 shows it about central). -->
+  <xacro:property name="battery_x_min" value="0.040"/>
+  <xacro:property name="battery_x_max" value="0.100"/>
+  <xacro:property name="battery_width" value="0.063"/>
+  <xacro:property name="battery_top_h" value="0.066"/>
+
+  <!-- ESP32-CAM on its ESP32-CAM-MB base, flat on the plate at the front, USB-C forward, in front of the battery holder.
+       x: derived - from the battery holder's front (B13 +100 mm; IMG_7437 shows the two touching) to the measured
+          front-most point B3_front_most_x = +138 mm (= axle_to_front, no cable): 38 mm long, so the two boxes
+          share a face and do not overlap. +-3 mm.
+       width: measured B14_esp32cam_width = 20 mm; +-2 mm. FLAG: narrower than the vendor-typical ESP32-CAM board
+          (27 mm, not a source recorded in this repo); re-check if the camera's clearance ever matters.
+       y: ESTIMATE - provisional: centred on y = 0 (the lens above it is measured on the centre line, S3_lens_y = 0).
+       top: measured B14_esp32cam_front_top_h = 61 mm floor (highest point at the board's front edge), used as the
+          top of the whole stack; +-2 mm. -->
+  <xacro:property name="esp32_x_min" value="${battery_x_max}"/>
+  <xacro:property name="esp32_width" value="0.020"/>
+  <xacro:property name="esp32_top_h" value="0.061"/>
+
+  <!-- Grey LEGO Technic camera stand, standing on the ESP32-CAM board behind the camera module.
+       top: measured B10_camera_stand_top_h = 100 mm floor ("around 10 cm"); +-5 mm.
+       section 8 x 8 mm: ESTIMATE (one Technic beam is 8 mm wide) - provisional.
+       x: ESTIMATE - provisional: directly behind the 6 mm camera module, i.e. from camera_x - 14 mm to camera_x - 6 mm. -->
+  <xacro:property name="stand_top_h" value="0.100"/>
+  <xacro:property name="stand_section" value="0.008"/>
+  <xacro:property name="camera_module_depth" value="0.006"/>
+  <!-- ESTIMATE (vendor-typical OV3660 / OV2640 camera module, about 8.5 mm square) - provisional; visual only -->
+  <xacro:property name="camera_module_size" value="0.0085"/>
+
+  <!-- BNO055 board (Adafruit 2472): 20 x 27 mm (reference/hardware/bno055-pin-map.md section 5).
+       Orientation (derived from the sources, not measured on the car): in reference/hardware/bno055-top.jpg both
+       header rows (6 holes Vin..RST, 4 holes PS0..ADR) run along the board's LONG 27 mm edges, about 0.7 inch apart
+       across the 20 mm width. car-build-notes.md seats the 6-pin row in ONE breadboard column (g) over rows 1-6,
+       and breadboard rows run along x (row 1 at the rear). So the 27 mm side is along x and the 20 mm side along y,
+       with the two rows straddling the board's centre gap. With the measured centre x = -61 mm the board spans
+       x -74.5 to -47.5 mm, overhanging the breadboard's rear edge (-70) by about 4.5 mm, as a board held on its pins
+       can. Bottom of the box = breadboard top (the header spacer fills the gap); top = imu_top_h. -->
+  <xacro:property name="imu_board_size_x" value="0.027"/>
+  <xacro:property name="imu_board_size_y" value="0.020"/>
+
+  <!-- ================= IMU orientation ================= -->
+  <!-- The IMU position (imu_x, imu_y, imu_top_h, imu_z) comes from car.json through car_props.xacro.
+       ASSUMED, not measured (board taken as flat and square to the car; car.json has no imu_axes yet); M1 IMU
+       calibration will set them. -->
+  <xacro:property name="imu_roll" value="0.0"/>
+  <xacro:property name="imu_pitch" value="0.0"/>
+  <xacro:property name="imu_yaw" value="0.0"/>
+
+  <!-- ================= Caster swivel ================= -->
+  <!-- measured C3_caster_swivel_axis_x = 120 mm: axle line to the centre of the caster's round swivel plate (the
+       pivot), the re-measure review #3 / #4 asked for; +-2 mm. Replaces the earlier photo estimate (115 mm).
+       Used for the centre-of-mass lever arm (below) and for the fork visual in the URDF.
+       OPEN, not used in the model: the swung-forward readings C2b_caster_front_swung_x = 127 mm (disputed, review #4)
+       and its re-measures C2b_..._remeasure = 135 mm and C2b_..._remeasure2 = 140 mm imply a swivel offset of only
+       (140 - 12.5) - 120 = 7.5 mm, against 20 mm from C3 and the trailing contact C2 = 100 ("around", probably the
+       looser reading). The caster sphere stays at the measured trailing contact C2 = 100 mm (car.json caster_x_m);
+       the footprint sweep (ROBOT_RADIUS) uses 140 mm, the worst measured front. -->
+  <xacro:property name="caster_swivel_x" value="0.120"/>
+
+  <!-- ================= Mass distribution ================= -->
+  <!-- The total, mass = K1_total_mass = 506 g, comes from car.json mass_kg through car_props.xacro. -->
+  <!-- measured K2_caster_load = 142 g (caster alone on one scale, turned SIDEWAYS, review #3); +-1 g -->
+  <xacro:property name="caster_load" value="0.142"/>
+  <!-- measured K2_drive_wheels_load = 364 g (both drive wheels on the other scale); +-1 g -->
+  <xacro:property name="drive_wheels_load" value="0.364"/>
+  <!-- derived (lever rule): whole-car centre of mass x = C3_caster_swivel_axis_x x K2_caster_load / K1_total_mass
+       = 120 x 142 / 506 = 33.676 mm. Uses the swivel pivot x, not the trailing contact, because the caster was turned
+       sideways on the scale, so its load acted at the pivot (review #3). About +-0.6 mm from the +-2 mm of C3
+       (each mm of C3 moves it 142 / 506 = 0.28 mm) and about +-0.2 mm from the +-1 g scale readings (0.17 mm per g
+       on the caster scale, 0.07 mm per g on the drive-wheel scale, since K1 = 142 + 364). Kept to 9 decimals so that
+       the URDF reproduces it within 1e-6 m (test_com_matches_lever_rule). -->
+  <xacro:property name="com_x" value="${round(caster_swivel_x * caster_load / mass, 9)}"/>
+  <!-- ESTIMATE - provisional, not measured: chassis centre-of-mass height = middle of the main body
+       (30 to 66 mm floor = 48 mm floor), i.e. 48 - 33.5 = 14.5 mm above the axle; +-10 mm -->
+  <xacro:property name="chassis_com_z" value="0.0145"/>
+  <!-- stand-in masses, NOT weighed; the chassis gets the remainder (beaconmind_car.urdf.xacro chassis_mass).
+       wheel_mass 30 g each and caster_mass 10 g: M2.T4 step 5 ("mass 0.03 kg each (stand-in)", caster "mass 0.01 kg").
+       camera_mass 10 g and imu_mass 5 g: the Module 6 guide defaults (assignments/assignment6/derived-values.md line 41;
+       the instructor's model, guide-original/urdf/gazebo_car.urdf.xacro, gives camera_link 0.01 and imu_link 0.005 kg).
+       M2.T4 step 5 gives the camera and IMU links no mass, and its chassis mass is mass - 2 x 0.03 - 0.01 = 0.436 kg;
+       this model's 0.421 kg also subtracts these two (a recorded deviation, evidence/M2/M2.T4/README.md). -->
+  <xacro:property name="wheel_mass" value="0.030"/>
+  <xacro:property name="caster_mass" value="0.010"/>
+  <xacro:property name="camera_mass" value="0.010"/>
+  <xacro:property name="imu_mass" value="0.005"/>
+
+</robot>

@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.obslog-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C9.1.",
+  "title": "bm.obslog/1",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "schema",
+        "log_id",
+        "world_id",
+        "source",
+        "driver",
+        "dv_sha12",
+        "car_sha12",
+        "camera_sha12",
+        "created",
+        "notes"
+      ],
+      "properties": {
+        "type": {
+          "const": "header"
+        },
+        "schema": {
+          "const": "bm.obslog/1"
+        },
+        "log_id": {
+          "type": "string"
+        },
+        "world_id": {
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "sim",
+            "kinsim",
+            "real"
+          ]
+        },
+        "driver": {
+          "type": "string",
+          "pattern": "^(B2|operator|L2:.+)$"
+        },
+        "dv_sha12": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        "car_sha12": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        "camera_sha12": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        "created": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "step",
+        "obs_id",
+        "observation",
+        "detections_internal",
+        "executed_move",
+        "gt_pose_map",
+        "det_truth"
+      ],
+      "properties": {
+        "type": {
+          "const": "step"
+        },
+        "step": {
+          "type": "integer"
+        },
+        "obs_id": {
+          "type": "string"
+        },
+        "observation": {
+          "$ref": "https://schemas.beaconmind.invalid/bm.observation-1.schema.json"
+        },
+        "detections_internal": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "det",
+              "x_m",
+              "y_m",
+              "normal_yaw_deg",
+              "frames_seen",
+              "uid"
+            ],
+            "properties": {
+              "det": {
+                "type": "integer"
+              },
+              "x_m": {
+                "type": "number"
+              },
+              "y_m": {
+                "type": "number"
+              },
+              "normal_yaw_deg": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "frames_seen": {
+                "type": "integer"
+              },
+              "uid": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "executed_move": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "command",
+                "result"
+              ],
+              "properties": {
+                "command": {
+                  "$ref": "https://schemas.beaconmind.invalid/bm.move-1.schema.json"
+                },
+                "result": {
+                  "$ref": "https://schemas.beaconmind.invalid/bm.move_result-1.schema.json"
+                }
+              }
+            }
+          ]
+        },
+        "gt_pose_map": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "x_m",
+                "y_m",
+                "theta_deg"
+              ],
+              "properties": {
+                "x_m": {
+                  "type": "number"
+                },
+                "y_m": {
+                  "type": "number"
+                },
+                "theta_deg": {
+                  "type": "number"
+                }
+              }
+            }
+          ]
+        },
+        "det_truth": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "det",
+              "uid"
+            ],
+            "properties": {
+              "det": {
+                "type": "integer"
+              },
+              "uid": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "steps",
+        "reason_ended"
+      ],
+      "properties": {
+        "type": {
+          "const": "footer"
+        },
+        "steps": {
+          "type": "integer"
+        },
+        "reason_ended": {
+          "type": "string"
+        }
+      }
+    }
+  ]
+}

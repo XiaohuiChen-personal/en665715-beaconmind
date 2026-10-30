@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.beaconmind.invalid/bm.camera-1.schema.json",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/M1-foundations.md M1.T2 (M1.T7 output).",
+  "title": "bm.camera/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "image_width",
+    "image_height",
+    "frame_size",
+    "jpeg_quality",
+    "distortion_model",
+    "camera_matrix",
+    "distortion",
+    "rms_px",
+    "hfov_deg",
+    "vfov_deg",
+    "n_images",
+    "extrinsics",
+    "firmware",
+    "capture_url",
+    "calibrated"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bm.camera/1"
+    },
+    "image_width": {
+      "type": "integer"
+    },
+    "image_height": {
+      "type": "integer"
+    },
+    "frame_size": {
+      "type": "string"
+    },
+    "jpeg_quality": {
+      "type": "integer"
+    },
+    "distortion_model": {
+      "const": "plumb_bob"
+    },
+    "camera_matrix": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": {
+        "type": "number"
+      }
+    },
+    "distortion": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "number"
+      }
+    },
+    "rms_px": {
+      "type": "number"
+    },
+    "hfov_deg": {
+      "type": "number"
+    },
+    "vfov_deg": {
+      "type": "number"
+    },
+    "n_images": {
+      "type": "integer"
+    },
+    "extrinsics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent",
+        "child",
+        "x_m",
+        "y_m",
+        "z_m",
+        "roll_deg",
+        "pitch_deg",
+        "yaw_deg",
+        "uncertainty_m",
+        "uncertainty_deg"
+      ],
+      "properties": {
+        "parent": {
+          "anyOf": [
+            {
+              "const": "base_link"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "child": {
+          "anyOf": [
+            {
+              "const": "camera_optical_frame"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "x_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "y_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "z_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "roll_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pitch_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "yaw_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "uncertainty_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "uncertainty_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "firmware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "vflip",
+        "hmirror"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "vflip": {
+          "type": "boolean"
+        },
+        "hmirror": {
+          "type": "boolean"
+        }
+      }
+    },
+    "capture_url": {
+      "type": "string"
+    },
+    "calibrated": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    }
+  }
+}

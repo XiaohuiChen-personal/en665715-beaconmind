@@ -1,0 +1,12 @@
+// Copy to wifi_config.h in this folder, on the Spark, and fill in your 2.4 GHz network; never commit
+// it (course-project/**/wifi_config.h is git-ignored). The ESP32-CAM only supports 2.4 GHz Wi-Fi.
+// bm_cam_v02 also accepts bm_cam-0.1's names BM_WIFI_SSID and BM_WIFI_PASS.
+// Reused from: instructor Module 8 guide, wifi_config.example.h (EN.665.715, 2026); changes: comments.
+// AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-25: adapted the comments.
+#ifndef WIFI_CONFIG_H
+#define WIFI_CONFIG_H
+
+#define WIFI_SSID "YOUR_2_4_GHZ_WIFI_NAME"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+
+#endif

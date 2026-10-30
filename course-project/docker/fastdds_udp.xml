@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Disables Fast DDS shared memory and keeps a single UDPv4 transport.
+  Copied from discussions/module2/sim/fastdds_udp.xml.
+  The beaconmind-ros container uses UDP-only so every peer (Isaac Sim's
+  Fast DDS 2.6.10, the micro-ROS agent container, and rosa-ros2) exchanges
+  user data over UDP. Shared memory across those version and IPC-namespace
+  boundaries is what failed in Module 2.
+
+  AI-assisted: Grok 4.7 via Cursor, 2026-10-06: copied the Module 2 UDP-only profile into the project container and added this comment.
+  Derived from: discussions/module2/sim/fastdds_udp.xml (repository code, copied).
+-->
+<dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+  <profiles>
+    <transport_descriptors>
+      <transport_descriptor>
+        <transport_id>UdpTransport</transport_id>
+        <type>UDPv4</type>
+      </transport_descriptor>
+    </transport_descriptors>
+    <participant profile_name="udp_only_participant" is_default_profile="true">
+      <rtps>
+        <useBuiltinTransports>false</useBuiltinTransports>
+        <userTransports>
+          <transport_id>UdpTransport</transport_id>
+        </userTransports>
+      </rtps>
+    </participant>
+  </profiles>
+</dds>

@@ -1,0 +1,26 @@
+# Compile only. Upload has not run. Serial port was not opened. Board was not reset.
+# FQBN: esp32:esp32:esp32cam:FlashFreq=40,FlashMode=dio
+# BUILD_EXIT:0 on 2026-10-06. build.sh on spark-2a60, image bm-esp32-builder.
+# Compiler framesize/quality evidence is the #pragma message note below.
+# AI-assisted: Grok 4.7 via Cursor, 2026-10-06: saved this UXGA compile result.
+
+/src/bm_cam/bm_cam.ino:58:145: note: '#pragma message: bm_cam frame_size=FRAMESIZE_UXGA width=1600 height=1200 jpeg_quality=10 fb_count=1'
+   58 | #pragma message("bm_cam frame_size=FRAMESIZE_UXGA width=1600 height=1200 jpeg_quality=" BM_STR(BM_JPEG_QUALITY) " fb_count=" BM_STR(BM_FB_COUNT))
+      |                                                                                                                                                 ^
+Sketch uses 1026941 bytes (32%) of program storage space. Maximum is 3145728 bytes.
+Global variables use 59312 bytes (18%) of dynamic memory, leaving 268368 bytes for local variables. Maximum is 327680 bytes.
+
+App image (not written):
+/home/xiaohui_chen/Projects/EN.665.715/course-project/firmware/esp32cam/bm_cam/build/bm_cam.ino.bin
+bytes=1027088
+sha256=f724e0c459d64ccad363c81716d1f062acef64d5dae77da7f1f35a1d515a7647
+esptool image-info (file only, no port): Image size 1027088 bytes. Flash size 4MB. Flash freq 40m. Flash mode DIO. Entry point 0x40081ee4. Checksum valid.
+
+The on-disk bootloader file was not written to the chip. Its sha256 is still
+f7ec7b7d9026e12dd3616bf79cee0e78974a2605afbc2863fcfb0ac9aeb159d4 (23520 bytes).
+flash_args from this compile still lists 0x1000, 0x8000, 0xe000, and 0x10000
+with --flash-mode dio. That file must not be passed to write-flash: offset
+0x1000 would replace the DOUT bootloader.
+
+Running firmware was still the previous image after the compile:
+GET http://192.168.4.24/status returned framesize SVGA, 800x600, quality 12, uptime_ms 1286312.

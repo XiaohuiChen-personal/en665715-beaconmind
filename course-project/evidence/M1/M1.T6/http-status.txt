@@ -1,0 +1,1 @@
+{"fw": "bm_cam-0.1", "framesize": "SVGA", "width": 800, "height": 600, "quality": 12, "vflip": 0, "hmirror": 0, "rssi_dbm": -58, "uptime_ms": 52868, "free_heap": 171576, "psram": true, "frames": 0}
