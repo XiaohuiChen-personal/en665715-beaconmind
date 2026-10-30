@@ -11,7 +11,22 @@ item 6). Arithmetic below; the inputs and their uncertainties are in `derived.tx
 | `forward_wall_limit_m` vs the car's nose | `front_overhang_m` must be well inside the limit | 0.138 ± 0.003 m vs 0.35 m (DV) | 0.212 ± 0.003 m between the nose and a wall at the limit, taking the wall distance from the axle midpoint as C1's ranges are | 0.35 | The minimum reliable tag range (M1.T8) is not measured yet, so the second half of this check is pending |
 | Odometry scale | metres per count = π · D / counts_per_rev | D = 0.067 m (direct, unloaded); counts **not measured** | 4.87 × 10⁻⁵ m/count **only with the nominal 4320** | — | Not a measurement: needs the encoder counts (postponed) and preferably the roll-out diameter (not done). M3.T3/M3.T8 replace it |
 
+**2026-10-29 update (the footprint now includes the cables).** Xiaohui kept the camera and Pico cables as they are and
+had the footprint follow them (`evidence/M1/M1.T16/measurements.md`, decisions): `front_overhang_m` 0.178 ± 0.0058 m
+(the camera cable's tip: 138 mm ± 3 mm plus a 40 mm stick-out read to the nearest cm, ± 5 mm), `rear_overhang_m` 0.148 ± 0.003 m (the Pico cable), `sweep_radius_m` 0.178281 ± 0.0058 m (the
+front-most corners, the cable taken as wide as the 20 mm board and centred). The rows above then become, with the same formulas:
+
+| Item | 2026-10-29 inputs | Result | Was |
+| --- | --- | --- | --- |
+| `done_range_m` | 0.35 (DV) + 0.178 ± 0.0058 + 0.10 | **0.628 ± 0.006 m** | 0.588 ± 0.003 m (placeholder DV 0.55) |
+| Turn/scan clearance | 0.178281 ± 0.0058 + `sweep_margin_m` 0.05 (OD17, not approved) | **0.228 m** | 0.190 m |
+| Nose to a wall at `forward_wall_limit_m` | 0.35 − 0.178 ± 0.0058 | **0.172 ± 0.006 m** | 0.212 ± 0.003 m |
+
+`configs/dv.json` was not edited: these stay proposals for Xiaohui (M1.T10).
+
 Generative-AI disclosure: Claude Opus 5.5 via Claude Code (2026-10-10) computed and wrote these proposals from
 Xiaohui Chen's measurements; after a second review (same day) it raised the ± of `front_overhang_m` from 0.002 to
 0.003 m (the 3 mm axle-datum floor of review #15 now covers `B3_front_most_x`, which is measured from the same axle
 line as B1/B2) and gave `done_range_m` and the nose-to-wall distance that ±. No design value was changed.
+
+Claude Opus 5.5 via Cursor (2026-10-29) added the 2026-10-29 update table from the rebuilt `car.json`. No design value was changed.

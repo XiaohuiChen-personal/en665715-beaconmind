@@ -11,7 +11,11 @@
   bank_black, guards) from the M1.T16 readings and updated the mass, centre-of-mass, inertia and Module 6 comments;
   after a review the same day, added the one-weighing guard, the body_box size check, the bank-floor guard and the
   complete bank/motor overlap test, compared the bank top with the measured rear underside, and corrected the inertia,
-  Isaac massless-link, self-collision and wheel-layout comments and added the M2.T16 notes (bank, caster).
+  Isaac massless-link, self-collision and wheel-layout comments and added the M2.T16 notes (bank, caster); later the
+  same day, after Xiaohui's footprint decision, ended the ESP32-CAM box at esp32_front_x and added the two visual-only
+  cable boxes (body_visual_box, colour cable_grey); after a review of that, gave the front cable a collider (an agent
+  decision for Xiaohui to accept), added the footprint guards and the floor check of body_visual_box, and stated the
+  rear wall-contact offset, the camera-view occlusion and what is not modelled.
 
   beaconmind_car.urdf.xacro: the robot description of Xiaohui Chen's two-wheel car for the BeaconMind course project
   (robot_state_publisher TF tree, C12; Isaac Sim twin, M2.T4 / M2.T16).
@@ -292,6 +296,30 @@
         <box size="0.008 0.008 0.039"/>
       </geometry>
     </collision>
+    <visual name="front_camera_cable_visual">
+      <origin rpy="0 0 0" xyz="0.158 0.0 0.02075"/>
+      <geometry>
+        <box size="0.04 0.02 0.0135"/>
+      </geometry>
+      <material name="cable_grey">
+        <color rgba="0.42 0.42 0.44 1"/>
+      </material>
+    </visual>
+    <collision name="front_camera_cable_collision">
+      <origin rpy="0 0 0" xyz="0.158 0.0 0.02075"/>
+      <geometry>
+        <box size="0.04 0.02 0.0135"/>
+      </geometry>
+    </collision>
+    <visual name="rear_pico_cable_visual">
+      <origin rpy="0 0 0" xyz="-0.1165 0.0 -0.0025"/>
+      <geometry>
+        <box size="0.063 0.07 0.048"/>
+      </geometry>
+      <material name="cable_grey">
+        <color rgba="0.42 0.42 0.44 1"/>
+      </material>
+    </visual>
     <!-- Inertia: box approximation. The chassis is treated as ONE uniform solid box of chassis_mass,
          207 x 100 x 36 mm (plate length x strip width x main-body height, motor bottoms to battery top),
          centred on the chassis centre of mass and aligned with base_link. Not measured; good enough for

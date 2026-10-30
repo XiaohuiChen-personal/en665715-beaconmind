@@ -32,6 +32,9 @@ instead of mm or g changes nothing):
   - one reading: 2 mm for a ruler/tape length, 5 mm when the notes say "around", 1 g for a scale reading;
   - axle-datum floor: every x measured from the axle line (AXLE_DATUM_ROWS, plan keys and 2026-10-10 row names)
     carries at least 3 mm (assignments/assignment6/review/MEASUREMENT-REVIEW.md #15);
+  - a stated exception for ONE exact row name in ROW_UNCERTAINTY, checked before every other rule (the earlier row of
+    the same quantity and other CSVs keep the rules): B3_front_most_x_remeasure, 138 mm (3 mm axle-datum floor) plus
+    a 40 mm stick-out read to the nearest centimetre (5 mm), root-sum-square;
   - stated exceptions in UNCERTAINTY_OVERRIDE: the wing depth B5b (review #7) and the two-scale mass;
   - a row whose instrument starts with "CAD" (a dimension read off the plate's CAD model, not a ruler) gets CAD_M,
     0.5 mm, before any of the rules above; the axle-datum floor still applies to such a row if it is an axle-line x;
@@ -39,11 +42,12 @@ instead of mm or g changes nothing):
 Plate front. When the CSV has the two CAD outline rows P1_plate_front_arc_radius and P2_plate_front_corner_radius, the
 plate-front corners are the farthest points of the rounded front (an arc with its apex at B1 and two corner fillets,
 car_model.rounded_front_corner); without them, the square corners (B1, +-B5 narrow / 2) of the 2026-10-10 build.
-Status is "measured" for every value written here: each is a reading or arithmetic on readings, with ONE stated
-assumption. `corners`, and therefore `sweep_radius_m`, include the ESP32-CAM front corners and the plate-front
-corners, whose y = +-(measured width) / 2 ASSUMES that those parts are centred on y = 0 (their widths were measured,
-their sideways offsets were not). The `source` text of both entries says so, and so does the derived.txt printout.
-No other estimate or assumption is written to car.json.
+Status is "measured" for every value written here: each is a reading or arithmetic on readings. `corners`, and
+therefore `sweep_radius_m`, carry stated assumptions about y (no sideways offset was measured): the front-most corners
+(x = front_overhang_m, y = +-B14 / 2) ASSUME the front-most point is as wide as the ESP32-CAM board (true when it is
+the board itself, a second assumption when it is a cable) and centred on y = 0; the plate-front corners ASSUME the
+plate strip is centred on y = 0; the rear-most point takes y = 0. The `source` text of both entries says so, and so
+does the derived.txt printout. No other estimate or assumption is written to car.json.
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-10: wrote this writer (mapping table, superseding rule,
 uncertainty rules, derived keys, printout); later the same day, after a review, made imu_z_m axle-relative, let the
@@ -55,7 +59,12 @@ test_urdf.py's use of read_csv changed; 2026-10-16: added the CAD uncertainty ru
 outline rows (P1, P2) and the rounded plate-front corners, for the plate CAD a classmate shared
 (the private course repo (plate CAD is not published here)). The measurements are Xiaohui Chen's; the CAD rows are the classmate's model.
 AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: made the K1_total_mass uncertainty reason generic
-(it named only the 2026-10-10 readings); the value TWO_SCALE_KG and all logic are unchanged.
+(it named only the 2026-10-10 readings); later the same day, when the front- and rear-most points became the camera
+and Pico cables, made the corner labels and the corners source text generic ("front-most corner", "rear-most
+point"; they had named the ESP32-CAM board and the plate's rear apex). The value TWO_SCALE_KG and all logic are
+unchanged by those edits. After a review the same day: added ROW_UNCERTAINTY (one exact-name exception, checked
+first in Reading.uncertainty, for B3_front_most_x_remeasure) and made the corners / sweep_radius_m source texts state
+both assumptions of the front-most corners (width and centring).
 """
 
 import argparse
@@ -104,7 +113,8 @@ EXTRA_ROWS = {
     "B5b_wing_depth_centre": "corners: the rear wing tips (x)",
     "B9_lowest_body_h": "chassis_height_m = B10_battery_holder_top_h - B9_lowest_body_h",
     "B10_battery_holder_top_h": "chassis_height_m",
-    "B14_esp32cam_width": "corners: the ESP32-CAM front corners (y = +-width / 2, board assumed centred)",
+    "B14_esp32cam_width": "corners: the front-most corners (y = +-width / 2: the front-most point taken as wide as "
+                          "the ESP32-CAM board, assumed centred)",
     "C2b_caster_front_swung_x": "corners: the caster wheel's front with the caster swung fully forward",
     IMU_TOP_ROW: "imu_z_m = this - wheel_diameter_m / 2 when there is no imu_z_m row",
     "P1_plate_front_arc_radius": "corners: the plate-front corners (radius of the front-edge arc, apex at B1; with P2)",
@@ -160,6 +170,15 @@ SCALE_KG = 0.001
 #     0.25 mm; wing depth 34.0 mm on the photo against 34.35 mm in the CAD): photo-check.txt in that folder.
 CAD_M = 0.0005
 CAD_WHY = "0.5 mm CAD allowance (plate CAD, the private course repo (plate CAD is not published here))"
+# (d) Exceptions for ONE row, keyed by the EXACT row name (not the base name), checked before every rule above, so the
+#     earlier row of the same quantity and other CSVs keep their rules. B3_front_most_x_remeasure (2026-10-29) is the
+#     138 mm of B3_front_most_x (3 mm axle-datum floor) plus a 40 mm stick-out that Xiaohui gave as "4cm"; reading it
+#     to the nearest centimetre (5 mm) is the agent's reading, not his word. The value already includes the floor.
+ROW_UNCERTAINTY = {
+    "B3_front_most_x_remeasure": (car_model.rss(0.003, 0.005),
+                                  "B3 138 mm (3 mm axle-datum floor) + a 40 mm stick-out read to the nearest cm "
+                                  "(5 mm), root-sum-square"),
+}
 
 
 class Reading:
@@ -179,22 +198,26 @@ class Reading:
     def uncertainty(self):
         """(uncertainty in SI units, rule text). All the constants are SI, so the row's unit does not matter."""
         base = SUPERSEDING_SUFFIX.sub("", self.row_name)
-        if self.instrument.upper().startswith("CAD"):
-            # First: an override reason (e.g. review #7 on the 40 mm wing-depth reading) is about a ruler reading.
-            single, rule = CAD_M, CAD_WHY
-        elif base in UNCERTAINTY_OVERRIDE:
-            single, rule = UNCERTAINTY_OVERRIDE[base]
-        elif self.unit in ("g", "kg"):
-            single, rule = SCALE_KG, "1 g scale rule; instrument: %s" % (self.instrument or "not stated")
-        elif "around" in self.notes.lower():
-            single, rule = AROUND_M, "5 mm rule: reading given as 'around'"
+        if self.row_name in ROW_UNCERTAINTY:
+            # First: a stated exception for this exact row; it already includes any axle-datum floor.
+            single, rule = ROW_UNCERTAINTY[self.row_name]
         else:
-            single, rule = RULER_M, "2 mm ruler rule; instrument: %s" % (self.instrument or "not stated")
-        if base in AXLE_DATUM_ROWS:
-            if single < AXLE_DATUM_M:
-                single, rule = AXLE_DATUM_M, AXLE_DATUM_WHY
+            if self.instrument.upper().startswith("CAD"):
+                # An override reason (e.g. review #7 on the 40 mm wing-depth reading) is about a ruler reading.
+                single, rule = CAD_M, CAD_WHY
+            elif base in UNCERTAINTY_OVERRIDE:
+                single, rule = UNCERTAINTY_OVERRIDE[base]
+            elif self.unit in ("g", "kg"):
+                single, rule = SCALE_KG, "1 g scale rule; instrument: %s" % (self.instrument or "not stated")
+            elif "around" in self.notes.lower():
+                single, rule = AROUND_M, "5 mm rule: reading given as 'around'"
             else:
-                rule += "; above the 3 mm axle-datum floor"
+                single, rule = RULER_M, "2 mm ruler rule; instrument: %s" % (self.instrument or "not stated")
+            if base in AXLE_DATUM_ROWS:
+                if single < AXLE_DATUM_M:
+                    single, rule = AXLE_DATUM_M, AXLE_DATUM_WHY
+                else:
+                    rule += "; above the 3 mm axle-datum floor"
         if len(self.readings) >= 2:
             half_spread = car_model.mean_and_spread(self.readings)[1] / 2.0
             if half_spread > single:
@@ -389,7 +412,8 @@ def build(text, csv_name, updated, measured, evidence_dir="evidence/M1/M1.T9"):
         b14 = need("B14_esp32cam_width")
         c2b = need("C2b_caster_front_swung_x")
         for s in (1, -1):
-            points.append(("ESP32-CAM front corner (front_overhang_m, +-B14 / 2; y ASSUMES the board is centred)",
+            points.append(("front-most corner (front_overhang_m, +-B14 / 2: as wide as the ESP32-CAM board; y ASSUMES "
+                           "it is centred)",
                            front.value, s * b14.value / 2, front.uncertainty()[0], b14.uncertainty()[0] / 2, True))
         if FRONT_ARC_ROW in rows and FRONT_CORNER_ROW in rows:
             # The rounded front (CAD outline): the farthest point of the arc + fillet, not the square corner.
@@ -410,8 +434,8 @@ def build(text, csv_name, updated, measured, evidence_dir="evidence/M1/M1.T9"):
         for s in (1, -1):
             points.append(("rear wing tip (-B2 + B5b, B5 max / 2)", -b2.value + b5b.value, s * b5m.value / 2,
                            car_model.rss(b2.uncertainty()[0], b5b.uncertainty()[0]), b5m.uncertainty()[0] / 2, False))
-        points.append(("rear apex (rear_overhang_m, %s)" % rear.row_name, -rear.value, 0.0, rear.uncertainty()[0],
-                       0.0, False))
+        points.append(("rear-most point (rear_overhang_m, %s; y taken as 0)" % rear.row_name, -rear.value, 0.0,
+                       rear.uncertainty()[0], 0.0, False))
         points.append(("caster swung fully forward (%s)" % c2b.row_name, c2b.value, 0.0, c2b.uncertainty()[0], 0.0,
                        False))
     except KeyError as exc:
@@ -422,9 +446,10 @@ def build(text, csv_name, updated, measured, evidence_dir="evidence/M1/M1.T9"):
         u_xy = max(max(p[3], p[4]) for p in points)
         values["corners"] = entry(
             corners, "m",
-            "M1.T9 (derived): plan-view extreme points from the axle midpoint (derived.txt); the ESP32-CAM front "
-            "corners and the plate-front corners ASSUME those parts are centred on y = 0 (only their widths were "
-            "measured)",
+            "M1.T9 (derived): plan-view extreme points from the axle midpoint (derived.txt); the front-most corners "
+            "take y = +-B14 / 2, which ASSUMES the front-most point is as wide as the ESP32-CAM board (true when it is "
+            "the board itself, not when it is a cable) and centred on y = 0; the plate-front corners ASSUME the plate "
+            "strip is centred on y = 0; the rear-most point takes y = 0; no sideways offset was measured",
             der_ev, u_xy,
         )
         report.append("corners (x, y) from the axle midpoint, m; uncertainty = the largest coordinate term %.4f m:" % u_xy)
@@ -440,7 +465,8 @@ def build(text, csv_name, updated, measured, evidence_dir="evidence/M1/M1.T9"):
         u_sweep = upper - radius
         if farthest[1]:
             sweep_src = ("M1.T9 (derived): the largest distance over corners, reached at the %s, so sweep_radius_m "
-                         "depends on that centring assumption" % farthest[0].split(" (")[0])
+                         "depends on what that corner's y assumes (see corners: the width it takes and its centring "
+                         "on y = 0)" % farthest[0].split(" (")[0])
         else:
             sweep_src = ("M1.T9 (derived): the largest distance over corners, reached at the %s, which uses no "
                          "centring assumption" % farthest[0].split(" (")[0])

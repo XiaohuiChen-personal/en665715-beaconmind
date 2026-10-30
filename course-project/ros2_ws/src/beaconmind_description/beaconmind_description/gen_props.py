@@ -39,8 +39,10 @@ calibrated).
 AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: made the generated texts independent of particular
 readings and dates, so test_props_up_to_date can keep them honest (the mass, front- and rear-overhang comments point to
 the source row's notes and to car_geometry_extras.xacro / evidence/M1/M1.T16 instead of quoting readings; the header
-names the CSV car.json uses, through evidence_csv(), which says so explicitly when car.json names none or several).
-The values and the logic that produces them are unchanged.
+names the CSV car.json uses, through evidence_csv(), which says so explicitly when car.json names none or several);
+later the same day, when the camera and Pico cables became the front- and rear-most points, made the axle_to_front /
+axle_to_rear comments say "front-most / rear-most point of the whole car" (they had named the ESP32-CAM board and the
+plate). The values and the logic that produces them are unchanged.
 """
 
 import argparse
@@ -373,12 +375,10 @@ def render(car_path, camera_path=None):
     ]
     lines += lit("axle_to_front", view["axle_to_front_m"],
                  c("view axle_to_front_m, " + describe(entries, "front_overhang_m")
-                   + "; front-most point (B3: the ESP32-CAM's USB-C side); the source row's notes in the CSV say"
-                   " whether a cable was fitted"))
+                   + "; front-most point of the whole car; the source row's notes in the CSV say what that point is"))
     lines += lit("axle_to_rear", view["axle_to_rear_m"],
                  c("view axle_to_rear_m, " + describe(entries, "rear_overhang_m")
-                   + "; rear-most point of the PLATE (B4); parts reaching further back are recorded in"
-                   " car_geometry_extras.xacro and evidence/M1/M1.T16"))
+                   + "; rear-most point of the whole car; the source row's notes in the CSV say what that point is"))
     lines += lit("body_width", view["body_width_m"],
                  c("view body_width_m, " + describe(entries, "chassis_width_m")
                    + "; widest body point = the rear wing (tyres excluded)"))

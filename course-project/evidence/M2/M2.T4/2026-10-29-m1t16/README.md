@@ -16,11 +16,22 @@ M1.T16 unblocked: the mass, the centre of mass and the power-bank box, from Xiao
 | `chassis_link` inertial origin | (35.974, −0.238, 14.5) mm | (8.809, −0.174, 14.5) mm |
 | Power bank | not modelled | box `power_bank` on `chassis_link`, x −85 to −15 mm, y ±35 mm, 17–42 mm above the floor; geometry only, no link, no mass of its own |
 | Gearbox boxes (`motor_x_min`, photo ESTIMATE ±6 mm) | rear end −16 mm | **−15 mm**, clipped to the measured bank front face (agent decision, below) |
+| `front_overhang_m` | 0.138 ± 0.003 m (ESP32-CAM, no cable) | **0.178 ± 0.0058 m** (the camera cable's tip, `B3_front_most_x_remeasure`) |
+| `rear_overhang_m` | 0.07649 ± 0.003 m (plate rear apex) | **0.148 ± 0.003 m** (the Pico cable, `B4_rear_most_x_remeasure`) |
+| `chassis_length_m` / `sweep_radius_m` | 0.21449 / 0.140 m | **0.326 ± 0.0066 / 0.178281 ± 0.0058 m** (front-most corners (0.178, ±0.010): the cable taken as wide as the board and centred) |
+| Cables in the URDF | none | `front_camera_cable` (x 0.138–0.178, visual + collision), `rear_pico_cable` (x −0.148 to −0.085, visual only); ends measured, cross-sections ASSUMED |
 
-Unchanged on purpose: ride height (30 / 46 / 43 mm), camera and IMU poses, wheels, track, caster position, and the
-`car.json` footprint keys (`sweep_radius_m`, `front_overhang_m`, `rear_overhang_m`, `corners`, `chassis_length_m`,
-`chassis_height_m`). The bank's rear face is 8.5 mm behind the plate's rear apex and the Pico cable reaches 148 mm
-behind the axle; the footprint waits for Xiaohui's cable / sweep-radius decision.
+Unchanged on purpose: ride height (30 / 46 / 43 mm), camera and IMU poses, wheels, track, caster position and
+`chassis_height_m`. The ESP32-CAM board box still ends at 138 mm (new row `B14b_esp32cam_front_x`).
+
+**The footprint (added after 23:45 CDT).** Xiaohui measured the camera cable 40 mm past the old 138 mm front-most
+point and chose to keep both cables as they are and have the footprint follow them, and to add the cables to the URDF
+(`evidence/M1/M1.T16/measurements.md`). `front_overhang_m` carries ±5.8 mm (138 ± 3 mm plus "4cm" read to the
+nearest cm, ± 5 mm, root-sum-square) through a writer exception keyed to that one row. Agent decisions for Xiaohui to
+accept: the front cable envelope has a collider, so the simulated car's first front wall contact matches
+`front_overhang_m`; the rear loop is visual only (a rigid box hanging toward the floor would be a false floor contact),
+so the simulated first rear wall contact is the bank's rear face, 63 mm short of the footprint and of the planned
+kinsim body. Design-value consequences (proposals only, `dv.json` unchanged): `evidence/M1/M1.T9/derived-dv-proposals.md`.
 
 The data chain was followed: a new CSV `evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv` (the
 2026-10-16 file unchanged plus `K1`/`K2` `_remeasure` rows, `B15_bank_*` rows and two cable rows that are not model
@@ -41,12 +52,12 @@ errored here.
 | --- | --- | --- |
 | `baseline-abde7a7/colcon_test.txt` | `beaconmind-ros:humble`, unmodified `main` | **21 tests, 1 error, 1 failure, 1 skipped**: two breakages from the public-repo move (`car_props.xacro` named the pre-scrub `car.json` hash; the extras CSV path pointed into the private repo) |
 | `pkg_check.txt` | same image, this branch | `xacro`, `robot_state_publisher`, `tf2_ros` found; ros-humble-xacro 2.1.1 |
-| `colcon_test.txt` | same | `colcon build --symlink-install` OK; **23 tests, 0 errors, 0 failures, 1 skipped** (`test_optical_frame_matches_camera_json`: no `camera.json`) |
-| `expand_check.txt` | same | xacro wrote `sim/isaac/assets/beaconmind_car.urdf` (sha256 `2cc248cf…`); `check_urdf` parses it, 8 links |
+| `colcon_test.txt` | same | `colcon build --symlink-install` OK; **24 tests, 0 errors, 0 failures, 1 skipped** (`test_optical_frame_matches_camera_json`: no `camera.json`) |
+| `expand_check.txt` | same | xacro wrote `sim/isaac/assets/beaconmind_car.urdf` (sha256 `f1116ee5…`); `check_urdf` parses it, 8 links |
 | `tf2_echo.txt` | same | `robot_state_publisher` up; `base_link → camera_optical_frame` (0.120, 0, 0.0415) m, RPY (−90, 0, −90)°; IMU, caster, chassis as before; published masses 0.575 + 2 × 0.03 + 0.01 + 0.01 + 0.005 = 0.660 kg |
-| `gz_sdf.txt` | Spark host, `gz sdf` 14.9.0 (Jazzy vendor) | converts with empty stderr; lumped body 0.600 kg + two 0.03 kg wheels = 0.660 kg; lumped centre of mass x 0.0116 m = 0.660 × 0.010545 / 0.600 |
-| `urdf_named_diff.txt` | Mac | only the two motor boxes (visual + collision), the new `power_bank` box (visual + collision) and the `chassis_link` inertial differ from `main`'s expansion |
-| `mac_pytest.txt` | Mac, pip xacro 2.1.1 | 22 passed, 1 skipped; `gen_props.py --check` up to date; `beaconmind` 64 passed, 1 skipped |
+| `gz_sdf.txt` | Spark host, `gz sdf` 14.9.0 (Jazzy vendor) | converts with empty stderr; lumped body 0.600 kg + two 0.03 kg wheels = 0.660 kg; lumped centre of mass x 0.0116 m = 0.660 × 0.010545 / 0.600; two cable visuals, one cable collision (the front) |
+| `urdf_named_diff.txt` | Mac | only the two motor boxes, the new `power_bank` box and front cable box (visual + collision), the rear cable visual and the `chassis_link` inertial differ from `main`'s expansion |
+| `mac_pytest.txt` | Mac, pip xacro 2.1.1 | 23 passed, 1 skipped; `gen_props.py --check` up to date; `beaconmind` 65 passed, 1 skipped |
 
 Container runs used a throwaway `docker run --rm --network none` from the `beaconmind-ros:humble` image on a scratch
 copy of the branch (`ROS_DOMAIN_ID=73`, `ROS_LOCALHOST_ONLY=1`), not the standing `beaconmind-ros` container or the
@@ -80,10 +91,27 @@ coordinator before it was fixed.
 | — | math | nit | sub-micrometre face snapping | rejected: readings are whole millimetres |
 | — | source, data chain | nit | `measured.date` stays 2026-10-10 | kept: the schema has one date (the first measurement); the notes record 2026-10-29 |
 
+**Second round (cables and footprint, after 23:45 CDT).** Two reviewers (source fidelity / data chain / scope; and
+geometry / simulator / tests), with mutation tests. No critical finding; the chain reproduced byte for byte.
+
+| # | Severity | Finding | Disposition |
+| --- | --- | --- | --- |
+| 17 | major | with both cables visual only, Isaac and Gazebo would first touch a wall 40 mm (front) and 63 mm (rear) short of the `car.json` footprint and the planned kinsim body | confirmed; front cable given a collider (agent decision); rear offset documented in the xacro and the M2.T16 notes |
+| 18 | major | handoff docs still forbade the footprint change | confirmed; `AGENTS.md`, `CONTEXT.md`, plan, both READMEs updated |
+| 19 | minor | ±5 mm on 178 mm dropped the 138 mm reading's ±3 mm, and the word "around" was the agent's | confirmed; ±5.8 mm through a writer exception keyed to the exact row, with a test; "around" removed |
+| 20 | minor | the sweep radius rests on two assumptions (cable width and centring), the rear point on y = 0 | confirmed; stated in `car.json`, the writer, the README and the xacro |
+| 21 | minor | the board front shared the B3 row name with the cable tip; board and cable widths were not tied to B14 (mutations passed) | confirmed; new row `B14b_esp32cam_front_x`, width checks in the test |
+| 22 | minor | the 7 mm lowest cable point may be under the car (the camera cable seems to run forward under the bank); the Pico plug above the breadboard is outside the rear envelope | confirmed from the photos (no front photo); envelope wording says so |
+| 23 | minor | the front cable visual will show at the bottom of a simulated camera image | recorded as an M2.T16 check (estimate, not rendered) |
+| 24 | nit | guard messages, the X1 note, docstrings, the template's AI line, stale "at the time" wording | fixed |
+
 Open, outside this change (for Xiaohui; also in `CONTEXT.md`):
 
-- Accept or reject the 1 mm gearbox-box change (`motor_x_min` −16 → −15 mm).
-- The footprint: reroute the rear Pico cable or enlarge `sweep_radius_m`; measure the front camera-cable point.
+- Accept or reject the 1 mm gearbox-box change (`motor_x_min` −16 → −15 mm), the front-cable collider and the
+  visual-only rear cable.
+- The cables' sideways position and width (they set the sweep radius through an assumption), and a front photo of the
+  camera cable's route.
+- `configs/dv.json` (`done_range_m` placeholder 0.55 vs the proposal 0.628 m; OD17's margin).
 - `plan/M2-sim-mvp.md` (M2.T16) says `merge_fixed_joints = True` "would delete the camera frames"; in importer 2.4.30 a massless fixed child becomes an Xform under its parent instead (`UrdfImporter.cpp` 295–310, per the ROS reviewer; not re-run here).
 - The Spark's private-repo mirror predates the Module 6 snapshot commit; `git pull` it before the lab is next used.
 

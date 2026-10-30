@@ -40,8 +40,10 @@ As of the **2026-10-29** handoff, which later work must not silently overwrite:
  `course-project/evidence/M1/M1.T16/`, run and review in
  `course-project/evidence/M2/M2.T4/2026-10-29-m1t16/`). It was 0.506 kg before.
  M2.T4 stays blocked on `camera.json` (M1.T7) and the `load_car` view (M2.T3).
- Do not change the sweep radius, the front overhang or the rear overhang until
- the cable stick-out in the M1.T16 folder is settled.
+ The footprint now includes the cables, by Xiaohui's decision of 2026-10-29
+ (keep them as they are): front overhang 0.178 m (camera cable tip), rear
+ overhang 0.148 m (Pico cable), sweep radius about 0.178 m. If the cables are
+ rerouted later, re-measure both points and rebuild `car.json` and the URDF.
 
 The Isaac Sim twin and the Pico project firmware are not built.
 

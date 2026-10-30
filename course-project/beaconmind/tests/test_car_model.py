@@ -8,6 +8,10 @@ added the imu_z_m (axle-relative), imu_axes, corner-assumption and template test
 row-unit tests (m / kg rows), the axle-datum asserts and the uncertainty comparison of the template test;
 2026-10-16: added the plate-CAD tests (rounded front, CAD rows) and made test_configs_car_json_is_the_writer_output
 follow the CSV and date that car.json names (it was tied to the 2026-10-10 file).
+AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: followed the writer's generic corner label
+("front-most corner"; it was "ESP32-CAM front corner") in test_writer_rows_rules_and_derived; the checks are the same.
+After a review the same day: followed the corners / sweep source texts that state both assumptions, and added
+test_row_specific_uncertainty_applies_to_the_exact_row_name_only (ROW_UNCERTAINTY).
 """
 import csv
 import importlib.util
@@ -118,7 +122,7 @@ def test_writer_rows_rules_and_derived():
     for key in ("rollout_left_m", "rollout_right_m", "wheel_diameter_left_m", "wheel_diameter_right_m",
                 "counts_per_rev_left", "counts_per_rev_right", "ticks_per_wheel_rev"):
         assert key not in v and key in omitted
-    # The later C2b re-measure (125) is the swung-forward caster corner; the ESP32-CAM corner (128, 10) is farthest.
+    # The later C2b re-measure (125) is the swung-forward caster corner; the front-most corner (128, 10) is farthest.
     assert [0.125, 0.0] in v["corners"]["value"]
     assert abs(v["sweep_radius_m"]["value"] - math.hypot(0.128, 0.010)) <= 1e-6
     assert all(e["status"] == "measured" for e in v.values())
@@ -126,14 +130,34 @@ def test_writer_rows_rules_and_derived():
     assert v["imu_z_m"]["value"] == 0.025 and "above the axle" in v["imu_z_m"]["source"]
     assert v["imu_z_m"]["uncertainty"] == round(math.hypot(0.002, 0.001), 4) and "imu_z_m" not in omitted
     assert v["lens_z_m"]["value"] == 0.07  # the lens stays a height above the FLOOR (M1.T7 step 8)
-    # The centring assumption behind the ESP32-CAM / plate-front corners is stated, and the farthest corner names it.
-    assert "ASSUME" in v["corners"]["source"]
-    assert "ESP32-CAM front corner" in v["sweep_radius_m"]["source"]
-    assert "depends on that centring assumption" in v["sweep_radius_m"]["source"]
+    # The assumptions behind the front-most / plate-front corners (width, centring) are stated, and the farthest corner
+    # names them.
+    assert "ASSUME" in v["corners"]["source"] and "as wide as the ESP32-CAM board" in v["corners"]["source"]
+    assert "front-most corner" in v["sweep_radius_m"]["source"]
+    assert "depends on what that corner's y assumes" in v["sweep_radius_m"]["source"]
     # The imu_axes text row becomes a string value; other text rows (C0_caster_type) are not written.
     assert v["imu_axes"]["value"] == "x arrow toward the camera; y arrow to the robot left"
     assert v["imu_axes"]["unit"] == "text" and v["imu_axes"]["uncertainty"] is None and "imu_axes" not in omitted
     assert "C0_caster_type" not in v
+
+
+def test_row_specific_uncertainty_applies_to_the_exact_row_name_only():
+    """ROW_UNCERTAINTY (2026-10-29) is keyed by the exact row name: B3_front_most_x_remeasure gets rss(3 mm, 5 mm)
+    with its stated reason (even with 'around' in its notes), while the base-name row B3_front_most_x and another
+    superseding name, B3_front_most_x_corrected, keep the 3 mm axle-datum floor."""
+    writer = _writer()
+    exact = SYNTHETIC + "\nB3_front_most_x_remeasure,168,,,mm,not stated,a stick-out of around 4 cm"
+    rows = writer.read_csv(exact)
+    assert rows["B3_front_most_x"].row_name == "B3_front_most_x_remeasure"
+    u, rule = rows["B3_front_most_x"].uncertainty()
+    assert u == car_model.rss(0.003, 0.005) and rule == writer.ROW_UNCERTAINTY["B3_front_most_x_remeasure"][1]
+    v = writer.build(exact, "synthetic.csv", "2026-10-10", MEASURED)[0]["values"]
+    assert v["front_overhang_m"]["value"] == 0.168 and v["front_overhang_m"]["uncertainty"] == 0.0058
+    assert v["chassis_length_m"]["uncertainty"] == round(car_model.rss(car_model.rss(0.003, 0.005), 0.003), 4)
+    # The base-name row (the fixture's B3, 128 mm) and a differently named later row keep the ordinary rules.
+    assert writer.read_csv(SYNTHETIC)["B3_front_most_x"].uncertainty()[0] == 0.003
+    other = writer.read_csv(SYNTHETIC + "\nB3_front_most_x_corrected,168,,,mm,not stated,x")["B3_front_most_x"]
+    assert other.row_name == "B3_front_most_x_corrected" and other.uncertainty()[0] == 0.003
 
 
 def _in_m_and_kg(text, only=None):

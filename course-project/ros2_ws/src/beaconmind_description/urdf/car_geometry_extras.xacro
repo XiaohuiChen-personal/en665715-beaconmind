@@ -13,7 +13,10 @@
   gearbox boxes end at the measured bank front face, and updated the sources and the stale comments; after a review
   the same day, added bank_top_h (rounded), stated the com_x range from the readings alone (8.8 to 11.2 mm) and who
   decided what, reworded the motor_x_min clipping as an agent decision, and labelled the private-repo files. No value
-  changed in that review. The readings are Xiaohui Chen's.
+  changed in that review. Later the same day, after Xiaohui's footprint decision, added esp32_front_x (the board's
+  front, no longer the car's front-most point) and the front/rear cable envelope properties; after a review the same
+  day, made esp32_front_x cite its own row B14b_esp32cam_front_x, gave the front cable's 178 mm its 5.8 mm, and
+  stated which parts of the rear envelope are assumed and what is not modelled. The readings are Xiaohui Chen's.
 
   car_geometry_extras.xacro: the car geometry that configs/car.json (M1.T9, schema bm.car/1) does NOT carry, one
   xacro:property per value. HAND-WRITTEN, not generated. gen_props.py writes car_props.xacro from car.json;
@@ -59,7 +62,9 @@
 
   <!-- ================= Plate (clear acrylic) ================= -->
   <!-- The overall extents axle_to_front, axle_to_rear and body_width, and the main-body height chassis_height, come
-       from car.json through car_props.xacro. -->
+       from car.json through car_props.xacro. Since 2026-10-29 axle_to_front and axle_to_rear are the whole car's
+       front- and rear-most points, the camera and Pico USB cables (Xiaohui's footprint decision; "Cables" below); the
+       plate's own ends are plate_front_x and plate_rear_x. -->
   <!-- 2026-10-16: the plate outline now follows a classmate's CAD of the same Emo chassis plate (Onshape STEP and
        drawing DRW_MOBILE_ROBOT_CHASSIS, the private course repo (plate CAD is not published here)), whose hole pattern matches this car's
        plate on the bottom-view photo to 0.25 mm rms (photo-check.txt there). The rows are in
@@ -137,10 +142,9 @@
        inside the measured total (car.json mass_kg, hence chassis_mass) and chassis_link's uniform-box inertia.
        x: measured B15_bank_front_x = 15 mm and B15_bank_rear_x = 85 mm BEHIND the axle line, written as signed x;
           +-3 mm each (axle-datum floor, review #15). 85 - 15 = 70 mm, the bank's side. The rear face is 8.5 mm behind
-          the plate's rear apex (plate_rear_x = -76.49 mm), but car.json rear_overhang_m, corners and sweep_radius_m are
-          deliberately NOT updated yet: the rear Pico cable reaches 148 mm behind the axle and the front camera cable is
-          unmeasured, and Xiaohui decides the footprint later. The bank's rear corners are 91.9 mm from the axle
-          midpoint, inside the 0.140 m sweep radius.
+          the plate's rear apex (plate_rear_x = -76.49 mm). Since Xiaohui's footprint decision (2026-10-29) car.json's
+          rear-most point is the Pico cable 148 mm behind the axle, so the bank lies inside the footprint; its rear
+          corners are 91.9 mm from the axle midpoint, inside the 0.178 m sweep radius.
        width: measured B15_bank_width = 70 mm (the 70 x 70 mm footprint); +-2 mm.
        y: measured: centred (Xiaohui), 18 mm from the bank to each tyre (B15_bank_tyre_gap; (107 - 70) / 2 = 18.5 mm);
           +-2 mm.
@@ -180,15 +184,19 @@
   <xacro:property name="battery_top_h" value="0.066"/>
 
   <!-- ESP32-CAM on its ESP32-CAM-MB base, flat on the plate at the front, USB-C forward, in front of the battery holder.
-       x: derived - from the battery holder's front (B13 +100 mm; IMG_7437 shows the two touching) to the measured
-          front-most point B3_front_most_x = +138 mm (= axle_to_front, no cable): 38 mm long, so the two boxes
-          share a face and do not overlap. +-3 mm.
+       x: derived - from the battery holder's front (B13 +100 mm; IMG_7437 shows the two touching) to the board's
+          front esp32_front_x = +138 mm (below): 38 mm long, so the two boxes share a face and do not overlap. +-3 mm.
        width: measured B14_esp32cam_width = 20 mm; +-2 mm. FLAG: narrower than the vendor-typical ESP32-CAM board
           (27 mm, not a source recorded in this repo); re-check if the camera's clearance ever matters.
        y: ESTIMATE - provisional: centred on y = 0 (the lens above it is measured on the centre line, S3_lens_y = 0).
        top: measured B14_esp32cam_front_top_h = 61 mm floor (highest point at the board's front edge), used as the
           top of the whole stack; +-2 mm. -->
   <xacro:property name="esp32_x_min" value="${battery_x_max}"/>
+  <!-- measured B14b_esp32cam_front_x = 138 mm: the ESP32-CAM board's own front, its USB-C side; +-3 mm (axle-datum
+       floor). It is the 2026-10-10 reading B3_front_most_x (no cable plugged in), re-filed under its own row on
+       2026-10-29 because B3 now means the whole car's front-most point: since then that is the camera's USB cable
+       (B3_front_most_x_remeasure = 178 mm = axle_to_front; "Cables" below). -->
+  <xacro:property name="esp32_front_x" value="0.138"/>
   <xacro:property name="esp32_width" value="0.020"/>
   <xacro:property name="esp32_top_h" value="0.061"/>
 
@@ -201,6 +209,49 @@
   <xacro:property name="camera_module_depth" value="0.006"/>
   <!-- ESTIMATE (vendor-typical OV3660 / OV2640 camera module, about 8.5 mm square) - provisional; visual only -->
   <xacro:property name="camera_module_size" value="0.0085"/>
+
+  <!-- ================= Cables (since 2026-10-29: in the footprint) ================= -->
+  <!-- Xiaohui's decision of 2026-10-29: keep the cables as they are and update the footprint. car.json front_overhang_m
+       and rear_overhang_m (axle_to_front, axle_to_rear) are now the camera and Pico cables' tips, and car.json corners
+       and sweep_radius_m include them. beaconmind_car.urdf.xacro draws each cable as a box (an envelope, not the
+       cable's shape): the front one with a collider, the rear one visual only (it explains why). Each value below is a
+       measured property or is labelled ASSUMED. -->
+  <!-- Front: the camera's USB cable, plugged into the ESP32-CAM board's USB-C port at its front.
+       x: from esp32_front_x (measured: the board's front, B14b_esp32cam_front_x, 138 mm) to axle_to_front (measured:
+          car.json front_overhang_m = B3_front_most_x_remeasure, 178 mm, given as "4cm" past the original; +-5.8 mm,
+          root-sum-square of 3 mm for B3 and 5 mm for reading "4cm" to the nearest centimetre, the agent's reading).
+       y and height: ASSUMED, not measured (Xiaohui gave neither): the cable leaves the board's USB-C port and stays
+          within the board's cross-section, y within +-esp32_width / 2 and heights from the plate top (the board's
+          bottom, = plate_top_h of beaconmind_car.urdf.xacro) to esp32_top_h. car.json's front-most corners make the
+          same width assumption. -->
+  <xacro:property name="front_cable_x_min" value="${esp32_front_x}"/>
+  <xacro:property name="front_cable_x_max" value="${axle_to_front}"/>
+  <xacro:property name="front_cable_half_width" value="${esp32_width / 2}"/>
+  <xacro:property name="front_cable_bottom_h" value="${round(plate_underside_h + plate_thickness, 6)}"/>
+  <xacro:property name="front_cable_top_h" value="${esp32_top_h}"/>
+  <!-- Rear: the USB cables that leave the power bank's rear face and loop behind the car; one climbs to the Pico on the
+       breadboard (evidence/M1/M1.T16/photos/bank-rear-low.jpg and car-from-rear.jpg).
+       x: from -axle_to_rear (measured: car.json rear_overhang_m = B4_rear_most_x_remeasure, the Pico's cable, 148 mm
+          behind the axle, +-3 mm) to bank_x_min (measured: the bank's rear face, -85 mm, where the photos show the
+          cables leaving it).
+       y: ASSUMED within +-bank_width / 2 (the photos show the loops hanging behind the bank; their sideways spread is
+          not measured). car.json's rear-most point takes y = 0 instead; the sweep radius does not depend on that (the
+          rear point could move about 99 mm sideways before it reached 0.178281 m).
+       bottom: X2_lowest_cable_h = 7 mm floor (+-2 mm) is a measured height, but it is the lowest point of ANY cable and
+          its location was not given. Putting it at the bottom of THIS envelope is an ASSUMPTION placed from
+          bank-rear-low.jpg; the photos suggest the camera's power cable runs forward under the bank, so the lowest
+          point may be under the car instead.
+       top: ASSUMED breadboard_top_h (the cable climbs to the Pico on the breadboard).
+       Not modelled: the camera cable's route under the car, and the Pico's plug above the breadboard (from about
+       x = -0.070, the breadboard's rear edge, forward).
+       If the cables are rerouted so that the rear overhang falls under 0.085 m (inside the bank's rear face), xacro
+       stops on the rear cable guard in beaconmind_car.urdf.xacro by design: this envelope must then be redrawn. -->
+  <xacro:property name="cable_lowest_h" value="0.007"/>
+  <xacro:property name="rear_cable_x_min" value="${-axle_to_rear}"/>
+  <xacro:property name="rear_cable_x_max" value="${bank_x_min}"/>
+  <xacro:property name="rear_cable_half_width" value="${bank_width / 2}"/>
+  <xacro:property name="rear_cable_bottom_h" value="${cable_lowest_h}"/>
+  <xacro:property name="rear_cable_top_h" value="${breadboard_top_h}"/>
 
   <!-- BNO055 board (Adafruit 2472): 20 x 27 mm (reference/hardware/bno055-pin-map.md section 5).
        Orientation (derived from the sources, not measured on the car): in reference/hardware/bno055-top.jpg both
@@ -228,8 +279,10 @@
        OPEN, not used in the model: the swung-forward readings C2b_caster_front_swung_x = 127 mm (disputed, review #4)
        and its re-measures C2b_..._remeasure = 135 mm and C2b_..._remeasure2 = 140 mm imply a swivel offset of only
        (140 - 12.5) - 120 = 7.5 mm, against 20 mm from C3 and the trailing contact C2 = 100 ("around", probably the
-       looser reading). The caster sphere stays at the measured trailing contact C2 = 100 mm (car.json caster_x_m);
-       the footprint sweep (ROBOT_RADIUS) uses 140 mm, the worst measured front. -->
+       looser reading). The caster sphere stays at the measured trailing contact C2 = 100 mm (car.json caster_x_m).
+       The footprint sweep (car.json sweep_radius_m) used 140 mm, the worst measured caster front, from 2026-10-16
+       to 2026-10-29; since then the front camera cable's corners set it (0.178281 m), and the swung caster is a
+       corner inside it. -->
   <xacro:property name="caster_swivel_x" value="0.120"/>
 
   <!-- ================= Mass distribution ================= -->

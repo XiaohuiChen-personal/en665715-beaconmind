@@ -10,7 +10,7 @@
   instrument starts with 'CAD' (a classmate's plate CAD); each CSV row carries its own date.
 
   Inputs:
-    course-project/configs/car.json  sha256 52a95a71bc9c...
+    course-project/configs/car.json  sha256 ad9bfc6c3093...
     camera.json: absent (M1.T7 calibration not done)
   Read through load_car_standin(), the stand-in for the M2.T3 view beaconmind.config.load_car.
   View status: measured. View assumptions (values from a stated default, not a measurement):
@@ -47,10 +47,10 @@
   <xacro:property name="wheel_separation" value="${track_width}"/>
 
   <!-- ================= Body extents ================= -->
-  <!-- view axle_to_front_m, car.json front_overhang_m = 0.138 m, measured +- 0.003 m (M1.T9 measurements.csv B3_front_most_x); front-most point (B3: the ESP32-CAM's USB-C side); the source row's notes in the CSV say whether a cable was fitted -->
-  <xacro:property name="axle_to_front" value="0.138"/>
-  <!-- view axle_to_rear_m, car.json rear_overhang_m = 0.07649 m, measured +- 0.003 m (M1.T9 measurements.csv B4_rear_most_x_corrected); rear-most point of the PLATE (B4); parts reaching further back are recorded in car_geometry_extras.xacro and evidence/M1/M1.T16 -->
-  <xacro:property name="axle_to_rear" value="0.07649"/>
+  <!-- view axle_to_front_m, car.json front_overhang_m = 0.178 m, measured +- 0.0058 m (M1.T9 measurements.csv B3_front_most_x_remeasure); front-most point of the whole car; the source row's notes in the CSV say what that point is -->
+  <xacro:property name="axle_to_front" value="0.178"/>
+  <!-- view axle_to_rear_m, car.json rear_overhang_m = 0.148 m, measured +- 0.003 m (M1.T9 measurements.csv B4_rear_most_x_remeasure); rear-most point of the whole car; the source row's notes in the CSV say what that point is -->
+  <xacro:property name="axle_to_rear" value="0.148"/>
   <!-- view body_width_m, car.json chassis_width_m = 0.14792 m, measured +- 0.0005 m (M1.T9 measurements.csv B5_plate_width_max_corrected); widest body point = the rear wing (tyres excluded) -->
   <xacro:property name="body_width" value="0.14792"/>
   <!-- view chassis_height_m, car.json chassis_height_m = 0.036 m, measured +- 0.0028 m (M1.T9 (derived)); main body height (gearbox bottoms to battery-holder top), used for the chassis inertia box -->

@@ -7,7 +7,11 @@
   bank_black, guards) from the M1.T16 readings and updated the mass, centre-of-mass, inertia and Module 6 comments;
   after a review the same day, added the one-weighing guard, the body_box size check, the bank-floor guard and the
   complete bank/motor overlap test, compared the bank top with the measured rear underside, and corrected the inertia,
-  Isaac massless-link, self-collision and wheel-layout comments and added the M2.T16 notes (bank, caster).
+  Isaac massless-link, self-collision and wheel-layout comments and added the M2.T16 notes (bank, caster); later the
+  same day, after Xiaohui's footprint decision, ended the ESP32-CAM box at esp32_front_x and added the two visual-only
+  cable boxes (body_visual_box, colour cable_grey); after a review of that, gave the front cable a collider (an agent
+  decision for Xiaohui to accept), added the footprint guards and the floor check of body_visual_box, and stated the
+  rear wall-contact offset, the camera-view occlusion and what is not modelled.
 
   beaconmind_car.urdf.xacro: the robot description of Xiaohui Chen's two-wheel car for the BeaconMind course project
   (robot_state_publisher TF tree, C12; Isaac Sim twin, M2.T4 / M2.T16).
@@ -47,8 +51,17 @@
   <xacro:if value="${battery_x_min &lt; breadboard_x_max}">
     ${xacro.fatal('battery holder (x from %s) would overlap the breadboard (x to %s)' % (battery_x_min, breadboard_x_max))}
   </xacro:if>
-  <xacro:if value="${axle_to_front &lt;= esp32_x_min}">
-    ${xacro.fatal('ESP32-CAM stack would have no length: front %s is not ahead of rear %s' % (axle_to_front, esp32_x_min))}
+  <xacro:if value="${esp32_front_x &lt;= esp32_x_min}">
+    ${xacro.fatal('ESP32-CAM stack would have no length: front %s (esp32_front_x) is not ahead of rear %s' % (esp32_front_x, esp32_x_min))}
+  </xacro:if>
+  <!-- The cable envelopes (car_geometry_extras.xacro "Cables") need car.json's footprint to reach past the parts they
+       start from: the front cable runs from the board's front to axle_to_front, the rear cable from axle_to_rear to the
+       bank's rear face. A footprint without the cables (an older car.json, or rerouted cables) stops here by design. -->
+  <xacro:if value="${axle_to_front &lt;= esp32_front_x}">
+    ${xacro.fatal('axle_to_front %s (car.json front_overhang_m, the camera cable tip) must exceed esp32_front_x %s (the board front): car.json front_overhang_m must reach past the board' % (axle_to_front, esp32_front_x))}
+  </xacro:if>
+  <xacro:if value="${axle_to_rear &lt;= -bank_x_min}">
+    ${xacro.fatal('axle_to_rear %s (car.json rear_overhang_m, the Pico cable) must exceed %s (-bank_x_min, the bank rear face): if the cables were rerouted, redraw the rear cable envelope' % (axle_to_rear, -bank_x_min))}
   </xacro:if>
   <xacro:if value="${wing_slices != 4}">
     ${xacro.fatal('wing_slices is %s, but chassis_link instantiates exactly 4 plate_wing_slice calls' % wing_slices)}
@@ -140,6 +153,7 @@
       battery_black='0.08 0.08 0.08 1',
       motor_light_blue='0.45 0.72 0.92 1',
       bank_black='0.11 0.11 0.12 1',
+      cable_grey='0.42 0.42 0.44 1',
       esp32_black='0.04 0.04 0.04 1',
       stand_grey='0.62 0.62 0.62 1',
       imu_purple='0.45 0.15 0.60 1',
@@ -175,20 +189,26 @@
              izz="${2 * m * r * r / 5}"/>
   </xacro:macro>
 
-  <!-- One named box of the chassis: a <visual> and a <collision> with the same geometry.
-       x and y are base_link coordinates; h_min / h_max are heights above the FLOOR (converted to model z here).
-       Named collisions are fine here because nothing sets Gazebo friction on chassis_link; if a
-       <gazebo reference="chassis_link"> surface block is ever added, drop the collision names (see the tyres). -->
-  <xacro:macro name="body_box" params="name x_min x_max y_min y_max h_min h_max material">
-    <!-- xacro would silently write a negative box size; stop instead and name the box. -->
-    <xacro:if value="${x_max &lt;= x_min or y_max &lt;= y_min or h_max &lt;= h_min}">
-      ${xacro.fatal('body_box %s has no volume: x %s to %s, y %s to %s, h %s to %s (each max must exceed its min)' % (name, x_min, x_max, y_min, y_max, h_min, h_max))}
+  <!-- One named VISUAL-ONLY box of the chassis (no collider): used for the rear cable. x and y are base_link
+       coordinates; h_min / h_max are heights above the FLOOR (converted to model z here). -->
+  <xacro:macro name="body_visual_box" params="name x_min x_max y_min y_max h_min h_max material">
+    <!-- xacro would silently write a negative box size or a box through the floor; stop instead and name the box. -->
+    <xacro:if value="${x_max &lt;= x_min or y_max &lt;= y_min or h_max &lt;= h_min or h_min &lt;= 0}">
+      ${xacro.fatal('box %s has no volume or is not above the floor: x %s to %s, y %s to %s, h %s to %s (each max must exceed its min, and h_min must be > 0)' % (name, x_min, x_max, y_min, y_max, h_min, h_max))}
     </xacro:if>
     <visual name="${name}_visual">
       <origin xyz="${round((x_min + x_max) / 2, 6)} ${round((y_min + y_max) / 2, 6)} ${round((h_min + h_max) / 2 - wheel_radius, 6)}" rpy="0 0 0"/>
       <geometry><box size="${round(x_max - x_min, 6)} ${round(y_max - y_min, 6)} ${round(h_max - h_min, 6)}"/></geometry>
       <xacro:part_material name="${material}"/>
     </visual>
+  </xacro:macro>
+
+  <!-- One named box of the chassis: body_visual_box (its <visual> and size check) plus a <collision> with the same
+       geometry. Named collisions are fine here because nothing sets Gazebo friction on chassis_link; if a
+       <gazebo reference="chassis_link"> surface block is ever added, drop the collision names (see the tyres). -->
+  <xacro:macro name="body_box" params="name x_min x_max y_min y_max h_min h_max material">
+    <xacro:body_visual_box name="${name}" x_min="${x_min}" x_max="${x_max}" y_min="${y_min}" y_max="${y_max}"
+                           h_min="${h_min}" h_max="${h_max}" material="${material}"/>
     <collision name="${name}_collision">
       <origin xyz="${round((x_min + x_max) / 2, 6)} ${round((y_min + y_max) / 2, 6)} ${round((h_min + h_max) / 2 - wheel_radius, 6)}" rpy="0 0 0"/>
       <geometry><box size="${round(x_max - x_min, 6)} ${round(y_max - y_min, 6)} ${round(h_max - h_min, 6)}"/></geometry>
@@ -274,14 +294,18 @@
          (M1.T16, evidence/M1/M1.T16/measurements.md; car_geometry_extras.xacro bank_*). Its front face is the measured
          x = -15 mm; the gearbox boxes' rear end, a photo ESTIMATE, is clipped to that face (car_geometry_extras.xacro
          motor_x_min), and whether the two parts touch on the car is not measured.
-         Geometry only: no link, no mass of its own (its mass is inside the measured total). The lowest body point;
-         its rear face is 8.5 mm behind the plate's rear apex, and the car.json footprint is deliberately not updated
-         for it yet.
+         Geometry only: no link, no mass of its own (its mass is inside the measured total). The lowest rigid body
+         point; its rear face is 8.5 mm behind the plate's rear apex, inside the car.json footprint, which since
+         Xiaohui's decision (2026-10-29) reaches the Pico cable 0.148 m behind the axle.
          Isaac Sim (M2.T16), computed from this model: the bank's rear-bottom edge (x = -0.085 m, 17 mm above the floor)
-         is now the first rear contact, at about 11.8 deg nose-up pitch about the axle (rear clearance 17 mm; the plate's
-         rear apex would touch only at about 34 deg). Its collider is not in the M2.T16 friction list (wheels 1.0,
-         caster 0.0), so it needs a physics material of its own. The caster lifts at a forward acceleration of about
-         2.2 m/s^2 (caster_link comment), so ramp the wheel commands or limit the drive force, and log the pitch. -->
+         is the first rear contact, at about 11.8 deg nose-up pitch about the axle (rear clearance 17 mm; the plate's
+         rear apex would touch only at about 34 deg). The rear cable is visual only, so it makes no contact in
+         simulation, and this bank's rear face is the simulated car's first rear WALL contact, 63 mm short of the
+         footprint (cables comment below); on the real car a cable's lowest point (7 mm above the floor, its x not
+         measured) may brush the floor at a smaller pitch. The bank's collider (and the front cable's) are not in the
+         M2.T16 friction list (wheels 1.0, caster 0.0), so each needs a physics material of its own. The caster lifts at
+         a forward acceleration of about 2.2 m/s^2 (caster_link comment), so ramp the wheel commands or limit the drive
+         force, and log the pitch. -->
     <xacro:body_box name="power_bank" x_min="${bank_x_min}" x_max="${bank_x_max}"
                     y_min="${-bank_width / 2}" y_max="${bank_width / 2}"
                     h_min="${bank_bottom_h}" h_max="${bank_top_h}" material="bank_black"/>
@@ -304,9 +328,10 @@
                     y_min="${-battery_width / 2}" y_max="${battery_width / 2}"
                     h_min="${plate_top_h}" h_max="${battery_top_h}" material="battery_black"/>
 
-    <!-- ESP32-CAM + MB board stack at the front, from the battery holder's front face (+100 mm) to the measured
-         front-most point (+138 mm), 20 mm wide, top 61 mm floor (B3/B13/B14); centred on y = 0: ESTIMATE. -->
-    <xacro:body_box name="esp32_cam_stack" x_min="${esp32_x_min}" x_max="${axle_to_front}"
+    <!-- ESP32-CAM + MB board stack at the front, from the battery holder's front face (+100 mm) to the board's measured
+         front esp32_front_x (+138 mm, B14b_esp32cam_front_x), 20 mm wide, top 61 mm floor (B13/B14/B14b); centred on
+         y = 0: ESTIMATE. Not axle_to_front: since 2026-10-29 that is the camera cable's tip. -->
+    <xacro:body_box name="esp32_cam_stack" x_min="${esp32_x_min}" x_max="${esp32_front_x}"
                     y_min="${-esp32_width / 2}" y_max="${esp32_width / 2}"
                     h_min="${plate_top_h}" h_max="${esp32_top_h}" material="esp32_black"/>
 
@@ -315,6 +340,35 @@
                     x_max="${camera_x - camera_module_depth}"
                     y_min="${camera_y - stand_section / 2}" y_max="${camera_y + stand_section / 2}"
                     h_min="${esp32_top_h}" h_max="${stand_top_h}" material="stand_grey"/>
+
+    <!-- The USB cables. Since Xiaohui's decision of 2026-10-29 they are part of the footprint: car.json front_overhang_m
+         and rear_overhang_m end at their tips, and car.json corners and sweep_radius_m include them; the planner and the
+         planned kinsim (M2.T3: a contact when the body rectangle at axle_to_front_m / axle_to_rear_m crosses a wall) use
+         that footprint. Each box is an envelope, not the cable's shape: its ends are measured, its cross-section partly
+         ASSUMED (car_geometry_extras.xacro "Cables").
+         Front camera cable: visual AND collision (body_box). Agent's decision (Claude Opus 5.5, 2026-10-29), for
+         Xiaohui to accept: the envelope sits 47.5 to 61 mm above the floor, so it cannot make a false floor contact, and
+         with a collider the simulated car's first front wall contact is at front_overhang_m, as in the footprint and in
+         kinsim (conservative for "bumped": the real cable bends). On the real car the first front contact is likely the
+         USB plug, which loads the board's port. M2.T16 must bind a physics material to this collider too. The envelope
+         is in the camera's view: with the D3 design HFOV of 60 deg (not calibrated, M1.T7), a level camera at the
+         measured lens pose (x 0.120 m, 75 mm above the floor) and a 640 x 480 image, it covers rows 374 to 480 (from
+         about 78 % of the height down) and columns 150 to 490 (computed from this model); M2.T16 should compare its
+         first rendered frame with a real frame.
+         Rear Pico cable(s): visual only (body_visual_box). The loops hang toward the floor, and a rigid box there would
+         be a false floor contact in Isaac Sim and Gazebo, catching or skidding where the real cable bends away. (The
+         envelope's 7 mm bottom is X2, the lowest point of ANY cable, location not given: placing it here is an
+         ASSUMPTION; the camera cable's route under the car and the Pico's plug above the breadboard are not modelled;
+         car_geometry_extras.xacro "Cables".) So the simulated car's first rear wall contact is the bank's rear
+         face (x = -0.085 m), 63 mm short of the footprint's rear_overhang_m (0.148 m) and of kinsim's rear contact. -->
+    <!-- Front camera cable: x +138 to +178 mm (board front to the measured tip), within the board's cross-section. -->
+    <xacro:body_box name="front_camera_cable" x_min="${front_cable_x_min}" x_max="${front_cable_x_max}"
+                    y_min="${-front_cable_half_width}" y_max="${front_cable_half_width}"
+                    h_min="${front_cable_bottom_h}" h_max="${front_cable_top_h}" material="cable_grey"/>
+    <!-- Rear Pico cable(s): x -148 to -85 mm (measured tip to the bank's rear face), 7 to 55 mm floor. -->
+    <xacro:body_visual_box name="rear_pico_cable" x_min="${rear_cable_x_min}" x_max="${rear_cable_x_max}"
+                           y_min="${-rear_cable_half_width}" y_max="${rear_cable_half_width}"
+                           h_min="${rear_cable_bottom_h}" h_max="${rear_cable_top_h}" material="cable_grey"/>
 
     <!-- Inertia: box approximation. The chassis is treated as ONE uniform solid box of chassis_mass,
          207 x 100 x 36 mm (plate length x strip width x main-body height, motor bottoms to battery top),

@@ -1,12 +1,12 @@
-# command (Mac, repository root, 2026-10-29T23:35:30-0500; rebuilt for the M1.T16 mass, 2026-10-29, re-run after the review's text fixes; interpreter /tmp/bm-urdf-venv/bin/python = Python 3.13.7 with jsonschema 4.26.0, a throwaway venv; any Python 3.10+ with jsonschema works): /tmp/bm-urdf-venv/bin/python course-project/tools/write_car_json.py course-project/evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv --measured course-project/evidence/M1/M1.T9/measured.json --updated 2026-10-29 --out course-project/configs/car.json
+# command (Mac, repository root, 2026-10-30T00:24:53-0500; rebuilt for the M1.T16 mass and the cable footprint Xiaohui decided, 2026-10-29, re-run after the review's B3 uncertainty fix; interpreter /tmp/bm-urdf-venv/bin/python = Python 3.13.7 with jsonschema 4.26.0, a throwaway venv; any Python 3.10+ with jsonschema works): /tmp/bm-urdf-venv/bin/python course-project/tools/write_car_json.py course-project/evidence/M1/M1.T9/measurements-2026-10-29-with-m1t16-mass.csv --measured course-project/evidence/M1/M1.T9/measured.json --updated 2026-10-29 --out course-project/configs/car.json
 write_car_json.py: measurements-2026-10-29-with-m1t16-mass.csv -> car.json
 wheel_width_m            0.027000 m  +- 0.0020  row W2_tyre_width (2 mm ruler rule; instrument: not stated)
 track_outer_m            0.160000 m  +- 0.0020  row W3_track_outer (2 mm ruler rule; instrument: not stated)
 track_inner_m            0.107000 m  +- 0.0020  row W3_track_inner (2 mm ruler rule; instrument: not stated)
 caster_x_m               0.100000 m  +- 0.0050  row C2_caster_contact_x (5 mm rule: reading given as 'around'; above the 3 mm axle-datum floor)
 caster_diameter_m        0.025000 m  +- 0.0020  row C1_caster_wheel_diameter_recheck (2 mm ruler rule; instrument: not stated)
-front_overhang_m         0.138000 m  +- 0.0030  row B3_front_most_x (axle-datum floor: x from the axle line, which is located to about 3 mm (review #15))
-rear_overhang_m          0.076490 m  +- 0.0030  row B4_rear_most_x_corrected (axle-datum floor: x from the axle line, which is located to about 3 mm (review #15))
+front_overhang_m         0.178000 m  +- 0.0058  row B3_front_most_x_remeasure (B3 138 mm (3 mm axle-datum floor) + a 40 mm stick-out read to the nearest cm (5 mm), root-sum-square)
+rear_overhang_m          0.148000 m  +- 0.0030  row B4_rear_most_x_remeasure (axle-datum floor: x from the axle line, which is located to about 3 mm (review #15))
 chassis_width_m          0.147920 m  +- 0.0005  row B5_plate_width_max_corrected (0.5 mm CAD allowance (plate CAD, the private course repo (plate CAD is not published here)))
 lens_x_m                 0.120000 m  +- 0.0050  row S3_lens_x (5 mm rule: reading given as 'around'; above the 3 mm axle-datum floor)
 lens_y_m                 0.000000 m  +- 0.0020  row S3_lens_y (2 mm ruler rule; instrument: not stated)
@@ -17,11 +17,11 @@ mass_kg                  0.660000 kg +- 0.0014  row K1_total_mass_remeasure (two
 wheel_diameter_m         0.067000 m  +- 0.0020  row W1_tyre_diameter_direct (2 mm ruler rule; instrument: not stated); DIRECT, not a 5-rev roll-out
 imu_z_m                  0.026500 m  +- 0.0022  row S1_imu_board_top_h (2 mm ruler rule; instrument: not stated) - wheel_diameter_m / 2; board top above the AXLE
 track_width_m            0.133500 m  +- 0.0014  (track_outer_m + track_inner_m) / 2
-chassis_length_m         0.214490 m  +- 0.0042  front_overhang_m + rear_overhang_m
+chassis_length_m         0.326000 m  +- 0.0066  front_overhang_m + rear_overhang_m
 chassis_height_m         0.036000 m  +- 0.0028  B10_battery_holder_top_h - B9_lowest_body_h (main body; the camera stand is excluded)
-corners (x, y) from the axle midpoint, m; uncertainty = the largest coordinate term 0.0050 m:
-    (  0.1380,   0.0100)  r = 0.1384 +- 0.0030  ESP32-CAM front corner (front_overhang_m, +-B14 / 2; y ASSUMES the board is centred)
-    (  0.1380,  -0.0100)  r = 0.1384 +- 0.0030  ESP32-CAM front corner (front_overhang_m, +-B14 / 2; y ASSUMES the board is centred)
+corners (x, y) from the axle midpoint, m; uncertainty = the largest coordinate term 0.0058 m:
+    (  0.1780,   0.0100)  r = 0.1783 +- 0.0058  front-most corner (front_overhang_m, +-B14 / 2: as wide as the ESP32-CAM board; y ASSUMES it is centred)
+    (  0.1780,  -0.0100)  r = 0.1783 +- 0.0058  front-most corner (front_overhang_m, +-B14 / 2: as wide as the ESP32-CAM board; y ASSUMES it is centred)
     (  0.1229,   0.0447)  r = 0.1308 +- 0.0028  plate front corner (rounded front: apex at B1, sides +-B5 narrow / 2, front arc P1_plate_front_arc_radius, corner fillets P2_plate_front_corner_radius; y ASSUMES the plate is centred)
     (  0.1229,  -0.0447)  r = 0.1308 +- 0.0028  plate front corner (rounded front: apex at B1, sides +-B5 narrow / 2, front arc P1_plate_front_arc_radius, corner fillets P2_plate_front_corner_radius; y ASSUMES the plate is centred)
     (  0.0335,   0.0800)  r = 0.0867 +- 0.0010  tyre outer corner
@@ -30,9 +30,9 @@ corners (x, y) from the axle midpoint, m; uncertainty = the largest coordinate t
     ( -0.0335,  -0.0800)  r = 0.0867 +- 0.0010  tyre outer corner
     ( -0.0421,   0.0740)  r = 0.0851 +- 0.0015  rear wing tip (-B2 + B5b, B5 max / 2)
     ( -0.0421,  -0.0740)  r = 0.0851 +- 0.0015  rear wing tip (-B2 + B5b, B5 max / 2)
-    ( -0.0765,   0.0000)  r = 0.0765 +- 0.0030  rear apex (rear_overhang_m, B4_rear_most_x_corrected)
+    ( -0.1480,   0.0000)  r = 0.1480 +- 0.0030  rear-most point (rear_overhang_m, B4_rear_most_x_remeasure; y taken as 0)
     (  0.1400,   0.0000)  r = 0.1400 +- 0.0050  caster swung fully forward (C2b_caster_front_swung_x_remeasure2)
-sweep_radius_m           0.140000 m  +- 0.0050  max hypot over corners, at the caster swung fully forward (C2b_caster_front_swung_x_remeasure2); uncertainty = max(r + u_r) - max(r)
+sweep_radius_m           0.178281 m  +- 0.0058  max hypot over corners, at the front-most corner (front_overhang_m, +-B14 / 2: as wide as the ESP32-CAM board; y ASSUMES it is centred); uncertainty = max(r + u_r) - max(r)
 omitted (no reading in the CSV): counts_per_rev_left, counts_per_rev_right, imu_axes, rollout_left_m, rollout_right_m, ticks_per_wheel_rev, wheel_diameter_left_m, wheel_diameter_right_m
 bm.car-1 validation: OK
 # exit status: 0

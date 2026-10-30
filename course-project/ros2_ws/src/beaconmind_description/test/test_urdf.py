@@ -15,7 +15,11 @@ CSV of the M1.T16 weighing (it named a private-repo file, so test_com_matches_le
 updated the docstrings for the 660 g weighing, and added test_power_bank_box_matches_measurements; after a review the
 same day, added the one-weighing check on the CSV rows to test_com_matches_lever_rule, compared the bank top with the
 measured rear plate underside, added test_inertias_are_physical_and_chassis_is_the_uniform_box, and rewrote the
-docstrings on what catches a half-done update.
+docstrings on what catches a half-done update; later the same day, after Xiaohui's footprint decision, added
+test_cables_are_visual_only_and_match_the_footprint and made the power bank's 'lowest box' check use collision boxes;
+after a review of that, renamed it test_cables_match_the_footprint (front cable: visual + collision; rear: visual
+only), read the board front from B14b_esp32cam_front_x, tied the board and front-cable widths to B14, and listed
+the part boxes now checked against the CSV.
 
 The URDF under test is what `xacro` (run via subprocess, so ROS must be sourced) expands from
 urdf/beaconmind_car.urdf.xacro, parsed with xml.etree.ElementTree.
@@ -47,8 +51,12 @@ measurement CSV -> car.json (tools/write_car_json.py) -> car_props.xacro + car_g
     rebuilt) and fails while the extras' caster_load differs from the CSV's K2 row (the COM no longer matches the
     lever rule). Since 2026-10-16 test_plate_outline_matches_measurements checks
     the plate outline (B1, B2, B5 narrow, B5b, the B5 max width and the front radii P1/P2) against the `meas` CSV,
-    which holds the plate CAD rows; since 2026-10-29 test_power_bank_box_matches_measurements checks the power-bank
-    box; B14 and the other part boxes are still not checked against a re-measured CSV.
+    which holds the plate CAD rows. Since 2026-10-29 test_power_bank_box_matches_measurements checks the power-bank
+    box (B15 rows, B8 rear) and test_cables_match_the_footprint checks the ESP32-CAM board box (its front against
+    B14b_esp32cam_front_x, its width against B14_esp32cam_width, its top against B14_esp32cam_front_top_h) and the
+    two cable envelopes (B14b, car.json front_overhang_m and its front-corner y; car.json rear_overhang_m, B15 width
+    and rear face, X2_lowest_cable_h, B10_breadboard_top_h). The motor boxes (photo ESTIMATE), the breadboard and
+    battery holder (B10/B12/B13), the camera stand and the IMU board's size are still not checked against the CSV.
 Overrides: BM_MEASUREMENTS_CSV (the `meas` CSV), BM_EXTRAS_CSV, BM_CAR_JSON (camera.json is looked for next to
 car.json). Expected values computed from a CSV are compared within MEAS_TOL = 2e-6 m: car.json stores every value to
 1 um and the xacro rounds derived values to 1 um, so a mean of three readings or a roll-out can land up to about
@@ -825,8 +833,9 @@ def test_power_bank_box_matches_measurements(robot, meas, extras_meas):
     """The chassis box power_bank (collision and visual) is the M1.T16 power bank (2026-10-29, rows B15_bank_* of the
     extras source CSV): x from -B15_bank_rear_x to -B15_bank_front_x (both read as distances BEHIND the axle line),
     y +-B15_bank_width / 2 (centred), floor heights B15_bank_bottom_h to B15_bank_bottom_h + B15_bank_height (model
-    z = floor height - the wheel radius from `meas`). It is the lowest chassis box, and its top is not above the
-    MEASURED plate underside at the rear, where it sits (B8_plate_underside_h_rear; the level model plate is higher)."""
+    z = floor height - the wheel radius from `meas`). It is the lowest chassis COLLISION box (the visual-only rear
+    cable reaches lower), and its top is not above the MEASURED plate underside at the rear, where it sits
+    (B8_plate_underside_h_rear; the level model plate is higher)."""
     r = meas.wheel_diameter() / 2
     front, rear = extras_meas["B15_bank_front_x"], extras_meas["B15_bank_rear_x"]
     width, bottom, height = (extras_meas[k] for k in ("B15_bank_width", "B15_bank_bottom_h", "B15_bank_height"))
@@ -843,12 +852,83 @@ def test_power_bank_box_matches_measurements(robot, meas, extras_meas):
         for axis, (lo, hi), (e_lo, e_hi) in zip("xyz", box, expected):
             assert abs(lo - e_lo) <= MEAS_TOL and abs(hi - e_hi) <= MEAS_TOL, \
                 f"{name} {axis} spans ({lo}, {hi}) m, the readings give ({e_lo}, {e_hi}) m"
-        others = {n: b for n, b in boxes.items() if n != name}
-        lowest = min(others, key=lambda n: others[n][2][0])
-        assert box[2][0] < others[lowest][2][0], f"{name} is not the lowest chassis box ({lowest} is as low)"
+        if element == "collision":
+            others = {n: b for n, b in boxes.items() if n != name}
+            lowest = min(others, key=lambda n: others[n][2][0])
+            assert box[2][0] < others[lowest][2][0], \
+                f"{name} is not the lowest chassis collision box ({lowest} is as low)"
         plate_rear = extras_meas["B8_plate_underside_h_rear"] - r
         assert box[2][1] <= plate_rear + TOL, \
             f"{name} top {box[2][1]} m is above the measured rear plate underside {plate_rear} m (B8 rear)"
+
+
+def test_cables_match_the_footprint(robot, meas, extras_meas, car_json_path):
+    """The USB cables (Xiaohui's footprint decision, 2026-10-29) and the ESP32-CAM board the front one leaves.
+
+    (a) front_camera_cable is a chassis_link visual AND collision with identical geometry (an agent decision for
+        Xiaohui to accept: the simulated first front wall contact then matches front_overhang_m); rear_pico_cable is a
+        visual with NO collision anywhere (a rigid box hanging 7 mm above the floor would be a false floor contact).
+    (b) The esp32_cam_stack box ends at B14b_esp32cam_front_x (the board's own front, read through the normal reader),
+        is B14_esp32cam_width wide, and its top is B14_esp32cam_front_top_h. The front cable spans x from
+        B14b_esp32cam_front_x to car.json front_overhang_m with the board's cross-section (ASSUMED), and its |y| is the
+        y of car.json's front-most corners (+-B14 / 2). The rear cable spans x from -car.json rear_overhang_m to
+        -B15_bank_rear_x (the bank's rear face), y +-B15_bank_width / 2 (ASSUMED), from X2_lowest_cable_h (placed
+        there: an ASSUMPTION) to B10_breadboard_top_h (ASSUMED) above the floor.
+    (c) car.json front_overhang_m and rear_overhang_m are the CSV's current B3/B4 rows after the superseding rule (the
+        _remeasure rows since 2026-10-29) and name them as their source; corners hold the front-most corners
+        (front_overhang_m, +-B14 / 2) and the rear-most point (-rear_overhang_m, 0); sweep_radius_m is the largest
+        distance over corners."""
+    r = meas.wheel_diameter() / 2
+    car = json.loads(car_json_path.read_text(encoding="utf-8"))["values"]
+    front, rear = car["front_overhang_m"]["value"], car["rear_overhang_m"]["value"]
+    visuals = dict(boxes_in_base(robot, "chassis_link", "visual"))
+    collisions = dict(boxes_in_base(robot, "chassis_link"))
+    # (a) which cable has a collider
+    for name in ("front_camera_cable", "rear_pico_cable"):
+        assert f"{name}_visual" in visuals, f"chassis_link has no visual box {name}_visual"
+    fc = visuals["front_camera_cable_visual"]
+    assert "front_camera_cable_collision" in collisions, "front_camera_cable must have a collider"
+    assert close(sum(collisions["front_camera_cable_collision"], ()), sum(fc, ()), TOL), \
+        "front_camera_cable visual and collision differ"
+    rear_colliders = [c.get("name") for c in robot.iter("collision")
+                      if (c.get("name") or "").startswith("rear_pico_cable")]
+    assert not rear_colliders, f"rear_pico_cable must be visual only, found collisions {rear_colliders}"
+    # (b) the board and the front cable
+    board_front, width = extras_meas["B14b_esp32cam_front_x"], meas["B14_esp32cam_width"]
+    board = collisions["esp32_cam_stack_collision"]
+    assert abs(board[0][1] - board_front) <= MEAS_TOL, \
+        f"esp32_cam_stack ends at {board[0][1]} m, not at B14b_esp32cam_front_x {board_front} m"
+    assert abs((board[1][1] - board[1][0]) - width) <= MEAS_TOL, \
+        f"esp32_cam_stack is {board[1][1] - board[1][0]} m wide, B14_esp32cam_width is {width} m"
+    assert abs(board[2][1] - (extras_meas["B14_esp32cam_front_top_h"] - r)) <= MEAS_TOL, "esp32_cam_stack top"
+    assert abs(fc[0][0] - board_front) <= MEAS_TOL and abs(fc[0][1] - front) <= MEAS_TOL, \
+        f"front cable x {fc[0]}, expected ({board_front}, {front})"
+    assert close(sum(fc[1:], ()), sum(board[1:], ()), MEAS_TOL), \
+        f"front cable cross-section {fc[1:]} vs the board's {board[1:]}"
+    corner_y = sorted({abs(y) for x, y in car["corners"]["value"] if abs(x - front) <= MEAS_TOL})
+    assert len(corner_y) == 1, f"car.json corners at x = front_overhang_m have |y| {corner_y}"
+    assert abs(fc[1][1] - corner_y[0]) <= MEAS_TOL and abs(fc[1][0] + corner_y[0]) <= MEAS_TOL, \
+        f"front cable y {fc[1]} vs car.json's front-most corners +-{corner_y[0]}"
+    # (b) the rear cable
+    rc = visuals["rear_pico_cable_visual"]
+    half = extras_meas["B15_bank_width"] / 2
+    expected = [(-rear, -extras_meas["B15_bank_rear_x"]), (-half, half),
+                (extras_meas["X2_lowest_cable_h"] - r, extras_meas["B10_breadboard_top_h"] - r)]
+    for axis, (lo, hi), (e_lo, e_hi) in zip("xyz", rc, expected):
+        assert abs(lo - e_lo) <= MEAS_TOL and abs(hi - e_hi) <= MEAS_TOL, \
+            f"rear cable {axis} spans ({lo}, {hi}) m, expected ({e_lo}, {e_hi}) m"
+    # (c) car.json footprint = the CSV's current rows
+    for key in ("front_overhang_m", "rear_overhang_m"):
+        reading = meas.reading(key)
+        assert abs(car[key]["value"] - reading.value) <= MEAS_TOL, (
+            f"car.json {key} {car[key]['value']} m, the CSV's {reading.row_name} gives {reading.value} m: "
+            "rebuild car.json")
+        assert car[key]["source"].endswith(reading.row_name), (car[key]["source"], reading.row_name)
+    corners = car["corners"]["value"]
+    for point in ([front, width / 2], [front, -width / 2], [-rear, 0.0]):
+        assert any(close(c, point, MEAS_TOL) for c in corners), f"corners lack {point}"
+    radius = max(math.hypot(x, y) for x, y in corners)
+    assert abs(car["sweep_radius_m"]["value"] - radius) <= TOL, (car["sweep_radius_m"]["value"], radius)
 
 
 def test_inertias_are_physical_and_chassis_is_the_uniform_box(robot, meas, car_json_path):
