@@ -38,7 +38,6 @@ but it changed what is on the car. This entry overrides the older camera and Pic
   carpet behaves like the hard floor.
 - **Depth did not transfer.** On carpet the depth model read almost flat past 1 m. A ball-size estimate tracked the tape
   within 2.6 % on fitted distances, which is not a held-out figure.
-- **Not committed.** The changes are in this working tree. Xiaohui decides when to commit.
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-02: changed the firmware source, the notes, and this entry. Xiaohui
 Chen placed the car and measured the distances that these figures come from.
