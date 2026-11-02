@@ -229,5 +229,10 @@ effectively permanent.
   fallback. The driver sometimes leaves several frames in one buffer; 0.2 serves only the first
   (`merged_buffers` in `/status`).
 - **OV3660 quirk:** with firmware written only for the OV2640 the picture can come up vertically
-  flipped and over-saturated. Espressif's own example corrects this specifically for the OV3660.
+  flipped and over-saturated. Espressif's own example corrects this specifically for the OV3660,
+  with brightness +1 and saturation -2.
+- **Color, changed 2026-11-01:** those two values washed the picture out in a bright, pale room. A
+  red ball read saturation 60 and the whole frame peaked at 73. With brightness 0 and saturation 0
+  the same scene peaked at 121 and the ball could be detected. `bm_cam_v02` now uses 0 and 0. If a
+  picture looks over-saturated in another room, this is the setting to revisit.
 - **WiFi:** 2.4 GHz only.

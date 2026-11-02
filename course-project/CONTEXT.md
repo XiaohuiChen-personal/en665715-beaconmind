@@ -1,6 +1,6 @@
 # Course Project Context
 
-Last updated: 2026-10-29
+Last updated: 2026-11-02
 
 **Project name: BeaconMind** (chosen 2026-09-28). "Beacon" for the AprilTags on the walls, "Mind" for
 the language model that owns the pose belief, the beacon map and the SLAM decisions. Use this name in
@@ -9,6 +9,39 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
+
+## 2026-11-02 — camera color fixed; what the Module 9 real-robot session changed on the car
+
+The Module 9 discussion (private course repo) ran the car for real on 2026-11-01 and 2026-11-02. It was not project work,
+but it changed what is on the car. This entry overrides the older camera and Pico lines where they differ.
+
+- **Camera color (this repo, source changed).** `firmware/esp32cam/bm_cam_v02/bm_cam_v02.ino` now sets brightness 0 and
+  saturation 0, not Espressif's +1 and -2. In a bright, pale room the old values left a red ball at saturation 60, and the
+  depth lab's detector needs 110. The peak saturation in the frame went from 73 to 121. `BM_FW` stays `bm_cam-0.2`. The
+  chip runs this change: it was built and flashed from the Spark's copy, which differs from this file only in one header
+  comment. Why it changed, and when to revisit it, is in `reference/hardware/esp32cam-notes.md`. The lab also lowered its own
+  detector threshold to 80 (private repo), because at 110 only part of the ball passed. That threshold is not project code.
+- **What this affects.** Images from before this date (`evidence/M1/M1.T6/`) used the old values. M1.T7 is still not done
+  and there is still no `configs/camera.json`, so no calibration is lost. Do the M1.T7 calibration on the new values.
+  AprilTag detection works on grayscale, so a color change should matter little, but this was not tested.
+- **The chip's network changed.** The car and camera are on a private WPA2 network that the Spark's own Wi-Fi radio serves on
+  2.4 GHz channel 11, at `10.42.0.1`, with no house mesh in the path. Pico image `~/fw_builds_m8/buildK2a_d485d7ab`, the K2
+  source with new Wi-Fi settings. Camera at 10.42.0.89 so far, Pico at 10.42.0.138 so far. The Spark's internet is a USB-C
+  tether to a phone. Parked soaks: 0 gaps over 0.5 s, against 32 to 45 on the house mesh that evening. One command gap in 40
+  real runs. The camera's `wifi_config.h` on the Spark holds those settings, so a new build keeps them until it is changed.
+- **Containers cannot open a connection to the access point's subnet.** A process on the Spark can. The Module 9 stack used
+  a small TCP relay for the camera. Plan for that if `beaconmind-ros` needs the camera on this network.
+- **For M3.T6 and the Pico port: the car veers on carpet.** At 0.30 m straight, the left wheel made about 70 to 74 % of the
+  right wheel's counts, and the car turned 41° to 46° left, at each smallest duty tried from 0.25 to 0.46. The cause is not
+  known. The old heading hold (gain 2, limit 0.5 rad/s) saturated. Gain 8, limit 1.2 rad/s gave about 4.5°. Turns of 45° on
+  the same carpet measured 44.4° and 43.7°. Give the project's straight moves enough steering authority, and do not assume
+  carpet behaves like the hard floor.
+- **Depth did not transfer.** On carpet the depth model read almost flat past 1 m. A ball-size estimate tracked the tape
+  within 2.6 % on fitted distances, which is not a held-out figure.
+- **Not committed.** The changes are in this working tree. Xiaohui decides when to commit.
+
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-02: changed the firmware source, the notes, and this entry. Xiaohui
+Chen placed the car and measured the distances that these figures come from.
 
 ## 2026-10-29 (night) — M2.T4: URDF updated to the M1.T16 car (660 g, power bank, cables in the footprint)
 

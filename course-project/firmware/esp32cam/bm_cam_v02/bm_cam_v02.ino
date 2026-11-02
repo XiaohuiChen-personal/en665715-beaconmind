@@ -18,7 +18,8 @@
 // Reused from: instructor Module 8 guide, esp32cam_camera.ino (EN.665.715 Camera Vision Source
 //   Files, 2026; pristine copy assignments/assignment8/guide-original/firmware/esp32cam_camera/,
 //   sha256 f8911650...); changes: see "Changes from the instructor sketch" below. The instructor
-//   credits its OV3660 brightness/saturation values to Espressif's example.
+//   credits its OV3660 brightness/saturation values to Espressif's example; this sketch no longer
+//   uses them (see the camera setup below, changed 2026-11-01).
 // Copied from: course-project/firmware/esp32cam/bm_cam/bm_cam.ino (bm_cam-0.1) on 2026-10-25: the
 //   /status field set, the X-BM-* headers, /led, the BM_CAM READY line, hostname bm-cam and the
 //   BM_WIFI_* header names. Its disclosure: Grok 4.7 via Cursor, 2026-10-06, wrote that sketch.
@@ -354,9 +355,11 @@ static bool start_camera() {
         return false;
     }
     if (s->id.PID == OV3660_PID) {
-        // Recommended starting settings for the OV3660 (from Espressif's example)
-        s->set_brightness(s, 1);
-        s->set_saturation(s, -2);
+        // CHANGED 2026-11-01 (AI-assisted: Claude Opus 5.5 via Claude Code): Espressif's example sets brightness +1 and
+        // saturation -2 here. In a bright, pale room that left the red ball at saturation 60, and the depth lab's detector
+        // needs 110, so the sensor's neutral 0 and 0 are used instead.
+        s->set_brightness(s, 0);
+        s->set_saturation(s, 0);
     }
     int vflip = 0;
     int hmirror = 0;
