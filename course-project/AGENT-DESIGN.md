@@ -497,6 +497,9 @@ come last (`nuance_and_assumptions`).
   - **mandatory:** an external pull-down of ≤ 8.2 kΩ (e.g. 4.7 kΩ) from STBY/GP5 to GND before
     any wheels-down run (RP2350-E9). A resistor is outside the kit list; this is a scope decision
     in favour of safety. Firmware drives STBY/IN/PWM low at boot.
+  - *v3.4 note (2026-11-10): waived for the project by Xiaohui ("we will not have the STBY resistor and the current
+    hardware will remain unchanged"). Operator procedures replace it (plan/README.md §3.6 "Hardware decision"), and the
+    wheels-down gate's "boot is disarmed with the pull-down fitted" check does not apply.*
 - **W3 — motion:** a stall profile (200 ms grace, then < 50 % of the profile over 200 ms); a bump
   threshold on the IMUPLUS linear acceleration (set from logged contacts); the
   heartbeat/watchdog period set from the measured p99 link latency with the camera streaming;

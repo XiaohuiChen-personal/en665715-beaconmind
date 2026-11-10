@@ -103,6 +103,11 @@ tar-synced copies are in `git stash` there ("tar-synced working copies before th
 committed files. Private repo `6a7a88d`. `sync_to_spark.sh` is for uncommitted work only; `pull_evidence.sh` no longer
 overwrites newer local files (it once replaced a newer `prereg.md`, restored).
 
+**Decision (Xiaohui, 2026-11-10): no STBY resistor; the car's hardware stays unchanged** (Pico on the bank, motors on
+the AA pack, jumper out, K2a firmware). Work list 2.1 / M3.T1 waived; the replacement procedures and the remaining risk
+(about 1.5 s of floating driver inputs after a Pico reset; the firmware boots armed) are in plan §3.6 "Hardware
+decision" and safety rule S5's note.
+
 **Section 0 is complete** (0.3 done on 2026-11-10). Section 1 finishes with the sweep and the analysis.
 
 **Decision (Xiaohui, 2026-11-10):** the closed-loop demo episodes (the simulation take and the car episodes, work list

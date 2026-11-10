@@ -700,7 +700,7 @@ the session of 2026-11-09.
 | 1.6 | Held-out kinsim logs at 2 % drift | M2.T11, M4.T12 | Claude | S |
 | 1.7 | Replay sweep of the three arms | M4.T4 lite, M2.T12 | Claude (unattended) | M |
 | 1.8 | Judge, statistics, figures | M4.T6, M4.T16 lite | Claude | M |
-| 2.1 | STBY pull-down fitted, or a written waiver | M3.T1 | Xiaohui | S |
+| 2.1 | ~~STBY pull-down~~ **waived by Xiaohui, 2026-11-10: no resistor, hardware unchanged** (procedures below) | M3.T1 | — | — |
 | 2.2 | Camera capture size | M1.T17 | both | S |
 | 2.3 | Camera calibration (checkerboard) → `configs/camera.json` | M1.T7 | both | S |
 | 2.4 | Tag detection on real frames; range and bearing error → real noise model | M1.T8, M3.T16 lite | both | M |
@@ -733,6 +733,19 @@ real-car pose error is final-pose error, not ATE); contact acceptance (M3.T15); 
 closed-loop sweep (M4.T3, M4.T5, M4.T14, M2.T20; H3 becomes descriptive); the stretch arms (M4.T7–T9); the sweep
 infrastructure (M4.T10, covered by `tools/replay_run.py`); M1.T11 (superseded), M1.T13, M1.T14, M2.T13, M2.T18.
 Done by the re-scope: M1.T15 (roster) and M6.T1 (deliverables).
+
+**Hardware decision (Xiaohui, 2026-11-10): no STBY pull-down, and the car's hardware stays as it is** (the Pico on
+the USB power bank, the motors on the AA pack, the AMS1117 → VSYS jumper out, the K2a firmware). This waives safety rule
+S5 and AGENT-DESIGN §W's "mandatory" pull-down for the project. The risk it leaves: after a Pico reset the driver inputs
+float for about 1.5 s (Assignment 5 review HS-3), and the K2 firmware's own watchdog can reboot the Pico while the motor
+battery is on (research note F11), so a reboot can move a wheel briefly; the firmware also boots armed. The labs ran
+wheels-down this way (Modules 6–9, including the 40 Module 9 runs) without an incident, which is evidence, not proof.
+Procedures that replace the resistor, for every real-car session: (1) power order S4 — the Pico (bank) first, the motor
+battery last, and the motor battery off first; (2) the motor battery is on only while a run is under way, with a hand on
+the switch, and off between runs, before any reflash, replug, agent restart or reboot (S6); (3) the first motor-battery
+switch-on of each session is done with the car on its stand, wheels up; (4) a Pico reboot during a run (a session rebuild,
+or a new boot cause in the diagnostics) stops the session: motor battery off, check, then continue; (5) the run recorder
+(rule R2) runs whenever the motor battery is on, so any unexpected motion is on video and in the bag.
 
 **Closed-loop demo model (Xiaohui, 2026-11-10):** the closed-loop demo episodes — the simulation take and the car
 episodes — use **Claude Opus 5.5** (about 15 s a step, so about 15 minutes an episode, against about 1–1.5 hours for
@@ -1609,7 +1622,9 @@ These apply to every task that touches the car. A task may add rules but never r
 - **S4 — Power order.** Pico first, battery switch second; power down with the battery switch first
   (Toshiba TB6612FNG order; `wiring-plan.md` §4). The regulator path powers VM and the Pico together, so it
   is allowed only with the S5 pull-down fitted and the wheels up at every switch-on (§W "fallback").
-- **S5 — STBY pull-down.** A pull-down of ≤ 8.2 kΩ (4.7 kΩ proposed) from STBY/GP5 to GND is
+- **S5 — STBY pull-down.** *Waived for the project by Xiaohui on 2026-11-10 (no resistor, hardware unchanged); the
+  procedures that replace it are in §3.6 "Hardware decision". The original rule, kept for its reasoning:* A pull-down of
+  ≤ 8.2 kΩ (4.7 kΩ proposed) from STBY/GP5 to GND is
   **mandatory before any wheels-down run** (§W, RP2350-E9). None is fitted, and Xiaohui owns no resistor
   as of 2026-10-04. The Module 5 waiver applied to that discussion only and does not apply here
   (`discussions/module5/DESIGN.md` §6: "The resistor remains the course project's rule (W3) and is not
