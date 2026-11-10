@@ -29,13 +29,18 @@ updates). The git-ignored `data/` was copied into the clone (`cp -a --update=non
 `tools/sync_to_spark.sh` and `tools/pull_evidence.sh` were rewritten: both still pointed at the private repo, so a sync
 would have pushed its stale leftovers. Normal path: commit, push, `git pull --ff-only` on the Spark.
 
-**0.3 Car network: NOT done (needs Xiaohui).** `sudo -n true` on the Spark asks for a password, so the access point
-cannot be brought up unattended. On 2026-11-09/10 the Spark was on wired Ethernet (`enP7s7`), its radio `wlP9s9` down,
-nothing on its USB. The car (`buildK2a_d485d7ab`) and camera still hold the access-point builds. Prepared: `tools/car_net.sh`
-(no sudo: `status`, `relay-start`, `relay-stop`) and `tools/camera_relay.py` (containers reach the camera at
-`http://172.17.0.1:18080`; tested on the Spark against a local server). **Xiaohui's steps:** in his own terminal on the
-Spark, `sudo bash ~/Projects/EN.665.715/discussions/module9/tools/ap_net.sh up 11`; power the car and the camera; then
-`bash ~/Projects/en665715-beaconmind/course-project/tools/car_net.sh status`.
+**0.3 Car network: DONE (2026-11-10, about 02:30 CST).** Xiaohui ran `sudo … discussions/module9/tools/ap_net.sh up 11`
+and powered the Pico (power bank) and the camera, motor battery OFF. `tools/car_net.sh status`: access point `car-ap` on
+`wlP9s9` at 10.42.0.1 (channel 11; the Ethernet link, internet and Tailscale unchanged); car at 10.42.0.138, camera at
+10.42.0.89 (`bm_cam-0.2`, OV3660, VGA q12, hmirror 1 saved, RSSI −48 to −56 dBm, no errors). micro-ROS agent started as
+container **`bm-micro-ros-agent`** (`microros/micro-ros-agent:humble`, host network, UDP 8888): the Pico joined as
+`/pico_fusion` with `/pico/cmd_vel`, `/pico/drive/status` (0), `/pico/imu/data` (50 Hz), `/pico/imu/std`,
+`/pico/wheel_ticks` (layout 9) — the K2 family, and the access-point build `buildK2a_d485d7ab` (only that build points at
+10.42.0.1). Read from `beaconmind-ros` with the UDP-only FastDDS profile. Camera relay `tools/camera_relay.py` running in
+tmux **`bm-cam-relay`**: from a container, `/status` and a 640×480 capture (10.6 KB, 0.13 s) through
+`http://172.17.0.1:18080`. **Left running:** the access point, `bm-micro-ros-agent`, `bm-cam-relay`; the car powered with
+the motor battery off. The firmware boots armed after a normal power-up, so switch the motor battery on only with the
+car on its stand or in the arena with a hand on the switch. No reflash is needed (see the decision below).
 
 **1.1 Harness** (committed `35847cc`). `harness/replay.py` (provider-neutral loop), `harness/providers/openai_chat.py`
 (vLLM, Ollama), `harness/providers/anthropic_messages.py` (the pilot's Opus loop; byte-identical requests),
@@ -98,7 +103,7 @@ tar-synced copies are in `git stash` there ("tar-synced working copies before th
 committed files. Private repo `6a7a88d`. `sync_to_spark.sh` is for uncommitted work only; `pull_evidence.sh` no longer
 overwrites newer local files (it once replaced a newer `prereg.md`, restored).
 
-**Still needs Xiaohui: 0.3 (car network)** — see above. Everything in section 1 runs without him.
+**Section 0 is complete** (0.3 done on 2026-11-10). Section 1 finishes with the sweep and the analysis.
 
 **Decision (Xiaohui, 2026-11-10):** the closed-loop demo episodes (the simulation take and the car episodes, work list
 3.5 and 4.3) use Claude Opus 5.5, not Qwen3.8: about 15 minutes an episode instead of 1-1.5 hours. **No reflash is
