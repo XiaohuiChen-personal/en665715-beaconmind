@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.beaconmind.invalid/bm.providers-1.schema.json",
-  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C11.",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C11. Claude Opus 5.5 via Claude Code, 2026-11-10: added provider \"ollama\" (Ollama's OpenAI-compatible /v1).",
   "title": "bm.providers/1",
   "type": "object",
   "additionalProperties": false,
@@ -34,7 +34,8 @@
             "enum": [
               "vllm",
               "openai_responses",
-              "anthropic_messages"
+              "anthropic_messages",
+              "ollama"
             ]
           },
           "model": {

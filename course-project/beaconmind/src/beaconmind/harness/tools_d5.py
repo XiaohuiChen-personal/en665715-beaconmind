@@ -12,6 +12,7 @@ AI-assisted: Claude Opus 5.5 via Cursor, 2026-10-29: ported the tool table and d
 added the replay-mode rules and the tolerant report parser.
 """
 import json
+import math
 import re
 
 from beaconmind import geometry as g
@@ -50,6 +51,11 @@ def schema(props):
 
 def anthropic_tool_defs():
     return [{"name": n, "description": d, "input_schema": schema(p)} for n, d, p in TOOLS]
+
+
+def openai_tool_defs():
+    """The same nine tools in the Chat Completions `tools` format (vLLM, Ollama)."""
+    return [{"type": "function", "function": {"name": n, "description": d, "parameters": schema(p)}} for n, d, p in TOOLS]
 
 
 def rnd(o):
@@ -151,7 +157,13 @@ def parse_report(text):
 
 
 def _num(v):
-    return isinstance(v, (int, float)) and not isinstance(v, bool)
+    """A finite JSON number. json.loads accepts NaN and Infinity, which would poison every metric."""
+    if not isinstance(v, (int, float)) or isinstance(v, bool):
+        return False
+    try:
+        return math.isfinite(v)
+    except OverflowError:       # an integer too large for a float (json.loads keeps big ints exact)
+        return False
 
 
 def report_checks(rep, obs):

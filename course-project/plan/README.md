@@ -1328,7 +1328,9 @@ message has to be compiled into micro-ROS:
    `forward_allowed` lists each forward move whose distance leaves ≥ `forward_wall_limit_m`. Turns and
    scans are refused when anything, detected or mapped, lies within the sweep radius plus margin
    (sweep radius from `configs/car.json`). `done_range_m` comes from C0.
-4. **Report checks** (D5 "The harness is authoritative for state"):
+4. **Report checks** (D5 "The harness is authoritative for state"). *2026-11-10, replay benchmark: the counters
+   follow verified fixes only, while poses and maps are scored as written and violations are measured, not
+   corrected (AGENT-DESIGN D5 v3.4 note; `evidence/M4/M4.T1/prereg.md`).*
    - `format` violation: the final text is not one JSON object matching C6 (after stripping one code
      fence). The step's report is then null; the harness reuses the previous report and counts a format
      violation.
@@ -1433,7 +1435,7 @@ K, budget cap, start and end times, host).
   `last_move` = the logged observation's own `last_move` (= the previous step's executed move); PREVIOUS_REPORT
   = this run's own previous corrected report; any `move` call is refused and logged; the expected
   `decision` is `NONE`. A replay episode runs to the end of the log (`ended_by "DONE"`, detail
-  `"log_end"`), the USD budget, or three consecutive policy errors; a `DONE`, `STOPPED`, `ASK` or
+  `"log_end"`), the USD budget, or three consecutive policy errors; a `DONE`, `STOPPED`, `ASK` or *(2026-11-10: the replay benchmark does not stop on policy errors; every step is scored, an invalid report as a counted fallback, and infrastructure failures stop the seed without writing the step; `harness/replay.py`.)*
   `REFUSED` decision is logged but does not end it, so every arm is scored on the same steps (M2.T7).
 - Baselines B0, B1 and B2 write the same run-log format with `llm_turns: []`, so that one metrics
   module scores every arm.

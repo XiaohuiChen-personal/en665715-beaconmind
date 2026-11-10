@@ -154,6 +154,14 @@ executed by the Pico's move executor.
 - It checks every map entry and pose in a report against the step's tool results and
   PREVIOUS_REPORT, within rounding (0.005 m, 0.05°).
 - A mismatch is logged as a `state_violation`, and the tool-derived value is used.
+- *v3.4 note (2026-11-10, benchmark harness only; decided under Xiaohui's delegation, pre-registration
+  `evidence/M4/M4.T1/prereg.md`):* in the replay benchmark the harness keeps the **counters** authoritative —
+  `travel_since_fix_m` and `turns_since_fix` reset only on a claimed full fix that one of the step's own `fix_pose`
+  results supports, given the harness's own prior (`harness/replay.py` `verify_fix`) — but scores the **reported
+  pose and map as written** and measures state violations afterwards (`metrics/pilot.py` `state_violations`)
+  instead of replacing them. Reason: H1 and H2 ask about the agent's own estimate; overwriting it with tool values
+  would credit the harness for the agent's transcription errors. A deployed runtime (the ROSA demo) may still apply
+  the correction.
 
 **OBSERVATION** (harness-built; bookkeeping precomputed):
 ```json

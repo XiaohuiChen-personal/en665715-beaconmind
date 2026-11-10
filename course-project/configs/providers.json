@@ -1,5 +1,5 @@
 {
-  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote configs/providers.json from plan/README.md C11.",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote configs/providers.json from plan/README.md C11. Claude Opus 5.5 via Claude Code, 2026-11-10: added the Qwen3.8-Flash-Next (vLLM) and Gemma 4 (Ollama) entries of the main study and recorded the Opus arm's request settings.",
   "schema": "bm.providers/1",
   "models": {
     "qwen35-a3b-think": {
@@ -70,7 +70,100 @@
         "output": 20.0
       },
       "price_checked": "2026-09-27",
-      "options": {}
+      "options": {
+        "max_tokens": 64000,
+        "effort": "medium",
+        "thinking": "adaptive (field omitted)",
+        "prompt_caching": true,
+        "harness": "harness/providers/anthropic_messages.py SETTINGS"
+      }
+    },
+    "qwen38-flash-xhigh": {
+      "provider": "vllm",
+      "base_url": "http://127.0.0.1:8000/v1",
+      "model": "nvidia/Qwen3.8-Flash-Next-NVFP4",
+      "api_key_env": null,
+      "thinking": true,
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20
+      },
+      "price_usd_per_mtok": {
+        "input": 0,
+        "cached_input": 0,
+        "output": 0
+      },
+      "price_checked": null,
+      "max_turns_per_step": 30,
+      "request_timeout_s": 3600,
+      "options": {
+        "max_tokens": 32768,
+        "chat_template_kwargs": {
+          "enable_thinking": true,
+          "reasoning_effort": "xhigh"
+        },
+        "reasoning_replay_field": "reasoning",
+        "server": "tools/serve_qwen38.sh (container bm-qwen38, image qwen38-flash-dgx:v0.30)",
+        "sampling_source": "checkpoint generation_config.json; model card: temperature 1.0, top_p 0.95, reasoning_effort xhigh",
+        "reasoning_replay_check": "2026-11-10 /tokenize+/detokenize on bm-qwen38: the field `reasoning` renders as <think>text</think> in the replayed assistant turn; `reasoning_content` is dropped (empty think block); inline <think> in content renders twice",
+        "max_tokens_reason": "32768 is 14x the largest turn of the 2026-11-10 Qwen gate (2,347 tokens; median 441) and is reached before the 3600 s client timeout at the slowest measured decode rate under 8 concurrent requests, so a runaway generation ends as a counted 'length' fallback, not a timeout (adversarial review 2026-11-10)"
+      }
+    },
+    "qwen38-flash-medium": {
+      "provider": "vllm",
+      "base_url": "http://127.0.0.1:8000/v1",
+      "model": "nvidia/Qwen3.8-Flash-Next-NVFP4",
+      "api_key_env": null,
+      "thinking": true,
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20
+      },
+      "price_usd_per_mtok": {
+        "input": 0,
+        "cached_input": 0,
+        "output": 0
+      },
+      "price_checked": null,
+      "max_turns_per_step": 30,
+      "request_timeout_s": 3600,
+      "options": {
+        "max_tokens": 32768,
+        "chat_template_kwargs": {
+          "enable_thinking": true,
+          "reasoning_effort": "medium"
+        },
+        "reasoning_replay_field": "reasoning",
+        "server": "tools/serve_qwen38.sh (container bm-qwen38, image qwen38-flash-dgx:v0.30)",
+        "sampling_source": "checkpoint generation_config.json (temperature 1.0, top_p 0.95, top_k 20); reasoning_effort medium is a template option (the model card benchmarks xhigh); not used in the study",
+        "reasoning_replay_check": "2026-11-10 /tokenize+/detokenize on bm-qwen38: the field `reasoning` renders as <think>text</think> in the replayed assistant turn; `reasoning_content` is dropped (empty think block); inline <think> in content renders twice",
+        "max_tokens_reason": "32768 is 14x the largest turn of the 2026-11-10 Qwen gate (2,347 tokens; median 441) and is reached before the 3600 s client timeout at the slowest measured decode rate under 8 concurrent requests, so a runaway generation ends as a counted 'length' fallback, not a timeout (adversarial review 2026-11-10)"
+      }
+    },
+    "gemma4-26b": {
+      "provider": "ollama",
+      "base_url": "http://127.0.0.1:11435/v1",
+      "model": "gemma4:26b-a4b-it-bf16",
+      "api_key_env": null,
+      "thinking": true,
+      "sampling": {},
+      "price_usd_per_mtok": {
+        "input": 0,
+        "cached_input": 0,
+        "output": 0
+      },
+      "price_checked": null,
+      "max_turns_per_step": 30,
+      "request_timeout_s": 3600,
+      "options": {
+        "max_tokens": 32768,
+        "reasoning_replay_field": "reasoning",
+        "server": "tools/serve_gemma4.sh: a user-level `ollama serve` (Ollama 0.40.11, the host binary) on 127.0.0.1:11435 reading the system model store, 8 parallel slots of 65,536 tokens; the system service on 11434 has one slot",
+        "sampling_source": "Ollama Modelfile defaults (temperature 1, top_k 64, top_p 0.95), not sent; thinking is Ollama's default for this model",
+        "max_tokens_reason": "32768 is 14x the largest turn of the 2026-11-10 Qwen gate (2,347 tokens; median 441) and is reached before the 3600 s client timeout at the slowest measured decode rate under 8 concurrent requests, so a runaway generation ends as a counted 'length' fallback, not a timeout (adversarial review 2026-11-10)"
+      }
     }
   }
 }

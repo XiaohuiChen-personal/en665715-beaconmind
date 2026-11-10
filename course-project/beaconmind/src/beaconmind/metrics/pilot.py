@@ -182,3 +182,64 @@ def prf(tp, fp, fn):
 def linear_score(error, tolerance):
     """max(0, 1 - error / tolerance): 1 is perfect, 0 at or beyond the tolerance (Module 9 notes, eq. 3.2)."""
     return max(0.0, 1.0 - error / tolerance)
+
+
+# ---------------------------------------------------------------- state violations (C5.4, measured, not corrected)
+
+STATE_TOL_M, STATE_TOL_DEG = 0.011, 0.11
+
+
+def _pt_close(a, b, tol=STATE_TOL_M):
+    try:
+        return math.hypot(float(a["x_m"]) - float(b["x_m"]), float(a["y_m"]) - float(b["y_m"])) <= tol
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
+def state_violations(row):
+    """Disagreements between a valid report and the numbers its own tools (or PREVIOUS_REPORT) supplied, by the
+    rule of plan C5.4. The harness does not correct them (pre-registration); this measures them.
+    Pose: the reported pose must equal the tool value of the claimed pose_source (beacon_fix/relocalised: a
+    fix_pose `full` result; position_fix: a fix_pose `position` result; odometry and prior_kept: the harness prior
+    or a compose_odometry result). Map: each reported entry must equal (x, y within tolerance) its PREVIOUS_REPORT
+    entry, a map_point result, or an update_beacon result of this step. Returns {pose: bool or None (not
+    checkable), pose_error_m: distance to the nearest candidate, map_bad: count, map_checked: count}."""
+    rep = row.get("report")
+    if not row.get("checks", {}).get("valid") or not isinstance(rep, dict):
+        return {"pose": None, "pose_error_m": None, "map_bad": 0, "map_checked": 0}
+    calls = row.get("calls") or []
+    res = lambda name: [c["result"] for c in calls if c.get("tool") == name and isinstance(c.get("result"), dict)
+                        and c["result"].get("status") != "error"]
+    src, pose = rep.get("pose_source"), rep.get("pose")
+    cands = []
+    if src in ("beacon_fix", "relocalised"):
+        cands = [r["full"] for r in res("fix_pose") if isinstance(r.get("full"), dict)]
+    elif src == "position_fix":
+        cands = [r["position"] for r in res("fix_pose") if isinstance(r.get("position"), dict)]
+    elif src in ("odometry", "prior_kept"):
+        cands = res("compose_odometry") + ([row["harness_prior"]] if row.get("harness_prior") else [])
+    ok, err = None, None
+    if cands:
+        dists = []
+        for c in cands:
+            try:
+                dists.append((math.hypot(float(pose["x_m"]) - float(c["x_m"]), float(pose["y_m"]) - float(c["y_m"])),
+                              abs(wrap_deg(float(pose["theta_deg"]) - float(c["theta_deg"])))))
+            except (KeyError, TypeError, ValueError):
+                continue
+        if dists:
+            best = min(dists)
+            err = best[0]
+            ok = best[0] <= STATE_TOL_M and best[1] <= STATE_TOL_DEG
+    prev_map = {b.get("beacon"): b for b in ((row.get("prev_report") or {}).get("map") or []) if isinstance(b, dict)}
+    points = res("map_point") + res("update_beacon")
+    bad = checked = 0
+    for b in rep.get("map") or []:
+        if not isinstance(b, dict):
+            continue
+        checked += 1
+        old = prev_map.get(b.get("beacon"))
+        if (old and _pt_close(b, old)) or any(_pt_close(b, p) for p in points):
+            continue
+        bad += 1
+    return {"pose": ok, "pose_error_m": err, "map_bad": bad, "map_checked": checked}
