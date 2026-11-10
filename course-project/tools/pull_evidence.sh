@@ -10,7 +10,9 @@ if [ "$#" -ne 2 ] || [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
   exit 2
 fi
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+# --keep-newer-files: a file edited on the Mac after its last sync is never overwritten by the Spark's older copy
+# (2026-11-10: a plain extract overwrote a newer prereg.md); such files are listed instead.
 ssh -o ConnectTimeout=15 -o BatchMode=yes xiaohui_chen@spark-2a60 \
   "cd ~/Projects/en665715-beaconmind && tar czf - course-project/evidence/${1}/${2}" \
-  | tar xzf - -C "$REPO"
+  | tar xzf - --keep-newer-files -C "$REPO" 2>&1 | sed 's/^/kept the newer local file: /' || true
 echo "pulled course-project/evidence/${1}/${2}"

@@ -742,7 +742,8 @@ firmware). The others keep their defaults until M1.T10 records v3.4.
 **If time runs short** (applied in this order, at any point): (1) never start the Isaac stretch; (2) drop B1
 from the report (H2 is then not tested); (3) drop the Gemma arm; (4) record the demo from the experiment harness
 instead of ROSA; (5) real episodes from 10 down to 5. Rules R1 and R2 are never cut, nor are the report, the
-slides and the video.
+slides and the video. *After the pre-registration freeze (`evidence/M4/M4.T1/prereg.md`), cuts (2) and (3) do not
+shrink the confirmatory families: a hypothesis that is not run counts as p = 1 (2026-11-10, analysis review).*
 
 ---
 

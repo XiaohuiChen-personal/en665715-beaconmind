@@ -47,11 +47,15 @@ class LabelTracker:
         beacon, FN = labelled new, ambiguous or rejected, or not associated at all. A first sighting
         labelled new is NEW_OK (NEW_BAD if the label already stands for another tag). dup_ids are the
         IDs that two physical tags share. Returns [(true_id_is_duplicated, outcome)]."""
-        prev_labels = {b.get("beacon") for b in (prev_report or {}).get("map") or [] if isinstance(b, dict)}
+        prev_labels = {b.get("beacon") for b in (prev_report or {}).get("map") or []
+                       if isinstance(b, dict) and isinstance(b.get("beacon"), str)}
         mapped = {self.tag_of[lab] for lab in prev_labels if lab in self.tag_of}
         assoc = {}
-        for a in (report or {}).get("associations") or []:
-            if isinstance(a, dict) and isinstance(a.get("det"), int) and not isinstance(a.get("det"), bool):
+        assocs = (report or {}).get("associations")
+        for a in assocs if isinstance(assocs, list) else []:
+            # an association with a non-integer det or a non-string beacon label cannot be scored: it counts as absent
+            if isinstance(a, dict) and isinstance(a.get("det"), int) and not isinstance(a.get("det"), bool) \
+                    and (a.get("beacon") is None or isinstance(a.get("beacon"), str)):
                 assoc.setdefault(a["det"], a)
         out = []
         for d in raw_dets:
@@ -66,7 +70,8 @@ class LabelTracker:
                 out.append((dup, "NEW_OK" if self.tag_of.get(lab, tag) == tag else "NEW_BAD"))
             else:
                 out.append((dup, "OTHER"))
-        carried = {b.get("beacon") for b in (report or {}).get("map") or [] if isinstance(b, dict)}
+        carried = {b.get("beacon") for b in (report or {}).get("map") or []
+                   if isinstance(b, dict) and isinstance(b.get("beacon"), str)}
         for d in raw_dets:
             a = assoc.get(d["det"])
             if a and a.get("result") == "new" and a.get("beacon") in carried and a.get("beacon") not in self.tag_of:
@@ -83,12 +88,18 @@ def association_scores(outcomes):
             "tp": tp, "fp": fp, "fn": fn, "new_bad": sum(1 for _, o in outcomes if o == "NEW_BAD")}
 
 
+def _finite(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
 def map_scores_c10(final_map, world, radius=0.30):
     """C10.3: an entry is correct if a physical tag with the same ID lies within `radius`; otherwise a
     phantom. RMSE over correct entries, ID precision (correct / entries) and recall (tags with a correct
     entry / tags in the world)."""
     errs, hit = [], set()
-    for b in final_map or []:
+    final_map = [b for b in (final_map if isinstance(final_map, list) else [])
+                 if isinstance(b, dict) and _finite(b.get("x_m")) and _finite(b.get("y_m"))]
+    for b in final_map:
         cands = [(math.hypot(b["x_m"] - t["x_m"], b["y_m"] - t["y_m"]), t["tag"]) for t in world if t["id"] == b.get("id")]
         near = min(cands) if cands else None
         if near and near[0] <= radius:
@@ -111,6 +122,14 @@ def _pose_close(a, b):
 
 
 def call_matches(pred, gold):
+    """Matching rule (see _call_matches); any malformed predicted argument is a non-match, never an error."""
+    try:
+        return _call_matches(pred, gold)
+    except Exception:  # noqa: BLE001  (model output can have any shape)
+        return False
+
+
+def _call_matches(pred, gold):
     """Matching rule: same tool and equivalent arguments.
     compose_odometry: odometry values equal and pose within tolerance; gate_detection: same det,
     same candidate set, pose within tolerance; fix_pose: same set of (det, beacon) pairs, prior within
@@ -165,7 +184,7 @@ def gold_calls(obs, prev_report):
     """The D7 procedure's calls on this input, or None when the procedure cannot process it."""
     try:
         return ks.estimate_step(obs, prev_report)["calls"]
-    except (NotImplementedError, ks.GoldUnavailable):
+    except Exception:  # noqa: BLE001  (an unimplemented branch, or a previous report the procedure cannot read)
         return None
 
 

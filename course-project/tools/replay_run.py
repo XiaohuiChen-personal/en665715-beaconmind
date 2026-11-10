@@ -10,7 +10,8 @@ secrets env_file, and passes the git commit):
 - Providers: "anthropic_messages" (Claude Opus 5.5, ANTHROPIC_API_KEY from the environment, never printed),
   "vllm" and "ollama" (OpenAI-compatible /v1 on the Spark's loopback). Local arms cost 0, so --cap-usd 0
   means no cap for them; an API arm needs a positive cap.
-- Resumable: re-running continues each seed after its last logged step, but only under the same configuration:
+- Resumable with --resume-reason (recorded in run.resume-*.json): re-running continues each seed after its last
+  logged step, but only under the same configuration:
   the provider entry, the agent settings, the repeat index, the step limit, and the hashes of the prompt, the
   design values, the providers file, every harness source file and every observation log must equal run.json's
   (their hash is the `config` tag written into every row). A lock file stops two runs from writing the same folder.
@@ -96,6 +97,27 @@ def served_models(base_url):
         return {"error": "%s: %s" % (type(exc).__name__, exc)}
 
 
+def header_agent(key, cfg, repeat):
+    """An agent object without a client, for its header and arm label only."""
+    if cfg["provider"] == "anthropic_messages":
+        from beaconmind.harness.providers import anthropic_messages as am
+        return am.AnthropicAgent(None, key)
+    from beaconmind.harness.providers import openai_chat as oc
+    return oc.OpenAIChatAgent(None, key, cfg, repeat=repeat)
+
+
+def config_invariant(key, providers_path, prompt_path, repeat, max_steps):
+    """Everything a resume must not change, and its 12-hex tag (written into run.json and every row; frozen per arm
+    in the pre-registration by tools/prereg_freeze.py)."""
+    cfg = json.loads(pathlib.Path(providers_path).read_text(encoding="utf-8"))["models"][key]
+    agent = header_agent(key, cfg, repeat)
+    inv = {"provider_key": key, "provider_entry": cfg, "agent": agent.header(), "arm": agent.arm,
+           "repeat": repeat, "max_steps": max_steps,
+           "sha12": {"prompt": sha12(prompt_path), "dv.json": sha12(ROOT / "configs" / "dv.json"),
+                     "providers.json": sha12(providers_path), **{f: sha12(SRC / f) for f in HASHED}}}
+    return inv, hashlib.sha256(json.dumps(inv, sort_keys=True).encode()).hexdigest()[:12]
+
+
 def build_agent(key, cfg, repeat):
     if cfg["provider"] == "anthropic_messages":
         import anthropic
@@ -135,6 +157,7 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--repeat", type=int, default=0, help="repeat index k (changes the local sampling seeds)")
     ap.add_argument("--order-seed", type=int, default=20261110)
+    ap.add_argument("--resume-reason", default=None, help="required to resume an existing run; recorded")
     ap.add_argument("--providers", default=str(ROOT / "configs" / "providers.json"))
     ap.add_argument("--prompt", default=str(ROOT / "prompts" / "robot_system_prompt_v3.3.txt"))
     args = ap.parse_args()
@@ -163,12 +186,13 @@ def main():
     order = list(seeds)
     random.Random(args.order_seed).shuffle(order)
 
-    invariant = {"provider_key": args.provider, "provider_entry": cfg, "agent": agent.header(), "arm": agent.arm,
-                 "repeat": args.repeat, "max_steps": args.max_steps,
-                 "sha12": {"prompt": sha12(args.prompt), "dv.json": sha12(ROOT / "configs" / "dv.json"),
-                           "providers.json": sha12(args.providers), **{f: sha12(SRC / f) for f in HASHED}}}
+    invariant, config = config_invariant(args.provider, args.providers, args.prompt, args.repeat, args.max_steps)
+    if invariant["agent"] != agent.header():
+        sys.exit("internal error: the header agent differs from the run agent")
     obslog_sha = {str(s): sha12(pathlib.Path(args.obslogs) / ("seed_%d.json" % s)) for s in seeds}
-    config = hashlib.sha256(json.dumps(invariant, sort_keys=True).encode()).hexdigest()[:12]
+    resumes = sorted(out_dir.glob("run.resume-*.json"))
+    if (out_dir / "run.json").exists() and not args.resume_reason:
+        sys.exit("%s already has a run (%d resumes so far): give --resume-reason to resume it" % (out_dir, len(resumes)))
     if (out_dir / "run.json").exists():
         first = json.loads((out_dir / "run.json").read_text())
         if first.get("config") != config:
@@ -188,6 +212,7 @@ def main():
                   server=dict(server_identity(cfg), host_side=json.loads(os.environ.get("BM_SERVER_INFO") or "{}"))
                   if cfg["provider"] in ("vllm", "ollama") else None,
                   host=os.environ.get("BM_HOST"), python=sys.version.split()[0], **sdk,
+                  resume_reason=args.resume_reason, earlier_resumes=len(resumes),
                   started=time.strftime("%Y-%m-%dT%H:%M:%S%z"), obslog_sha12=obslog_sha)
     name = "run.json" if not (out_dir / "run.json").exists() else "run.resume-%s.json" % time.strftime("%Y%m%dT%H%M%S")
     (out_dir / name).write_text(json.dumps(header, indent=1))

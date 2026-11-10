@@ -1,0 +1,8 @@
+Power of H1 (exact one-sided signed-rank, n = 30, 4000 simulations each)
+columns: P(reject at alpha/3), P(reject at alpha), P(reject at alpha/3 and HL interval below -3 cm)
+  pilot effect: Normal(-2.70 cm, 3.11 cm)                                                         0.993  0.999  0.009
+  pilot mean, SD at its 95 % upper bound (8.94 cm)                                                0.283  0.461  0.021
+  the 3 cm threshold: Normal(-3.00 cm, 3.11 cm)                                                   0.999  1.000  0.033
+  an arm that reproduces the procedure: resampled B2-B0 of 99 dev seeds (mean -3.04 cm, SD 4.73 cm) 0.883  0.956  0.025
+H2 with B2 as a stand-in for the agent: log(ATE_B2/ATE_B1) - log 2 over 99 dev seeds: median 1.62 (range 0.45 to 2.68); seeds below 0: 0
+  P(reject H2 at alpha) for such an arm: 0.000
