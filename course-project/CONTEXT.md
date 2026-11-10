@@ -10,7 +10,7 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
 
-## 2026-11-10 — re-scope for the 2026-12-01 presentation; work list 0 and 1 started (IN PROGRESS, see the end of this entry)
+## 2026-11-10 — re-scope for the 2026-12-01 presentation; work list 0 and 1: pre-registered study frozen, held-out sweep RUNNING
 
 **Scope (Xiaohui, 2026-11-09; plan/README.md §3.6 is the authority).** Xiaohui presents in Group 1 on
 **2026-12-01**; slides, a demo recording (video), the report and the GitHub link are due then, 10 points each. Target:
@@ -29,30 +29,76 @@ updates). The git-ignored `data/` was copied into the clone (`cp -a --update=non
 `tools/sync_to_spark.sh` and `tools/pull_evidence.sh` were rewritten: both still pointed at the private repo, so a sync
 would have pushed its stale leftovers. Normal path: commit, push, `git pull --ff-only` on the Spark.
 
-**0.3 Car network: NOT done (needs Xiaohui).** `sudo -n true` on the Spark asks for a password, so `ap_net.sh up` cannot
-run unattended. On 2026-11-09 the Spark was on wired Ethernet (`enP7s7`), its radio `wlP9s9` down, nothing on its USB, no
-containers running. The car (`buildK2a_d485d7ab`) and camera still hold the access-point builds.
+**0.3 Car network: NOT done (needs Xiaohui).** `sudo -n true` on the Spark asks for a password, so the access point
+cannot be brought up unattended. On 2026-11-09/10 the Spark was on wired Ethernet (`enP7s7`), its radio `wlP9s9` down,
+nothing on its USB. The car (`buildK2a_d485d7ab`) and camera still hold the access-point builds. Prepared: `tools/car_net.sh`
+(no sudo: `status`, `relay-start`, `relay-stop`) and `tools/camera_relay.py` (containers reach the camera at
+`http://172.17.0.1:18080`; tested on the Spark against a local server). **Xiaohui's steps:** in his own terminal on the
+Spark, `sudo bash ~/Projects/EN.665.715/discussions/module9/tools/ap_net.sh up 11`; power the car and the camera; then
+`bash ~/Projects/en665715-beaconmind/course-project/tools/car_net.sh status`.
 
-**1.1 Harness.** `harness/replay.py` (provider-neutral loop; `verify_fix`: the counters reset only on a claimed full fix
-that one of the step's own `fix_pose` results supports; reported poses and maps are scored as written), `harness/
-providers/openai_chat.py` (vLLM and Ollama), `harness/providers/anthropic_messages.py` (the pilot's Opus loop, moved
-unchanged), `harness/anthropic_replay.py` (compatibility shim), `tools/replay_run.py` + `replay_run.sh`, three entries
-in `configs/providers.json`, provider `ollama` in the schema; `tools_d5.report_checks` now rejects NaN/Infinity. Found on
-the live server with `/tokenize` + `/detokenize`: this vLLM build renders replayed reasoning only from a message field
-named `reasoning`; `reasoning_content` is dropped, and the Module 4 harness's inline `<think>` (used for the M1.T15
-latency runs) rendered after a second, empty think block. Tests: 100 passed, 1 skipped in `beaconmind-ros`.
+**1.1 Harness** (committed `35847cc`). `harness/replay.py` (provider-neutral loop), `harness/providers/openai_chat.py`
+(vLLM, Ollama), `harness/providers/anthropic_messages.py` (the pilot's Opus loop; byte-identical requests),
+`harness/anthropic_replay.py` (shim), `tools/replay_run.py` + `replay_run.sh`. Rules: the counters reset only on a claimed
+full fix that one of the step's own `fix_pose` results supports from the harness's own prior (`verify_fix`); poses and
+maps are scored as written and state violations are measured (`metrics/pilot.py` `state_violations`; AGENT-DESIGN D5 v3.4
+note); model failures in a step (output cap 32,768 local / 64,000 Opus, 30 turns, context overflow) are counted fallbacks;
+infrastructure failures stop the seed without writing the step; a resume under another configuration is refused. Found on
+the live vLLM server: replayed reasoning renders only from a field named `reasoning` (`reasoning_content` is dropped; the
+Module 4 harness's inline `<think>`, used for the M1.T15 latency runs, rendered after a second, empty think block). An
+independent adversarial review found 13 issues (1 critical: timeouts shorter than a full generation, retried 7 times);
+all fixed, log `evidence/M2/M2.T7/REVIEW.md`. Tests 110 passed in `beaconmind-ros`; a mutation check shows the new ones bite.
 
-**1.2 Servers.** `tools/serve_qwen38.sh` runs container `bm-qwen38`: the M1.T15 `qwen38-flash` server with the same image,
-arguments and environment, but served as `nvidia/Qwen3.8-Flash-Next-NVFP4` instead of the `Qwen/Qwen3.5-35B-A3B` alias.
-Gemma 4 through Ollama's `/v1` returned well-formed tool calls with thinking on (probe 2026-11-09). Smoke tests:
-Qwen3.8 xhigh 3 steps of dev seed 1000 (42-88 s per step, all valid, poses equal B2's); Opus 3 steps (US$0.14, 7 of 7
-calls match the procedure). Decision: Qwen3.8 runs at the template's default reasoning effort `xhigh` (the model
-card's benchmark setting and the M1.T15 pin); the medium-effort gate was cancelled.
+**1.2 Servers.** Qwen3.8: `tools/serve_qwen38.sh` (container `bm-qwen38`, the M1.T15 server with the same image,
+arguments and environment, served as `nvidia/Qwen3.8-Flash-Next-NVFP4`; 127.0.0.1:8000). Gemma 4: first on a user-level
+Ollama with 8 slots (`tools/serve_gemma4.sh`; the host's systemd Ollama has one slot, `n_seq_max = 1`, and its settings
+need sudo) — one step took about 10 minutes with 8 seeds in parallel (about 41 hours for the sweep) — so it moved to
+**vLLM with Google's official bf16 checkpoint** (`tools/serve_gemma4_vllm.sh`, container `bm-gemma4-vllm`, 127.0.0.1:8001,
+`--tool-call-parser gemma4 --reasoning-parser gemma4`, snapshot 4d7ae498). On both servers replayed reasoning renders only
+from a field named `reasoning` (checked with `/tokenize` + `/detokenize`; Ollama too). vLLM's gemma4 parser returns the
+numbers inside untyped object arguments as strings; the harness now turns numeric strings in tool arguments into numbers
+for every arm (`tools_d5.coerce_numeric_strings`). The two local servers cannot share the GPU (about 97 GB each).
 
-**1.4 B1.** `baselines/b1_gtsam.py` + `tools/b1_run.py`: iSAM2, oracle association, the simulator's sigmas plus the
-logs' rounding; GTSAM's default wildfire threshold (0.001) left the final trajectory up to 1.3 mm from the batch optimum,
-so it is set to 0 and estimates use `calculateBestEstimate`; now within 0.014 mm of batch Levenberg-Marquardt on dev
-seeds 1010-1019. Tests: 4 passed on the Spark venv.
+**1.3 Throughput and gates** (dev seeds, all partial by decision; `data/main/gate/`). Qwen3.8 xhigh: about 125 tokens/s
+aggregate at 8 requests (60-80 at 4), about 3-4.6 minutes a step at 8 seeds in parallel; 116 steps over seeds 1010-1017;
+9 reports did not parse, 6 of them complete but for the final `}` or `"}` → **closing-character repair** for every arm
+(at most 3 characters, counted; `tools_d5.parse_report_ex`), and each turn now logs vLLM's stop reason and the content's
+tail. Gemma 4 on vLLM: about 91 tokens/s aggregate at 10 requests, about 4,000-7,000 output tokens and 450-800 s a step;
+it often answers without calling any tool (a model behaviour the study measures). Decision: keep bf16 (no FP8).
+
+**1.4 B1** (`2baa41a`, M2.T9 done). GTSAM iSAM2 with oracle association and online odometry-scale calibration; the
+online estimate is scored. Dev seeds 1010-1019 at 2 % drift: median ATE B1 1.11 cm (2.09 without calibration), B2 13.01,
+B0 15.60. Run on the held-out seeds 2000-2029 at the frozen commit (`data/main/b1/test/drift2/`, 0 batch mismatches).
+
+**1.5-1.6 Pre-registration: FROZEN** (M4.T1 done). `evidence/M4/M4.T1/prereg.md` (n = 30 seeds 2000-2029 at 2 % drift,
+K = 1; family 1: H1 per arm, ATE below dead reckoning, Holm; family 2: H2 per arm, ATE below twice B1, Holm, behind a
+serial gate; exact signed-rank tests with ties and zeros handled exactly, sign test if |G1| > 1; Hodges-Lehmann
+estimates; practical support needs the interval below -3 cm; 22 declared deviations from the report's plan; power table
+from `tools/prereg_power.py`). `prereg.json` (commit `37f0be2`) froze commit `0f2f88eab99b`: 29 files, 30 logs, the servers
+and packages, and the config tags claude-opus-5-5 `b003c274bbb8`, qwen38-flash-xhigh `488f835d69b5`, gemma4-26b
+`9cad251b7f18`; `prereg_freeze.py --verify` printed OK on the Spark. Three independent adversarial reviews preceded it:
+harness (13 findings, `evidence/M2/M2.T7/REVIEW.md`), B1 (9, `evidence/M2/M2.T9/REVIEW.md`), analysis and pre-registration
+(14, `evidence/M4/M4.T1/REVIEW.md`); all verified and fixed; the new tests were mutation-checked. Analysis
+`tools/study_analyze.py` (checks every run against prereg.json and labels the output exploratory on any mismatch),
+statistics `metrics/stats.py`, judge `tools/study_judge.py`.
+
+**1.7 Held-out sweep: RUNNING** (M4.T4 in progress). `tools/study_sweep.sh` in tmux on the Spark, launched 02:06 CST
+from a clean checkout of `61ca2c7`: `bm-sweep-opus` (Claude Opus 5.5, 8 seeds at a time, cap US$250, expected about
+US$150-160, about an hour) and `bm-sweep-local` (Gemma 4 on vLLM, 16 at a time, expected about 20-27 hours; then it
+stops Gemma, starts Qwen3.8 and runs it, 8 at a time, expected about 19 hours). Each arm writes
+`data/main/runs/drift2/<arm>/` and `<arm>.log`; one automatic resume after an infrastructure failure, as pre-registered.
+The runs' config tags equal the frozen ones and `git_dirty` is 0.
+
+**1.8 Next (after the sweep):** `study_judge.py` (Sol, 10 notes per seed and arm, cap US$25), then
+`study_analyze.py --prereg course-project/evidence/M4/M4.T1/prereg.json` on the Spark host venv into
+`evidence/M4/M4.T16/`, `prereg_freeze.py --verify` first. Then the report's Results (M5).
+
+**Git.** Public repo pushed through `61ca2c7` (this entry follows). The Spark clone is a clean checkout; the earlier
+tar-synced copies are in `git stash` there ("tar-synced working copies before the 2026-11-10 freeze"), all identical to
+committed files. Private repo `6a7a88d`. `sync_to_spark.sh` is for uncommitted work only; `pull_evidence.sh` no longer
+overwrites newer local files (it once replaced a newer `prereg.md`, restored).
+
+**Still needs Xiaohui: 0.3 (car network)** — see above. Everything in section 1 runs without him.
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-10: the re-scope text, the code, the runs and this entry.
 
