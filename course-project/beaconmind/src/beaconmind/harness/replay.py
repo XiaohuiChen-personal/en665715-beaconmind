@@ -14,7 +14,9 @@ State rules (pre-registration, evidence/M4/M4.T1/prereg.md; AGENT-DESIGN v3.4 no
 - The reported pose and map are scored as the agent wrote them; the harness does not overwrite them with tool
   values. Disagreements with the tool results are measured afterwards (metrics/pilot.py `state_violations`).
 - An invalid report (unparseable, non-numeric or non-finite pose, malformed map) is replaced by the previous report
-  dead-reckoned through this step's odometry (`fallback`, counted). Model failures inside a step (output cap,
+  dead-reckoned through this step's odometry (`fallback`, counted). A report whose content is complete but whose
+  last one to three closing characters are missing is completed and counted (`checks.repaired_chars`,
+  tools_d5.parse_report_ex), the same rule for every arm. Model failures inside a step (output cap,
   turn cap, context overflow) produce such a fallback row.
 - Infrastructure failures (a server that keeps refusing or timing out after the provider's retries, a malformed
   request) raise out of `replay_seed` without writing the step, so a rerun resumes at that step (report Section
@@ -205,8 +207,9 @@ def replay_seed(agent, system_text, log_doc, out_path, budget, max_steps, log=pr
         if out["error"] == "budget cap reached":
             log("seed %s: budget cap reached during step %d; step not written" % (seed, rec["step"]))
             return False
-        rep = t5.parse_report(out["final_text"])
+        rep, repaired = t5.parse_report_ex(out["final_text"])
         checks = t5.report_checks(rep, obs)
+        checks["repaired_chars"] = repaired
         if checks["valid"]:
             estimate, next_prev, fallback = rep, rep, False
             last_valid = rep

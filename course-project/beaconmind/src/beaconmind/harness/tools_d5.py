@@ -141,19 +141,65 @@ def run_tool(name, args, obs, prev, state):
     return err("unknown tool.")
 
 
-def parse_report(text):
-    """The D8 report from the final text: the whole text, a fenced block, or the outermost {...}."""
+MAX_REPAIR = 3
+
+
+def closing_completion(text):
+    """The characters that close an unfinished JSON value: an open string's quote, then the open arrays and objects
+    in reverse order. None if the text is not an unfinished prefix (an unmatched closer)."""
+    stack, in_str, esc = [], False, False
+    for ch in text:
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch in "{[":
+            stack.append("}" if ch == "{" else "]")
+        elif ch in "}]":
+            if not stack or stack.pop() != ch:
+                return None
+    return ('"' if in_str else "") + "".join(reversed(stack))
+
+
+def parse_report_ex(text):
+    """The D8 report from the final text and the number of closing characters the harness had to add.
+
+    Tried in order: the whole text, a fenced block, the outermost {...}; then, symmetric for every arm, the text from
+    its first '{' completed with at most MAX_REPAIR closing characters (an open string's quote, then closing
+    brackets), for a report whose content is complete but whose last characters are missing (dev gate 2026-11-10: 6
+    of 9 invalid Qwen3.8 reports parsed after adding '}' or '"}'). Returns (report or None, repaired characters)."""
     if not text:
-        return None
+        return None, 0
     t = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
     for cand in (t, t[t.find("{"): t.rfind("}") + 1] if "{" in t else ""):
         try:
             rep = json.loads(cand)
             if isinstance(rep, dict):
-                return rep
+                return rep, 0
         except (ValueError, TypeError):
             continue
-    return None
+    if "{" in t:
+        body = t[t.find("{"):].rstrip()
+        tail = closing_completion(body)
+        if tail and len(tail) <= MAX_REPAIR:
+            try:
+                rep = json.loads(body + tail)
+                if isinstance(rep, dict):
+                    return rep, len(tail)
+            except (ValueError, TypeError):
+                pass
+    return None, 0
+
+
+def parse_report(text):
+    """The D8 report from the final text (see parse_report_ex)."""
+    return parse_report_ex(text)[0]
 
 
 def _num(v):

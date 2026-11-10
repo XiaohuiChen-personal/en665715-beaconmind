@@ -219,6 +219,7 @@ def llm_metrics(rows, doc):
         valid_rate=sum(1 for r in rows if r["checks"]["valid"]) / n,
         valid_rate_real=sum(1 for r in real if r["checks"]["valid"]) / len(real) if real else None,
         fallbacks=sum(1 for r in rows if r["fallback"]), padded_steps=sum(1 for r in rows if r.get("padded")),
+        repaired_reports=sum(1 for r in real if (r["checks"].get("repaired_chars") or 0) > 0),
         unverified_fix_claims=sum(1 for r in real if r.get("fix_verified") is False),
         verified_fix_claims=sum(1 for r in real if r.get("fix_verified") is True),
         errors={e: sum(1 for r in real if (r["error"] or "").split(":")[0] == e)

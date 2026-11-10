@@ -188,7 +188,10 @@ class OpenAIChatAgent:
             reasoning = _reasoning(m)
             tcs = list(m.tool_calls or [])
             u = _usage(resp)
+            server_stop = (getattr(ch, "model_extra", None) or {}).get("stop_reason")   # vLLM: the stop token or string
             turns.append({"seconds": dt, "finish_reason": ch.finish_reason, "finish": ch.finish_reason, "usage": u,
+                          "server_stop_reason": server_stop if isinstance(server_stop, (int, str)) else None,
+                          "content_tail": (m.content or "")[-40:],
                           "tokens": tokens(u), "model": getattr(resp, "model", None), "seed": seed,
                           "n_tool_calls": len(tcs), "content_chars": len(m.content or ""),
                           "reasoning_chars": len(reasoning or ""), "reasoning": reasoning, "cost_usd": 0.0})

@@ -394,3 +394,31 @@ def test_state_violations(episode):
 
 def test_huge_integer_is_not_a_number():
     assert t5._num(10 ** 400) is False and t5._num(1.5) is True and t5._num(float("nan")) is False
+
+
+@pytest.mark.parametrize("text,repaired", [
+    ('{"a": 1, "note": "done."', 1),                  # missing the final brace
+    ('{"a": 1, "note": "kept the pose (1.2, -0.5).', 2),   # missing the closing quote and brace (dev gate case)
+    ('{"a": [1, 2', 2),
+    ('{"a": "q\\"x', 2),                               # an escaped quote stays inside the string
+    ('{"a": {"b": 1}, "note": "x"}', 0),
+])
+def test_closing_repair(text, repaired):
+    rep, n = t5.parse_report_ex(text)
+    assert isinstance(rep, dict) and n == repaired
+    assert t5.parse_report(text) == rep
+
+
+@pytest.mark.parametrize("text", ['{"a": 1, ""b": 2}', '{"a": {"b": {"c": {"d": 1', '{"a": 1}}', "no json"])
+def test_no_repair_for_real_syntax_errors_or_long_tails(text):
+    assert t5.parse_report_ex(text) == (None, 0)
+
+
+def test_repaired_report_is_valid_and_counted(episode, tmp_path):
+    rep = dict(episode["records"][0]["report"], decision="NONE")
+    text = json.dumps(rep)[:-1]                       # drop the final brace
+    agent = oc.OpenAIChatAgent(_Client([_resp(_msg(content=text))]), "k", CFG)
+    out = tmp_path / "r.jsonl"
+    assert rp.replay_seed(agent, "SYS", episode, out, rp.Budget(1.0), 1, log=lambda m: None)
+    row = json.loads(out.read_text())
+    assert row["checks"]["valid"] and row["checks"]["repaired_chars"] == 1 and not row["fallback"]

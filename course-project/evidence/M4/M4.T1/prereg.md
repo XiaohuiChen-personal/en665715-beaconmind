@@ -58,7 +58,9 @@ claimed full fix that one of the step's own `fix_pose` results supports, given t
 the reported pose and map are scored **as the agent wrote them** (never replaced by tool values), and their
 disagreements with the tools are measured (`state_violations`, plan C5.4's rule); a report that does not parse, or
 has a non-finite or non-numeric pose or a malformed map, is replaced by the previous report dead-reckoned through the
-step's odometry (`fallback`, counted). Model failures inside a step — the output cap, the 30-turn cap, a context
+step's odometry (`fallback`, counted). A report whose text stops one to three closing characters short (an open
+string's quote and closing brackets, nothing else) is completed and counted as `repaired` (`tools_d5.parse_report_ex`,
+the same rule for every arm). Model failures inside a step — the output cap, the 30-turn cap, a context
 overflow, an unexpected finish reason — end the step as such a fallback. Infrastructure failures — a server that
 still fails after 7 attempts (3 for a client timeout of 3,600 s), a malformed request — stop the seed without writing
 the step.
@@ -186,6 +188,11 @@ the sim-to-real gap, descriptively (tape ground truth cannot resolve 3 cm).
 19. **B0 is rounded at every step** (report precision), so a pure dead-reckoning arm ties it exactly; the pilot
     rounded nothing in B0.
 20. **Latency:** besides the per-seed 95th percentiles, a 95th percentile pooled over all of an arm's steps.
+21. **Closing-character repair** (new; the pilot's parser had none): in the Qwen3.8 gate, 9 of about 110 reports did
+    not parse; 6 of them were complete except for the final `}` or `"}` (the server's own short answers came back
+    whole, so the cause, model or server, is not known; each turn now logs vLLM's stop reason and the content's last
+    characters). Counting those as invalid would score punctuation, not estimation. The rule completes at most three
+    closing characters, applies to every arm, and the count of repaired reports is reported per arm.
 
 ## 9. Freeze
 
