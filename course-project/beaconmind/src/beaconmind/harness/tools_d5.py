@@ -37,6 +37,39 @@ TOOLS = [
 MOVES = ("FORWARD_25", "FORWARD_10", "BACKWARD_10", "TURN_LEFT_30", "TURN_RIGHT_30")
 
 
+_INT = re.compile(r"^-?\d+$")
+_FLOAT = re.compile(r"^-?(\d+\.\d*|\.\d+|\d+)([eE][-+]?\d+)?$")
+
+
+def coerce_numeric_strings(value):
+    """Tool arguments with numeric strings turned into numbers, recursively; returns (value, changed).
+
+    vLLM's gemma4 tool-call parser returns the numbers inside an object argument that the schema leaves untyped
+    (`pose`, `prior`, `matches`) as strings ("30" for 30; checked on 2026-11-10), where Gemma's own call syntax
+    leaves them unquoted. The harness applies this to every arm's arguments before the tool runs and before scoring,
+    so a parser's quoting is not scored as a model error. Non-numeric strings (labels, actions, reasons) are kept."""
+    if isinstance(value, dict):
+        out, changed = {}, False
+        for k, v in value.items():
+            out[k], c = coerce_numeric_strings(v)
+            changed = changed or c
+        return out, changed
+    if isinstance(value, list):
+        out, changed = [], False
+        for v in value:
+            x, c = coerce_numeric_strings(v)
+            out.append(x)
+            changed = changed or c
+        return out, changed
+    if isinstance(value, str):
+        t = value.strip()
+        if _INT.match(t):
+            return int(t), True
+        if _FLOAT.match(t):
+            return float(t), True
+    return value, False
+
+
 def schema(props):
     js = {}
     for k, t in props.items():

@@ -142,7 +142,7 @@
         "max_tokens_reason": "32768 is 14x the largest turn of the 2026-11-10 Qwen gate (2,347 tokens; median 441) and is reached before the 3600 s client timeout at the slowest measured decode rate under 8 concurrent requests, so a runaway generation ends as a counted 'length' fallback, not a timeout (adversarial review 2026-11-10)"
       }
     },
-    "gemma4-26b": {
+    "gemma4-26b-ollama": {
       "provider": "ollama",
       "base_url": "http://127.0.0.1:11435/v1",
       "model": "gemma4:26b-a4b-it-bf16",
@@ -162,7 +162,40 @@
         "reasoning_replay_field": "reasoning",
         "server": "tools/serve_gemma4.sh: a user-level `ollama serve` (Ollama 0.40.11, the host binary) on 127.0.0.1:11435 reading the system model store, 8 parallel slots of 65,536 tokens; the system service on 11434 has one slot",
         "sampling_source": "Ollama Modelfile defaults (temperature 1, top_k 64, top_p 0.95), not sent; thinking is Ollama's default for this model",
-        "max_tokens_reason": "32768 is 14x the largest turn of the 2026-11-10 Qwen gate (2,347 tokens; median 441) and is reached before the 3600 s client timeout at the slowest measured decode rate under 8 concurrent requests, so a runaway generation ends as a counted 'length' fallback, not a timeout (adversarial review 2026-11-10)"
+        "max_tokens_reason": "32768 is 14x the largest turn of the 2026-11-10 Qwen gate (2,347 tokens; median 441) and is reached before the 3600 s client timeout at the slowest measured decode rate under 8 concurrent requests, so a runaway generation ends as a counted 'length' fallback, not a timeout (adversarial review 2026-11-10)",
+        "note": "superseded on 2026-11-10 by gemma4-26b (vLLM): about 10 minutes a step with 8 seeds in parallel on llama.cpp"
+      }
+    },
+    "gemma4-26b": {
+      "provider": "vllm",
+      "base_url": "http://127.0.0.1:8001/v1",
+      "model": "google/gemma-4-26B-A4B-it",
+      "api_key_env": null,
+      "thinking": true,
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64
+      },
+      "price_usd_per_mtok": {
+        "input": 0,
+        "cached_input": 0,
+        "output": 0
+      },
+      "price_checked": null,
+      "max_turns_per_step": 30,
+      "request_timeout_s": 3600,
+      "options": {
+        "max_tokens": 32768,
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "reasoning_replay_field": "reasoning",
+        "server": "tools/serve_gemma4_vllm.sh (container bm-gemma4-vllm, image qwen38-flash-dgx:v0.30 = vLLM 0.30.0, google/gemma-4-26B-A4B-it snapshot 4d7ae498, --tool-call-parser gemma4 --reasoning-parser gemma4)",
+        "sampling_source": "the checkpoint's generation_config.json (temperature 1.0, top_k 64, top_p 0.95), sent explicitly",
+        "reasoning_replay_check": "2026-11-10 /tokenize+/detokenize: the field `reasoning` renders as <|channel>thought ... <channel|> in the replayed model turn; `reasoning_content` is dropped",
+        "max_tokens_reason": "as the Qwen arm: a runaway generation ends as a counted fallback before the client timeout",
+        "parser_note": "the gemma4 tool parser returns numbers inside untyped object arguments as strings; the harness coerces numeric strings for every arm (tools_d5.coerce_numeric_strings)"
       }
     }
   }

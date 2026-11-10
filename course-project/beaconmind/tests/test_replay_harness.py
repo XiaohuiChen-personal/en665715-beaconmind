@@ -422,3 +422,24 @@ def test_repaired_report_is_valid_and_counted(episode, tmp_path):
     assert rp.replay_seed(agent, "SYS", episode, out, rp.Budget(1.0), 1, log=lambda m: None)
     row = json.loads(out.read_text())
     assert row["checks"]["valid"] and row["checks"]["repaired_chars"] == 1 and not row["fallback"]
+
+
+def test_numeric_strings_in_tool_arguments_are_coerced():
+    v, c = t5.coerce_numeric_strings({"pose": {"x_m": "0.1", "y_m": "-2", "theta_deg": "3.5e1"}, "det": "0",
+                                      "matches": [{"det": "1", "beacon": "B12"}], "candidates": ["B3", "B3b"],
+                                      "action": "FORWARD_25", "reason": "12 deg off"})
+    assert c and v == {"pose": {"x_m": 0.1, "y_m": -2, "theta_deg": 35.0}, "det": 0,
+                       "matches": [{"det": 1, "beacon": "B12"}], "candidates": ["B3", "B3b"],
+                       "action": "FORWARD_25", "reason": "12 deg off"}
+    assert t5.coerce_numeric_strings({"a": 1, "b": "x"}) == ({"a": 1, "b": "x"}, False)
+
+
+def test_stringified_nested_numbers_still_reach_the_tool(episode):
+    """The gemma4 parser's output shape: the tool runs on numbers, the raw arguments are kept."""
+    obs = _obs(episode, 1)
+    raw = '{"pose": {"x_m": "0.0", "y_m": "0.0", "theta_deg": "0.0"}, "forward_m": 0.25, "left_m": 0, "dtheta_deg": 0}'
+    client = _Client([_resp(_msg(tool_calls=[("compose_odometry", raw)]), "tool_calls"), _resp(_msg(content="{}"))])
+    out = oc.OpenAIChatAgent(client, "k", CFG).step("SYS", obs, None, rp.Budget(1.0), lambda m: None)
+    c = out["calls"][0]
+    assert c["result"].get("status") != "error" and c["result"]["x_m"] == pytest.approx(0.25)
+    assert c["args"]["pose"]["theta_deg"] == 0.0 and c["args_raw"] == raw

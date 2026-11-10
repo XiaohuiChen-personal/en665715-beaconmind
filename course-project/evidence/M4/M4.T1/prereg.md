@@ -42,13 +42,14 @@ association, map and fidelity to the procedure. RQ4 (secondary, new): do the thr
 | B2 | The coded procedure (AGENT-DESIGN D7), which also chose the moves of every log |
 | L2: `claude-opus-5-5` | Anthropic Messages, adaptive thinking, effort medium, max_tokens 64,000, prompt caching (the 2026-10-29 pilot's settings) |
 | L2: `qwen38-flash-xhigh` | `nvidia/Qwen3.8-Flash-Next-NVFP4` on vLLM (`tools/serve_qwen38.sh`, the M1.T15 server), thinking on at the template's default effort `xhigh` (the model card's benchmark setting), temperature 1.0, top_p 0.95, top_k 20 (the checkpoint's generation config), max_tokens 32,768, a per-request sampling seed |
-| L2: `gemma4-26b` | `gemma4:26b-a4b-it-bf16` on a user-level Ollama 0.40.11 with 8 slots (`tools/serve_gemma4.sh`; the same model files as the host's Ollama), thinking on (Ollama's default for this model), the Modelfile's sampling (temperature 1, top_k 64, top_p 0.95), max_tokens 32,768, a per-request sampling seed |
+| L2: `gemma4-26b` | `google/gemma-4-26B-A4B-it` (Google's bf16 checkpoint, snapshot 4d7ae498) on vLLM (`tools/serve_gemma4_vllm.sh`; vLLM 0.30.0 with `--tool-call-parser gemma4 --reasoning-parser gemma4`), thinking on (`enable_thinking`, the model card's switch), temperature 1.0, top_p 0.95, top_k 64 (the checkpoint's generation config), max_tokens 32,768, a per-request sampling seed |
 
 Every LLM arm gets the byte-identical system prompt (`prompts/robot_system_prompt_v3.3.txt`), step message and nine
 tools, at most 30 turns per step, one stateless call per observation, replay mode (moves are refused). Reasoning is
 sent back inside a step's tool loop (Anthropic thinking blocks; the `reasoning` field for the local servers, checked
-by rendering on the live vLLM server). **Repeats: K = 1.** Seeds run 8 at a time, in an order shuffled with seed
-20261110. The Opus arm's spend cap is **US$250** (expected about US$150–160: the pilot's mean cost per step was
+by rendering on both live vLLM servers). **Repeats: K = 1.** Seeds run 8 at a time for Opus and Qwen3.8 (Qwen's server
+has 8 slots) and 16 at a time for Gemma 4 (16 slots), in an order shuffled with seed 20261110; concurrency changes
+latency, not what a model is asked. The Opus arm's spend cap is **US$250** (expected about US$150–160: the pilot's mean cost per step was
 US$0.070–0.079 in every 20-step band, p90 about US$0.092; 1,976 steps). If the cap binds, the run stops, the cause is
 checked, and the remaining steps are run after a recorded increase; the cap is a guard against runaway spend, not a
 design element.
@@ -60,7 +61,9 @@ disagreements with the tools are measured (`state_violations`, plan C5.4's rule)
 has a non-finite or non-numeric pose or a malformed map, is replaced by the previous report dead-reckoned through the
 step's odometry (`fallback`, counted). A report whose text stops one to three closing characters short (an open
 string's quote and closing brackets, nothing else) is completed and counted as `repaired` (`tools_d5.parse_report_ex`,
-the same rule for every arm). Model failures inside a step — the output cap, the 30-turn cap, a context
+the same rule for every arm). Tool arguments that are numeric strings ("30") are turned into numbers before the tool
+runs and before scoring, for every arm (`tools_d5.coerce_numeric_strings`; vLLM's gemma4 parser returns the numbers
+inside untyped object arguments as strings); the raw arguments are logged. Model failures inside a step — the output cap, the 30-turn cap, a context
 overflow, an unexpected finish reason — end the step as such a fallback. Infrastructure failures — a server that
 still fails after 7 attempts (3 for a client timeout of 3,600 s), a malformed request — stop the seed without writing
 the step.
@@ -141,11 +144,20 @@ the sim-to-real gap, descriptively (tape ground truth cannot resolve 3 cm).
 ## 7. Development data, and what it was used for
 
 - The 2026-10-29 pilot (Opus on dev seeds 1000–1004, both drift levels): the effect size and SD in §5's power table.
-- Gate runs of 2026-11-10 on dev seeds 1010–1017 at 2 % drift (Qwen3.8 xhigh; Gemma 4), full episodes, 8 at a time
-  (`data/main/gate/`; `evidence/M4/M4.T2/`). Used for: checking that each arm completes episodes with valid reports;
-  the output cap of the local arms (the largest Qwen turn was 2,347 tokens, median 441); the 8 parallel seeds (vLLM's
-  aggregate generation was about 125 tokens/s at 8 requests, 60–80 at 4); K = 1 (about 160 Qwen steps an hour). No
-  prompt, tool, threshold, metric or test was changed after looking at any LLM output in them.
+- Gate runs of 2026-11-10 on dev seeds (2 % drift), all partial by decision (the harness and its failure modes, not
+  the models' scores, were the question; `data/main/gate/`):
+  - Qwen3.8 xhigh, seeds 1010–1017, 8 at a time: the first 11–19 steps of each seed (116 steps; stopped once the step
+    time had grown to about 4.6 minutes). 9 reports did not parse; 6 of them were complete but for the final `}` or
+    `"}` (the closing-character repair, deviation 21). The largest turn was 2,347 output tokens (median 441); vLLM's
+    aggregate generation was about 125 tokens/s at 8 requests and 60–80 at 4.
+  - Gemma 4 on the user-level Ollama (8 slots), seeds 1010–1017: step 0 only (535–785 s a step, about 8.5 tokens/s
+    per slot); valid reports, no tool calls. It moved to vLLM for throughput (deviation 22).
+  - Gemma 4 on vLLM, seeds 1010–1019, 10 at a time, at most 12 steps: about 91 tokens/s in aggregate, about 4,000
+    output tokens and 450 s a step; step 0 again without tool calls. The tool-call path (and the numeric-string
+    coercion it needed) is checked on its later steps.
+  Used for: checking that each arm completes steps with valid reports; the output cap of the local arms; the
+  concurrency; K = 1; the repair and coercion rules (both found here, both applied to every arm). No prompt, tool,
+  threshold, metric or test was changed in response to any arm's estimates.
 - B0, B1, B2 on dev seeds: B1's design (the scale calibration, after the B1 review) and §5's power rows.
 
 ## 8. Deviations from the report's plan of 2026-10-29, with reasons
@@ -193,6 +205,9 @@ the sim-to-real gap, descriptively (tape ground truth cannot resolve 3 cm).
     whole, so the cause, model or server, is not known; each turn now logs vLLM's stop reason and the content's last
     characters). Counting those as invalid would score punctuation, not estimation. The rule completes at most three
     closing characters, applies to every arm, and the count of repaired reports is reported per arm.
+22. **Gemma 4 serving:** the roster's Gemma 4 26B-A4B is served from Google's official bf16 checkpoint on vLLM, not the
+    locally built bf16 GGUF in Ollama first planned (same model and precision; Ollama ran one step in about 10 minutes
+    with 8 seeds in parallel, about 41 hours for the sweep). Its parser needed the numeric-string coercion (§3).
 
 ## 9. Freeze
 

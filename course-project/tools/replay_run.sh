@@ -53,6 +53,11 @@ if "bm-qwen38" in (out("docker", "ps", "--format", "{{.Names}}") or "").split():
     src = next((m["Source"] for m in mounts if m.get("Destination") == "/qwen38/chat_template.jinja"), None)
     if src:
         info["chat_template_sha12"] = hashlib.sha256(open(src, "rb").read()).hexdigest()[:12]
+if "bm-gemma4-vllm" in (out("docker", "ps", "--format", "{{.Names}}") or "").split():
+    info["gemma_vllm_container"] = "bm-gemma4-vllm"
+    info["gemma_image_id"] = out("docker", "inspect", "bm-gemma4-vllm", "--format", "{{.Image}}")
+    args = json.loads(out("docker", "inspect", "bm-gemma4-vllm", "--format", "{{json .Args}}") or "[]")
+    info["gemma_snapshot"] = next((a.rsplit("/", 1)[-1] for a in args if "/snapshots/" in a), None)
 if out("tmux", "has-session", "-t", "bm-gemma4") is not None:
     info["ollama_server"] = "bm-gemma4 on 127.0.0.1:11435, OLLAMA_NUM_PARALLEL=8, OLLAMA_CONTEXT_LENGTH=65536 (tools/serve_gemma4.sh)"
     info["ollama_binary"] = out("/usr/local/bin/ollama", "--version")

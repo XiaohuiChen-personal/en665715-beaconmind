@@ -220,8 +220,12 @@ class OpenAIChatAgent:
                         res = t5.err("The arguments are not a JSON object.")
                         calls.append({"tool": name, "args": {}, "args_raw": raw, "result": res})
                     else:
+                        args, coerced = t5.coerce_numeric_strings(args)
                         res = t5.rnd(t5.run_tool(name, args, obs, prev, state))
-                        calls.append({"tool": name, "args": args, "result": res})
+                        call = {"tool": name, "args": args, "result": res}
+                        if coerced:
+                            call["args_raw"] = raw
+                        calls.append(call)
                     messages.append({"role": "tool", "tool_call_id": tc_msg["id"], "content": json.dumps(res)})
                 continue
             final = (m.content or "").strip()

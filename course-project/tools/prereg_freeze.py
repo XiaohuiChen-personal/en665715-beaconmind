@@ -36,7 +36,7 @@ FROZEN = [
     "beaconmind/src/beaconmind/baselines/b1_gtsam.py", "beaconmind/src/beaconmind/metrics/pilot.py",
     "beaconmind/src/beaconmind/metrics/stats.py", "beaconmind/src/beaconmind/metrics/judge.py",
     "tools/pilot_record.py", "tools/replay_run.py", "tools/replay_run.sh", "tools/b1_run.py", "tools/study_analyze.py",
-    "tools/study_judge.py", "tools/pilot_judge.py", "tools/serve_qwen38.sh", "tools/serve_gemma4.sh",
+    "tools/study_judge.py", "tools/pilot_judge.py", "tools/serve_qwen38.sh", "tools/serve_gemma4_vllm.sh",
 ]
 DESIGN = {
     "study": "main-2026-11", "condition": "drift2 (2 % systematic odometry over-read, duplicated IDs)",
@@ -45,7 +45,8 @@ DESIGN = {
     "arms": {"B0": "dead reckoning, rounded at every step", "B1": "GTSAM iSAM2 online estimate, odometry-scale "
              "calibration, oracle association", "B2": "coded procedure (drives the log)",
              "L2": ["claude-opus-5-5", "qwen38-flash-xhigh", "gemma4-26b"]},
-    "repeats": 1, "max_steps": 150, "workers": 8, "order_seed": 20261110, "opus_cap_usd": 250, "judge_cap_usd": 25,
+    "repeats": 1, "max_steps": 150, "workers": {"claude-opus-5-5": 8, "qwen38-flash-xhigh": 8, "gemma4-26b": 16},
+    "order_seed": 20261110, "opus_cap_usd": 250, "judge_cap_usd": 25,
     "primary_endpoint": "unaligned ATE-RMSE over all steps of the episode, per seed, at report precision",
     "family_1": "H1[arm]: ATE(arm)-ATE(B0)<0, the three LLM arms, Holm at 0.05; a test not run counts as p=1",
     "family_2": "H2[arm]: log(ATE(arm)/ATE(B1))-log 2<0, Holm at 0.05, tested only if every H1 is rejected",
@@ -85,7 +86,6 @@ def environment():
     home = pathlib.Path.home()
     tpl = home / ".cache/huggingface/qwen38-flash-dgx/chat-templates/" \
         "models--nvidia--Qwen3.8-Flash-Next-NVFP4--fc694b54fb0174e0913e6adf86691ef85a4ead47-fp8hybrid.jinja"
-    man = pathlib.Path("/usr/share/ollama/.ollama/models/manifests/registry.ollama.ai/library/gemma4/26b-a4b-it-bf16")
     venv = home / ".venvs/beaconmind/bin/python"
     pkgs = run(str(venv), "-c", "import importlib.metadata as m, json; print(json.dumps({p: m.version(p) for p in "
                "('numpy','scipy','matplotlib','gtsam')}))")
@@ -95,7 +95,10 @@ def environment():
     return {"qwen38_chat_template_sha256": sha(tpl) if tpl.exists() else None,
             "qwen38_image_id": run("docker", "image", "inspect", "qwen38-flash-dgx:v0.30", "--format", "{{.Id}}"),
             "beaconmind_ros_image_id": run("docker", "image", "inspect", "beaconmind-ros:humble", "--format", "{{.Id}}"),
-            "gemma4_manifest_sha256": sha(man) if man.exists() else None,
+            "gemma4_snapshot": run("ls", str(home / ".cache/huggingface/hub/models--google--gemma-4-26B-A4B-it/snapshots")),
+            "gemma4_weights_index_sha256": sha(next((home / ".cache/huggingface/hub/models--google--gemma-4-26B-A4B-it/snapshots")
+                                                  .glob("*/model.safetensors.index.json"))) if (home / ".cache/huggingface/hub/"
+                                                  "models--google--gemma-4-26B-A4B-it/snapshots").exists() else None,
             "ollama_version": run("/usr/local/bin/ollama", "--version"),
             "host_venv_packages": json.loads(pkgs) if pkgs else None,
             "container_packages": json.loads(cont) if cont else None}

@@ -105,8 +105,12 @@ def agent_step(client, system_blocks, tools, obs, prev, budget, log, settings=No
             results = []
             for b in uses:
                 args = b.input if isinstance(b.input, dict) else {}
+                args, coerced = t5.coerce_numeric_strings(args)      # the same rule as every arm (tools_d5)
                 res = t5.rnd(t5.run_tool(b.name, args, obs, prev, state))
-                calls.append({"tool": b.name, "args": args, "result": res})
+                call = {"tool": b.name, "args": args, "result": res}
+                if coerced:
+                    call["args_raw"] = b.input
+                calls.append(call)
                 results.append({"type": "tool_result", "tool_use_id": b.id, "content": json.dumps(res)})
             messages.append({"role": "user", "content": results})
             continue
