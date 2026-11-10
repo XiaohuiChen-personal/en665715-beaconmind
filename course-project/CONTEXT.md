@@ -100,6 +100,15 @@ overwrites newer local files (it once replaced a newer `prereg.md`, restored).
 
 **Still needs Xiaohui: 0.3 (car network)** — see above. Everything in section 1 runs without him.
 
+**Decision (Xiaohui, 2026-11-10):** the closed-loop demo episodes (the simulation take and the car episodes, work list
+3.5 and 4.3) use Claude Opus 5.5, not Qwen3.8: about 15 minutes an episode instead of 1-1.5 hours. **No reflash is
+needed for the project:** the Pico keeps `buildK2a_d485d7ab` (K2 source, access-point build; moves are bounded on the host
+over its `/pico/cmd_vel`, wheel ticks and `/pico/imu/data`, as in the 40 Module 9 runs) and the camera keeps `bm_cam-0.2`
+(access-point build, brightness and saturation 0, hmirror 1 saved in NVS; capture size is set per session with
+`/control`, calibration needs no firmware change). Reflash only if they had to leave the access point (house builds
+`buildK2w_4b70a0f3`, `bm_cam_v02.house.bin`) or a check fails. Confirm the running Pico image when it joins (node
+`/pico_fusion`).
+
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-10: the re-scope text, the code, the runs and this entry.
 
 ## 2026-11-02 — camera color fixed; what the Module 9 real-robot session changed on the car

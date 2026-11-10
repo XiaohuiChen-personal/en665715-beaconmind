@@ -714,11 +714,11 @@ the session of 2026-11-09.
 | 3.2 | Rehearse every real scenario in kinsim (rule R1) | M3.T12 | Claude | S |
 | 3.3 | Practice run on the car (not scored) | M3.T12 | both | S |
 | 3.4 | ≥ 10 real episodes driven by B2 (≥ 5 if short of time) | M3.T12 | both | M–L |
-| 3.5 | 2–3 closed-loop Qwen3.8 episodes on the car, including the demo take | M3.T18 lite, M6.T3 | both | M |
+| 3.5 | 2–3 closed-loop Claude Opus 5.5 episodes on the car, including the demo take (Xiaohui, 2026-11-10) | M3.T18 lite, M6.T3 | both | M |
 | 3.6 | Replay of the three arms on the real logs; sim-to-real gap | M3.T19, M4.T13 | Claude | S–M |
 | 4.1 | Closed loop in kinsim (the model chooses, the validator checks) | M2.T1, M2.T7, M2.T19 | Claude | M |
 | 4.2 | ROSA demo setup (`bm-tools` MCP server, trimmed ROSA in `rosa-ros2`, environment server for kinsim and car) | M6.T2, M6.T7, M6.T8 | Claude | M |
-| 4.3 | Demo script and the simulation take | M6.T4, M6.T10 | Claude | S |
+| 4.3 | Demo script and the simulation take (Claude Opus 5.5) | M6.T4, M6.T10 | Claude | S |
 | 4.4 | Video: simulation part and car part, time-lapse, cards; Xiaohui's voice-over | M6.T11, T12, T14, T15, T16 | Claude; Xiaohui narrates | M |
 | 4.5 | Stretch: Isaac Sim re-render of the simulation take | M6.T13 | Claude | M |
 | 5.1–5.3 | Report: requirements, rewrite of Experiments, Results, Conclusion and Abstract (real setup and sim-to-real included), review, disclosure, build | M5 | Claude; Xiaohui reads | M |
@@ -733,6 +733,11 @@ real-car pose error is final-pose error, not ATE); contact acceptance (M3.T15); 
 closed-loop sweep (M4.T3, M4.T5, M4.T14, M2.T20; H3 becomes descriptive); the stretch arms (M4.T7–T9); the sweep
 infrastructure (M4.T10, covered by `tools/replay_run.py`); M1.T11 (superseded), M1.T13, M1.T14, M2.T13, M2.T18.
 Done by the re-scope: M1.T15 (roster) and M6.T1 (deliverables).
+
+**Closed-loop demo model (Xiaohui, 2026-11-10):** the closed-loop demo episodes — the simulation take and the car
+episodes — use **Claude Opus 5.5** (about 15 s a step, so about 15 minutes an episode, against about 1–1.5 hours for
+Qwen3.8 at about 1–2 minutes a step; about US$5 an episode at the pilot's cost per step). The study's replay arms are
+unchanged.
 
 **Open decisions settled by the re-scope.** OD4: L1 and L3 dropped. OD19: the reduced scope above. OD20: no
 closed-loop sweep, so no random explorer. OD1: no request suite. OD8: Qwen3.8-Flash-Next with thinking at the
