@@ -1,0 +1,48 @@
+{
+  "schema": "bm.checkerboard-1",
+  "generated": "2026-11-10",
+  "generator": "course-project/tools/make_checkerboard.py",
+  "display": {
+    "label": "iPhone 18 Pro Max",
+    "screen_px": [
+      2868,
+      1320
+    ],
+    "ppi": 460.0,
+    "orientation": "landscape"
+  },
+  "squares": [
+    13,
+    6
+  ],
+  "inner_corners": [
+    12,
+    5
+  ],
+  "inner_corner_count": 60,
+  "top_left_square": "black",
+  "quiet_min_squares": 1.0,
+  "square_px": 165,
+  "origin_px": [
+    361,
+    165
+  ],
+  "board_px": [
+    2145,
+    990
+  ],
+  "quiet_px": {
+    "left": 361,
+    "right": 362,
+    "top": 165,
+    "bottom": 165
+  },
+  "square_mm_predicted": 9.1109,
+  "board_mm_predicted": [
+    118.44,
+    54.67
+  ],
+  "note": "Predicted sizes hold only when the phone shows the PNG 1:1 (full screen, not zoomed). Confirm with the ruler check in evidence/M1/M1.T7/board/README.md; calibration uses square_m = square_mm_predicted / 1000 if the check passes, else the measured long span / cols / 1000.",
+  "png": "checkerboard_12x5_2868x1320.png",
+  "png_sha256": "339306a2cdaf82dd2c8217df2674898acdefb3216047891de4c9ad87c16e9edc"
+}

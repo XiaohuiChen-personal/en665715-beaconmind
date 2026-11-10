@@ -119,6 +119,8 @@ over its `/pico/cmd_vel`, wheel ticks and `/pico/imu/data`, as in the 40 Module 
 `buildK2w_4b70a0f3`, `bm_cam_v02.house.bin`) or a check fails. Confirm the running Pico image when it joins (node
 `/pico_fusion`).
 
+**M1.T7 board (2026-11-10):** Xiaohui will show the checkerboard on their phone instead of printing it. `tools/make_checkerboard.py` drew `evidence/M1/M1.T7/board/checkerboard_12x5_2868x1320.png`: 13 × 6 squares (12 × 5 inner corners) of 165 px = 9.111 mm at the phone's native 2868 × 1320, 460 ppi. A copy is in the Mac's `~/Downloads`. The README there has the phone settings, the ruler check (118.4 ± 1.0 mm over 13 squares), the scaled distances, and a simulated OpenCV check. That check found the plan's fixed 11 × 11 `cornerSubPix` window wrong for this board (2.6–8.8 px RMS); size the window from the corner spacing instead. The M1.T7 plan note lists the changed steps. M1.T17 (capture size) still comes first.
+
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-10: the re-scope text, the code, the runs and this entry.
 
 ## 2026-11-02 — camera color fixed; what the Module 9 real-robot session changed on the car
