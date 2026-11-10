@@ -19,6 +19,26 @@ project tree an instructor opens for review.
 The course's final project deadline is **2026-12-13**. That date is a course fact.
 It is not the due date of the class-project code-repository link.
 
+**Xiaohui presents on Tuesday 2026-12-01 (Group 1), and all four project deliverables are
+due then, 10 points each:** the slides, a demo **recording** (a video, not a live demo),
+the report, and this repository's link (EN.665.715 lecture of 2026-10-27; confirmed by
+Xiaohui on 2026-11-09). The target is to finish by **2026-11-25**. The plan was re-scoped
+for this on 2026-11-09: `course-project/plan/README.md` §3.6 is the authority for what
+remains, and it overrides older scope text in the plan.
+
+Two standing rules (Xiaohui, 2026-11-09; plan §3.6):
+
+- **R1 — always sim-to-real.** The real car is in scope. Every real-car session is first
+  rehearsed in simulation (the kinematic simulator, with the same arena layout, start,
+  agent, prompt and tools) and compared with that rehearsal.
+- **R2 — record every real run.** One evidence folder per session holds the phone video,
+  a rosbag of the car's topics, the camera frames, the agent's traces and tool calls, a
+  terminal capture, the tape readings and a README. Never drive the car without the
+  recorder (`M3.T27`).
+
+The LLM arms are Claude Opus 5.5, Qwen3.8-Flash-Next (vLLM) and Gemma 4 26B-A4B (Ollama),
+set in `course-project/configs/providers.json` (Xiaohui, 2026-11-09).
+
 BeaconMind asks whether a language-model agent can keep its own pose and AprilTag
 map on a small differential-drive car. Code does the geometry. A validator gates
 each move. Do not describe work as finished when `course-project/CONTEXT.md` says
@@ -124,7 +144,21 @@ Project containers, Isaac Sim, vLLM, and Pico or ESP32-CAM flashing run on the
 DGX Spark host named `spark-2a60`. Do not write a Tailscale IP or a tailnet DNS
 name into this file or into a new public note.
 
-Copy files to that host with `tar` over `ssh`, not `rsync`.
+Since 2026-11-10 the Spark has a **git clone of this repository at
+`~/Projects/en665715-beaconmind`**, and that clone is the project's working tree there
+(git-ignored `course-project/data/` lives in it; the older tar copy under the private
+course repo's clone is stale). Move code by commit, push and `git pull --ff-only` on the
+Spark; for uncommitted work, `course-project/tools/sync_to_spark.sh` copies the working
+copy over with `tar` through `ssh`. Never use `rsync` to the Spark (its Tailscale SSH check
+corrupts rsync's stream). `course-project/tools/pull_evidence.sh` copies a task's evidence
+back. The host venv `~/.venvs/beaconmind` (Python 3.12, gtsam 4.3.0) imports `beaconmind`
+from that clone.
+
+Model servers on the Spark: `course-project/tools/serve_qwen38.sh start|wait|stop` runs
+Qwen3.8-Flash-Next on vLLM at `127.0.0.1:8000` (container `bm-qwen38`, about 97 GB of the
+121 GB); Gemma 4 runs in the host's Ollama at `127.0.0.1:11434` (about 52 GB). The two do
+not fit at the same time: stop one before loading the other. Replay runs go through
+`course-project/tools/replay_run.sh` (a one-off `beaconmind-ros` container).
 
 The project container is **`beaconmind-ros`** (ROS 2 Humble, Ubuntu 22.04),
 defined in `course-project/docker/`. Compose project name `beaconmind`, container

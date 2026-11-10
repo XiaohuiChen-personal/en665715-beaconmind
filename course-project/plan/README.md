@@ -4,6 +4,11 @@ Written 2026-10-05. Project: **BeaconMind**, the EN.665.715 capstone. Owner and 
 **Xiaohui Chen**. Final deadline: **2026-12-13**. The plan has an order but no dates; Xiaohui decides
 when each task runs.
 
+> **Re-scoped 2026-11-09 — read §3.6 first.** Xiaohui presents on **2026-12-01**, and all four project
+> deliverables are due then; the target is to finish by **2026-11-25**. §3.6 lists the work that remains, the two
+> standing rules (sim-to-real, and recordings of every real run), the three-model roster, and the tasks dropped
+> (`dropped (cut line)` in the status tables). Where §3.4 or a milestone file disagrees with §3.6, §3.6 wins.
+
 This file is the contract that the six milestone files (§9) build on. Revised 2026-10-06 after the
 per-milestone reviews and a cross-plan consistency review (`REVIEW.md`), and on 2026-10-24 after the car
 firmware research note `course-project/research/2026-10-24-car-firmware-lessons-and-pid.md` (L11 reuse rule,
@@ -190,7 +195,7 @@ non-stretch tasks are done. Effort: S = one session, M = 2–3, L = 4 or more (�
 - M2.T19 (S) B2 decisions: D7 step 7 (EXPLORE E1–E5, GO_TO_BEACON, RETURN_TO_START, contact recovery, refused turn)
 - M2.T20 (S) Metrics B: missions and SPL, exploration, refusal
 
-**M3** — [`M3-real-car.md`](M3-real-car.md), 26 tasks (T21–T24 added 2026-10-24; T25–T26 added 2026-10-29)
+**M3** — [`M3-real-car.md`](M3-real-car.md), 27 tasks (T21–T24 added 2026-10-24; T25–T26 added 2026-10-29; T27 added 2026-11-10)
 - M3.T1 (S) Safety hardware: STBY pull-down, wheels-up stand, parts purchase, power-path decision
 - M3.T2 (M) Firmware skeleton logic: boot disarmed, arm, `/estop`, heartbeat watchdog, boot id, state; host tests
 - M3.T3 (S) Encoders: quadrature counting, direction signs, counts per wheel revolution
@@ -217,6 +222,7 @@ non-stretch tasks are done. Effort: S = one session, M = 2–3, L = 4 or more (�
 - M3.T24 (M) Floor re-tune of the wheel PID and the left encoder's scale (after the wheels-down gate)
 - M3.T25 (S) Camera Wi-Fi rejoin while running, or a dated replug decision (added 2026-10-29)
 - M3.T26 (S) Host adapter from C2 IMU and wheel topics into the EKF inputs (added 2026-10-29)
+- M3.T27 (S) Real-run recorder for rule R2 (added 2026-11-10, §3.6)
 
 **M4** — [`M4-benchmark.md`](M4-benchmark.md), 16 tasks
 - M4.T1 (M) Pre-registration: hypotheses, endpoints, episode counts from the pilot power analysis, seeds, roster, budget; frozen before the test seeds run
@@ -541,6 +547,9 @@ when M3.T22 is done; it is not a prerequisite. M5.T2, M5.T3 and M5.T10 also use 
 
 ### 3.4 Cut line and critical path to 2026-12-13
 
+> **Superseded on 2026-11-09 by §3.6** (presentation and deliverables due 2026-12-01). The text below is the
+> 2026-10-06/24 plan, kept for its reasoning.
+
 **Cut line (APPROACH §10, proposal talk track):** if time runs short, deliver **sim-only L2 + B1 with 2–3
 models, plus replay of real-car logs.** In plan terms that is: all of M1; all of M2; M3.T1–T17, T19, T20
 and T21–T24 (the 10 real logs with moves chosen by B2 or by the operator, not an LLM, and their replay by
@@ -649,6 +658,91 @@ v3.4. Until then, build to the default and label it "proposed default (M1.T10 co
 M6 has its own decision list MD1–MD7 (ROSA tool set, how ROSA reaches the robot, the `rosa-ros2` mount,
 demo seeds, simulation footage, video editing, slide display), each with a default, in
 `M6-demo-presentation.md` "M6 decisions"; M6.T1 and M6.T2 ask them.
+
+### 3.6 Re-scope of 2026-11-09: the work to the 2026-12-01 presentation (overrides §3.4)
+
+**Facts.** Xiaohui presents in Group 1 on **Tuesday 2026-12-01** (EN.665.715 lecture of 2026-10-27; confirmed by
+Xiaohui on 2026-11-09: "I will present on Dec 1st"). Four deliverables, **10 points each, are due at presentation
+time**: the slides, a **demo recording** (a video, not a live demo), the project report, and the code repository
+(GitHub link). Xiaohui's target is to finish **before Thanksgiving**, i.e. by Wednesday **2026-11-25**; the days
+after that are buffer and rehearsal. 2026-12-13 stays the course's project date, but nothing is planned after
+2026-12-01. On 2026-11-09 the plan's own estimate for the old cut line was about 175 sessions, of which about 10
+were done, so the scope below replaces it.
+
+**Standing rules (Xiaohui, 2026-11-09).**
+- **R1 — Always sim-to-real.** The real car is in scope. Every real-car session is first rehearsed in simulation
+  with the same arena layout, start pose, agent, prompt and tools, and the real run is compared with that
+  rehearsal. "Simulation" means the kinematic simulator (kinsim, `envs/kinsim_lite.py`); the Isaac Sim twin is
+  dropped (an Isaac re-render of the demo take, M6.T13, is a stretch).
+- **R2 — Record every real run.** Whenever the real robot runs, one evidence folder per session holds the phone
+  video, a rosbag of the car's topics, the camera frames, the agent's traces and tool calls, a terminal capture,
+  the tape readings and a short README. The car is never driven without the recorder.
+
+**Roster (Xiaohui, 2026-11-09).** Three LLM arms: **Claude Opus 5.5** (Anthropic API, the pilot's settings),
+**Qwen3.8-Flash-Next** NVFP4 on vLLM (`tools/serve_qwen38.sh`), **Gemma 4 26B-A4B** on Ollama's OpenAI-compatible
+endpoint; plus B0 (dead reckoning), B1 (GTSAM iSAM2, oracle association) and B2 (the coded procedure). The only
+new provider code is one OpenAI-compatible provider (vLLM and Ollama). Settings are in `configs/providers.json`;
+the pre-registration (M4.T1) fixes them.
+
+**The work, in dependency order** (S = one session, M = 2–3). Section numbers are the ones Xiaohui approved in
+the session of 2026-11-09.
+
+| # | Work | Tasks | Who | Size |
+| --- | --- | --- | --- | --- |
+| 0.1 | Record the scope, the date and rules R1–R2 (this section, the status tables, `CONTEXT.md`, both `AGENTS.md`) | — | Claude | S |
+| 0.2 | The Spark gets a git clone of this repo (`~/Projects/en665715-beaconmind`); sync and evidence scripts point at it | L6 | Claude | S |
+| 0.3 | Car network up (`ap_net.sh up`, needs Xiaohui's sudo), camera relay, car and camera join | — | Xiaohui + Claude | S |
+| 1.1 | OpenAI-compatible provider (vLLM, Ollama); provider-neutral replay loop | M2.T7, M2.T14 | Claude | S–M |
+| 1.2 | Serve Qwen3.8 and Gemma 4; tool-call gate on dev seeds | M4.T2 lite, M4.T11 | Claude | S |
+| 1.3 | Throughput with several episodes at once | — | Claude | S |
+| 1.4 | B1 (GTSAM iSAM2, oracle association) | M2.T9 | Claude | M |
+| 1.5 | Pre-registration (seeds, arms, hypotheses, one run per seed, analysis-code hash) | M4.T1 lite | Claude | S |
+| 1.6 | Held-out kinsim logs at 2 % drift | M2.T11, M4.T12 | Claude | S |
+| 1.7 | Replay sweep of the three arms | M4.T4 lite, M2.T12 | Claude (unattended) | M |
+| 1.8 | Judge, statistics, figures | M4.T6, M4.T16 lite | Claude | M |
+| 2.1 | STBY pull-down fitted, or a written waiver | M3.T1 | Xiaohui | S |
+| 2.2 | Camera capture size | M1.T17 | both | S |
+| 2.3 | Camera calibration (checkerboard) → `configs/camera.json` | M1.T7 | both | S |
+| 2.4 | Tag detection on real frames; range and bearing error → real noise model | M1.T8, M3.T16 lite | both | M |
+| 2.5 | Arena: floor, walls, tags (D3 layout), taped tag positions and start → real world file | M3.T10, M2.T2 lite | Xiaohui builds, Claude checks | M |
+| 2.6 | Host-side bounded-move executor on the car's current K2 image (an AGENT-DESIGN v3.4 change) | M3.T6 lite, M1.T10 | Claude | M |
+| 2.7 | Out-of-band STOP and latch | M3.T13 | Claude | S |
+| 2.8 | Floor check of distance, turn angle and wheel scale → `configs/car.json` | M3.T7/T8 lite | both | S–M |
+| 2.9 | Real-car backend with the kinsim interface | M3.T9 lite, M1.T12 | Claude | M |
+| 2.10 | Run recorder for rule R2 | M3.T27 | Claude | S |
+| 3.1 | Kinsim copy of the real arena with the measured noise | M2.T3 | Claude | S |
+| 3.2 | Rehearse every real scenario in kinsim (rule R1) | M3.T12 | Claude | S |
+| 3.3 | Practice run on the car (not scored) | M3.T12 | both | S |
+| 3.4 | ≥ 10 real episodes driven by B2 (≥ 5 if short of time) | M3.T12 | both | M–L |
+| 3.5 | 2–3 closed-loop Qwen3.8 episodes on the car, including the demo take | M3.T18 lite, M6.T3 | both | M |
+| 3.6 | Replay of the three arms on the real logs; sim-to-real gap | M3.T19, M4.T13 | Claude | S–M |
+| 4.1 | Closed loop in kinsim (the model chooses, the validator checks) | M2.T1, M2.T7, M2.T19 | Claude | M |
+| 4.2 | ROSA demo setup (`bm-tools` MCP server, trimmed ROSA in `rosa-ros2`, environment server for kinsim and car) | M6.T2, M6.T7, M6.T8 | Claude | M |
+| 4.3 | Demo script and the simulation take | M6.T4, M6.T10 | Claude | S |
+| 4.4 | Video: simulation part and car part, time-lapse, cards; Xiaohui's voice-over | M6.T11, T12, T14, T15, T16 | Claude; Xiaohui narrates | M |
+| 4.5 | Stretch: Isaac Sim re-render of the simulation take | M6.T13 | Claude | M |
+| 5.1–5.3 | Report: requirements, rewrite of Experiments, Results, Conclusion and Abstract (real setup and sim-to-real included), review, disclosure, build | M5 | Claude; Xiaohui reads | M |
+| 6.1 | Slides on the JHU template, talk track, validator | M6.T5 | Claude | M |
+| 6.2 | Public repo for the instructor (README, video link, branches, disclosure audit) | M6.T6 | Claude | S |
+| 6.3 | Rehearse the 15-minute talk | M6.T17 | Xiaohui | S |
+
+**Dropped** (status `dropped (cut line)`, one-line reason in each status row): the Isaac twin (M2.T4–T6,
+M2.T15–T17, M4.T15, M6.T9); the project Pico firmware and its tuning (M3.T2–T5, M3.T14, M3.T20–T26); the overhead
+ground-truth camera (M3.T11, M3.T17; ground truth on the car is tape: tag positions, start and end pose, so
+real-car pose error is final-pose error, not ATE); contact acceptance (M3.T15); the request suite and every
+closed-loop sweep (M4.T3, M4.T5, M4.T14, M2.T20; H3 becomes descriptive); the stretch arms (M4.T7–T9); the sweep
+infrastructure (M4.T10, covered by `tools/replay_run.py`); M1.T11 (superseded), M1.T13, M1.T14, M2.T13, M2.T18.
+Done by the re-scope: M1.T15 (roster) and M6.T1 (deliverables).
+
+**Open decisions settled by the re-scope.** OD4: L1 and L3 dropped. OD19: the reduced scope above. OD20: no
+closed-loop sweep, so no random explorer. OD1: no request suite. OD8: Qwen3.8-Flash-Next with thinking at the
+template's default reasoning effort `xhigh` (the model card's benchmark setting). OD21: not reached (no project
+firmware). The others keep their defaults until M1.T10 records v3.4.
+
+**If time runs short** (applied in this order, at any point): (1) never start the Isaac stretch; (2) drop B1
+from the report (H2 is then not tested); (3) drop the Gemma arm; (4) record the demo from the experiment harness
+instead of ROSA; (5) real episodes from 10 down to 5. Rules R1 and R2 are never cut, nor are the report, the
+slides and the video.
 
 ---
 

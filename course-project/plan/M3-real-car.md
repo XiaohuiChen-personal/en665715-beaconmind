@@ -242,32 +242,33 @@ numbers as of 2026-10-24):
 
 | Task | Title | Status | Effort | Evidence | Last updated | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| M3.T1 | Safety hardware: STBY pull-down, wheels-up stand, parts purchase, power-path decision | todo | S | — | 2026-10-05 | STOP hotkey part is M3.T13; power-bank trial is M3.T20 |
-| M3.T2 | Firmware skeleton logic: boot disarmed, arm, `/estop`, heartbeat watchdog, boot id, state; host tests | todo | M | — | 2026-10-24 | needs M3.T14 and M3.T23; sets up the control context (core 1 or a timer) |
-| M3.T3 | Encoders: quadrature counting, direction signs, counts per wheel revolution | todo | S | — | 2026-10-24 | powered stand runs, no hand-turning (2026-10-23); battery on, so needs M3.T1 |
-| M3.T4 | Motors: direction mapping (forward = +x), wheel-speed PID, speed cap | todo | M | — | 2026-10-24 | settles OD10; PWM-frequency A/B before the curve; full PID tuning is M3.T21 |
-| M3.T5 | BNO055: IMUPLUS yaw, gyro integration, motor magnetic interference | todo | M | — | 2026-10-05 | settles OD13 |
-| M3.T6 | Bounded-move executor: five moves, stall and bump, timeout, result codes | todo | M | — | 2026-10-29 | **2026-10-29:** turn stop is the Pico yaw minus a coast lead measured on these motors, not `/odometry/filtered`. Distance stops on encoder counts. Coast lead is not the PID |
-| M3.T7 | Wheels-down gate (§W), wheels up; link latency → `watchdog_ms` | todo | M | — | 2026-10-05 | |
-| M3.T8 | UMBmark odometry calibration; update `configs/car.json` | todo | M | — | 2026-10-24 | after M3.T24 (the first floor runs are now M3.T24's) |
-| M3.T9 | Real-car bridge in `beaconmind-ros`: Pico telemetry, move client, real env backend | todo | M | — | 2026-10-05 | |
-| M3.T10 | W8 physical arena: walls, tags printed and measured, survey, real arena spec | todo | M | — | 2026-10-05 | |
-| M3.T11 | Overhead ground-truth camera: mount, calibrate, roof tag, GT node | todo | M | — | 2026-10-05 | accuracy acceptance is M3.T17 |
-| M3.T12 | Real runs part 1: ≥ 10 real observation logs (C9.1) | todo | L | — | 2026-10-05 | in the cut line |
-| M3.T13 | Out-of-band STOP hotkey and the latch file | todo | S | — | 2026-10-05 | split from M3.T1 |
-| M3.T14 | Firmware build chain: project micro-ROS library, UDP transport, first node | todo | M | — | 2026-10-29 | Stays todo. Gate before extra Pico topics. Library on the car is still 3 publishers and 2 subscriptions (Module 5 `colcon.meta`; K2 did not raise it). This task builds 6 and 6 |
-| M3.T15 | Contact detection acceptance: ≥ 10 wall drives; bump threshold | todo | S | — | 2026-10-05 | |
-| M3.T16 | Real observation pipeline on the car: static accuracy check | todo | S | — | 2026-10-05 | |
-| M3.T17 | Ground-truth accuracy acceptance (5 cm / 3°) | todo | S | — | 2026-10-05 | split from M3.T11 |
-| M3.T18 | Real runs part 2: closed-loop L2 runs with 2–3 models | todo | L | — | 2026-10-05 | dropped at the cut line |
-| M3.T19 | Real runs part 3: replay of every available arm on the real logs | todo | M | — | 2026-10-05 | replay of 2–3 models is in the cut line |
-| M3.T20 | Untethered power path: power-bank trial (OD9) | todo | S | — | 2026-10-29 | Stays todo. The Pico-on-bank / motors-on-AA split has been in use since 2026-10-20. That is not this trial's acceptance (jumper-out check, 30 min auto-off, arena watchdog) |
-| M3.T21 | Wheel-speed PID tuning on the stand: step responses, low-speed hold, battery range | todo | M | — | 2026-10-29 | Stays todo. First question is whether these motors can hold about 0.05 m/s. If they cannot, the 45°/s limit is a C0 change, not an EKF change. PID is not yet justified by a real-car run. Feed-forward plus count stops plus IMU-closed turns stays the short-time fallback |
-| M3.T22 | Link baseline at the floor spot with the camera streaming (Assignment 7 firmware as the instrument) | todo | M | — | 2026-10-29 | Stays todo. **2026-10-29:** the docs name K2 as the image, not Build J. Module 8 streamed the camera on the floor and did not run the four arms of ≥ 600 s. Camera rejoin is M3.T25, not this task |
-| M3.T23 | Port the K2 link, safety, and IMU layer into the project firmware | todo | M | — | 2026-10-29 | Stays todo. **2026-10-29:** copy source is `assignments/assignment8/module-8-sensor-fusion/firmware/pico_fusion/` (K2), not Assignment 7 J2. J2's Float32 `/pico/imu/heading` cannot feed `ekf.yaml` imu0. The port has not been done. `course-project/firmware/pico/` has no sources |
-| M3.T24 | Floor re-tune of the wheel PID and the left encoder's scale (after the wheels-down gate) | todo | M | — | 2026-10-24 | added 2026-10-24; must finish before M3.T8; sized M, though it may take S–M (one floor session per round) |
-| M3.T25 | Camera Wi-Fi rejoin while running, or a dated replug decision | todo | S | `evidence/M3/M3.T25/` | 2026-10-29 | Not owned by M3.T22. Does not invent a firmware change. bm_cam-0.2 picks a mesh node only at boot |
-| M3.T26 | Host adapter: C2 IMU and wheel topics into the EKF inputs | todo | S | `evidence/M3/M3.T26/` | 2026-10-29 | Pose for logs and for the agent between moves. The move executor does not stop on `/odometry/filtered`. No fifth Pico publisher. No on-Pico EKF |
+| M3.T1 | Safety hardware: STBY pull-down, wheels-up stand, parts purchase, power-path decision | todo | S | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: work list 2.1 (STBY pull-down or a written waiver). STOP hotkey part is M3.T13; power-bank trial is M3.T20 |
+| M3.T2 | Firmware skeleton logic: boot disarmed, arm, `/estop`, heartbeat watchdog, boot id, state; host tests | dropped (cut line) | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no project Pico firmware; the car keeps the K2 image and moves are bounded on the host (work list 2.6). needs M3.T14 and M3.T23; sets up the control context (core 1 or a timer) |
+| M3.T3 | Encoders: quadrature counting, direction signs, counts per wheel revolution | dropped (cut line) | S | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no project firmware; wheel scale is checked on the floor in M3.T8 lite. powered stand runs, no hand-turning (2026-10-23); battery on, so needs M3.T1 |
+| M3.T4 | Motors: direction mapping (forward = +x), wheel-speed PID, speed cap | dropped (cut line) | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no project firmware. settles OD10; PWM-frequency A/B before the curve; full PID tuning is M3.T21 |
+| M3.T5 | BNO055: IMUPLUS yaw, gyro integration, motor magnetic interference | dropped (cut line) | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no project firmware; K2 already publishes BNO055 yaw. settles OD13 |
+| M3.T6 | Bounded-move executor: five moves, stall and bump, timeout, result codes | todo | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, re-scoped: host-side bounded-move executor over the K2 image (work list 2.6), an AGENT-DESIGN v3.4 change. **2026-10-29:** turn stop is the Pico yaw minus a coast lead measured on these motors, not `/odometry/filtered`. Distance stops on encoder counts. Coast lead is not the PID |
+| M3.T7 | Wheels-down gate (§W), wheels up; link latency → `watchdog_ms` | todo | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: wheels-up stand gate of the host-side executor and STOP. |
+| M3.T8 | UMBmark odometry calibration; update `configs/car.json` | todo | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: floor check of distance, turn angle and wheel scale on the arena floor -> car.json (work list 2.8); absorbs M3.T24. after M3.T24 (the first floor runs are now M3.T24's) |
+| M3.T9 | Real-car bridge in `beaconmind-ros`: Pico telemetry, move client, real env backend | todo | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: real-car backend with the kinsim interface (work list 2.9). |
+| M3.T10 | W8 physical arena: walls, tags printed and measured, survey, real arena spec | todo | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: work list 2.5. |
+| M3.T11 | Overhead ground-truth camera: mount, calibrate, roof tag, GT node | dropped (cut line) | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no overhead camera: ground truth is tape (tag positions, start and end pose), stated as a limitation. accuracy acceptance is M3.T17 |
+| M3.T12 | Real runs part 1: ≥ 10 real observation logs (C9.1) | todo | L | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: work list 3.4 (>= 10 B2-driven episodes, >= 5 if short of time), each rehearsed in kinsim first and recorded (README §3.6 rules R1, R2). in the cut line |
+| M3.T13 | Out-of-band STOP hotkey and the latch file | todo | S | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: work list 2.7. split from M3.T1 |
+| M3.T14 | Firmware build chain: project micro-ROS library, UDP transport, first node | dropped (cut line) | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no project firmware. Stays todo. Gate before extra Pico topics. Library on the car is still 3 publishers and 2 subscriptions (Module 5 `colcon.meta`; K2 did not raise it). This task builds 6 and 6 |
+| M3.T15 | Contact detection acceptance: ≥ 10 wall drives; bump threshold | dropped (cut line) | S | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** real runs rely on K2's stall cut-off and the operator; no contact-detection acceptance. |
+| M3.T16 | Real observation pipeline on the car: static accuracy check | todo | S | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: part of work list 2.4. |
+| M3.T17 | Ground-truth accuracy acceptance (5 cm / 3°) | dropped (cut line) | S | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no overhead camera. split from M3.T11 |
+| M3.T18 | Real runs part 2: closed-loop L2 runs with 2–3 models | todo | L | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: 2-3 closed-loop Qwen3.8 episodes on the car, including the demo take (work list 3.5). dropped at the cut line |
+| M3.T19 | Real runs part 3: replay of every available arm on the real logs | todo | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: work list 3.6 (replay of the three LLM arms on the real logs; sim-to-real gap). replay of 2–3 models is in the cut line |
+| M3.T20 | Untethered power path: power-bank trial (OD9) | dropped (cut line) | S | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** the car already runs the Pico from the power bank and the motors from the AA pack. Stays todo. The Pico-on-bank / motors-on-AA split has been in use since 2026-10-20. That is not this trial's acceptance (jumper-out check, 30 min auto-off, arena watchdog) |
+| M3.T21 | Wheel-speed PID tuning on the stand: step responses, low-speed hold, battery range | dropped (cut line) | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no project firmware; K2 drives open loop with the host's heading hold. Stays todo. First question is whether these motors can hold about 0.05 m/s. If they cannot, the 45°/s limit is a C0 change, not an EKF change. PID is not yet justified by a real-car run. Feed-forward plus count stops plus IMU-closed turns stays the short-time fallback |
+| M3.T22 | Link baseline at the floor spot with the camera streaming (Assignment 7 firmware as the instrument) | dropped (cut line) | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** the Spark access point's soaks and the 40 Module 9 runs are the link baseline. Stays todo. **2026-10-29:** the docs name K2 as the image, not Build J. Module 8 streamed the camera on the floor and did not run the four arms of ≥ 600 s. Camera rejoin is M3.T25, not this task |
+| M3.T23 | Port the K2 link, safety, and IMU layer into the project firmware | dropped (cut line) | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no project firmware. Stays todo. **2026-10-29:** copy source is `assignments/assignment8/module-8-sensor-fusion/firmware/pico_fusion/` (K2), not Assignment 7 J2. J2's Float32 `/pico/imu/heading` cannot feed `ekf.yaml` imu0. The port has not been done. `course-project/firmware/pico/` has no sources |
+| M3.T24 | Floor re-tune of the wheel PID and the left encoder's scale (after the wheels-down gate) | dropped (cut line) | M | — | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** folded into M3.T8 lite. added 2026-10-24; must finish before M3.T8; sized M, though it may take S–M (one floor session per round) |
+| M3.T25 | Camera Wi-Fi rejoin while running, or a dated replug decision | dropped (cut line) | S | `evidence/M3/M3.T25/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** camera stays on the access point; a replug is the recovery. Not owned by M3.T22. Does not invent a firmware change. bm_cam-0.2 picks a mesh node only at boot |
+| M3.T26 | Host adapter: C2 IMU and wheel topics into the EKF inputs | dropped (cut line) | S | `evidence/M3/M3.T26/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** the real-car backend composes wheel and IMU telemetry itself; no robot_localization. Pose for logs and for the agent between moves. The move executor does not stop on `/odometry/filtered`. No fifth Pico publisher. No on-Pico EKF |
+| M3.T27 | Real-run recorder for rule R2 (video sync, rosbag, frames, agent traces, terminal, tape sheet) | todo | S | `evidence/M3/M3.T27/` | 2026-11-10 | **Appended 2026-11-10 (README §3.6, work list 2.10).** Every real session runs under it |
 
 ### 0.9 Task list with dependencies and machines
 
@@ -4491,6 +4492,63 @@ M3.T3's; any `stalled` or `bumped` result; anything moving outside the walls; th
 **Estimated effort.** S.
 
 **AI-disclosure note.** Adapter code: `AI-assisted: <model> via <tool>, <YYYY-MM-DD>: wrote the host adapter. No instructor file was pasted.` `ekf-role.md`: the same line, plus that Xiaohui can override the pose-only rule.
+
+---
+### M3.T27 — Real-run recorder for rule R2 (appended 2026-11-10)
+
+**Why.** Rule R2 of README §3.6 (Xiaohui, 2026-11-09): whenever the real robot runs, everything is recorded, so
+that every claim about the car can be checked afterwards and the video, the report and the slides use real
+footage and real traces. The recorder is one command that starts and stops every capture of a session, and one
+folder per session that holds them.
+
+**Prerequisites.**
+
+| Prerequisite | Kind | Check command (machine) | Expected result |
+| --- | --- | --- | --- |
+| Car network up (work list 0.3) | service | `ping -c 3 <pico ip>` from the Spark host | replies |
+| `beaconmind-ros` image | service | `docker image inspect beaconmind-ros:humble` (Spark host) | exists |
+
+**Inputs.** README §3.6 rules R1 and R2; `discussions/module9/tools/record_demo.sh` and `real_run.py` in the
+private course repo (the Module 9 pattern: a clock shown to the phone, tmux capture, one folder per run; study it,
+do not paste it); M3.T9's topic list.
+
+**Steps.**
+
+1. **Mac.** `mkdir -p course-project/evidence/M3/M3.T27`; write `course-project/tools/record_session.sh`
+   (`start <session_id>` / `stop`) and a Python helper if needed.
+2. `start` creates `course-project/data/real/<session_id>/` and starts: a rosbag2 of the car's topics (`ros2 bag
+   record` in `beaconmind-ros`, the topics M3.T9 names), the camera frame saver (every frame the backend uses, with
+   its `X-BM-*` headers), the tmux capture of the agent terminal, and the run log the harness writes; it prints a
+   large clock and the session id for the phone video's first seconds (video sync).
+3. `stop` ends every capture, writes `README.md` (date, operator, firmware build id, battery voltage, room and
+   floor, what ran, which files exist, their sizes and SHA-256 prefixes) and a tape sheet template for the
+   operator's readings.
+4. **Spark host.** Run `start`/`stop` once with the car parked and the agent idle; check every file exists and is
+   non-empty.
+
+**Deliverables.** `course-project/tools/record_session.sh` (and helper), `evidence/M3/M3.T27/dry-run.md`.
+
+**Tests.** Smoke: a 60 s parked session on the Spark produces a non-empty bag (`ros2 bag info` lists the topics),
+at least one frame, a terminal capture and a README; paste the listing.
+
+**Acceptance criteria.**
+
+- [ ] One command starts and one stops every capture of rule R2.
+- [ ] The parked dry run's folder holds the bag, frames, terminal capture, README and tape sheet, all non-empty.
+- [ ] The README records the firmware build id and the battery voltage field.
+
+**Evidence to save** (`evidence/M3/M3.T27/`): `dry-run.md` (the command output and the folder listing).
+
+**Pitfalls and known gotchas.** Containers cannot open connections to the access point's subnet (CONTEXT.md
+2026-11-02; use the Module 9 relay pattern for the camera); `ros2` needs `source /opt/ros/humble/setup.bash` in
+the container; a bag left recording fills the disk, so `stop` must always run (trap on exit).
+
+**Stop-and-ask conditions.** The car moved during the parked dry run; the bag is empty for a topic the car
+should publish.
+
+**Estimated effort.** S.
+
+**AI-disclosure note.** `AI-assisted: <model> via <tool>, <YYYY-MM-DD>: wrote the session recorder.`
 
 ---
 ## Milestone-level integration and smoke test (run once all non-stretch tasks are `done`)

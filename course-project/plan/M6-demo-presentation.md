@@ -101,19 +101,19 @@ toward the 60 % preparation-and-participation part of the grade (AGENTS.md §5, 
 
 | Task | Title | Status | Effort | Evidence | Last updated | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| M6.T1 | Confirm the final deliverables with Xiaohui (formats, lengths, where they are submitted) | todo | S | `evidence/M6/M6.T1/` | 2026-10-05 | Can run now |
+| M6.T1 | Confirm the final deliverables with Xiaohui (formats, lengths, where they are submitted) | done | S | `evidence/M6/M6.T1/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** deliverables confirmed (EN.665.715 lecture 2026-10-27, Xiaohui 2026-11-09): slides, demo recording (video), report, GitHub link, 10 points each, due at the 2026-12-01 presentation (Group 1). Can run now |
 | M6.T2 | ROSA demo runtime in `rosa-ros2`: MCP servers exposing the D5 tools, `RobotSystemPrompts` v3.3+, `accumulate_chat_history=False`, against the Isaac twin | todo | M | `evidence/M6/M6.T2/` | 2026-10-05 | Delivers the `bm-tools` MCP server and container access; the runner is T7–T8, the twin run is T9 |
-| M6.T3 | The same ROSA demo on the car | todo | M | `evidence/M6/M6.T3/` | 2026-10-05 | Dropped at the cut line |
+| M6.T3 | The same ROSA demo on the car | todo | M | `evidence/M6/M6.T3/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: the car part of the demo (work list 3.5). Dropped at the cut line |
 | M6.T4 | Demo script and filming: explore, return to start, go to a named beacon, refuse "follow that person"; time-lapse video | todo | S | `evidence/M6/M6.T4/` | 2026-10-05 | Delivers the script, the shot list and the kinsim dry run; filming and video are T10–T16 |
 | M6.T5 | Slides on the JHU template, validated, with a talk track | todo | M | `evidence/M6/M6.T5/` | 2026-10-05 | |
 | M6.T6 | Final submission package and an AI-disclosure audit of every artifact | todo | S | `evidence/M6/M6.T6/` | 2026-10-05 | Last task of the project |
 | M6.T7 | Demo environment server, file RPC and stub runner (no LLM) | todo | S | `evidence/M6/M6.T7/` | 2026-10-05 | Appended |
 | M6.T8 | ROSA decider, ReAct console, demo trace and tmux capture; kinsim smoke with the real model | todo | S | `evidence/M6/M6.T8/` | 2026-10-05 | Appended |
-| M6.T9 | Isaac twin hookup: 3-step ROSA smoke and an estop check in the twin | todo | S | `evidence/M6/M6.T9/` | 2026-10-05 | Appended |
-| M6.T10 | Simulation demo take in the Isaac twin | todo | S | `evidence/M6/M6.T10/` | 2026-10-05 | Appended; hours of unattended model time |
+| M6.T9 | Isaac twin hookup: 3-step ROSA smoke and an estop check in the twin | dropped (cut line) | S | `evidence/M6/M6.T9/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** Isaac twin dropped. Appended |
+| M6.T10 | Simulation demo take in the Isaac twin | todo | S | `evidence/M6/M6.T10/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, re-scoped: the simulation take runs in kinsim with the top-down view. Appended; hours of unattended model time |
 | M6.T11 | Video logic: edit decision list, time-lapse fitting, frame times, render plan, ffmpeg plan | todo | S | `evidence/M6/M6.T11/` | 2026-10-05 | Appended; pure Python |
 | M6.T12 | Video renderers: terminal frames, belief panel, top-down view, cards | todo | S | `evidence/M6/M6.T12/` | 2026-10-05 | Appended; Pillow |
-| M6.T13 | Isaac Sim re-render of a take's ground-truth trajectory | todo | M | `evidence/M6/M6.T13/` | 2026-10-05 | Appended; fallback is the top-down view |
+| M6.T13 | Isaac Sim re-render of a take's ground-truth trajectory | todo | M | `evidence/M6/M6.T13/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** stretch: Isaac re-render of the kinsim take's ground truth (work list 4.5). Appended; fallback is the top-down view |
 | M6.T14 | Simulation demo video assembly | todo | S | `evidence/M6/M6.T14/` | 2026-10-05 | Appended |
 | M6.T15 | Car demo video assembly (phone footage, terminal, time-lapse) | todo | S | `evidence/M6/M6.T15/` | 2026-10-05 | Appended; dropped at the cut line |
 | M6.T16 | Final demo video: cards, narration, checks | todo | S | `evidence/M6/M6.T16/` | 2026-10-05 | Appended |

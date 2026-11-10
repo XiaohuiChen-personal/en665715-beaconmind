@@ -213,22 +213,22 @@ Count the calendar days left to 2026-12-13 at the start of every session.
 
 | Task | Title | Status | Effort | Evidence | Last updated | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| M4.T1 | Pre-registration: hypotheses, endpoints, episode counts from the pilot power analysis, seeds, roster, budget; frozen before the test seeds run | todo | M | `evidence/M4/M4.T1/` | 2026-10-05 | |
-| M4.T2 | Roster: local candidates served and gated (structured tool calls), frontier gate inside the $100 pilot cap, effort tiers matched, data-governance guard | todo | M | `evidence/M4/M4.T2/` | 2026-10-05 | |
-| M4.T3 | Request suite: ≥ 30 unsafe and ≥ 10 valid requests, suite runner and scoring (C10.6), dev dry run | todo | M | `evidence/M4/M4.T3/` | 2026-10-05 | |
-| M4.T4 | Replay sweep on held-out simulated logs (unique and duplicated IDs), full roster and B0/B1/B2, K ≥ 3 | todo | L | `evidence/M4/M4.T4/` | 2026-10-05 | Mostly unattended compute |
-| M4.T5 | Closed-loop sweep on held-out kinsim seeds (EXPLORE → RETURN_TO_START → GO_TO_BEACON), closed-loop models, B2 and the random explorer | todo | L | `evidence/M4/M4.T5/` | 2026-10-05 | Mostly unattended compute |
-| M4.T6 | Statistics and figures library: Friedman with Holm-corrected Wilcoxon, exact McNemar, seed-clustered bootstrap, effect sizes, power simulation, Pareto front; tested before the freeze | todo | M | `evidence/M4/M4.T6/` | 2026-10-05 | |
-| M4.T7 | Stretch: the L1 and L3 arms (go/no-go) | todo | L | `evidence/M4/M4.T7/` | 2026-10-05 | Optional |
-| M4.T8 | Stretch: the NoMaD/GNM navigation arm (W6) (go/no-go) | todo | L | `evidence/M4/M4.T8/` | 2026-10-05 | Optional |
-| M4.T9 | Stretch: the hidden-ID condition and the V (image) ablation | todo | M | `evidence/M4/M4.T9/` | 2026-10-05 | Optional |
-| M4.T10 | Sweep infrastructure: interface check, job manifests, resumable sweep runner, spend ledger, holdout guard, cost and time estimator | todo | M | `evidence/M4/M4.T10/` | 2026-10-05 | Appended task |
-| M4.T11 | Dev-seed pilot: roster on dev logs and dev closed loop, latency at concurrency 1, variance, tokens and cost; frontier pilot within $100 | in-progress | M | `evidence/M4/M4.T11/` | 2026-10-29 | Appended task. 2026-10-29: early 5-seed pilot for the report draft (Opus 5.5 only, K=1, two drift levels, judges calibrated): `evidence/M4/M4.T11/README.md` |
-| M4.T12 | Record the held-out simulated observation logs for the frozen test seeds | todo | M | `evidence/M4/M4.T12/` | 2026-10-05 | Appended task |
-| M4.T13 | Real-log replay sweep and the sim-to-real gap | todo | M | `evidence/M4/M4.T13/` | 2026-10-05 | Appended task; needs M3.T12 |
-| M4.T14 | Request-suite scoring on held-out contexts | todo | S | `evidence/M4/M4.T14/` | 2026-10-05 | Appended task |
-| M4.T15 | Isaac closed-loop confirmatory subset | todo | M | `evidence/M4/M4.T15/` | 2026-10-05 | Appended task |
-| M4.T16 | Final analysis: results, tables and figures for M5.T14 | todo | M | `evidence/M4/M4.T16/` | 2026-10-05 | Appended task |
+| M4.T1 | Pre-registration: hypotheses, endpoints, episode counts from the pilot power analysis, seeds, roster, budget; frozen before the test seeds run | todo | M | `evidence/M4/M4.T1/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: work list 1.5 (three arms, drift block, held-out seeds 2000-2199). |
+| M4.T2 | Roster: local candidates served and gated (structured tool calls), frontier gate inside the $100 pilot cap, effort tiers matched, data-governance guard | todo | M | `evidence/M4/M4.T2/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: work list 1.2 (gate on dev seeds 1010-1017). |
+| M4.T3 | Request suite: ≥ 30 unsafe and ≥ 10 valid requests, suite runner and scoring (C10.6), dev dry run | dropped (cut line) | M | `evidence/M4/M4.T3/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no request suite; refusal is shown in the demo only. |
+| M4.T4 | Replay sweep on held-out simulated logs (unique and duplicated IDs), full roster and B0/B1/B2, K ≥ 3 | todo | L | `evidence/M4/M4.T4/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: work list 1.7. Mostly unattended compute |
+| M4.T5 | Closed-loop sweep on held-out kinsim seeds (EXPLORE → RETURN_TO_START → GO_TO_BEACON), closed-loop models, B2 and the random explorer | dropped (cut line) | L | `evidence/M4/M4.T5/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no closed-loop sweep; H3 becomes descriptive. Mostly unattended compute |
+| M4.T6 | Statistics and figures library: Friedman with Holm-corrected Wilcoxon, exact McNemar, seed-clustered bootstrap, effect sizes, power simulation, Pareto front; tested before the freeze | todo | M | `evidence/M4/M4.T6/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: statistics for H1, H2 and the model comparison (work list 1.8). |
+| M4.T7 | Stretch: the L1 and L3 arms (go/no-go) | dropped (cut line) | L | `evidence/M4/M4.T7/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** stretch dropped. Optional |
+| M4.T8 | Stretch: the NoMaD/GNM navigation arm (W6) (go/no-go) | dropped (cut line) | L | `evidence/M4/M4.T8/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** stretch dropped. Optional |
+| M4.T9 | Stretch: the hidden-ID condition and the V (image) ablation | dropped (cut line) | M | `evidence/M4/M4.T9/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** stretch dropped. Optional |
+| M4.T10 | Sweep infrastructure: interface check, job manifests, resumable sweep runner, spend ledger, holdout guard, cost and time estimator | dropped (cut line) | M | `evidence/M4/M4.T10/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** tools/replay_run.py (resumable, locked, spend cap, provenance) covers what the sweep needs. Appended task |
+| M4.T11 | Dev-seed pilot: roster on dev logs and dev closed loop, latency at concurrency 1, variance, tokens and cost; frontier pilot within $100 | in-progress | M | `evidence/M4/M4.T11/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: the 2026-10-29 Opus pilot plus the 2026-11-10 gate runs of the local arms. Appended task. 2026-10-29: early 5-seed pilot for the report draft (Opus 5.5 only, K=1, two drift levels, judges calibrated): `evidence/M4/M4.T11/README.md` |
+| M4.T12 | Record the held-out simulated observation logs for the frozen test seeds | todo | M | `evidence/M4/M4.T12/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: work list 1.6. Appended task |
+| M4.T13 | Real-log replay sweep and the sim-to-real gap | todo | M | `evidence/M4/M4.T13/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: work list 3.6. Appended task; needs M3.T12 |
+| M4.T14 | Request-suite scoring on held-out contexts | dropped (cut line) | S | `evidence/M4/M4.T14/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** no request suite. Appended task |
+| M4.T15 | Isaac closed-loop confirmatory subset | dropped (cut line) | M | `evidence/M4/M4.T15/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** Isaac twin dropped. Appended task |
+| M4.T16 | Final analysis: results, tables and figures for M5.T14 | todo | M | `evidence/M4/M4.T16/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: work list 1.8. Appended task |
 
 ## Task list
 

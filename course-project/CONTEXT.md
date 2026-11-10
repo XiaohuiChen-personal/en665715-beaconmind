@@ -1,6 +1,6 @@
 # Course Project Context
 
-Last updated: 2026-11-02
+Last updated: 2026-11-10
 
 **Project name: BeaconMind** (chosen 2026-09-28). "Beacon" for the AprilTags on the walls, "Mind" for
 the language model that owns the pose belief, the beacon map and the SLAM decisions. Use this name in
@@ -9,6 +9,52 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
+
+## 2026-11-10 — re-scope for the 2026-12-01 presentation; work list 0 and 1 started (IN PROGRESS, see the end of this entry)
+
+**Scope (Xiaohui, 2026-11-09; plan/README.md §3.6 is the authority).** Xiaohui presents in Group 1 on
+**2026-12-01**; slides, a demo recording (video), the report and the GitHub link are due then, 10 points each. Target:
+done by **2026-11-25**. Standing rules: **R1** always sim-to-real (every real-car session rehearsed in kinsim first),
+**R2** every real run recorded (video, rosbag, frames, agent traces, terminal, tape; task M3.T27). Roster: Claude Opus
+5.5, Qwen3.8-Flash-Next (vLLM), Gemma 4 26B-A4B (Ollama). The Isaac twin, the project Pico firmware, the overhead
+ground-truth camera, the request suite and the closed-loop sweeps are dropped (`dropped (cut line)` with a reason in each
+status row); M1.T15 and M6.T1 are done. Xiaohui asked for sections 0 and 1 of the work list to run fully automatically,
+with commits and pushes as needed, adversarial reviews where they matter, and decisions made by Claude after weighing
+the options (2026-11-10).
+
+**0.2 Spark working tree.** `~/Projects/en665715-beaconmind` on the Spark is now a git clone of this repository (it was a
+tar copy inside the private course repo's clone, last synced 2026-10-11 to 10-19, so it lacked the URDF, plan and report
+updates). The git-ignored `data/` was copied into the clone (`cp -a --update=none`; the old copy is kept). The host venv
+`~/.venvs/beaconmind` was re-pointed at the clone (`pip install --no-deps -e`; it still imported the old copy).
+`tools/sync_to_spark.sh` and `tools/pull_evidence.sh` were rewritten: both still pointed at the private repo, so a sync
+would have pushed its stale leftovers. Normal path: commit, push, `git pull --ff-only` on the Spark.
+
+**0.3 Car network: NOT done (needs Xiaohui).** `sudo -n true` on the Spark asks for a password, so `ap_net.sh up` cannot
+run unattended. On 2026-11-09 the Spark was on wired Ethernet (`enP7s7`), its radio `wlP9s9` down, nothing on its USB, no
+containers running. The car (`buildK2a_d485d7ab`) and camera still hold the access-point builds.
+
+**1.1 Harness.** `harness/replay.py` (provider-neutral loop; `verify_fix`: the counters reset only on a claimed full fix
+that one of the step's own `fix_pose` results supports; reported poses and maps are scored as written), `harness/
+providers/openai_chat.py` (vLLM and Ollama), `harness/providers/anthropic_messages.py` (the pilot's Opus loop, moved
+unchanged), `harness/anthropic_replay.py` (compatibility shim), `tools/replay_run.py` + `replay_run.sh`, three entries
+in `configs/providers.json`, provider `ollama` in the schema; `tools_d5.report_checks` now rejects NaN/Infinity. Found on
+the live server with `/tokenize` + `/detokenize`: this vLLM build renders replayed reasoning only from a message field
+named `reasoning`; `reasoning_content` is dropped, and the Module 4 harness's inline `<think>` (used for the M1.T15
+latency runs) rendered after a second, empty think block. Tests: 100 passed, 1 skipped in `beaconmind-ros`.
+
+**1.2 Servers.** `tools/serve_qwen38.sh` runs container `bm-qwen38`: the M1.T15 `qwen38-flash` server with the same image,
+arguments and environment, but served as `nvidia/Qwen3.8-Flash-Next-NVFP4` instead of the `Qwen/Qwen3.5-35B-A3B` alias.
+Gemma 4 through Ollama's `/v1` returned well-formed tool calls with thinking on (probe 2026-11-09). Smoke tests:
+Qwen3.8 xhigh 3 steps of dev seed 1000 (42-88 s per step, all valid, poses equal B2's); Opus 3 steps (US$0.14, 7 of 7
+calls match the procedure). Decision: Qwen3.8 runs at the template's default reasoning effort `xhigh` (the model
+card's benchmark setting and the M1.T15 pin); the medium-effort gate was cancelled.
+
+**1.4 B1.** `baselines/b1_gtsam.py` + `tools/b1_run.py`: iSAM2, oracle association, the simulator's sigmas plus the
+logs' rounding; GTSAM's default wildfire threshold (0.001) left the final trajectory up to 1.3 mm from the batch optimum,
+so it is set to 0 and estimates use `calculateBestEstimate`; now within 0.014 mm of batch Levenberg-Marquardt on dev
+seeds 1010-1019. Tests: 4 passed on the Spark venv.
+
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-10: the re-scope text, the code, the runs and this entry.
 
 ## 2026-11-02 — camera color fixed; what the Module 9 real-robot session changed on the car
 
