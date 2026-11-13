@@ -1,6 +1,6 @@
 # Course Project Context
 
-Last updated: 2026-11-10
+Last updated: 2026-11-13
 
 **Project name: BeaconMind** (chosen 2026-09-28). "Beacon" for the AprilTags on the walls, "Mind" for
 the language model that owns the pose belief, the beacon map and the SLAM decisions. Use this name in
@@ -9,6 +9,47 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
+
+## 2026-11-13 — work list 1.7 and 1.8 DONE: the main simulated study's results (section 1 complete)
+
+**Sweep (M4.T4 done).** Every arm finished 1,976 / 1,976 steps on seeds 2000-2029 from a clean `61ca2c7`, with the frozen
+config tags. Opus 5.5: 2026-11-10 02:06-03:35 CST, 1 fallback, US$143.97. Gemma 4 (vLLM): 2026-11-10 02:06 to 11-12
+14:50, 78 fallbacks (70 no parse, 8 output cap), 79 client timeouts in 66 steps (77 retried; seeds 2008 and 2021
+stopped at step 0 and were completed by the single pre-registered resume). At about 7 tokens/s, Gemma's output cap
+takes longer than the 60-minute timeout, so its timeouts were probably long generations re-asked; its fallbacks are a
+lower bound. Qwen3.8: 2026-11-12 14:54 to 11-13 08:07, 12 fallbacks, 97 repaired
+reports. No missing steps.
+
+**Analysis (M4.T16 reduced, done).** `prereg_freeze.py --verify` OK; `study_analyze.py --prereg` → **confirmatory**, no
+provenance problem; byte-identical on a second run. Judge: 900 notes, US$6.27. Hand-off with every number:
+`evidence/M4/M4.T16/results_summary.md`.
+- Median ATE (cm): B0 16.74, B1 1.23, B2 11.68, Opus 12.06, Qwen3.8 11.92, Gemma 4 69.33.
+- **H1** (Holm): Opus HL −2.83 cm [−4.93, −0.75], Holm p 0.0025, **rejected**; Qwen3.8 −4.00 [−6.06, −1.85], 7.2e-5,
+  **rejected**; both **not practical** (upper ends above −3 cm). Gemma 4 sign test, median +56.7 cm [+38.2, +79.2],
+  **not rejected** (worse than dead reckoning on 29 of 30 seeds).
+- **H2 not tested** (the serial gate needs every H1 rejected). Descriptively every arm is more than twice B1 on every
+  seed (HL ratio to B1: 8.9, 8.6, 57).
+- **H4:** Friedman p 5.4e-12, Kendall's W 0.865. Opus − Qwen3.8: HL +0.05 cm, 15 seeds tied, Holm p 0.022, driven by
+  three seeds where Qwen3.8 was lower by 6-18 cm. Both are about 64-65 cm better than Gemma 4.
+- Descriptive: Opus and Qwen3.8 reproduce the coded procedure B2 (within 1 cm on 28 and 26 of 30 seeds; B2 − B0 HL
+  −2.74 cm, so Qwen3.8's extra about 1.3 cm comes from four departures that all helped). Rubric (Sol):
+  0.955, 0.935, 0.407. Post-hoc check (`error_sources.txt`): Gemma 4's error builds up on the 54 % of steps it answers
+  without tools (2.47 cm per step), plus 215 pose jumps with no successful fix. An independent decoder confirms it is
+  not a parsing artefact. An independent adversarial review found no wrong statistic; its 11 wording and script fixes
+  are applied.
+- Figures: `report/figures/fig_study.*` (frozen, Type 3 fonts) and the TrueType `fig_study_log.*` and `fig_study_h1.*`
+  (`evidence/M4/M4.T16/make_figures.py`).
+
+**State.** `bm-qwen38` stopped after the analysis (restart: `bash course-project/tools/serve_qwen38.sh start`), and the
+Gemma container stopped when its arm ended. Still running: the access point, `bm-micro-ros-agent` and `bm-cam-relay`.
+The study data (`data/main/`, git-ignored, about 185 MB) is on the Spark, with a copy on the Mac. The Mac's
+`caffeinate` (kept on until section 1 finished) was stopped.
+
+**Next:** section 2 with Xiaohui: M1.T17 capture size, then M1.T7 calibration with the phone board. Section 5 (report
+Results, M5.T14) can start from `results_summary.md` at any time.
+
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-13: ran the judge, the verify and the analysis; wrote the post-hoc
+check, the figures and this entry.
 
 ## 2026-11-10 — re-scope for the 2026-12-01 presentation; work list 0 and 1: pre-registered study frozen, held-out sweep RUNNING
 

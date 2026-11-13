@@ -1,0 +1,45 @@
+== claude-opus-5-5: 1976 steps, 1975 with a valid report
+  final text: bare JSON object 1964, one fenced JSON block 11
+  independent parse: matches the scored pose 1975
+  final position error split by step kind (sums to 5.46 m = 30 x mean final error 0.18 m):
+    tools, no fix         1134 steps (57.4 % of all, 57.4 % of valid),   +4.45 m,  +0.39 cm per step
+    successful fix_pose    841 steps (42.6 % of all, 42.6 % of valid),   +1.01 m,  +0.12 cm per step
+    fallback                 1 steps ( 0.1 % of all, -),   +0.00 m,  +0.00 cm per step
+  jumps > 5 cm from the harness prior without a successful fix_pose: 0
+  calls with an empty object argument: 0; tool-free steps whose text has tool-call markup: 0
+  tool-error results: 140; most frequent:
+     137 fix_pose          no matched confirmed beacons in this step. Nothing changed.
+       2 predict_observation KeyError: '"B#"'. Nothing changed.
+       1 update_beacon     B# is confirmed; confirmed beacons never move. Nothing changed.
+== qwen38-flash-xhigh: 1976 steps, 1964 with a valid report
+  final text: bare JSON object 1853, one fenced JSON block 14, other 97
+  independent parse: matches the scored pose 1868, not exactly one object with a pose 96
+  final position error split by step kind (sums to 4.89 m = 30 x mean final error 0.16 m):
+    no tool call            36 steps ( 1.8 % of all,  1.8 % of valid),   +0.15 m,  +0.42 cm per step
+    tools, no fix         1087 steps (55.0 % of all, 55.3 % of valid),   +4.08 m,  +0.38 cm per step
+    successful fix_pose    841 steps (42.6 % of all, 42.8 % of valid),   +0.66 m,  +0.08 cm per step
+    fallback                12 steps ( 0.6 % of all, -),   +0.00 m,  +0.00 cm per step
+  jumps > 5 cm from the harness prior without a successful fix_pose: 2
+  calls with an empty object argument: 0; tool-free steps whose text has tool-call markup: 2
+  tool-error results: 862; most frequent:
+     538 fix_pose          no matched confirmed beacons in this step. Nothing changed.
+      61 gate_detection    [{'beacon': 'B#', 'x_m': #, 'y_m': #}] is not a label in PREVIOUS_REPORT's map. 
+      40 gate_detection    [{'beacon': 'B#', 'id': #, 'x_m': #, 'y_m': #}] is not a label in PREVIOUS_REPOR
+      39 gate_detection    [{'beacon': 'B#'}] is not a label in PREVIOUS_REPORT's map. Nothing changed.
+      34 gate_detection    [{'beacon': 'B#', 'x_m': #, 'y_m': #}, {'beacon': 'B#b', 'x_m': #, 'y_m': #}] is
+== gemma4-26b: 1976 steps, 1898 with a valid report
+  final text: bare JSON object 466, one fenced JSON block 1432
+  independent parse: matches the scored pose 1898
+  final position error split by step kind (sums to 31.98 m = 30 x mean final error 1.07 m):
+    no tool call          1060 steps (53.6 % of all, 55.8 % of valid),  +26.21 m,  +2.47 cm per step
+    tools, no fix          592 steps (30.0 % of all, 31.2 % of valid),   +4.59 m,  +0.78 cm per step
+    successful fix_pose    246 steps (12.4 % of all, 13.0 % of valid),   +0.65 m,  +0.26 cm per step
+    fallback                78 steps ( 3.9 % of all, -),   +0.53 m,  +0.68 cm per step
+  jumps > 5 cm from the harness prior without a successful fix_pose: 215
+  calls with an empty object argument: 151; tool-free steps whose text has tool-call markup: 0
+  tool-error results: 448; most frequent:
+     131 compose_odometry  KeyError: 'x_m'. Nothing changed.
+      85 fix_pose          no matched confirmed beacons in this step. Nothing changed.
+      52 fix_pose          B# is not a confirmed, non-suspect beacon in PREVIOUS_REPORT. Nothing changed.
+      36 update_beacon     B# is confirmed; confirmed beacons never move. Nothing changed.
+      19 fix_pose          B#b is not a confirmed, non-suspect beacon in PREVIOUS_REPORT. Nothing changed.

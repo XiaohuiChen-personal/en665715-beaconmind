@@ -1,0 +1,17 @@
+{
+ "claude-opus-5-5": {
+  "steps": 1976,
+  "with_note": 1975,
+  "share": 0.9994939271255061
+ },
+ "qwen38-flash-xhigh": {
+  "steps": 1976,
+  "with_note": 1963,
+  "share": 0.993421052631579
+ },
+ "gemma4-26b": {
+  "steps": 1976,
+  "with_note": 1898,
+  "share": 0.9605263157894737
+ }
+}

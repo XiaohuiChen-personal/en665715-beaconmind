@@ -1,0 +1,21 @@
+items 900, done 0, to do 900, spent $0.00, cap $25.00
+14:10:29 50 / 900 qwen38-flash-xhigh:2001:45 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $0.36 
+14:10:53 100 / 900 claude-opus-5-5:2003:66 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $0.70 
+14:11:15 150 / 900 gemma4-26b:2004:66 {'faithful': 2, 'coverage': 1, 'uncertainty': 0} $1.02 
+14:11:39 200 / 900 qwen38-flash-xhigh:2006:66 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $1.35 
+14:12:06 250 / 900 claude-opus-5-5:2008:60 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $1.73 
+14:12:34 300 / 900 gemma4-26b:2009:55 {'faithful': 0, 'coverage': 1, 'uncertainty': 1} $2.07 
+14:12:56 350 / 900 qwen38-flash-xhigh:2011:56 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $2.39 
+14:13:20 400 / 900 claude-opus-5-5:2013:50 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $2.74 
+14:13:52 450 / 900 gemma4-26b:2014:78 {'faithful': 1, 'coverage': 2, 'uncertainty': 0} $3.15 
+14:14:18 500 / 900 qwen38-flash-xhigh:2016:56 {'faithful': 2, 'coverage': 2, 'uncertainty': 0} $3.55 
+14:14:39 550 / 900 claude-opus-5-5:2018:85 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $3.86 
+14:15:04 600 / 900 gemma4-26b:2019:61 {'faithful': 0, 'coverage': 2, 'uncertainty': 1} $4.24 
+14:15:31 650 / 900 qwen38-flash-xhigh:2021:52 {'faithful': 2, 'coverage': 2, 'uncertainty': 1} $4.59 
+14:15:54 700 / 900 claude-opus-5-5:2023:90 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $4.96 
+14:16:20 750 / 900 gemma4-26b:2024:55 {'faithful': 0, 'coverage': 2, 'uncertainty': 0} $5.33 
+14:16:43 800 / 900 qwen38-flash-xhigh:2026:53 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $5.64 
+14:17:04 850 / 900 claude-opus-5-5:2028:52 {'faithful': 2, 'coverage': 2, 'uncertainty': 2} $5.94 
+14:17:29 900 / 900 gemma4-26b:2029:48 {'faithful': 0, 'coverage': 2, 'uncertainty': 0} $6.27 
+finished, spent $6.27
+EXIT 0
