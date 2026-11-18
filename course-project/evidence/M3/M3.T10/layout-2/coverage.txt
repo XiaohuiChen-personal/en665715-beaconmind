@@ -1,0 +1,24 @@
+Coverage. One heading: share of (position, heading) samples that see at least 1 / at least 2 tags.
+Full turn: share of positions where a turn in place (36 headings) sees at least 1 tag / 2 different tags.
+Visibility as kinsim_lite.detect: field of view 46.9 deg, range 0.25 m to the limit below, incidence <= 60 deg,
+range and bearing from the pose point; no random drop-outs. Positions at least 0.30 m inside the driving
+area, headings every 10 deg. Room: 1102 positions (10 cm grid), the desk blocks the view.
+
+A. Simulator's rule (tag centre inside the field of view), 20 tags:
+             one heading           | full turn            | the printed 12 alone: one heading, full turn
+max range    >=1     >=2           |  >=1     >=2         |  >=1     >=2      >=1     >=2
+   2.0 m    41.8%   20.3%          |  96.7%   86.7%       |  35.4%    3.7%    96.6%   85.0%
+   2.5 m    55.8%   30.0%          |  99.7%   98.7%       |  49.8%   10.3%    99.7%   98.7%
+   3.0 m    67.1%   38.5%          | 100.0%  100.0%       |  61.6%   19.3%   100.0%   99.9%
+
+B. Camera model (configs/camera.json: the WHOLE tag sheet, black square and white border, inside the
+   picture, with lens distortion, the mount's roll, pitch and yaw and the lens 0.12 m ahead of the pose
+   point; this also gives the near limit, about 0.79 m straight ahead), 20 tags:
+             one heading           | full turn            | the printed 12 alone: one heading, full turn
+max range    >=1     >=2           |  >=1     >=2         |  >=1     >=2      >=1     >=2
+   2.0 m    30.0%   12.7%          |  92.8%   80.3%       |  24.3%    1.0%    91.9%   71.5%
+   2.5 m    43.4%   21.8%          |  98.5%   96.3%       |  38.0%    5.0%    98.0%   92.8%
+   3.0 m    54.9%   29.6%          |  99.3%   98.3%       |  49.9%   11.8%    98.8%   96.7%
+
+Block B is the stricter and more faithful one: the detector needs the whole black square and some white
+around it. Both blocks keep the incidence limit and the desk; neither has random drop-outs.

@@ -1,0 +1,27 @@
+Checks of layout real-room-2 (20 tags), tools/room_layout.py. Nominal positions; nothing was moved.
+
+Clashes (door trim, corner, Ethernet stretch, known outlets, neighbouring pages, ID rule): none
+
+Not checkable from the survey:
+  not checked, desk wall: one outlet (the Spark's power brick) between the entrance trim and the desk, place not recorded. Tags there: T00 at 161 cm. The mounting rule applies: slide the page inside its range if it would cover an outlet, and write down the centre.
+  not checked, 295 cm wall: one outlet, place along the wall not recorded. Tags there: T01 at 58 cm, T02 at 148 cm, T17 at 200 cm, T03 at 237 cm, T18 at 269 cm. The mounting rule applies: slide the page inside its range if it would cover an outlet, and write down the centre.
+  not checked, window wall: low outlets, places along the wall not recorded. Tags there: T16 at 14 cm, T05 at 63 cm, T14 at 125 cm, T06 at 163 cm, T13 at 215 cm, T07 at 264 cm, T15 at 314 cm, T08 at 364 cm, T19 at 404 cm. The mounting rule applies: slide the page inside its range if it would cover an outlet, and write down the centre.
+  the outlet places used (angled section 50 cm from corner 4, doors wall 190 cm from corner 1) are estimates from photos; the outlet height (31 cm) is inside a page's height (12-40 cm), so a page at an outlet's place does cover it
+
+Slide ranges narrowed because a new page is a neighbour (the tag itself is not moved):
+  T02 (id 3, 295 cm wall, nominal 148 cm): 128-162 cm, was 128-168 cm
+  T03 (id 23, 295 cm wall, nominal 237 cm): 230-241 cm, was 217-257 cm
+  T05 (id 3, window wall, nominal 63 cm): 50-82 cm, was 43-83 cm
+  T06 (id 12, window wall, nominal 163 cm): 156-177 cm, was 143-183 cm
+  T07 (id 28, window wall, nominal 264 cm): 251-277 cm, was 244-284 cm
+  T08 (id 2, window wall, nominal 364 cm): 351-372 cm, was 344-384 cm
+
+Neighbours on each wall (centre to centre, cm from the wall's corner; a page is 21.6 cm wide):
+  desk wall (512 cm from corner 5): T00 161
+  295 cm wall (295 cm from corner 5): T01 58, T02 148, T17* 200, T03 237, T18* 269
+  angled section (123 cm from corner 4): T12* 20, T04 85
+  window wall (427 cm from corner 3): T16* 14, T05 63, T14* 125, T06 163, T13* 215, T07 264, T15* 314, T08 364, T19* 404
+  doors wall (381 cm from corner 1): T09 27, T10 165, T11 343
+  (* = added)
+
+Against the world file real-room-plus8-160mm-nominal.json (real-room-plus8-160mm-nominal, 20 tags), positions to the millimetre: all 20 tags agree (uid, id, x, y, z, normal, size)

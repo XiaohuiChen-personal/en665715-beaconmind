@@ -1,0 +1,17 @@
+Check of the print file data/real/tags/room-layout-real-room-2-new-tags.pdf (git-ignored), 2026-11-18.
+pdfinfo: 8 pages, 612 x 792 pt (US Letter), as room-layout-real-room-1.pdf (13 pages, same size).
+Each page rasterised with pdftoppm at 300 dpi (2550 x 3300 px = 215.9 x 279.4 mm at 100 percent scale) and read back:
+  page 1: 2550 x 3300 px, decodes as id [1], black square 1889 x 1889 px = 159.94 x 159.94 mm, centre 110.0 mm above the page's bottom edge, 0.0 mm off the page's centre line
+  page 2: 2550 x 3300 px, decodes as id [4], black square 1889 x 1889 px = 159.94 x 159.94 mm, centre 110.0 mm above the page's bottom edge, 0.0 mm off the page's centre line
+  page 3: 2550 x 3300 px, decodes as id [5], black square 1889 x 1889 px = 159.94 x 159.94 mm, centre 110.0 mm above the page's bottom edge, 0.0 mm off the page's centre line
+  page 4: 2550 x 3300 px, decodes as id [6], black square 1889 x 1889 px = 159.94 x 159.94 mm, centre 110.0 mm above the page's bottom edge, 0.0 mm off the page's centre line
+  page 5: 2550 x 3300 px, decodes as id [7], black square 1889 x 1889 px = 159.94 x 159.94 mm, centre 110.0 mm above the page's bottom edge, 0.0 mm off the page's centre line
+  page 6: 2550 x 3300 px, decodes as id [8], black square 1889 x 1889 px = 159.94 x 159.94 mm, centre 110.0 mm above the page's bottom edge, 0.0 mm off the page's centre line
+  page 7: 2550 x 3300 px, decodes as id [9], black square 1889 x 1889 px = 159.94 x 159.94 mm, centre 110.0 mm above the page's bottom edge, 0.0 mm off the page's centre line
+  page 8: 2550 x 3300 px, decodes as id [11], black square 1889 x 1889 px = 159.94 x 159.94 mm, centre 110.0 mm above the page's bottom edge, 0.0 mm off the page's centre line
+  for comparison, page 2 of room-layout-real-room-1.pdf (T00, already printed), read back the same way: id [15], black square 1889 x 1889 px = 159.94 mm, centre 110.0 mm above the bottom edge
+The tool draws the square 1888 px wide (159.85 mm: 160 mm rounded to whole tag cells at 300 dpi, 8 x 236 px); the read-back
+counts one more pixel because the PDF's picture is resampled when it is rasterised. Old and new pages read back alike.
+Result: all eight pages hold one tag each, the right id, and a black square of 159.9 mm, the same size and place as the twelve printed pages.
+When printing: 100 percent (Actual size), black only, Letter; then check a black square with a ruler: 160 mm +/- 1 mm.
+AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: ran this check.

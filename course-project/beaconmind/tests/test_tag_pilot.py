@@ -53,6 +53,26 @@ def test_plan_fits_the_field_of_view():
     assert all(int(r["tag_id"]) == 15 for r in rows)
 
 
+def test_plan_follows_the_tag_size(tmp_path, capsys):
+    tp = load()
+    assert [r["x_m"] for r in tp.plan_rows(CAM, 15, tag_black_m=0.16)] == [r["x_m"] for r in tp.plan_rows(CAM, 15)]
+    small = tp.plan_rows(CAM, 15, height_m=0.1825, tag_black_m=0.10)       # a 100 mm tag standing on the baseboard
+    near = cm.min_full_view_range(CAM, 0.1825, 0.0625, 0.0, margin_px=8.0)
+    first = float([r for r in small if r["part"] == "A"][0]["x_m"])
+    assert first == pytest.approx(math.ceil(near * 20) / 20) and first < 0.70 < float(tp.plan_rows(CAM, 15)[0]["x_m"])
+    for r in small:
+        if r["part"] in "ABE":
+            assert tp.squared_in_view(CAM, float(r["x_m"]), float(r["y_m"]), 0.1825, tp.sheet_half_m(0.10)), r["placement"]
+    # a smaller sheet can stand further to the side
+    assert tp.max_side_offset(CAM, 1.5, +1, 0.1825, tp.sheet_half_m(0.10)) > tp.max_side_offset(CAM, 1.5, +1)
+    out = tmp_path / "plan.csv"
+    assert tp.main(["placements", "--tag-id", "7", "--out", str(out), "--tag-black-m", "0.10", "--tag-height-m", "0.1825"]) == 0
+    assert "a 100 mm tag 0.18 m up" in capsys.readouterr().out
+    assert [r["x_m"] for r in tp.read_rows(str(out))] == [r["x_m"] for r in small]
+    with pytest.raises(SystemExit):
+        tp.main(["placements", "--tag-id", "7", "--out", str(out), "--tag-black-m", "0"])
+
+
 def test_max_side_offset_is_asymmetric_like_the_mount():
     tp = load()
     left, right = tp.max_side_offset(CAM, 2.5, +1), tp.max_side_offset(CAM, 2.5, -1)

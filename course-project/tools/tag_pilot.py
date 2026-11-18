@@ -7,8 +7,10 @@ to the camera or the car, it only reads the session's frames/ folder. Operator p
 course-project/evidence/M1/M1.T8/PROCEDURE.md. Spark host, /usr/bin/python3 (OpenCV, numpy).
 
     tag_pilot.py placements --tag-id 15 --out course-project/data/real/tag_pilot_placements.csv
+                            [--tag-black-m 0.16] [--tag-height-m 0.23]
         Writes the placement plan, fitted to the calibrated field of view (configs/camera.json) and to the distance
-        from which the whole tag is in the picture.
+        from which the whole tag is in the picture. --tag-black-m is the black square's edge (the sheet is taken as
+        that plus a white border of one eighth on each side); --tag-height-m the tag centre's height above the floor.
     tag_pilot.py mark --placement A05 [--session DIR] [--placements CSV] [--frames 30]
         Run when the car stands at placement A05: waits --settle seconds, takes the next --frames frames the recorder
         saves, detects, prints one line (frames, detected, median range and bearing, error against the tape), and
@@ -62,6 +64,11 @@ FRONT_OVERHANG_M = 0.178       # configs/car.json front_overhang_m (camera cable
 
 # ------------------------------------------------------------------ the plan
 
+def sheet_half_m(tag_black_m):
+    """Half the side of a tag's sheet: the black square plus a white border of one eighth of it on each side."""
+    return 0.625 * float(tag_black_m)
+
+
 def squared_in_view(camera, x_m, y_m, height_m=TAG_HEIGHT_M, half_m=TAG_HALF_WITH_BORDER_M, margin_px=8.0):
     """Whole tag (with border) in the picture when the car is squared to the wall: tag centre at (x, y) in
     base_link, its normal pointing back along -x."""
@@ -69,20 +76,22 @@ def squared_in_view(camera, x_m, y_m, height_m=TAG_HEIGHT_M, half_m=TAG_HALF_WIT
     return cm.square_in_view(camera, rng, bearing, height_m, half_m, margin_px, incidence_deg=-bearing)
 
 
-def max_side_offset(camera, x_m, side, height_m=TAG_HEIGHT_M):
+def max_side_offset(camera, x_m, side, height_m=TAG_HEIGHT_M, half_m=TAG_HALF_WITH_BORDER_M):
     """Largest sideways offset (m, positive number) at forward distance x_m with the whole tag still in the picture;
     side +1 = tag to the car's left, -1 = right. 0.0 when it is not in view even on the centre line."""
     y, step = 0.0, 0.005
-    if not squared_in_view(camera, x_m, 0.0, height_m):
+    if not squared_in_view(camera, x_m, 0.0, height_m, half_m):
         return 0.0
-    while y + step < 3.0 and squared_in_view(camera, x_m, side * (y + step), height_m):
+    while y + step < 3.0 and squared_in_view(camera, x_m, side * (y + step), height_m, half_m):
         y += step
     return y
 
 
-def plan_rows(camera, tag_id, height_m=TAG_HEIGHT_M, far_m=3.5):
-    """The placement plan as a list of row dicts."""
-    near = cm.min_full_view_range(camera, height_m, TAG_HALF_WITH_BORDER_M, 0.0, margin_px=8.0)
+def plan_rows(camera, tag_id, height_m=TAG_HEIGHT_M, far_m=3.5, tag_black_m=0.16):
+    """The placement plan as a list of row dicts, for a tag whose black square is tag_black_m wide and whose centre
+    is height_m above the floor."""
+    half = sheet_half_m(tag_black_m)
+    near = cm.min_full_view_range(camera, height_m, half, 0.0, margin_px=8.0)
     first = math.ceil(near * 20.0) / 20.0                                   # next 5 cm step
     rows = []
 
@@ -97,7 +106,7 @@ def plan_rows(camera, tag_id, height_m=TAG_HEIGHT_M, far_m=3.5):
         add("A", x, note="centre line; whole tag in view from %.2f m" % near if x == first else "centre line")
     for x in (1.50, 2.50):
         for side in (1, -1):
-            limit = max_side_offset(camera, x, side, height_m)
+            limit = max_side_offset(camera, x, side, height_m, half)
             for share in (0.5, 0.9):
                 y = round(side * share * limit, 2)
                 if abs(y) >= 0.05:
@@ -762,14 +771,16 @@ def selftest(keep=None, frames_per_placement=12, seed=7, verbose=True):
 
 def cmd_placements(args):
     camera = cm.load_camera(args.camera)
-    rows = plan_rows(camera, args.tag_id, args.tag_height_m, args.far_m)
+    if not args.tag_black_m > 0:
+        raise SystemExit("--tag-black-m must be positive")
+    rows = plan_rows(camera, args.tag_id, args.tag_height_m, args.far_m, args.tag_black_m)
     write_rows(args.out, rows)
-    near_black = cm.min_full_view_range(camera, args.tag_height_m, 0.08, 0.0)
-    near_page = cm.min_full_view_range(camera, args.tag_height_m, TAG_HALF_WITH_BORDER_M, 0.0)
+    near_black = cm.min_full_view_range(camera, args.tag_height_m, args.tag_black_m / 2.0, 0.0)
+    near_page = cm.min_full_view_range(camera, args.tag_height_m, sheet_half_m(args.tag_black_m), 0.0)
     print("%d placements written to %s" % (len(rows), args.out))
-    print("field of view %.1f x %.1f deg; a tag %.2f m up, straight ahead, is whole in the picture from %.2f m "
+    print("field of view %.1f x %.1f deg; a %.0f mm tag %.2f m up, straight ahead, is whole in the picture from %.2f m "
           "(black square) / %.2f m (with its white border) from the axle midpoint"
-          % (camera.hfov_deg, camera.vfov_deg, args.tag_height_m, near_black, near_page))
+          % (camera.hfov_deg, camera.vfov_deg, args.tag_black_m * 1000, args.tag_height_m, near_black, near_page))
     for row in rows:
         x, y = float(row["x_m"]), float(row["y_m"])
         print("  %-4s x %.2f m  y %+.2f m  (range %.2f m, bearing %+5.1f deg)%s  %s"
@@ -786,7 +797,8 @@ def build_parser():
     p = sub.add_parser("placements", help="write the placement plan")
     p.add_argument("--out", required=True)
     p.add_argument("--tag-id", type=int, required=True, help="id of the wall tag the pilot uses")
-    p.add_argument("--tag-height-m", type=float, default=TAG_HEIGHT_M)
+    p.add_argument("--tag-height-m", type=float, default=TAG_HEIGHT_M, help="tag centre above the floor, metres")
+    p.add_argument("--tag-black-m", type=float, default=0.16, help="edge of the black square, metres")
     p.add_argument("--far-m", type=float, default=3.5, help="longest distance the room allows")
     p.add_argument("--camera", default=None)
     p.set_defaults(func=cmd_placements)

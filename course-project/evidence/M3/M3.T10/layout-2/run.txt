@@ -1,0 +1,82 @@
+Checks of layout real-room-2 (20 tags), tools/room_layout.py. Nominal positions; nothing was moved.
+
+Clashes (door trim, corner, Ethernet stretch, known outlets, neighbouring pages, ID rule): none
+
+Not checkable from the survey:
+  not checked, desk wall: one outlet (the Spark's power brick) between the entrance trim and the desk, place not recorded. Tags there: T00 at 161 cm. The mounting rule applies: slide the page inside its range if it would cover an outlet, and write down the centre.
+  not checked, 295 cm wall: one outlet, place along the wall not recorded. Tags there: T01 at 58 cm, T02 at 148 cm, T17 at 200 cm, T03 at 237 cm, T18 at 269 cm. The mounting rule applies: slide the page inside its range if it would cover an outlet, and write down the centre.
+  not checked, window wall: low outlets, places along the wall not recorded. Tags there: T16 at 14 cm, T05 at 63 cm, T14 at 125 cm, T06 at 163 cm, T13 at 215 cm, T07 at 264 cm, T15 at 314 cm, T08 at 364 cm, T19 at 404 cm. The mounting rule applies: slide the page inside its range if it would cover an outlet, and write down the centre.
+  the outlet places used (angled section 50 cm from corner 4, doors wall 190 cm from corner 1) are estimates from photos; the outlet height (31 cm) is inside a page's height (12-40 cm), so a page at an outlet's place does cover it
+
+Slide ranges narrowed because a new page is a neighbour (the tag itself is not moved):
+  T02 (id 3, 295 cm wall, nominal 148 cm): 128-162 cm, was 128-168 cm
+  T03 (id 23, 295 cm wall, nominal 237 cm): 230-241 cm, was 217-257 cm
+  T05 (id 3, window wall, nominal 63 cm): 50-82 cm, was 43-83 cm
+  T06 (id 12, window wall, nominal 163 cm): 156-177 cm, was 143-183 cm
+  T07 (id 28, window wall, nominal 264 cm): 251-277 cm, was 244-284 cm
+  T08 (id 2, window wall, nominal 364 cm): 351-372 cm, was 344-384 cm
+
+Neighbours on each wall (centre to centre, cm from the wall's corner; a page is 21.6 cm wide):
+  desk wall (512 cm from corner 5): T00 161
+  295 cm wall (295 cm from corner 5): T01 58, T02 148, T17* 200, T03 237, T18* 269
+  angled section (123 cm from corner 4): T12* 20, T04 85
+  window wall (427 cm from corner 3): T16* 14, T05 63, T14* 125, T06 163, T13* 215, T07 264, T15* 314, T08 364, T19* 404
+  doors wall (381 cm from corner 1): T09 27, T10 165, T11 343
+  (* = added)
+
+Against the world file real-room-plus8-160mm-nominal.json (real-room-plus8-160mm-nominal, 20 tags), positions to the millimetre: all 20 tags agree (uid, id, x, y, z, normal, size)
+
+Coverage. One heading: share of (position, heading) samples that see at least 1 / at least 2 tags.
+Full turn: share of positions where a turn in place (36 headings) sees at least 1 tag / 2 different tags.
+Visibility as kinsim_lite.detect: field of view 46.9 deg, range 0.25 m to the limit below, incidence <= 60 deg,
+range and bearing from the pose point; no random drop-outs. Positions at least 0.30 m inside the driving
+area, headings every 10 deg. Room: 1102 positions (10 cm grid), the desk blocks the view.
+
+A. Simulator's rule (tag centre inside the field of view), 20 tags:
+             one heading           | full turn            | the printed 12 alone: one heading, full turn
+max range    >=1     >=2           |  >=1     >=2         |  >=1     >=2      >=1     >=2
+   2.0 m    41.8%   20.3%          |  96.7%   86.7%       |  35.4%    3.7%    96.6%   85.0%
+   2.5 m    55.8%   30.0%          |  99.7%   98.7%       |  49.8%   10.3%    99.7%   98.7%
+   3.0 m    67.1%   38.5%          | 100.0%  100.0%       |  61.6%   19.3%   100.0%   99.9%
+
+B. Camera model (configs/camera.json: the WHOLE tag sheet, black square and white border, inside the
+   picture, with lens distortion, the mount's roll, pitch and yaw and the lens 0.12 m ahead of the pose
+   point; this also gives the near limit, about 0.79 m straight ahead), 20 tags:
+             one heading           | full turn            | the printed 12 alone: one heading, full turn
+max range    >=1     >=2           |  >=1     >=2         |  >=1     >=2      >=1     >=2
+   2.0 m    30.0%   12.7%          |  92.8%   80.3%       |  24.3%    1.0%    91.9%   71.5%
+   2.5 m    43.4%   21.8%          |  98.5%   96.3%       |  38.0%    5.0%    98.0%   92.8%
+   3.0 m    54.9%   29.6%          |  99.3%   98.3%       |  49.9%   11.8%    98.8%   96.7%
+
+Block B is the stricter and more faithful one: the detector needs the whole black square and some white
+around it. Both blocks keep the incidence limit and the desk; neither has random drop-outs.
+mounting sheet for 20 tags: course-project/data/real/tags/room-layout-real-room-2-mounting-sheet.pdf
+T12 id=1 decoded=[1] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T13 id=4 decoded=[4] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T14 id=5 decoded=[5] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T15 id=6 decoded=[6] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T16 id=7 decoded=[7] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T17 id=8 decoded=[8] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T18 id=9 decoded=[9] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T19 id=11 decoded=[11] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T00 15 desk wall corner 5 161 cm slide 141-181
+T01 10 295 cm wall corner 5 58 cm slide 38-78
+T02 3 295 cm wall corner 5 148 cm slide 128-162
+T03 23 295 cm wall corner 5 237 cm slide 230-241
+T04 0 angled section corner 4 85 cm slide 65-105
+T05 3 window wall corner 3 63 cm slide 50-82
+T06 12 window wall corner 3 163 cm slide 156-177
+T07 28 window wall corner 3 264 cm slide 251-277
+T08 2 window wall corner 3 364 cm slide 351-372
+T09 0 doors wall corner 1 27 cm slide 13-41
+T10 2 doors wall corner 1 165 cm slide 158-185
+T11 29 doors wall corner 1 343 cm slide 323-363
+T12 1 angled section corner 4 20 cm slide 13-40
+T13 4 window wall corner 3 215 cm slide 201-228
+T14 5 window wall corner 3 125 cm slide 106-132
+T15 6 window wall corner 3 314 cm slide 301-327
+T16 7 window wall corner 3 14 cm slide 13-27
+T17 8 295 cm wall corner 5 200 cm slide 186-207
+T18 9 295 cm wall corner 5 269 cm slide 265-282
+T19 11 window wall corner 3 404 cm slide 396-414
+duplicates: [['T02', 'T05'], ['T04', 'T09'], ['T08', 'T10']]
