@@ -1,0 +1,13 @@
+fix_pose noise model: kinsim_room.MEASURED_SIGMA_DV {'sigma_range_a_m': 0.01, 'sigma_range_b_per_m': 0.012, 'sigma_bearing_deg': 0.5}
+2088 poses (174 positions x 12 headings), range limit 2.5 m, 197 candidates
+printed layout: a tag in view 39.7 %, two or more 5.5 %, a full fix possible 5.2 % of poses
+add 1: angled wall at 0.20 m -> a tag in view 40.9 %, two or more 8.5 %, full fix possible 7.8 %
+add 2: window wall at 2.15 m -> a tag in view 42.0 %, two or more 12.3 %, full fix possible 10.2 %
+add 3: window wall at 1.25 m -> a tag in view 43.0 %, two or more 15.1 %, full fix possible 12.6 %
+add 4: window wall at 3.14 m -> a tag in view 43.8 %, two or more 17.1 %, full fix possible 14.6 %
+add 5: window wall at 0.14 m -> a tag in view 44.4 %, two or more 18.9 %, full fix possible 16.1 %
+add 6: w295 wall at 2.00 m -> a tag in view 44.9 %, two or more 21.0 %, full fix possible 17.4 %
+add 7: w295 wall at 2.69 m -> a tag in view 45.1 %, two or more 22.0 %, full fix possible 18.7 %
+add 8: window wall at 4.04 m -> a tag in view 45.5 %, two or more 23.1 %, full fix possible 19.9 %
+
+[exited with code 0]

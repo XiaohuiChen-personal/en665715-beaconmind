@@ -606,19 +606,57 @@ def test_scenarios_start_inside_the_driving_area_clear_of_the_walls(world, scena
 
 def test_rehearsal_metrics_on_one_episode(world, scenarios):
     rr = load_tool("room_rehearsal")
+    assert rr.option_world("A") == world
     rows = rr.run_cell(world, [{"id": "S1", "start_pose": scenarios["S1"]}], [3000, 3001], "camera", 2.5, "drift2")
     assert len(rows) == 2
     r = rows[0]
     assert r["scenario"] == "S1" and r["ended_by"] in ("DONE", "budget", "not_implemented")
     shares = sum(r["share_" + k] for k in ("beacon_fix", "relocalised", "position_fix", "prior_kept", "odometry"))
-    assert shares == pytest.approx(1.0) and 0 <= r["tags_mapped"] <= r["tags_seen"] <= 12
+    assert shares == pytest.approx(1.0) and 0 <= r["tags_mapped"] <= r["tags_seen"] <= r["n_tags"] == 12
     assert r["ate_b0_m"] > 0 and r["dup_pairs_mapped_twice"] <= r["dup_pairs_seen"] <= 3
+    assert 0 <= r["share_steps_near_limit"] <= 1
     s = rr.summarise(rows)
     assert s["episodes"] == 2 and s["done"] + s["budget"] + s["not_implemented"] == 2
     assert s["ate_b2_lower"] + s["ate_b2_higher"] <= 2
-    more = rr.with_extra_tags(world)
-    assert len(more["tags"]) == 18 and validate("world", more) == [] and len(world["tags"]) == 12
-    assert "| S1 |" not in rr.table("t", "x", [("row", s)]) and "| row |" in rr.table("t", "x", [("row", s)])
+    assert rr.table("t", "x", [("row", s)]).count("| row |") == 1
+    cells = rr.build_cells(["options", "options-dv", "study-preset", "scenarios", "driver", "inset", "bias", "range"], ("B", 2.5))
+    assert len({rr.cell_key(c) for c in cells}) == len(cells) == 54 + 36 + 9 + 2 * (10 + 6 + 3 + 2) + 6
+
+
+def test_layout_options_and_the_dv_override(world, scenarios):
+    rr = load_tool("room_rehearsal")
+    rw = load_tool("room_world")
+    small = rr.option_world("B")
+    assert validate("world", small) == [] and small["world_id"] == "real-room-printed-100mm-nominal"
+    assert {(t["black_size_m"], t["z_m"]) for t in small["tags"]} == {(0.1, 0.1825)}
+    assert [(t["x_m"], t["y_m"], t["id"]) for t in small["tags"]] == [(t["x_m"], t["y_m"], t["id"]) for t in world["tags"]]
+    for name, n in (("C16", 16), ("C20", 20), ("D16", 16), ("D20", 20)):
+        w = rr.option_world(name)
+        assert validate("world", w) == [] and rw.check_world(w) == [] and len(w["tags"]) == n
+        assert w["tags"][:12] == (world["tags"] if name[0] == "C" else small["tags"])
+        ids = [t["id"] for t in w["tags"]]
+        assert sorted(ids.count(i) for i in set(ids)).count(2) == 3 and len(set(ids[12:])) == n - 12
+        assert not set(ids[12:]) & set(ids[:12])                                  # the added tags have new IDs
+        for i, a in enumerate(w["tags"]):                                         # sheets do not overlap
+            for b in w["tags"][i + 1:]:
+                assert math.hypot(a["x_m"] - b["x_m"], a["y_m"] - b["y_m"]) >= 0.25
+    # the conditioning test of fix_pose under the frozen and the measured DV noise model
+    from beaconmind import dv as dvm
+    frozen = dvm.load_dv()
+    two = [{"det": {"range_m": 2.0, "bearing_deg": b}, "point": g.map_point(ORIGIN, 2.0, b)} for b in (-10.0, 10.0)]
+    assert not g.fix_pose(ORIGIN, two)["full"]["well_conditioned"]
+    with kr.dv_override(**kr.MEASURED_SIGMA_DV):
+        assert g.fix_pose(ORIGIN, two)["full"]["well_conditioned"]
+        assert dvm.load_dv()["sigma_range_a_m"] == 0.01 and dvm.load_dv()["gate_range_m"] == frozen["gate_range_m"]
+    assert dvm.load_dv() == frozen and not g.fix_pose(ORIGIN, two)["full"]["well_conditioned"]
+    with pytest.raises(RuntimeError):
+        with kr.dv_override(sigma_bearing_deg=0.5):
+            raise RuntimeError("inside")
+    assert dvm.load_dv() == frozen                                                 # restored after an exception
+    with pytest.raises(KeyError):
+        with kr.dv_override(not_a_design_value=1):
+            pass
+    assert kr.run_episode(kr.KinSimEnv.study(2002), 2002)["records"] == ks.run_episode(2002)["records"]
 
 
 def test_visibility_agrees_with_the_layout_tools_independent_model(world):

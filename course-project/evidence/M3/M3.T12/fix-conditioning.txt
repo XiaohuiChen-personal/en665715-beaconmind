@@ -1,9 +1,9 @@
-fix_pose full fix: share of random tag sets that are well conditioned (20000 sets per cell, seed 1)
-| field of view | tags in the picture | ranges 0.65-1.5 m | ranges 0.65-2.5 m | best sigma_xy m | best sigma_theta deg |
-| --- | --- | --- | --- | --- | --- |
-| 46.9 deg (measured camera) | 2 | 26.05 % | 31.38 % | 0.086 | 2.8 |
-| 46.9 deg (measured camera) | 3 | 59.25 % | 61.10 % | 0.064 | 2.1 |
-| 46.9 deg (measured camera) | 4 | 80.74 % | 80.05 % | 0.053 | 1.8 |
-| 60 deg (study placeholder) | 2 | 25.66 % | 31.03 % | 0.087 | 2.8 |
-| 60 deg (study placeholder) | 3 | 61.02 % | 62.56 % | 0.055 | 2.0 |
-| 60 deg (study placeholder) | 4 | 84.17 % | 82.22 % | 0.053 | 1.7 |
+fix_pose full fix: share of random tag sets in one 46 deg picture that are well conditioned (20000 sets per cell, seed 1)
+| DV noise model | tags in the picture | same wall, depth 0.75-2.5 m | any depth 0.75-2.5 m |
+| --- | --- | --- | --- |
+| configs/dv.json (range 0.05 + 0.05 r m, bearing 2.0 deg) | 2 | 0.0 % | 25.6 % |
+| configs/dv.json (range 0.05 + 0.05 r m, bearing 2.0 deg) | 3 | 0.0 % | 54.8 % |
+| configs/dv.json (range 0.05 + 0.05 r m, bearing 2.0 deg) | 4 | 0.0 % | 75.7 % |
+| MEASURED_SIGMA_DV (range 0.01 + 0.012 r m, bearing 0.5 deg) | 2 | 34.5 % | 86.1 % |
+| MEASURED_SIGMA_DV (range 0.01 + 0.012 r m, bearing 0.5 deg) | 3 | 65.5 % | 98.8 % |
+| MEASURED_SIGMA_DV (range 0.01 + 0.012 r m, bearing 0.5 deg) | 4 | 84.8 % | 99.9 % |

@@ -1,35 +1,49 @@
 #!/usr/bin/env python3
 """Rehearse the real-room sessions in the room simulator with the coded procedure B2 (work list 3.2, rule R1).
 
-Usage (pure Python, no model calls; about 0.1 s an episode):
-    python3 course-project/tools/room_rehearsal.py grid --seeds 3000-3029 \\
-        --logs course-project/data/room/rehearsal --save-seeds 5 \\
-        --json course-project/evidence/M3/M3.T12/rehearsal-b2.json \\
-        --tables course-project/evidence/M3/M3.T12/rehearsal-b2-tables.md
-    python3 course-project/tools/room_rehearsal.py one --scenario S1 --preset camera --range 2.5 --seed 3000 --trace
+Pure Python, no model calls; about 0.5 s an episode, run --jobs at a time.
 
-`grid` runs every scenario of configs/arenas/real-room-scenarios.json for the noise presets, range limits and
-odometry conditions given, then the variant runs (range sweep, B2 as frozen, driving-area inset, extra tags, bearing
-bias, E1 patience), and writes the per-cell statistics as JSON and as Markdown tables. Every number in the tables is
-computed here from the episodes. Logs are kinsim_lite episode documents (seed_<n>.json, as tools/pilot_record.py
-writes them), so tools/replay_run.py, tools/b1_run.py and the metrics read them unchanged:
-    <logs>/<world_id>/<preset>-r<range>-<odometry>/<scenario>/seed_<n>.json
+    # the option grid (tag size and height, tag count, range limit, odometry; DV noise model frozen and measured)
+    python3 course-project/tools/room_rehearsal.py grid --groups options,options-dv,study-preset --seeds 3000-3029 \\
+        --json course-project/evidence/M3/M3.T12/rehearsal-b2.json --logs course-project/data/room/rehearsal --save-seeds 5
+    # the detail runs for one configuration (per start pose, driver, driving-area inset, bearing bias, range sweep)
+    python3 course-project/tools/room_rehearsal.py grid --groups scenarios,driver,inset,bias,range --focus B:2.5 \\
+        --seeds 3000-3029 --json course-project/evidence/M3/M3.T12/rehearsal-b2.json
+    python3 course-project/tools/room_rehearsal.py tables --json course-project/evidence/M3/M3.T12/rehearsal-b2.json \\
+        --out course-project/evidence/M3/M3.T12/rehearsal-b2-tables.md
+    python3 course-project/tools/room_rehearsal.py one --option A --scenario S1 --range 2.5 --seed 3000 --trace
+    python3 course-project/tools/room_rehearsal.py layout-search --range 2.5 --add 8 [--measured-sigma]
+    python3 course-project/tools/room_rehearsal.py conditioning
 
-Odometry conditions: `study` (kinsim_lite's noise, no bias), `drift2` (the main study's held-out condition: distance
-and turn angle over-read by 2 %), `carpet` (kinsim_room.CARPET: the car veers on a forward move, turns fall short).
+`grid` adds its cells to the JSON file (a cell run again replaces the old one); `tables` writes every table from that
+file, so every number in the tables is computed here from the episodes. Logs are kinsim_lite episode documents
+(seed_<n>.json, as tools/pilot_record.py writes them), so tools/replay_run.py, tools/b1_run.py and the metrics read
+them unchanged:  <logs>/<world_id>/<preset>-r<range>-<odometry>[-dv-measured]/<scenario>/seed_<n>.json
+
+Options (OPTIONS below): A the printed layout (12 tags, 160 mm, centre 0.23 m); B the same places with 100 mm tags
+centred 0.1825 m up (a 125 mm sheet standing on the baseboard); C16 / C20 the printed layout plus 4 / 8 tags of
+160 mm; D16 / D20 the same with 100 mm tags. Worlds are built in memory by tools/room_world.py.
+
+Odometry: `study` (kinsim_lite's noise, no bias), `drift2` (the main study's held-out condition: distance and turn
+angle over-read by 2 %), `carpet` (kinsim_room.CARPET: the car veers on a forward move, turns fall short).
+
+DV noise model: `frozen` = configs/dv.json as it is; `measured` = kinsim_room.MEASURED_SIGMA_DV through
+kinsim_room.dv_override (the three sigma values fix_pose's conditioning test uses, set to the simulated estimate of
+the tag detector; no file is edited).
 
 Metrics per episode (plan C10; truth is the simulator's): steps, how it ended, share of steps by pose source, ATE-RMSE
 and final pose error of B2 and of dead reckoning B0, tags seen and tags mapped (a map entry within 0.30 m of a tag
 with its ID), phantom entries, duplicated-ID pairs seen and mapped as two beacons, association outcomes
-(metrics/pilot.py LabelTracker), and the footprint's smallest clearance to a wall or the desk.
+(metrics/pilot.py LabelTracker), steps in which the camera's near limit hid a tag, and the footprint's smallest
+clearance to a wall or the desk.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this tool.
 """
 import argparse
 import collections
-import copy
 import json
 import math
+import multiprocessing
 import pathlib
 import statistics
 import sys
@@ -41,13 +55,20 @@ sys.path.insert(0, str(ROOT / "beaconmind" / "src"))
 from beaconmind.envs import kinsim_lite as ks  # noqa: E402
 from beaconmind.envs import kinsim_room as kr  # noqa: E402
 from beaconmind.metrics import pilot as pm  # noqa: E402
+import room_world as rw  # noqa: E402
 
 ODOMETRY = {"study": ("study", 0.0), "drift2": ("study", 0.02), "carpet": ("carpet", 0.0)}
-# Extra tags for the "more tags" variant: (wall key of tools/room_layout.py, metres from the wall's corner, ID).
-# Each sits about 0.5 m from a tag of the printed layout, so two tags share a picture more often.
-EXTRA_TAGS = [("window", 1.13, 5), ("window", 3.14, 7), ("w295", 1.93, 9), ("doors", 3.18, 11), ("desk", 1.95, 13),
-              ("w295", 1.03, 17)]
-EXTRA_MOVES = {"T11": 3.63, "T00": 1.41}     # inside the mounting sheet's slide ranges
+OPTIONS = {
+    "A": {"label": "A: 12 tags, 160 mm, centre 0.23 m (as printed)", "variant": "printed", "tag_mm": None},
+    "B": {"label": "B: 12 tags, 100 mm, centre 0.18 m", "variant": "printed", "tag_mm": 100.0},
+    "C16": {"label": "C16: 16 tags, 160 mm", "variant": "plus4", "tag_mm": None},
+    "C20": {"label": "C20: 20 tags, 160 mm", "variant": "plus8", "tag_mm": None},
+    "D16": {"label": "D16: 16 tags, 100 mm", "variant": "plus4", "tag_mm": 100.0},
+    "D20": {"label": "D20: 20 tags, 100 mm", "variant": "plus8", "tag_mm": 100.0},
+}
+RANGES = (2.0, 2.5, 3.0)
+LAYOUT = ROOT / "evidence" / "M3" / "M3.T10" / "layout" / "layout.json"
+SCENARIOS = ROOT / "configs" / "arenas" / "real-room-scenarios.json"
 
 
 def seed_list(text):
@@ -58,23 +79,34 @@ def seed_list(text):
     return out
 
 
-def with_extra_tags(world):
-    import room_world as rw
-    world = copy.deepcopy(world)
-    for t in world["tags"]:
-        if t["uid"] in EXTRA_MOVES:
-            t["x_m"], t["y_m"] = rw.tag_xy(rw.wall_of(t["wall"]), EXTRA_MOVES[t["uid"]])
-    for k, (wall, along, tag_id) in enumerate(EXTRA_TAGS):
-        w = rw.wall_of(wall)
-        x, y = rw.tag_xy(w, along)
-        nx, ny = rw.rl.inward_normal(w)
-        world["tags"].append(dict(world["tags"][0], uid="T%02d" % (len(world["tags"])), id=tag_id, wall=wall, x_m=x,
-                                  y_m=y, normal_deg=round(math.degrees(math.atan2(ny, nx)), 1)))
-    world["world_id"] += "+6tags"
-    return world
+def option_world(option):
+    o = OPTIONS[option]
+    layout = json.loads(LAYOUT.read_text(encoding="utf-8"))
+    return rw.build_world(layout, start=rw.default_start(), variant=o["variant"], tag_black_mm=o["tag_mm"])
 
 
-def episode_metrics(ep):
+def load_scenarios(path=SCENARIOS):
+    return json.loads(pathlib.Path(path).read_text(encoding="utf-8"))["scenarios"]
+
+
+def near_limit_steps(env, recs):
+    """Steps in which at least one tag would have been detected-in-view but for the picture's top edge: the tag
+    passes every visibility test once its centre is put at lens height (so it cannot leave the picture vertically)."""
+    cam = env.noise.get("camera")
+    if cam is None:
+        return 0
+    z = kr.camera_of(cam).z_m
+    n = 0
+    for r in recs:
+        for t in env.scene["tags"]:
+            if kr.visible(env.scene, r["truth"], t, env.noise) is None \
+                    and kr.visible(env.scene, r["truth"], dict(t, z_m=z), env.noise) is not None:
+                n += 1
+                break
+    return n
+
+
+def episode_metrics(ep, env=None):
     recs, world = ep["records"], ep["world"]
     out = {"steps": len(recs), "ended_by": ep["ended_by"].split(":")[0],
            "ended_detail": ep["ended_by"].partition(": ")[2] or None}
@@ -92,12 +124,14 @@ def episode_metrics(ep):
     out["share_any_fix"] = (src["beacon_fix"] + src["relocalised"] + src["position_fix"]) / len(recs)
     out["share_steps_with_detection"] = sum(bool(r["raw"]["detections"]) for r in recs) / len(recs)
     out["share_steps_two_detections"] = sum(len(r["raw"]["detections"]) >= 2 for r in recs) / len(recs)
+    if env is not None:
+        out["share_steps_near_limit"] = near_limit_steps(env, recs) / len(recs)
     seen = {d["_tag"] for r in recs for d in r["raw"]["detections"]}
     final_map = recs[-1]["report"]["map"]
     ms = pm.map_scores_c10(final_map, world)
-    out.update(tags_seen=len(seen), tags_mapped=round(ms["map_recall"] * len(world)), map_entries=ms["n_entries"],
-               phantoms=ms["phantoms"], confirmed=sum(b["state"] == "confirmed" for b in final_map),
-               map_rmse_m=ms["map_rmse_m"])
+    out.update(tags_seen=len(seen), tags_mapped=round(ms["map_recall"] * len(world)), n_tags=len(world),
+               map_entries=ms["n_entries"], phantoms=ms["phantoms"],
+               confirmed=sum(b["state"] == "confirmed" for b in final_map), map_rmse_m=ms["map_rmse_m"])
     ids = [t["id"] for t in world]
     dup_ids = {i for i in ids if ids.count(i) > 1}
     pairs_seen = pairs_two = 0
@@ -128,24 +162,27 @@ def episode_metrics(ep):
 
 
 def run_cell(world, scenarios, seeds, preset, max_range, odometry, policy="block", patience=2, inset=0.0,
-             noise_overrides=None, log_dir=None, save_seeds=0):
+             noise_overrides=None, dv="frozen", log_dir=None, save_seeds=0):
     """All scenarios x seeds for one configuration. Returns the per-episode metric rows."""
     odo, bias = ODOMETRY[odometry]
     pol = kr.b2_step if policy == "frozen" else kr.make_b2_policy(dead_end="block", patience=patience)
     rows = []
-    for sc in scenarios:
-        for k, seed in enumerate(seeds):
-            env = kr.KinSimEnv.room(world, sc["start_pose"], preset_name=preset, max_range_m=max_range, odometry=odo,
-                                    odo_bias=bias, drive_inset_m=inset, noise_overrides=noise_overrides)
-            ep = kr.run_episode(env, seed, policy=pol)
-            row = dict(episode_metrics(ep), scenario=sc["id"], seed=seed)
-            rows.append(row)
-            if log_dir is not None and k < save_seeds and ep["records"]:
-                d = pathlib.Path(log_dir) / world["world_id"] / ("%s-r%.1f-%s" % (preset, max_range, odometry)) / sc["id"]
-                d.mkdir(parents=True, exist_ok=True)
-                ep["rehearsal"] = {"scenario": sc["id"], "preset": preset, "max_range_m": max_range,
-                                   "odometry": odometry, "policy": policy, "patience": patience, "drive_inset_m": inset}
-                (d / ("seed_%d.json" % seed)).write_text(json.dumps(ep), encoding="utf-8")
+    with kr.dv_override(**(kr.MEASURED_SIGMA_DV if dv == "measured" else {})):
+        for sc in scenarios:
+            for k, seed in enumerate(seeds):
+                env = kr.KinSimEnv.room(world, sc["start_pose"], preset_name=preset, max_range_m=max_range,
+                                        odometry=odo, odo_bias=bias, drive_inset_m=inset, noise_overrides=noise_overrides)
+                ep = kr.run_episode(env, seed, policy=pol)
+                rows.append(dict(episode_metrics(ep, env), scenario=sc["id"], seed=seed))
+                if log_dir is not None and k < save_seeds and ep["records"]:
+                    d = pathlib.Path(log_dir) / world["world_id"] / ("%s-r%.1f-%s%s" % (
+                        preset, max_range, odometry, "-dv-measured" if dv == "measured" else "")) / sc["id"]
+                    d.mkdir(parents=True, exist_ok=True)
+                    ep["rehearsal"] = {"scenario": sc["id"], "preset": preset, "max_range_m": max_range,
+                                       "odometry": odometry, "policy": policy, "patience": patience,
+                                       "drive_inset_m": inset, "dv": dv,
+                                       "dv_values": kr.MEASURED_SIGMA_DV if dv == "measured" else None}
+                    (d / ("seed_%d.json" % seed)).write_text(json.dumps(ep), encoding="utf-8")
     return rows
 
 
@@ -174,19 +211,22 @@ def summarise(rows):
     scored = [r for r in rows if r["steps"]]
     diff = [r["ate_b2_m"] - r["ate_b0_m"] for r in scored]
     return {
-        "episodes": n, "scored": len(scored), "done": ends["DONE"], "budget": ends["budget"], "not_implemented": ends["not_implemented"],
-        "not_implemented_branches": dict(detail),
+        "episodes": n, "scored": len(scored), "done": ends["DONE"], "budget": ends["budget"],
+        "not_implemented": ends["not_implemented"], "not_implemented_branches": dict(detail),
         "steps_median": med(rows, "steps"), "steps_iqr": quartiles(rows, "steps"),
         "share_beacon_fix": mean(scored, "share_beacon_fix"), "share_position_fix": mean(scored, "share_position_fix"),
         "share_any_fix": mean(scored, "share_any_fix"), "share_prior_kept": mean(scored, "share_prior_kept"),
+        "episodes_with_full_fix": sum(r["share_beacon_fix"] > 0 for r in scored),
         "share_steps_with_detection": mean(scored, "share_steps_with_detection"),
         "share_steps_two_detections": mean(scored, "share_steps_two_detections"),
+        "share_steps_near_limit": mean(scored, "share_steps_near_limit"),
         "ate_b2_median_m": med(scored, "ate_b2_m"), "ate_b0_median_m": med(scored, "ate_b0_m"),
         "ate_diff_median_m": statistics.median(diff) if diff else None,
         "ate_b2_lower": sum(d < 0 for d in diff), "ate_b2_higher": sum(d > 0 for d in diff),
         "final_pos_b2_median_m": med(scored, "final_pos_b2_m"), "final_pos_b0_median_m": med(scored, "final_pos_b0_m"),
         "final_heading_b2_median_deg": med(scored, "final_heading_b2_deg"),
         "final_heading_b0_median_deg": med(scored, "final_heading_b0_deg"),
+        "n_tags": scored[0]["n_tags"] if scored else None,
         "tags_seen_mean": mean(scored, "tags_seen"), "tags_mapped_mean": mean(scored, "tags_mapped"),
         "tags_mapped_min": min((r["tags_mapped"] for r in scored), default=None),
         "tags_mapped_max": max((r["tags_mapped"] for r in scored), default=None),
@@ -199,139 +239,212 @@ def summarise(rows):
         "assoc_new_bad": sum(r["assoc_new_bad"] for r in scored),
         "min_clearance_m": min((r["min_clearance_m"] for r in scored), default=None),
         "contact_episodes": sum(r["contact_steps"] > 0 for r in scored),
-        "clearance_below_5cm_episodes": sum(r["min_clearance_m"] < 0.05 for r in scored),
         "outside_drive_episodes": sum(r["outside_drive_steps"] > 0 for r in scored),
         "path_median_m": med(scored, "path_m"),
     }
 
 
+# ---------------------------------------------------------------- the grid
+
+def cell(group, name, option="A", preset="camera", max_range=2.5, odometry="study", dv="frozen", **kw):
+    return dict(group=group, name=name, option=option, preset=preset, max_range=max_range, odometry=odometry, dv=dv, **kw)
+
+
+def build_cells(groups, focus):
+    f_opt, f_range = focus
+    cells = []
+    if "options" in groups:
+        for odo in ODOMETRY:
+            for opt in OPTIONS:
+                for r in RANGES:
+                    cells.append(cell("options", "%s, %.1f m" % (opt, r), opt, max_range=r, odometry=odo, save=True))
+    if "options-dv" in groups:
+        for odo in ("study", "drift2"):
+            for opt in OPTIONS:
+                for r in RANGES:
+                    cells.append(cell("options-dv", "%s, %.1f m" % (opt, r), opt, max_range=r, odometry=odo,
+                                      dv="measured", save=True))
+    if "study-preset" in groups:
+        for odo in ODOMETRY:
+            for r in RANGES:
+                cells.append(cell("study-preset", "study preset, %.1f m" % r, "A", preset="study", max_range=r,
+                                  odometry=odo, save=True))
+    base = dict(option=f_opt, max_range=f_range)
+    for dv in ("frozen", "measured"):
+        tag = "" if dv == "frozen" else ", measured DV sigmas"
+        if "scenarios" in groups:
+            for odo in ("study", "drift2"):
+                for sid in ("S1", "S2", "S3", "S4", "S5"):
+                    cells.append(cell("scenarios", sid, odometry=odo, dv=dv, only=sid, **base))
+        if "driver" in groups:
+            for odo in ("study", "carpet"):
+                cells.append(cell("driver", "B2 as frozen" + tag, odometry=odo, dv=dv, policy="frozen", **base))
+                cells.append(cell("driver", "dead end defined" + tag, odometry=odo, dv=dv, **base))
+                cells.append(cell("driver", "dead end defined, E1 after 4 scans" + tag, odometry=odo, dv=dv, patience=4, **base))
+        if "inset" in groups:
+            for inset in (0.0, 0.2, 0.4):
+                cells.append(cell("inset", "inset %.1f m%s" % (inset, tag), odometry="carpet", dv=dv, inset=inset, **base))
+        if "bias" in groups:
+            for b in (0.0, 2.0):
+                cells.append(cell("bias", "bearing bias %+.0f deg%s" % (b, tag), odometry="study", dv=dv,
+                                  noise_overrides={"bearing_bias_deg": b}, **base))
+    if "range" in groups:
+        for r in (1.5, 2.0, 2.5, 3.0, 3.5, 4.0):
+            cells.append(cell("range", "%.1f m" % r, f_opt, max_range=r, odometry="study"))
+    for c in cells:
+        if c["group"] not in ("options", "options-dv", "study-preset"):
+            c["focus"] = "%s:%.1f" % (f_opt, f_range)
+    return cells
+
+
+_WORK = {}
+
+
+def _run(job):
+    c, seeds, logs, save_seeds = job
+    if c["option"] not in _WORK:
+        _WORK[c["option"]] = option_world(c["option"])
+    scenarios = [s for s in load_scenarios() if c.get("only") in (None, s["id"])]
+    rows = run_cell(_WORK[c["option"]], scenarios, seeds, c["preset"], c["max_range"], c["odometry"],
+                    policy=c.get("policy", "block"), patience=c.get("patience", 2), inset=c.get("inset", 0.0),
+                    noise_overrides=c.get("noise_overrides"), dv=c["dv"],
+                    log_dir=logs if c.get("save") else None, save_seeds=save_seeds)
+    return dict(c, seeds=len(seeds), summary=summarise(rows))
+
+
+def cell_key(c):
+    return json.dumps([c["group"], c["name"], c["option"], c["preset"], c["max_range"], c["odometry"], c["dv"],
+                       c.get("focus")])
+
+
+def cmd_grid(args):
+    f_opt, _, f_range = args.focus.partition(":")
+    cells = build_cells(args.groups.split(","), (f_opt, float(f_range)))
+    seeds = seed_list(args.seeds)
+    path = pathlib.Path(args.json)
+    doc = json.loads(path.read_text(encoding="utf-8")) if path.exists() and not args.fresh else {"cells": []}
+    have = {cell_key(c): i for i, c in enumerate(doc["cells"])}
+    jobs = [(c, seeds, args.logs, args.save_seeds) for c in cells]
+    with multiprocessing.Pool(args.jobs) as pool:
+        for done in pool.imap_unordered(_run, jobs):
+            done["seed_range"] = args.seeds
+            k = cell_key(done)
+            if k in have:
+                doc["cells"][have[k]] = done
+            else:
+                have[k] = len(doc["cells"])
+                doc["cells"].append(done)
+            print("%s / %s / %s / %s / dv %s: %d episodes" % (done["group"], done["name"], done["odometry"],
+                                                              done["preset"], done["dv"], done["summary"]["episodes"]),
+                  flush=True)
+    doc["scenarios"] = load_scenarios()
+    doc["options"] = OPTIONS
+    doc["measured_sigma_dv"] = kr.MEASURED_SIGMA_DV
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+
+
+# ---------------------------------------------------------------- tables
+
 def f(v, fmt="%.1f", none="-"):
     return none if v is None else fmt % v
 
 
-HEAD = ("| %s | ended: DONE / budget / B2 stopped | steps (median, IQR) | fix share: full / position / prior kept | "
-        "ATE cm, median: B2 / B0 | B2 lower ATE in | final error cm: B2 / B0 | final heading deg: B2 / B0 | "
-        "tags seen / mapped (of %d) | duplicated pairs: seen / mapped as two | wrong matches | closest to a wall cm "
-        "(episodes touching) |")
+HEAD = ("| %s | ended: DONE / budget / B2 stopped | steps, median (IQR) | steps with a tag / with two, %% | "
+        "fix share, %%: full / position / any | prior kept, %% | episodes with a full fix | ATE cm, median: B2 / B0 "
+        "(B2 lower in) | final position error cm: B2 / B0 | final heading error deg: B2 / B0 | tags seen / mapped / "
+        "in the room | duplicated pairs seen / mapped as two | wrong matches | steps where the near limit hid a tag, %% "
+        "| closest to a wall, cm (episodes touching) |")
 
 
-def table(title, label, cells, n_tags=12):
-    lines = ["**%s**" % title, "", HEAD % (label, n_tags), "|" + " --- |" * 12]
-    for name, s in cells:
-        iqr = s["steps_iqr"]
-        lines.append("| %s | %d / %d / %d | %s (%s) | %s / %s / %s %% | %s / %s | %d of %d | %s / %s | %s / %s | "
-                     "%s / %s | %d / %d | %d | %s (%d) |" % (
-                         name, s["done"], s["budget"], s["not_implemented"], f(s["steps_median"], "%.0f"),
-                         "%.0f-%.0f" % tuple(iqr) if iqr else "-",
-                         f(100 * s["share_beacon_fix"]), f(100 * s["share_position_fix"]), f(100 * s["share_prior_kept"]),
-                         f(100 * s["ate_b2_median_m"]), f(100 * s["ate_b0_median_m"]), s["ate_b2_lower"],
-                         s["scored"],
-                         f(100 * s["final_pos_b2_median_m"]), f(100 * s["final_pos_b0_median_m"]),
-                         f(s["final_heading_b2_median_deg"]), f(s["final_heading_b0_median_deg"]),
-                         f(s["tags_seen_mean"]), f(s["tags_mapped_mean"]), s["dup_pairs_seen"],
-                         s["dup_pairs_mapped_twice"], s["assoc_fp"], f(100 * s["min_clearance_m"], "%.0f"),
-                         s["contact_episodes"]))
-    return "\n".join(lines) + "\n"
+def table_row(name, s):
+    name = name.replace(" | ", ", ")
+    iqr = s["steps_iqr"]
+    return ("| %s | %d / %d / %d | %s (%s) | %s / %s | %s / %s / %s | %s | %d of %d | %s / %s (%d of %d) | %s / %s | "
+            "%s / %s | %s / %s / %s | %d / %d | %d | %s | %s (%d) |" % (
+                name, s["done"], s["budget"], s["not_implemented"], f(s["steps_median"], "%.0f"),
+                "%.0f-%.0f" % tuple(iqr) if iqr else "-",
+                f(100 * s["share_steps_with_detection"]), f(100 * s["share_steps_two_detections"]),
+                f(100 * s["share_beacon_fix"], "%.2f"), f(100 * s["share_position_fix"]), f(100 * s["share_any_fix"]),
+                f(100 * s["share_prior_kept"]), s["episodes_with_full_fix"], s["scored"],
+                f(100 * s["ate_b2_median_m"]), f(100 * s["ate_b0_median_m"]), s["ate_b2_lower"], s["scored"],
+                f(100 * s["final_pos_b2_median_m"]), f(100 * s["final_pos_b0_median_m"]),
+                f(s["final_heading_b2_median_deg"]), f(s["final_heading_b0_median_deg"]),
+                f(s["tags_seen_mean"]), f(s["tags_mapped_mean"]), f(s["n_tags"], "%d"), s["dup_pairs_seen"],
+                s["dup_pairs_mapped_twice"], s["assoc_fp"],
+                f(None if s["share_steps_near_limit"] is None else 100 * s["share_steps_near_limit"]),
+                f(100 * s["min_clearance_m"], "%.0f"), s["contact_episodes"]))
 
 
-def cmd_grid(args):
-    world = kr.load_world(args.world)
-    scenarios = json.loads(pathlib.Path(args.scenarios).read_text(encoding="utf-8"))["scenarios"]
-    seeds = seed_list(args.seeds)
-    presets, ranges, odos = args.presets.split(","), [float(v) for v in args.ranges.split(",")], args.odometry.split(",")
-    result = {"world": world["world_id"], "scenarios": scenarios, "seeds": args.seeds, "main": [], "per_scenario": [],
-              "variants": [], "argv": sys.argv[1:]}
-    out = ["<!-- Generated by tools/room_rehearsal.py grid; do not edit by hand. -->", "",
-           "World `%s`, %d scenarios x %d noise seeds (%s) = %d episodes per row; driver: B2 with the dead-end branch "
-           "defined (kinsim_room.make_b2_policy), E1 as written. ATE and final errors against the simulator's truth; "
-           "B0 = dead reckoning on the same odometry. \"B2 stopped\" = an unimplemented branch of the coded procedure."
-           % (world["world_id"], len(scenarios), len(seeds), args.seeds, len(scenarios) * len(seeds)), ""]
-    main = {}
-    for odo in odos:
-        cells = []
-        for preset in presets:
-            for r in ranges:
-                rows = run_cell(world, scenarios, seeds, preset, r, odo, log_dir=args.logs, save_seeds=args.save_seeds)
-                main[(preset, r, odo)] = rows
-                s = summarise(rows)
-                result["main"].append({"preset": preset, "max_range_m": r, "odometry": odo, "summary": s})
-                cells.append(("%s, %.1f m" % (preset, r), s))
-                print("main %s %.1f %s: %d episodes" % (preset, r, odo, len(rows)), flush=True)
-        out.append(table("Table 1 (%s odometry). Noise preset and range limit, all scenarios pooled" % odo,
-                         "preset, range limit", cells))
-    for preset, r, odo in [(p, r, o) for p, r, o in main if p == args.detail_preset and o in args.detail_odometry.split(",")]:
-        cells = []
-        for sc in scenarios:
-            s = summarise([row for row in main[(preset, r, odo)] if row["scenario"] == sc["id"]])
-            result["per_scenario"].append({"preset": preset, "max_range_m": r, "odometry": odo, "scenario": sc["id"],
-                                           "summary": s})
-            p = sc["start_pose"]
-            cells.append(("%s (%.2f, %.2f, %.0f deg)" % (sc["id"], p["x_m"], p["y_m"], p["theta_deg"]), s))
-        out.append(table("Table 2. Per start pose: %s preset, %.1f m, %s odometry (%d seeds each)" % (
-            preset, r, odo, len(seeds)), "scenario (start pose, room frame)", cells))
+def table(title, label, rows):
+    return "\n".join(["**%s**" % title, "", HEAD % label, "|" + " --- |" * 15] + [table_row(n, s) for n, s in rows]) + "\n"
 
-    def variant(group, name, n_tags=12, w=world, **kw):
-        rows = run_cell(w, scenarios, seeds, **kw)
-        s = summarise(rows)
-        result["variants"].append({"group": group, "name": name, "config": {k: v for k, v in kw.items()}, "summary": s})
-        print("variant %s / %s" % (group, name), flush=True)
-        return name, s
 
-    base = dict(preset="camera", odometry="study")
-    out.append(table("Table 3. Range limit sweep (camera preset, study odometry). Beyond 2.5 m the noise model is an "
-                     "extrapolation", "range limit",
-                     [variant("range", "%.1f m" % r, max_range=r, **base) for r in (1.5, 2.0, 2.5, 3.0, 3.5, 4.0)]))
-    cells = []
-    for r in (2.0, 2.5):
-        for odo in ("study", "carpet"):
-            b = dict(preset="camera", max_range=r, odometry=odo)
-            cells.append(variant("driver", "%.1f m, %s: B2 as frozen" % (r, odo), policy="frozen", **b))
-            cells.append(variant("driver", "%.1f m, %s: dead end defined" % (r, odo), **b))
-            cells.append(variant("driver", "%.1f m, %s: dead end defined, E1 after 4 scans" % (r, odo), patience=4, **b))
-    out.append(table("Table 4. The driver: B2 as frozen, with the dead-end branch defined, and with a more patient E1 "
-                     "(camera preset)", "range limit, odometry: driver", cells))
-    cells = []
-    for r in (2.0, 2.5):
-        for inset in (0.0, 0.2, 0.4):
-            cells.append(variant("inset", "%.1f m, inset %.1f m" % (r, inset), preset="camera", max_range=r,
-                                 odometry="carpet", inset=inset))
-    out.append(table("Table 5. Driving area moved in from every edge (camera preset, carpet odometry)",
-                     "range limit, inset", cells))
-    more = with_extra_tags(world)
-    cells = []
-    for r in (2.0, 2.5):
-        for odo in ("study", "drift2"):
-            b = dict(preset="camera", max_range=r, odometry=odo)
-            cells.append(variant("tags", "%.1f m, %s: 12 tags" % (r, odo), **b))
-            cells.append(variant("tags", "%.1f m, %s: 18 tags" % (r, odo), w=more, **b))
-    out.append(table("Table 6. Six more tags, each about 0.5 m from a tag of the printed layout (camera preset; "
-                     "\"of 12\" reads \"of 18\" on the 18-tag rows)", "range limit, odometry: layout", cells))
-    cells = []
-    for r in (2.0, 2.5):
-        for bias in (0.0, 2.0):
-            cells.append(variant("bearing_bias", "%.1f m, bearing bias %+.0f deg" % (r, bias), preset="camera",
-                                 max_range=r, odometry="study", noise_overrides={"bearing_bias_deg": bias}))
-    out.append(table("Table 7. A constant bearing offset (the camera's yaw is known to +-2 deg; camera preset, study "
-                     "odometry)", "range limit, bias", cells))
-    if args.json:
-        pathlib.Path(args.json).parent.mkdir(parents=True, exist_ok=True)
-        pathlib.Path(args.json).write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
+def cmd_tables(args):
+    doc = json.loads(pathlib.Path(args.json).read_text(encoding="utf-8"))
+    cells = doc["cells"]
+    order = list(doc["options"])
+    pick = lambda **kw: sorted((c for c in cells if all(c.get(k) == v for k, v in kw.items())),
+                               key=lambda c: (order.index(c["option"]), c["max_range"], c.get("inset", 0.0)))
+    n_ep = lambda cs: sorted({c["summary"]["episodes"] for c in cs})
+    out = ["<!-- Generated by tools/room_rehearsal.py tables from rehearsal-b2.json; do not edit by hand. -->", "",
+           "Driver in every table unless a row says otherwise: B2 with the dead-end branch defined "
+           "(kinsim_room.make_b2_policy), E1 as written; camera noise preset; five start poses pooled. ATE and final "
+           "errors are against the simulator's truth; B0 is dead reckoning on the same odometry. \"B2 stopped\" = an "
+           "unimplemented branch of the coded procedure. Fix shares are means over episodes of the share of steps. "
+           "Options: " + "; ".join(o["label"] for o in doc["options"].values()) + ".", ""]
+    for dv, group, title in (("frozen", "options", "Table 1%s. Options and range limits, DV noise model as frozen in configs/dv.json"),
+                             ("measured", "options-dv", "Table 2%s. The same with the DV noise model set to the simulated "
+                              "estimate (kinsim_room.MEASURED_SIGMA_DV %s)" % ("%s", doc["measured_sigma_dv"]))):
+        for letter, odo in zip("abc", ODOMETRY):
+            cs = pick(group=group, odometry=odo)
+            if cs:
+                out.append(table((title % letter) + "; %s odometry; %s episodes per row" % (odo, n_ep(cs)),
+                                 "option, range limit", [(c["name"], c["summary"]) for c in cs]))
+    for letter, odo in zip("abc", ODOMETRY):
+        cs = pick(group="study-preset", odometry=odo)
+        if cs:
+            out.append(table("Table 3%s. The study's placeholder noise preset (60 deg view, no near limit) on option A; "
+                             "%s odometry; %s episodes per row" % (letter, odo, n_ep(cs)), "preset, range limit",
+                             [(c["name"], c["summary"]) for c in cs]))
+    focuses = sorted({c["focus"] for c in cells if c.get("focus")})
+    for fc in focuses:
+        scen = {s["id"]: s["start_pose"] for s in doc["scenarios"]}
+        for dv in ("frozen", "measured"):
+            for odo in ("study", "drift2"):
+                cs = pick(group="scenarios", focus=fc, dv=dv, odometry=odo)
+                if cs:
+                    out.append(table("Table 4 (%s, DV %s, %s odometry). Per start pose; %s episodes per row" % (
+                        fc, dv, odo, n_ep(cs)), "start pose (room frame)",
+                        [("%s (%.2f, %.2f, %.0f deg)" % (c["name"], scen[c["name"]]["x_m"], scen[c["name"]]["y_m"],
+                                                         scen[c["name"]]["theta_deg"]), c["summary"]) for c in cs]))
+        for group, title in (("driver", "Table 5 (%s). The driver: B2 as frozen, with the dead-end branch defined, with a more patient E1"),
+                             ("inset", "Table 6 (%s). Driving area moved in from every edge, carpet odometry"),
+                             ("bias", "Table 7 (%s). A constant bearing offset (the camera's yaw is known to +-2 deg before the pilot)")):
+            cs = pick(group=group, focus=fc)
+            if cs:
+                out.append(table((title % fc) + "; %s episodes per row" % n_ep(cs), "odometry: variant",
+                                 [("%s: %s" % (c["odometry"], c["name"]), c["summary"]) for c in cs]))
+        cs = pick(group="range", focus=fc)
+        if cs:
+            out.append(table("Table 8 (option %s). Range limit sweep, study odometry, DV frozen; %s episodes per row"
+                             % (fc.split(":")[0], n_ep(cs)), "range limit", [(c["name"], c["summary"]) for c in cs]))
     text = "\n".join(out)
-    if args.tables:
-        pathlib.Path(args.tables).write_text(text, encoding="utf-8")
+    if args.out:
+        pathlib.Path(args.out).write_text(text, encoding="utf-8")
     else:
         print(text)
 
 
 def cmd_one(args):
-    world = kr.load_world(args.world)
-    scenarios = json.loads(pathlib.Path(args.scenarios).read_text(encoding="utf-8"))["scenarios"]
-    sc = next(s for s in scenarios if s["id"] == args.scenario)
+    world = option_world(args.option)
+    sc = next(s for s in load_scenarios() if s["id"] == args.scenario)
     odo, bias = ODOMETRY[args.odometry]
-    env = kr.KinSimEnv.room(world, sc["start_pose"], preset_name=args.preset, max_range_m=args.range, odometry=odo,
-                            odo_bias=bias, drive_inset_m=args.inset)
-    pol = kr.b2_step if args.policy == "frozen" else kr.make_b2_policy(patience=args.patience)
-    ep = kr.run_episode(env, args.seed, policy=pol)
+    with kr.dv_override(**(kr.MEASURED_SIGMA_DV if args.dv == "measured" else {})):
+        env = kr.KinSimEnv.room(world, sc["start_pose"], preset_name=args.preset, max_range_m=args.range, odometry=odo,
+                                odo_bias=bias, drive_inset_m=args.inset)
+        pol = kr.b2_step if args.policy == "frozen" else kr.make_b2_policy(patience=args.patience)
+        ep = kr.run_episode(env, args.seed, policy=pol)
     if args.trace:
         for r in ep["records"]:
             w = kr.to_world(env.scene["start_pose_world"], r["truth"])
@@ -340,50 +453,54 @@ def cmd_one(args):
                 r["step"], w["x_m"], w["y_m"], w["theta_deg"],
                 ",".join("%s@%.1f" % (world["tags"][d["_tag"]]["uid"], d["range_m"]) for d in r["raw"]["detections"]),
                 rep["pose_source"], rep["decision"], len(rep["map"])))
-    print(json.dumps(episode_metrics(ep), indent=1))
+    print(json.dumps(episode_metrics(ep, env), indent=1))
     if args.out:
         pathlib.Path(args.out).write_text(json.dumps(ep), encoding="utf-8")
 
 
 def cmd_conditioning(args):
-    """How often can fix_pose's full fix be `well_conditioned` (configs/dv.json: sigma_xy <= 0.15 m and sigma_theta
-    <= 8 deg under the DV noise model) for tags that share one picture? Random sets of 2-4 tags at bearings inside
-    the half field of view (less the tag's own half width) and ranges in [near, far]."""
+    """How often can fix_pose's full fix be `well_conditioned` (sigma_xy <= 0.15 m and sigma_theta <= 8 deg under the
+    DV noise model) for tags that share one picture? Random sets of 2-4 tags at bearings inside the half field of view
+    (less the tag's own half width) and ranges in [0.75, far]; `same wall`: all at the same depth ahead (a wall seen
+    square-on), `any depth`: independent ranges."""
     import random
     from beaconmind import geometry as g
+    from beaconmind.dv import load_dv
     rng = random.Random(args.seed)
     pose = {"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}
-    print("fix_pose full fix: share of random tag sets that are well conditioned (%d sets per cell, seed %d)" % (
-        args.samples, args.seed))
-    print("| field of view | tags in the picture | ranges 0.65-1.5 m | ranges 0.65-2.5 m | best sigma_xy m | best sigma_theta deg |")
-    print("| --- | --- | --- | --- | --- | --- |")
-    for label, half in (("46.9 deg (measured camera)", 46.86 / 2), ("60 deg (study placeholder)", 30.0)):
+    half = 22.4
+    print("fix_pose full fix: share of random tag sets in one 46 deg picture that are well conditioned "
+          "(%d sets per cell, seed %d)" % (args.samples, args.seed))
+    print("| DV noise model | tags in the picture | same wall, depth 0.75-2.5 m | any depth 0.75-2.5 m |")
+    print("| --- | --- | --- | --- |")
+    for label, dv in (("configs/dv.json (range 0.05 + 0.05 r m, bearing 2.0 deg)", load_dv()),
+                      ("MEASURED_SIGMA_DV (range 0.01 + 0.012 r m, bearing 0.5 deg)", dict(load_dv(), **kr.MEASURED_SIGMA_DV))):
         for k in (2, 3, 4):
-            cells, best_xy, best_th = [], float("inf"), float("inf")
-            for far in (1.5, 2.5):
+            cells = []
+            for same_wall in (True, False):
                 ok = 0
                 for _ in range(args.samples):
+                    depth = rng.uniform(0.75, 2.5)
                     matches = []
                     for _ in range(k):
-                        r = rng.uniform(0.65, far)
-                        b = rng.uniform(-1.0, 1.0) * (half - math.degrees(math.atan(0.10 / r)))
+                        r0 = depth if same_wall else rng.uniform(0.75, 2.5)
+                        b = rng.uniform(-1.0, 1.0) * (half - math.degrees(math.atan(0.08 / r0)))
+                        r = r0 / math.cos(math.radians(b)) if same_wall else r0
                         matches.append({"det": {"range_m": r, "bearing_deg": b}, "point": g.map_point(pose, r, b)})
-                    full = g.fix_pose(pose, matches)["full"]
-                    ok += full["well_conditioned"]
-                    best_xy, best_th = min(best_xy, full["sigma_xy_m"]), min(best_th, full["sigma_theta_deg"])
-                cells.append("%.2f %%" % (100.0 * ok / args.samples))
-            print("| %s | %d | %s | %s | %.3f | %.1f |" % (label, k, cells[0], cells[1], best_xy, best_th))
+                    ok += g.fix_pose(pose, matches, dv=dv)["full"]["well_conditioned"]
+                cells.append("%.1f %%" % (100.0 * ok / args.samples))
+            print("| %s | %d | %s | %s |" % (label, k, cells[0], cells[1]))
 
 
 def cmd_layout_search(args):
     """Greedy choice of extra tag positions: each step adds the candidate that most raises the share of poses from
-    which a full fix is possible in one picture (fix_pose's `well_conditioned` on the tags in view, true geometry).
-    Poses: a 0.25 m grid at least --inset inside the driving area, 12 headings. Candidates: every 5 cm along the
-    walls' usable stretches (tools/room_layout.py WALLS), at least --spacing from every tag already placed."""
-    import room_world as rw
+    which a full fix is possible in one picture (fix_pose's `well_conditioned` on the tags in view, true geometry),
+    ties broken by the share of poses with two tags in view. Poses: a 0.25 m grid at least --inset inside the
+    driving area, 12 headings. Candidates: every 5 cm along the walls' usable stretches (tools/room_layout.py WALLS),
+    at least --spacing from every tag already placed."""
     from beaconmind import geometry as g
     from beaconmind.dv import load_dv
-    world = kr.load_world(args.world)
+    world = option_world("A")
     noise = kr.preset("camera", max_range_m=args.range)
     dv = dict(load_dv(), **(kr.MEASURED_SIGMA_DV if args.measured_sigma else {}))
     print("fix_pose noise model: %s" % ("kinsim_room.MEASURED_SIGMA_DV %s" % kr.MEASURED_SIGMA_DV if args.measured_sigma
@@ -404,8 +521,7 @@ def cmd_layout_search(args):
         w = rw.wall_of(wall_key)
         x, y = rw.tag_xy(w, along)
         nx, ny = rw.rl.inward_normal(w)
-        nd = math.degrees(math.atan2(ny, nx))
-        return {"x_m": x, "y_m": y, "normal_deg": nd, "n": (nx, ny), "z_m": proto["z_m"],
+        return {"x_m": x, "y_m": y, "normal_deg": math.degrees(math.atan2(ny, nx)), "n": (nx, ny), "z_m": proto["z_m"],
                 "half_m": proto["black_size_m"] / 2, "wall": wall_key, "along": along}
 
     def seen_from(tag):
@@ -415,12 +531,11 @@ def cmd_layout_search(args):
     for t in world["tags"]:
         nd = math.radians(t["normal_deg"])
         placed.append(dict(t, n=(math.cos(nd), math.sin(nd)), half_m=t["black_size_m"] / 2))
-    half_sheet = args.spacing / 2
     cands = []
     for w in rw.rl.WALLS:
         for a, b in w["spans"]:
-            s = a + half_sheet + 0.02
-            while s <= b - half_sheet - 0.02 + 1e-9:
+            s = a + args.spacing / 2 + 0.02
+            while s <= b - args.spacing / 2 - 0.02 + 1e-9:
                 cands.append(as_tag(w["key"], round(s, 2)))
                 s += 0.05
     vis = [seen_from(t) for t in placed]
@@ -450,8 +565,8 @@ def cmd_layout_search(args):
         for c, cv in zip(cands, cvis):
             if any(math.hypot(c["x_m"] - t["x_m"], c["y_m"] - t["y_m"]) < args.spacing for t in placed):
                 continue
-            gain = sum(1 for k in cv if k not in fix and fixable(k, at.get(k, []) + [c]))
-            gain2 = sum(1 for k in cv if k not in two and len(at.get(k, [])) >= 1)
+            gain = sum(1 for k in cv if k not in fix and k in at and fixable(k, at[k] + [c]))
+            gain2 = sum(1 for k in cv if k not in two and k in at)
             if best is None or (gain, gain2) > best[0]:
                 best = ((gain, gain2), c, cv)
         (gain, gain2), c, cv = best
@@ -466,27 +581,28 @@ def cmd_layout_search(args):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("grid", "one"):
-        p = sub.add_parser(name)
-        p.add_argument("--world", default=str(ROOT / "configs" / "arenas" / "real-room-nominal.json"))
-        p.add_argument("--scenarios", default=str(ROOT / "configs" / "arenas" / "real-room-scenarios.json"))
-    g = sub.choices["grid"]
-    g.add_argument("--seeds", default="3000-3029")
-    g.add_argument("--presets", default="study,camera")
-    g.add_argument("--ranges", default="2.0,2.5")
-    g.add_argument("--odometry", default="study,drift2,carpet")
-    g.add_argument("--detail-preset", default="camera")
-    g.add_argument("--detail-odometry", default="study")
-    g.add_argument("--logs")
-    g.add_argument("--save-seeds", type=int, default=5, help="save the logs of the first N seeds of every main cell")
-    g.add_argument("--json")
-    g.add_argument("--tables")
-    g.set_defaults(func=cmd_grid)
-    o = sub.choices["one"]
+    g_ = sub.add_parser("grid")
+    g_.add_argument("--groups", default="options,options-dv,study-preset",
+                    help="options, options-dv, study-preset, scenarios, driver, inset, bias, range")
+    g_.add_argument("--focus", default="A:2.5", help="OPTION:RANGE for the detail groups")
+    g_.add_argument("--seeds", default="3000-3029")
+    g_.add_argument("--json", required=True)
+    g_.add_argument("--fresh", action="store_true", help="start the JSON file again instead of adding to it")
+    g_.add_argument("--logs")
+    g_.add_argument("--save-seeds", type=int, default=5, help="save the logs of the first N seeds of the option cells")
+    g_.add_argument("--jobs", type=int, default=max(1, multiprocessing.cpu_count() - 1))
+    g_.set_defaults(func=cmd_grid)
+    t_ = sub.add_parser("tables")
+    t_.add_argument("--json", required=True)
+    t_.add_argument("--out")
+    t_.set_defaults(func=cmd_tables)
+    o = sub.add_parser("one")
+    o.add_argument("--option", default="A", choices=sorted(OPTIONS))
     o.add_argument("--scenario", default="S1")
     o.add_argument("--preset", default="camera")
-    o.add_argument("--range", type=float, default=2.0)
+    o.add_argument("--range", type=float, default=2.5)
     o.add_argument("--odometry", default="study", choices=sorted(ODOMETRY))
+    o.add_argument("--dv", default="frozen", choices=("frozen", "measured"))
     o.add_argument("--seed", type=int, default=3000)
     o.add_argument("--policy", default="block", choices=("block", "frozen"))
     o.add_argument("--patience", type=int, default=2)
@@ -495,7 +611,6 @@ def main(argv=None):
     o.add_argument("--out")
     o.set_defaults(func=cmd_one)
     ls = sub.add_parser("layout-search")
-    ls.add_argument("--world", default=str(ROOT / "configs" / "arenas" / "real-room-nominal.json"))
     ls.add_argument("--range", type=float, default=2.5)
     ls.add_argument("--add", type=int, default=8)
     ls.add_argument("--spacing", type=float, default=0.25, help="smallest distance between two tag centres, m")

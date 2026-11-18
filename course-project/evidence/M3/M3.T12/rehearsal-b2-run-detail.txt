@@ -1,0 +1,60 @@
+scenarios / S2 / drift2 / camera / dv frozen: 30 episodes
+scenarios / S2 / study / camera / dv frozen: 30 episodes
+scenarios / S1 / drift2 / camera / dv frozen: 30 episodes
+scenarios / S4 / study / camera / dv frozen: 30 episodes
+scenarios / S1 / study / camera / dv frozen: 30 episodes
+scenarios / S5 / study / camera / dv frozen: 30 episodes
+scenarios / S3 / study / camera / dv frozen: 30 episodes
+scenarios / S4 / drift2 / camera / dv frozen: 30 episodes
+scenarios / S5 / drift2 / camera / dv frozen: 30 episodes
+scenarios / S3 / drift2 / camera / dv frozen: 30 episodes
+driver / B2 as frozen / study / camera / dv frozen: 150 episodes
+driver / dead end defined / study / camera / dv frozen: 150 episodes
+driver / B2 as frozen / carpet / camera / dv frozen: 150 episodes
+driver / dead end defined / carpet / camera / dv frozen: 150 episodes
+inset / inset 0.0 m / carpet / camera / dv frozen: 150 episodes
+scenarios / S1 / study / camera / dv measured: 30 episodes
+scenarios / S2 / study / camera / dv measured: 30 episodes
+driver / dead end defined, E1 after 4 scans / study / camera / dv frozen: 150 episodes
+scenarios / S3 / study / camera / dv measured: 30 episodes
+inset / inset 0.4 m / carpet / camera / dv frozen: 150 episodes
+driver / dead end defined, E1 after 4 scans / carpet / camera / dv frozen: 150 episodes
+inset / inset 0.2 m / carpet / camera / dv frozen: 150 episodes
+bias / bearing bias +2 deg / study / camera / dv frozen: 150 episodes
+scenarios / S4 / study / camera / dv measured: 30 episodes
+scenarios / S5 / study / camera / dv measured: 30 episodes
+scenarios / S2 / drift2 / camera / dv measured: 30 episodes
+scenarios / S1 / drift2 / camera / dv measured: 30 episodes
+scenarios / S4 / drift2 / camera / dv measured: 30 episodes
+bias / bearing bias +0 deg / study / camera / dv frozen: 150 episodes
+scenarios / S5 / drift2 / camera / dv measured: 30 episodes
+scenarios / S3 / drift2 / camera / dv measured: 30 episodes
+driver / B2 as frozen, measured DV sigmas / study / camera / dv measured: 150 episodes
+driver / B2 as frozen, measured DV sigmas / carpet / camera / dv measured: 150 episodes
+driver / dead end defined, measured DV sigmas / carpet / camera / dv measured: 150 episodes
+driver / dead end defined, measured DV sigmas / study / camera / dv measured: 150 episodes
+inset / inset 0.0 m, measured DV sigmas / carpet / camera / dv measured: 150 episodes
+driver / dead end defined, E1 after 4 scans, measured DV sigmas / study / camera / dv measured: 150 episodes
+inset / inset 0.4 m, measured DV sigmas / carpet / camera / dv measured: 150 episodes
+bias / bearing bias +2 deg, measured DV sigmas / study / camera / dv measured: 150 episodes
+driver / dead end defined, E1 after 4 scans, measured DV sigmas / carpet / camera / dv measured: 150 episodes
+inset / inset 0.2 m, measured DV sigmas / carpet / camera / dv measured: 150 episodes
+range / 1.5 m / study / camera / dv frozen: 150 episodes
+bias / bearing bias +0 deg, measured DV sigmas / study / camera / dv measured: 150 episodes
+range / 3.0 m / study / camera / dv frozen: 150 episodes
+range / 2.5 m / study / camera / dv frozen: 150 episodes
+range / 2.0 m / study / camera / dv frozen: 150 episodes
+range / 4.0 m / study / camera / dv frozen: 150 episodes
+range / 3.5 m / study / camera / dv frozen: 150 episodes
+driver / B2 as frozen / carpet / camera / dv frozen: 150 episodes
+driver / B2 as frozen, measured DV sigmas / study / camera / dv measured: 150 episodes
+driver / B2 as frozen / study / camera / dv frozen: 150 episodes
+driver / dead end defined / carpet / camera / dv frozen: 150 episodes
+driver / dead end defined / study / camera / dv frozen: 150 episodes
+driver / dead end defined, E1 after 4 scans / carpet / camera / dv frozen: 150 episodes
+driver / dead end defined, E1 after 4 scans / study / camera / dv frozen: 150 episodes
+driver / B2 as frozen, measured DV sigmas / carpet / camera / dv measured: 150 episodes
+driver / dead end defined, measured DV sigmas / carpet / camera / dv measured: 150 episodes
+driver / dead end defined, measured DV sigmas / study / camera / dv measured: 150 episodes
+driver / dead end defined, E1 after 4 scans, measured DV sigmas / carpet / camera / dv measured: 150 episodes
+driver / dead end defined, E1 after 4 scans, measured DV sigmas / study / camera / dv measured: 150 episodes
