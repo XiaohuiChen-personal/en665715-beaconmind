@@ -3,6 +3,8 @@
 % AI-assisted: Claude Opus 5.5 via Cursor drafted this figure (2026-10-29) from AGENT-DESIGN D1-D10,
 % CONTEXT.md (2026-10-29), reference/hardware/ and plan/README.md C2-C5, C12, and marked the metrics and
 % the two judges as built after the pilot code existed. Xiaohui Chen reviews it.
+% AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: updated the status of nodes to the re-scoped plan
+% (no Isaac twin, no project firmware, no overhead camera; three LLM back ends; one judge).
 \begin{figure*}[!t]
 \centering
 \begin{tikzpicture}[
@@ -12,6 +14,8 @@
                align=center, inner sep=2pt, text width=#1},
   comp/.default=2cm,
   plan/.style={comp=#1, dashed},
+  unused/.style={comp=#1, densely dotted, line width=0.9pt},
+  unused/.default=2cm,
   plan/.default=2cm,
   link/.style={->, line width=0.55pt},
   plink/.style={link, dashed},
@@ -21,16 +25,16 @@
   gtitle/.style={anchor=north west, align=left, inner sep=0pt},
 ]
 % ------------------------------------------------------------------ group 1: robot car
-\node[comp=3.1cm] (cam) at (1.75,9.0)
+\node[unused=3.1cm] (cam) at (1.75,9.0)
   {\textbf{ESP32-CAM} (OV3660)\\ firmware bm\_cam-0.2};
 \node[align=center, text width=3.1cm, inner sep=1pt] (picot) at (1.75,8.05)
-  {\textbf{Raspberry Pi Pico 2 W}\\ RP2350; micro-ROS client;\\ lab firmware flashed now};
-\node[plan=2.9cm, below=3pt of picot] (fw)
-  {project firmware: bounded moves, watchdog, e-stop};
-\node[draw, line width=0.6pt, rounded corners=1.5pt, fit=(picot)(fw), inner sep=2pt] (pico) {};
-\node[comp=1.15cm] (imu) at (0.75,5.85) {\textbf{BNO055}\\ IMU};
-\node[comp=1.45cm] (drv) at (2.6,5.85) {\textbf{TB6612FNG}\\ motor driver};
-\node[comp=3.1cm] (mot) at (1.75,4.7)
+  {\textbf{Raspberry Pi Pico 2 W}\\ RP2350; micro-ROS client;\\ lab firmware (author's build)};
+\node[unused=2.9cm, below=3pt of picot] (fw)
+  {watchdog, deadman, stall cut-off};
+\node[draw, densely dotted, line width=0.9pt, rounded corners=1.5pt, fit=(picot)(fw), inner sep=2pt] (pico) {};
+\node[unused=1.15cm] (imu) at (0.75,5.85) {\textbf{BNO055}\\ IMU};
+\node[unused=1.45cm] (drv) at (2.6,5.85) {\textbf{TB6612FNG}\\ motor driver};
+\node[unused=3.1cm] (mot) at (1.75,4.7)
   {2 $\times$ TT gear motors (1:90)\\ with Hall quadrature encoders};
 \node[lbl, text width=3.2cm] (pwr) at (1.75,3.75)
   {\textit{Power: 4$\times$AA pack $\rightarrow$ motor driver; USB power bank $\rightarrow$
@@ -44,19 +48,19 @@
 
 % ------------------------------------------------------------------ group 2: host
 \node[plan=1.95cm] (cb) at (5.88,9.1)
-  {camera bridge +\\ AprilTag detector\\ \texttt{apriltag\_ros}};
+  {camera relay +\\ AprilTag detector\\ (tag36h11)};
 \node[comp=2.4cm] (ob) at (9.33,9.1)
   {\textbf{observation builder}\\ odometry, detections, counters, safety flags};
-\node[comp=1.95cm] (mr) at (5.88,7.6)
+\node[unused=1.95cm] (mr) at (5.88,7.6)
   {\textbf{micro-ROS agent}\\ UDP over Wi-Fi\\ (own container)};
-\node[comp=2.4cm] (va) at (9.33,7.6)
-  {\textbf{validator}\\ move checks, safety flags (auto-latch planned)};
+\node[unused=2.4cm] (va) at (9.33,7.6)
+  {\textbf{validator}\\ move checks, safety flags, latch};
 \node[comp=2.4cm] (ha) at (9.33,6.2)
-  {\textbf{benchmark harness}\\ closed loop or replay; run logs};
+  {\textbf{benchmark harness}\\ replay (the study); run logs};
 \node[plan=1.95cm] (isaac) at (5.88,4.75)
-  {\textbf{Isaac Sim 5.1} digital twin (ROS~2 bridge)};
+  {kinematic copy of the real room (sim-first rule)};
 \node[comp=2.4cm] (kin) at (9.33,4.75)
-  {\textbf{kinematic simulator}\\ (pilot)};
+  {\textbf{kinematic simulator}\\ (pilot, main study)};
 \node[lbl] (altcap) at (7.6,3.9)
   {\textit{alternative environments,}\\ \textit{same observation interface}};
 
@@ -67,8 +71,8 @@
    quality; safety flags) + PREVIOUS\_REPORT\\[1pt]
    \textit{owns the pose belief and the beacon map}};
 \node[comp=2.85cm, anchor=north] (be) at (16.455,10.72)
-  {\textbf{LLM back ends}\\ Claude Opus 5.5\\ (Anthropic API; pilot)\\
-   planned on the Spark: vLLM\\ serving \mbox{Qwen3.8-Flash-Next}};
+  {\textbf{LLM back ends}\\ Claude Opus 5.5\\ (Anthropic API)\\
+   on the Spark (vLLM):\\ \mbox{Qwen3.8-Flash-Next},\\ \mbox{Gemma 4 26B}};
 \node[comp=2.85cm, below=0.25cm of be] (tl)
   {\textbf{deterministic tools}\\ single-timestep, JSON out\\[1pt]
    \texttt{compose\_odometry}\\ \texttt{gate\_detection}\\ \texttt{fix\_pose}\\
@@ -76,25 +80,25 @@
    \texttt{exploration\_summary}\\ \texttt{move}\\ \texttt{emergency\_stop}};
 \node[plan=2.85cm, below=0.25cm of tl] (rosa)
   {\textbf{ROSA demo}, same tools\\ (\texttt{rosa-ros2} container)};
-\node[plan=2.85cm] (gt) at (16.455,3.75) {overhead ground-truth\\ camera (real arena)};
+\node[plan=2.85cm] (gt) at (16.455,3.75) {tape ground truth\\ (real room)};
 \node[comp=2.9cm] (rp) at (12.98,6.2)
   {\textbf{JSON belief report}\\ pose, associations, map, memory, decision, note};
 \node[comp=2.9cm] (met) at (12.98,4.85)
   {\textbf{metrics}: trajectory, map and association error, tool-call F1};
 \node[comp=2.9cm] (jud) at (12.98,3.75)
-  {\textbf{LLM judges}: GPT-6.1 Sol (API) and \mbox{Gemma 4 26B} (Ollama) score the \textit{note}};
+  {\textbf{LLM judge}: GPT-6.1 Sol (API) scores the \textit{note}};
 
 % ------------------------------------------------------------------ links: car <-> host
 \draw[plink] (cam.east |- cb.west) -- node[lbl, above] {JPEG over\\ HTTP} (cb.west);
 \draw[link] ([yshift=0.3cm]pico.east |- mr.west) -- node[lbl, above] {odometry,\\ IMU}
   ([yshift=0.3cm]mr.west);
-\draw[plink] ([yshift=-0.3cm]mr.west) -- node[lbl, below] {bounded\\ moves}
+\draw[plink] ([yshift=-0.3cm]mr.west) -- node[lbl, below] {bounded\\ moves (host)}
   ([yshift=-0.3cm]pico.east |- mr.west);
 % out-of-band STOP (harness hotkey or /estop) straight to the Pico
 \draw[plink, red!70!black, line width=0.8pt]
   ([yshift=0.15cm]ha.west) -- ([yshift=0.15cm]ha.west -| 3.25,0) -- (3.25,0 |- pico.south);
 \node[lbl, text=red!70!black, anchor=south] at (5.88,6.45)
-  {out-of-band STOP\\ (hotkey, \texttt{/estop})};
+  {out-of-band STOP\\ (key; zero velocity, latch)};
 % ------------------------------------------------------------------ links: host internal
 \draw[plink] (cb.east) -- node[lbl, above] {tags} (cb.east -| ob.west);
 \draw[plink] (mr.north east) -- (ob.south west);
@@ -135,14 +139,19 @@
 
 \node[draw, line width=0.6pt, rounded corners=1pt, minimum width=0.45cm, minimum height=0.25cm]
   (lg1) at (0.3,2.85) {};
-\node[lbl, right=2pt of lg1] (lg1t) {built (the simulator pilot ran on these)};
+\node[lbl, right=2pt of lg1] (lg1t) {used in the simulated study};
+\node[draw, densely dotted, line width=0.9pt, rounded corners=1pt, minimum width=0.45cm,
+  minimum height=0.25cm, right=10pt of lg1t] (lg3) {};
+\node[lbl, right=2pt of lg3] (lg3t) {built, not used in the study};
 \node[draw, line width=0.6pt, rounded corners=1pt, dashed, minimum width=0.45cm,
-  minimum height=0.25cm, right=10pt of lg1t] (lg2) {};
-\node[lbl, right=2pt of lg2] {planned, not built yet (borders and arrows)};
+  minimum height=0.25cm, right=10pt of lg3t] (lg2) {};
+\node[lbl, right=2pt of lg2] {in progress or planned (borders and dashed arrows)};
 \end{tikzpicture}
-\caption{BeaconMind architecture. Solid borders and arrows mark components that exist; dashed ones mark
-planned components that are not built yet. The
-language model owns the pose belief and the beacon map, while deterministic single-timestep tools
-compute every geometric quantity and a validator below the model checks every move.}
+\caption{BeaconMind architecture as designed. Solid borders mark the components the simulated study used;
+dotted borders mark components that are built but were not used in it (the car and the validator); dashed
+borders and arrows mark the real-car path, the room simulator, the closed loop and the demonstration runtime,
+which were in progress or planned when this draft was built. The language model owns the pose belief and the
+beacon map, while deterministic single-timestep tools compute every geometric quantity; in closed loop a
+validator below the model checks every move. Arrows show the designed data flow.}
 \label{fig:arch}
 \end{figure*}

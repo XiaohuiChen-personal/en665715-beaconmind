@@ -747,6 +747,20 @@ switch-on of each session is done with the car on its stand, wheels up; (4) a Pi
 or a new boot cause in the diagnostics) stops the session: motor battery off, check, then continue; (5) the run recorder
 (rule R2) runs whenever the motor battery is on, so any unexpected motion is on video and in the bag.
 
+**Unattended batches (Xiaohui, 2026-11-18), which changes procedures (2) and (5) above for batch runs.** Xiaohui: "I
+would want all the coded-procedure episodes done automatically. That means I do not need to take care of the car between
+episodes. Same for the live Opus episodes"; then "I approve leaving the motor battery on unattended." During a batch of
+episodes the motor battery stays on with nobody at the car. What replaces the hand on the switch: the validator's wall
+check before every move, the firmware's command timeout and stall cut-off, the STOP latch, and a batch runner that halts
+and waits (never retries) on a Pico restart, a lost link, a camera failure, a stall, a latch or fading batteries; the
+recorder runs throughout (rule R2). The stand test and the first one or two episodes of a batch stay attended (Claude's
+recommendation). **Ground truth changes with it:** the car turns a full circle at each episode's start and end and its
+pose is computed from the surveyed wall tags (resection); tape readings are taken at the batch's first start, its last
+end and one spot check, to bound the resection's error. The report states this as a deviation from "ground truth on the
+car is tape". Spend approved the same day: one simulated closed-loop episode each on Claude Opus 5.5 and Claude Fable 5.2
+(and one rerun on the final room simulator, decided by Claude under the delegation), the 2–3 live Opus episodes on the
+car, and the Opus replay of the 10 real logs (quoted US$48–110).
+
 **Closed-loop demo model (Xiaohui, 2026-11-10):** the closed-loop demo episodes — the simulation take and the car
 episodes — use **Claude Opus 5.5** (about 15 s a step, so about 15 minutes an episode, against about 1–1.5 hours for
 Qwen3.8 at about 1–2 minutes a step; about US$5 an episode at the pilot's cost per step). The study's replay arms are

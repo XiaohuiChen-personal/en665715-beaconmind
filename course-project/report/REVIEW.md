@@ -152,3 +152,105 @@ Template changes, all in the preamble: `subfig` loaded with `caption=false` so I
 table-caption format applies; `flushend` to balance the last page; `\bstctlcite` plus an
 `@IEEEtranBSTCTL` entry so that more than six authors print as "et al."; the instructor's 48
 sample entries removed from `mybibfile.bib`.
+
+## Main-study rewrite — rounds 1 and 2 (M5.T13, M5.T14, M5.T5, M5.T15, M5.T7 part; 2026-11-18)
+
+Scope: the rewrite of the Abstract, Sections I and III–VI and the disclosure for the pre-registered main study
+(Section II unchanged), with the generated numbers and tables of `tools/report_assets.py` (`report/generated/`,
+`MANIFEST.txt`). Every reviewer was a fresh agent (Claude Fable 5.2 subagents in Claude Code) with no access to the
+drafting context; none edited a file. Each finding was checked by the drafting agent against the evidence, the code
+or the design documents before anything was changed. The earlier rounds are above and in `REVIEW-DRAFT.md`.
+
+| Round | Lens | Findings (crit/major/minor) | Confirmed | Declined or left to the owner |
+| --- | --- | --- | --- | --- |
+| 1 | Results integrity: every number and claim against `evidence/M4/M4.T16/`, `M4.T1/`, the camera and room evidence (about 230 numbers recomputed) | 0 / 3 / 11 | 10 | 4 |
+| 1 | Requirements, logic, overclaiming, design consistency, writing | 4 / 11 / 19 | 30 | 4 |
+| 2 | All lenses on the revised text (about 190 numbers recomputed; all matched) | 2 / 7 / 14 | 19 | 4 |
+
+No wrong statistic and no wrong hypothesis outcome was found in either round.
+
+### Round 1, confirmed and fixed
+
+- **Signs.** "lower by −2.83 cm" was a double negative: the Abstract now uses unsigned gains (new keys
+  `h1.<arm>.gain`), Section V-B states the paired difference with its sign, and the threshold reads "below −3 cm".
+- **Coverage comparison.** The room and the study arena are compared at the design's 2.0 m range limit, while the
+  study's simulator stopped at 1.5 m; the text now says so.
+- **Unfinished work shown as finished.** The tags are printed, not mounted (text and Fig. 3 caption). Fig. 1 has three
+  states (used in the study; built but not used in it; in progress or planned), so the car and the validator no longer
+  read as part of the study. Table II separates the checks of the study's tool dispatcher from those of the closed-loop
+  validator, which was written after the study. The real setup is no longer listed as a contribution. Section III says
+  that the study ran in replay, so the agent's move decisions and the validator were not exercised.
+- **Limitations and threats added:** replay is open loop and B2 drove every log; the drift condition was chosen from
+  the pilot's outcome; the judge was calibrated on synthetic notes and Opus's notes only; "on most seeds their estimates
+  are the procedure's" replaced by the counts (within 1 cm on 28 and 26 of 30 seeds).
+- **Pre-registration described plainly:** a self-registration in the project's own repository, committed minutes before
+  the launch, with the launch script outside the frozen files. Deviation 3 names the unique-ID condition; deviation 2 is
+  one run per seed for every arm; the failed premise of the local output cap is tied to the Gemma 4 time-outs.
+- **Disclosure:** GPT-5.6 Sol, Grok 4.7 and the AI-run literature searches added; Opus 5.5's real-setup work and Fable
+  5.2's work added; the reviewer models named.
+- **Smaller fixes:** the back-transformed H2 ratio is named as such; Gemma 4's cause is labelled post hoc in the
+  Abstract, Introduction and Conclusion; the latency row is labelled as pooled over steps; the Fig. 4 caption says the
+  panels round to one decimal; three accepted calibration deviations, not two (the board was not ruler-checked); the H4
+  alternative, the Opus − Qwen3.8 outcome ("rejected, but fragile") and the H0 column for the H4 pairs; Opus's six
+  `emergency_stop` calls; the firmware described as the author's build that boots armed; the tool-call tolerance's
+  reason and the Concise criterion's level 0 restored; generalisations in the Conclusion scoped to this study;
+  "gray"; cross-references.
+
+### Round 1, declined or left to the owner
+
+- **Numbers taken from the hand-off's prose** (Gemma 4's 7.2 tokens/s and 76 minutes; 285 label errors): kept where
+  used, because `results_summary.md` is an evidence file and `MANIFEST.txt` names it as their source; the 285 sentence
+  was later cut for space.
+- **"The prompt was finished on 2026-09-27":** kept, reworded to "before the study simulator and its seeds existed";
+  `AGENT-DESIGN.md` dates v3.3 and its 4,352 tokens.
+- **Section II forward pointers:** not changed; that section is the reviewed text of the earlier rounds.
+- **Reasons for the rubric weights:** none is recorded anywhere, so none is stated.
+- **Fig. 4's inner titles** ("odometry drift", "grey", one-decimal annotations): the figures are drawn by
+  `evidence/M4/M4.T16/make_figures.py`, which this task may not edit; the caption notes the rounding.
+
+### Round 2, confirmed and fixed
+
+- **Table II was out of date again:** another agent's validator gained error and reboot latches and the latch file
+  during the session; the row now matches `harness/validator.py` (only the slip latch is not implemented).
+- **Scope of the replay:** every log is one exploration episode with no operator request; stated in the limitations.
+  The safety flags came from the simulator in the study, from the validator in closed loop.
+- **Coverage:** only the one-heading figure falls with the measured field of view; the full-turn figure does not
+  depend on it under that rule.
+- **Not yet run on the car:** the bounded-move executor and the STOP are described as written and tested against a
+  simulated car. The simulated closed-loop episodes that ran during the session are named as not reported in this draft
+  (placeholder 6 in `PENDING.md`).
+- **Disclosure:** Grok 4.7's and Opus 5.5's lists completed from the repository's AI-assisted lines; this log supports
+  the sentence about the reviewers.
+- **Smaller fixes:** deviation 9 (the 30 seeds kept) named, so the summary covers all 22; the power model's wording;
+  the single run per seed among the uses of the development runs; "8 output-cap fallbacks" instead of "it did not";
+  "no move chosen by the agent was executed"; the prompt's development model named (Qwen3.5, not an arm); vLLM 0.30.0
+  for both local models; "9 × 6 inner corners"; editing residue in the opening of Section IV; the STOP label in Fig. 1.
+
+### Round 2, declined or left to the owner
+
+- **Batches of episodes with the motor battery left on, and resection ground truth:** the report describes them as
+  planned, on the lead's relay of Xiaohui's approval of 2026-11-18. The reviewer was right that `plan/README.md` §3.6 and `CONTEXT.md` did not record it; the lead recorded it the
+  same night (plan §3.6 "Unattended batches (Xiaohui, 2026-11-18)" and the top `CONTEXT.md` entry), so the text stays.
+- **"The code is public":** true only after the new files are committed and pushed; committing is the lead's.
+- **`results_summary.md` rounding slips** (H2 lower ends 7.5 and 7.3 for 7.6 and 7.4; B0 minimum 4.8 for 4.7): the
+  report follows `study_summary.json`; the lead corrected the hand-off with a dated note.
+- **Fig. 3 label overlap and Fig. 1's "A/B" label:** cosmetic, left.
+
+### Not run
+
+A third round was not run, so the protocol's "one full round with zero confirmed findings" is **not** met. After
+round 2 the text was also cut by about 30 lines to hold 12 pages; those cuts were checked by the drafting agent only.
+A final round belongs after the real-car results are filled in.
+
+### Validation (final build, 2026-11-18)
+
+`latexmk -pdf -interaction=nonstopmode -halt-on-error Chen-Project-Report.tex`: exit 0, 12 pages; 0 overfull boxes,
+0 undefined references or citations, 0 LaTeX or `bmnum` warnings, 0 BibTeX warnings; 41 cite keys and 41 entries,
+each cited; `pdffonts`: every font embedded, no Type 3 (the Type 3 `fig_pilot.pdf` and `fig_study.pdf` are no longer
+included). `report_assets.py --check`: `assets: up to date`; `--pending`: 7. Tests:
+`beaconmind/tests/test_report_assets.py` 7 passed (the whole suite 449 passed, 10 skipped on the Mac). Abstract: about
+245 words without the placeholder sentence. Files no longer input by the report and kept as the pilot's record:
+`tab_pilot.tex`, `tab_judge.tex`, `figures/fig_pilot.*`, `figures/fig_study.*`.
+
+AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: rewrote the report, ran the two review rounds with fresh
+subagents, verified the findings, applied the fixes and wrote this log.

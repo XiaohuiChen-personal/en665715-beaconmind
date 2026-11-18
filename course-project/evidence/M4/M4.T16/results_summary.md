@@ -32,7 +32,7 @@ US$6.27 (cap 25).
 | --- | --- | --- | --- | --- | --- | --- |
 | Median | 16.74 | 1.23 | 11.68 | 12.06 | 11.92 | 69.33 |
 | Mean [bootstrap 95 %] | 16.2 [14.2, 18.1] | 1.34 [1.21, 1.49] | 13.1 [11.0, 15.4] | 13.1 [11.0, 15.4] | 12.0 [10.5, 13.5] | 80.6 [66.6, 96.6] |
-| Range | 4.8–26.6 | 0.7–2.4 | 4.6–31.3 | 4.6–31.3 | 4.6–22.0 | 13.4–227.1 |
+| Range | 4.7–26.6 | 0.7–2.4 | 4.6–31.3 | 4.6–31.3 | 4.6–22.0 | 13.4–227.1 |
 
 Figures: `report/figures/fig_study.{pdf,png}` (the frozen analysis's figure, linear axis);
 `fig_study_log.{pdf,png}` (the same strips on a log axis) and `fig_study_h1.{pdf,png}` (H1's paired differences
@@ -63,8 +63,8 @@ than dead reckoning.
 The serial gate opens family 2 only if every H1 is rejected. Gemma 4's H1 was not, so H2 is **not tested** for any
 arm and none is rejected (the pre-registered rule; not a choice made after seeing the data). Descriptively it would
 have failed for every arm. On every seed, every arm's ATE is more than twice B1's: 30 of 30 values of
-log(ATE/ATE_B1) − log 2 are positive. The HL estimates, converted to ATE/ATE_B1, are 8.9 [7.5, 11.1] (Opus), 8.6
-[7.3, 10.1] (Qwen3.8) and 57 [43, 71] (Gemma 4). The pre-registration expected this (§5: for an arm that reproduces the procedure,
+log(ATE/ATE_B1) − log 2 are positive. The HL estimates, converted to ATE/ATE_B1, are 8.9 [7.6, 11.1] (Opus), 8.6
+[7.4, 10.1] (Qwen3.8) and 57 [43, 71] (Gemma 4). The pre-registration expected this (§5: for an arm that reproduces the procedure,
 log(ATE/ATE_B1) − log 2 had median 1.62 on 99 dev seeds, a ratio of about 10, and was never below 0).
 
 ## H4 (secondary, own family): do the three models differ?
@@ -229,3 +229,5 @@ same day) checked every number against the source files and found no wrong stati
 interpretation and post-hoc-script problems, among them the rubric-sample direction, the circular parse check, the
 Gemma 4 timeouts and the Opus − Qwen3.8 reading. All were verified against the logs and fixed here and in the
 scripts. The pre-registered design is in `evidence/M4/M4.T1/`.
+
+Correction, 2026-11-18 (Claude Fable 5.2 via Claude Code, found by the report's independent number review): three values in this file were truncated, not rounded; they now match `study_summary.json`: B0's minimum ATE 4.7 cm (4.748; was 4.8) and the H2 ratio intervals' lower ends 7.6 and 7.4 (7.550, 7.351; were 7.5 and 7.3). No statistic or outcome changes.

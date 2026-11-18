@@ -2,11 +2,12 @@
 % Content from AGENT-DESIGN D4, D5 and D7, plan/README.md C0, C2, C4 and C5, and the run_tool
 % behaviour of the v3.3 smoke harness. Every threshold is a design value until measured.
 % AI-assisted: Claude Opus 5.5 via Cursor drafted this table (2026-10-29). Xiaohui Chen reviews it.
+% AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: updated the compose_odometry check to the study harness.
 \begin{table*}[!t]
 \caption{The Agent's Nine Tools and the Checks That Guard Them}
 \label{tab:tools}
 \centering
-\footnotesize
+\scriptsize
 \renewcommand{\arraystretch}{1.1}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{p{\dimexpr0.19\textwidth-2\tabcolsep\relax}
@@ -22,8 +23,8 @@
 \raggedright Predict the pose from the odometry increment &
 \raggedright pose $(x,y,\theta)$, forward $f$, left $l$, $\Delta\theta$ $\rightarrow$ pose
 $x+f\cos\theta-l\sin\theta$, $y+f\sin\theta+l\cos\theta$, $\theta+\Delta\theta$ &
-\raggedright Heading wrapped to $(-180^\circ,180^\circ]$; designed but not yet in the pilot harness: a
-reported pose that differs from the tool result is a state violation, and the tool value is kept
+\raggedright Heading wrapped to $(-180^\circ,180^\circ]$; a reported pose that differs from the
+tool result is counted as a state violation (the study scores the report as written)
 \tabularnewline
 \hline
 \raggedright\texttt{gate\_detection} &
@@ -78,24 +79,27 @@ bounded by mapped beacons used as wall proxies
 \raggedright one of \texttt{FORWARD\_25}, \texttt{FORWARD\_10}, \texttt{BACKWARD\_10},
 \texttt{TURN\_LEFT\_30}, \texttt{TURN\_RIGHT\_30} $\rightarrow$ result (done, stalled, bumped,
 timeout, link\_lost, refused, not\_called), reason &
-\raggedright Validator refuses: any other action; a second executed move per observation; any
-move when status is error or the latch is set; a move not in the safety flags; a move beyond the
-step budget; any move in replay
+\raggedright Refused: any other action; a second executed move per observation; any move when
+the latch is set; a move not in the safety flags; any move in replay. The closed-loop validator$^{\ast}$
+also refuses on status error and beyond the step budget
 \tabularnewline
 \hline
 \raggedright\texttt{emergency\_stop} &
 \raggedright Stop the car and latch &
 \raggedright reason $\rightarrow$ status ok, latched &
-\raggedright Latch holds until the operator clears it; the validator also latches after two
-consecutive contacts, slips or errors, a lost link, or a Pico reboot
+\raggedright Latch holds until the operator clears it; the closed-loop validator$^{\ast}$ also
+latches after two consecutive contacts or error observations, a lost link, a Pico reboot or an external
+latch file (the slip latch is designed, not implemented)
 \tabularnewline
 \hline
 \end{tabular}
 
 \vspace{2pt}
 \begin{minipage}{\textwidth}
-\footnotesize All nine tools are single-timestep (one observation and the previous report) and return
+\scriptsize All nine tools are single-timestep (one observation and the previous report) and return
 JSON with a \texttt{status} field; a refused call returns status \texttt{error} with a reason and
-changes nothing. Every threshold is a design value until measured.
+changes nothing. Every threshold is a design value until measured. $^{\ast}$The closed-loop validator was
+written after the study; the study ran in replay, where the only move check exercised was the refusal of
+every move.
 \end{minipage}
 \end{table*}

@@ -10,6 +10,23 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
 
+## 2026-11-18 (later) — delegation, unattended batches, spend approvals; parallel agents at work (entry in progress)
+
+**Delegation (Xiaohui, about 02:15 CST):** "fully automate the whole process and finish the tasks that could be done
+automatically … use subagents … choose the option that gives us the best quality. Do not try to save tokens … feel free
+to stage the changes, commit and push"; later "feel free to perform adversarial reviews on the steps you think it is
+important". Five agents were started on disjoint files: tag perception, car control (executor, STOP, backend), the room
+simulator and B2 rehearsal, the closed loop, the report.
+
+**Unattended batches approved (Xiaohui):** "I approve leaving the motor battery on unattended"; coded-procedure and
+live Opus episodes are to run back to back without Xiaohui at the car. Details, the safeguards that replace the hand on
+the switch, and the ground-truth change (resection from the surveyed tags, tape at the batch's first start, last end and
+a spot check) are in plan/README.md §3.6 "Unattended batches". A batch runner is still to be built.
+
+**Spend approved (Xiaohui):** the simulated Opus 5.5 and Fable 5.2 episodes; the 2–3 live Opus episodes on the car; the
+Opus replay of the 10 real logs ("Yes, I approve the replay as well"; quoted US$48–110, tell Xiaohui the tightened
+estimate first). The GPU is free for Xiaohui's other use until the Qwen3.8/Gemma replay of the real logs.
+
 ## 2026-11-18 — work list 2.10 and 2.2 DONE, 2.3 intrinsics done: recorder (M3.T27); camera size XGA (M1.T17); camera.json; tags printed
 
 **2.2 capture size (M1.T17 done): XGA 1024 × 768, JPEG quality 12** (Xiaohui, after Claude's recommendation;
