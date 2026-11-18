@@ -652,6 +652,9 @@ def table_tests(n):
     return "\n".join(L)
 
 
+LABEL_NUDGE = {"T11": (0.0, -0.2), "T01": (0.0, -0.17)}     # figure cm at the report's scale; by tag, not by ID
+
+
 def figure_room(src, scale=1.2):
     """The room, its driving area and the twelve nominal tag positions as TikZ (plan view; 1 m = `scale` cm)."""
     L = src["layout"]
@@ -677,6 +680,8 @@ def figure_room(src, scale=1.2):
         nx, ny = math.cos(a), math.sin(a)                     # the tag's normal points into the room
         px, py = t["y_m"] * s, t["x_m"] * s
         lx, ly = px + ny * 0.27, py + nx * 0.27
+        dx, dy = LABEL_NUDGE.get(t["uid"], (0.0, 0.0))      # keep a label off a neighbour or the dashed line
+        lx, ly = lx + dx * s / 1.2, ly + dy * s / 1.2
         style = "fill=black" if t["uid"] in dup else "fill=white"
         out.append("\\node[draw, %s, minimum size=3.2pt, inner sep=0pt] at (%.3f,%.3f) {};" % (style, px, py))
         out.append("\\node[inner sep=0pt] at (%.3f,%.3f) {%d};" % (lx, ly, t["id"]))

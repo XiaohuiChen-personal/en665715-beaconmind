@@ -34,7 +34,7 @@
 \input{generated/numbers}
 % A result that is not measured yet: says which number goes here and which evidence will supply it.
 % Every use is listed in PENDING.md (python3 course-project/tools/report_assets.py --pending).
-\newcommand{\pending}[1]{\textcolor{red!75!black}{\textbf{[PENDING:} #1\textbf{]}}}
+\newcommand{\pending}[1]{\textcolor{red!75!black}{\textbf{[\mbox{PENDING}:} #1\textbf{]}}}
 \input{pilot_macros}
 \pdfinfo{/Title (BeaconMind: Can a Large Language Model Own Landmark SLAM?) /Author (Xiaohui Chen)}
 \begin{document}
@@ -600,8 +600,7 @@ reckoning on \bmnum{h1.gemma.worse} of \bmnum{n.seeds} seeds.
 not; this is the pre-registered rule, not a choice made after seeing the data. Descriptively, H2 would have
 failed for every model: each arm's ATE is more than twice B1's on all \bmnum{h2.opus.above} seeds, and the
 Hodges--Lehmann estimate of the ratio to B1 (back-transformed from the log ratio) is \bmnum{h2.opus.ratio}
-for Opus, \bmnum{h2.qwen.ratio} for Qwen3.8 and \bmnum{h2.gemma.ratio} for Gemma~4 (the lowest interval end
-is \bmnum{h2.qwen.ratio-lo}). 
+for Opus, \bmnum{h2.qwen.ratio} for Qwen3.8 and \bmnum{h2.gemma.ratio} for Gemma~4 (every exact 95\,\% interval lies above 7). 
 
 \textbf{H4: the models differ} (Friedman $\chi^2=\bmnum{h4.chi2}$, $p=\bmnum{h4.p}$, Kendall's
 $W=\bmnum{h4.w}$). Both stronger models are about 64--65\,cm better than Gemma~4 (Table~\ref{tab:tests}).
@@ -643,9 +642,9 @@ is weak evidence. Gemma~4's median precision on duplicated IDs is \bmnum{assoc.d
 \textbf{Reports, notes and cost.} Gemma~4 made \bmnum{unverified.gemma} unverified fix claims, and its notes
 failed the judge's faithfulness gate \bmnum{rubric.gemma.gate} times in \bmnum{rubric.gemma.n}, against
 \bmnum{rubric.opus.gate} and \bmnum{rubric.qwen.gate}. The judged sample is drawn from valid reports only,
-which can only flatter the arm with the most invalid ones. Opus cost a median of
-US\$\bmnum{cost.seed.opus} per episode; the local models cost no API fee but were far slower under load
-(Table~\ref{tab:study}).
+which can only flatter the arm with the most invalid ones (judgeable steps: \bmnum{rubric.opus.judgeable},
+\bmnum{rubric.qwen.judgeable} and \bmnum{rubric.gemma.judgeable}\,\%). Opus cost a median of
+US\$\bmnum{cost.seed.opus} per episode.
 
 \subsection{Why Gemma 4 Is Worse Than Dead Reckoning (Post Hoc)}\label{sec:gemma}
 Because a result this far in the wrong direction could be a bug, the run logs were checked afterwards. The result is not a parsing artifact: an independent JSON decoder recovers the scored pose from all
@@ -688,11 +687,11 @@ from the study prompt, so these numbers are not comparable with the replay resul
 with DONE and mapped \bmnum{cl.opus.tags-found} of the \bmnum{cl.n-tags} tags without a phantom entry; no
 move was refused. The two models made the identical \bmnum{cl.opus.moves} moves (B2: \bmnum{cl.b2.moves}),
 and at each of their \bmnum{cl.opus.agree-steps} steps the frozen procedure, run on the observation the model
-received and the model's own previous report, makes the model's decision; they left B2's path only after a pose argument 1--2\,cm from the procedure's (Opus's rounded to two decimals,
-Fable's not yet updated by that step's fix) changed one tool result. The episode therefore shows agreement
-with the procedure, not a difference in driving. The episode's odometry had no 2\,\% over-read and the car
-traveled about \bmnum{cl.opus.path-m}\,m, so there was little to correct: no arm obtained a full pose fix,
-and dead reckoning was at least as accurate: ATE
+received and the model's own previous report, makes the model's decision; they left B2's path only after a different pose argument (Opus's rounded to two decimals, 1\,mm off;
+Fable's not yet updated by that step's fix, 2\,cm off) changed one tool result. The episode therefore shows agreement
+with the procedure, not a difference in driving. No arm obtained a full pose fix. The episode's odometry had no 2\,\%
+over-read and the car traveled about \bmnum{cl.opus.path-m}\,m, so there was little to correct, and dead
+reckoning was at least as accurate: ATE
 \bmnum{cl.opus.ate}, \bmnum{cl.fable.ate} and \bmnum{cl.b2.ate}\,cm against \bmnum{cl.opus.b0-ate},
 \bmnum{cl.fable.b0-ate} and \bmnum{cl.b2.b0-ate}\,cm on the same paths. The 95th-percentile step time was
 \bmnum{cl.opus.p95}\,s (Opus) and \bmnum{cl.fable.p95}\,s (Fable), and the episodes cost
@@ -745,7 +744,7 @@ and wrote the camera firmware, the car model, the recorder, the room-survey fit 
 calibration tools. Claude
 Fable~5.1 drafted the first Related Works section and its references. Claude Fable~5.2 (through Claude Code)
 finished the camera calibration records, wrote the perception, car-control, room-simulator and closed-loop
-code, rewrote the Abstract and Sections~I and III--VI for the main study, and wrote the script that generates
+code and ran the rehearsals and closed-loop episodes, rewrote the Abstract and Sections~I and III--VI, and wrote the script that generates
 this report's numbers from the evidence files. Fresh reviewer agents without the drafting context (Claude
 Opus~5.5, Fable~5.1 and Fable~5.2) checked the code, the pre-registration, the analysis and this report; the
 logs are in the repository. Claude Opus~5.5, Qwen3.8-Flash-Next and Gemma~4 26B are also the systems under

@@ -266,7 +266,7 @@ and 6 should-fix findings plus two open checks. The drafting agent verified each
 | Finding | What was wrong | Fix |
 | --- | --- | --- |
 | M1 | The 3.0 m range limit read as settled | "the value used in the rehearsals; provisional until a tag-accuracy pilot on real frames confirms it"; the confirmation is now part of pending item 4; slide 9 says provisional |
-| M2 | "a rounded pose argument" was wrong for Fable 5.2, whose argument was the pose before that step's fix | The sentence now gives both causes (a pose argument 1–2 cm from the procedure's), and the agreement claim is qualified: given the tool results each model obtained |
+| M2 | "a rounded pose argument" was wrong for Fable 5.2, whose argument was the pose before that step's fix | The sentence now gives both causes (first worded as "1–2 cm from the procedure's", which was wrong for Opus; corrected in the next round, below), and the agreement claim is qualified: given the tool results each model obtained |
 | M3 | A space cut had dropped "later analyses are labeled post hoc" | Restored |
 | S1 | "Dead reckoning was at least as accurate" lacked its reason | The episode's odometry had no 2 % over-read and the car traveled about 1.5 m (generated from `path_length_m`) |
 | S2 | "8 added" did not say they are not printed | "12 printed; 8 more … not yet printed; none mounted" |
@@ -284,5 +284,30 @@ this revision.
 
 Validation: `latexmk` exit 0, 12 pages, no LaTeX, `bmnum` or BibTeX warning, no Type 3 font;
 `report_assets.py --check` up to date, `--pending` 6.
+
+AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: verified and applied the findings and wrote this entry.
+
+## Second review of the closed-loop text (2026-11-18, after commit `8578a05`)
+
+A second independent review, arranged by the lead, returned 1 must-fix and 4 should-fix findings; all were verified
+against `evidence/M2/M2.T7/closed-loop/README.md`, `study_summary.json`, `judge_summary.txt` and `prereg.md` §4 and
+applied.
+
+- **M1:** "a pose argument 1–2 cm from the procedure's" was wrong for Opus 5.5, whose argument was the rounded pose,
+  about 1 mm off; only Fable 5.2's was 2 cm off. Corrected in V-G and in the slide-10 notes.
+- **S1:** "no full pose fix" no longer reads as a consequence of "little to correct"; it is its own sentence.
+- **S2:** each arm's share of judgeable steps (99.9, 99.3 and 96.1 %), which the pre-registration promises and a space
+  cut had removed, is back, generated from `judge_summary.txt`; the sentence on the local models' cost and speed was
+  cut to pay for it (Table IV still shows both).
+- **S3:** "(the lowest interval end is 7.4)" became "(every exact 95 % interval lies above 7)"; the intervals are
+  7.6–11.1, 7.4–10.1 and 43–71.
+- **S4:** the disclosure says Claude Fable 5.2 also ran the rehearsals and the closed-loop episodes, and no longer
+  limits its rewrite to "the main study". The slide and the README disclosure say the same.
+- Also from the clarification of commit `8578a05`: B2 in the room is the frozen procedure plus one dead-end rule that
+  did not fire in the episode, and the agreement figure takes each model's own state as given (56 of 56 steps each).
+- Cosmetic: the placeholder marker no longer hyphenates; two labels of Fig. 3 were moved off a neighbour and off the
+  dashed line.
+
+Validation as before: 12 pages, clean build, `report_assets.py --check` up to date, 6 placeholders.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: verified and applied the findings and wrote this entry.

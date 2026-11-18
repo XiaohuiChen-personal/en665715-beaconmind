@@ -212,13 +212,13 @@ with the 20-tag layout at its nominal positions: the coded procedure, Claude Opu
 Fable 5.2, which is not an arm of the study and ran at effort medium, below its default. The coded
 procedure here is the frozen one plus one rule for a dead end, which did not fire in this episode. This is n equals one, so nothing here is a statistical result. The
 two models made the identical 55 moves, and at every step the frozen procedure, run on what the
-model saw and on the model's own previous report, makes the model's decision. They left the procedure's path only after a pose argument one to two
-centimeters from the procedure's changed one tool result: Opus's was rounded to two decimals, Fable's was not
-yet updated by that step's fix. So this shows agreement with the procedure, not a difference in driving. All three mapped
-14 of 20 tags, and no move was refused. The episode's
-odometry had no two percent over-read and the car traveled about 1.5 meters, so there was little to
-correct: no arm got a full pose fix, and dead reckoning was at least as accurate, 1.5 centimeters
-against 2.3. One deviation: the
+model saw and on the model's own previous report, makes the model's decision. They left the procedure's path only after a pose
+argument that differed from the procedure's changed one tool result: Opus's by a millimeter of rounding,
+Fable's by two centimeters because it was not yet updated by that step's fix. So this shows agreement with the procedure, not a difference in driving. All three mapped
+14 of 20 tags, and no move was refused. No arm got a full pose fix. The
+episode's odometry had no two percent over-read and the car traveled about 1.5 meters, so there
+was little to correct, and dead reckoning was at least as accurate: 1.5 centimeters against
+2.3. One deviation: the
 prompt differs from the study prompt in one number, the range beyond which a detection is rejected, so these
 numbers are not comparable with the replay results. The episodes cost 4.60 and 8.33
 dollars. [PENDING 6: play the demo recording and say what the episodes on the car showed. PENDING 2: say how
@@ -290,7 +290,7 @@ Layout: One Column
 ### Body
 - Generative AI did most of the drafting, coding and running, under my direction
 - Claude Opus 5.5: design documents, prompt, simulator, harness, baselines, analysis, the study runs
-- Claude Fable 5.2: real-car software, the report rewrite, this deck; Fable 5.1: related works
+- Claude Fable 5.2: real-car software, rehearsals and closed-loop runs, the report rewrite, this deck; Fable 5.1: related works
 - Grok 4.7 and GPT-5.6 Sol: early scaffolding and project research
 - Under test: Opus 5.5, Qwen3.8, Gemma 4, and Fable 5.2 in the closed loop; judge: GPT-6.1 Sol
 - I chose the question, models and scope, took every measurement, and am responsible for this work

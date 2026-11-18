@@ -152,7 +152,7 @@ Generative AI did most of the drafting, coding and running in this project, unde
   simulator, harness, baselines, metrics and analysis code, the pre-registration, the pilot and the study runs, the
   first draft of the report, the camera firmware, the car model, the session recorder and the room-layout tools.
 - **Claude Fable 5.2** (through Claude Code): the camera-calibration records, tag perception, the car executor, the
-  room simulator and the closed loop, the rewrite of the report for the main study, the script that generates the
+  room simulator and the closed loop, the rehearsals and closed-loop episodes, the rewrite of the report, the script that generates the
   report's numbers, the slide outline, and this README.
 - **Claude Fable 5.1**: the first Related Works section of the report and its references.
 - **Grok 4.7** (through Cursor): the early package (schemas, configuration files, the geometry port and its tests,
