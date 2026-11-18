@@ -1,0 +1,84 @@
+{
+ "driver": "claude-fable-5-2",
+ "provider_entry": {
+  "provider": "anthropic_messages",
+  "model": "claude-fable-5-2",
+  "api_key_env": "ANTHROPIC_API_KEY",
+  "price_usd_per_mtok": {
+   "input": 8.0,
+   "cached_input": 0.2,
+   "output": 40.0
+  },
+  "price_checked": "2026-11-18",
+  "request_timeout_s": 900,
+  "options": {
+   "max_tokens": 64000,
+   "effort": "medium",
+   "thinking": "adaptive (field omitted; always on for this model)",
+   "prompt_caching": true,
+   "price_cache_write_5m_usd_per_mtok": 10.0,
+   "harness": "harness/closed_loop.py AnthropicDriver over the frozen harness/providers/anthropic_messages.py agent_step",
+   "price_source": "Claude API skill bundled with Claude Code (cached 2026-11-03): Claude Fable 5.2 US$8 / US$40 per million input / output tokens, 5-minute cache writes US$10, cache reads US$0.20",
+   "settings_vs_opus_arm": "identical request shape to the frozen claude-opus-5-5 entry (max_tokens 64000, output_config.effort medium, thinking field omitted, no sampling parameters, no tool_choice, the same two cache breakpoints, non-streaming, 900 s client timeout, 7 attempts, 30 turns a step). Differences: the model id; the price; effort medium is one level below this model's default (high), while it is the Opus 5.5 default; no server-side refusal fallback is requested for either model, so a refusal (stop_reason refusal) is a counted harness fallback, not a silent switch to another model"
+  }
+ },
+ "agent": {
+  "provider": "anthropic_messages",
+  "settings": {
+   "model": "claude-fable-5-2",
+   "max_tokens": 64000,
+   "output_config": {
+    "effort": "medium"
+   }
+  },
+  "price_usd_per_mtok": {
+   "input": 8.0,
+   "cache_write_5m": 10.0,
+   "cache_read": 0.2,
+   "output": 40.0
+  },
+  "max_turns": 30
+ },
+ "arm": "L2:claude-fable-5-2",
+ "max_steps": 3,
+ "env": {
+  "env": "room",
+  "start": null,
+  "preset": "camera",
+  "max_range": 2.0,
+  "odometry": "study",
+  "world_sha12": "f8f5566bf02b"
+ },
+ "max_idle_steps": 3,
+ "autolatch_contacts": 2,
+ "sha12": {
+  "prompt": "d0b75b25a86e",
+  "dv.json": "be20213dd9c9",
+  "providers_file": "4cb656ca3804",
+  "geometry.py": "f7fc3d27c000",
+  "dv.py": "692a77bfad86",
+  "envs/kinsim_lite.py": "4fe853bf47ac",
+  "envs/kinsim_room.py": "eefded236771",
+  "harness/tools_d5.py": "61305f0008df",
+  "harness/replay.py": "27a210633184",
+  "harness/providers/anthropic_messages.py": "705c14614a2d",
+  "harness/closed_loop.py": "f5a28b21c15d",
+  "harness/validator.py": "b8820a8cb8eb"
+ },
+ "config": "540a146980f9",
+ "run_id": "smoke-claude-fable-5-2",
+ "prompt_file": "robot_system_prompt_v3.3.txt",
+ "provider_file": "providers_demo.json",
+ "seeds": [
+  1
+ ],
+ "cap_usd": 2.5,
+ "git_commit": "898f3d0533aa",
+ "git_dirty": "18",
+ "host": "spark-2a60",
+ "python": "3.10.12",
+ "anthropic_sdk": "1.11.0",
+ "resume_reason": null,
+ "earlier_resumes": 0,
+ "started": "2026-11-18T08:37:52+0000"
+}

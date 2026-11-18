@@ -1,0 +1,399 @@
+{
+ "what": "A scripted model (tests/test_closed_loop.py ScriptedModel, no network) drives the study square, seed 1010, through the real provider tool loop and the closed loop: four forward moves to the wall limit, then a refused FORWARD_25 followed by an accepted turn (step 4), a refused BACKWARD_10 as the step's only move (step 5), and emergency_stop followed by a move (step 6).",
+ "result": {
+  "complete": true,
+  "ended_by": "latch",
+  "detail": "emergency_stop: scripted test",
+  "steps": 7
+ },
+ "steps": [
+  {
+   "step": 0,
+   "decision": "FORWARD_25",
+   "move_calls": [
+    {
+     "action": "FORWARD_25",
+     "tool_result": "done",
+     "tool_reason": null,
+     "validator_ok": true,
+     "validator_reason": null,
+     "agree": true
+    }
+   ],
+   "executed_move": {
+    "action": "FORWARD_25",
+    "result": "done",
+    "reason": null,
+    "odometry": {
+     "forward_m": 0.24,
+     "left_m": 0.0,
+     "dtheta_deg": 0.0
+    }
+   },
+   "next_last_move": {
+    "action": "FORWARD_25",
+    "result": "done"
+   },
+   "violations": [],
+   "validator": {
+    "latched": false,
+    "latch_reason": null,
+    "consecutive_contacts": 0
+   },
+   "episode_end": null,
+   "safety": {
+    "forward_allowed": [
+     "FORWARD_25",
+     "FORWARD_10"
+    ],
+    "backward_allowed": false,
+    "turn_allowed": true,
+    "scan_allowed": true,
+    "done_range_m": 0.55
+   },
+   "last_move_seen": null,
+   "latched_seen": false,
+   "truth_xy_theta": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "step": 1,
+   "decision": "FORWARD_25",
+   "move_calls": [
+    {
+     "action": "FORWARD_25",
+     "tool_result": "done",
+     "tool_reason": null,
+     "validator_ok": true,
+     "validator_reason": null,
+     "agree": true
+    }
+   ],
+   "executed_move": {
+    "action": "FORWARD_25",
+    "result": "done",
+    "reason": null,
+    "odometry": {
+     "forward_m": 0.24,
+     "left_m": 0.0,
+     "dtheta_deg": 0.0
+    }
+   },
+   "next_last_move": {
+    "action": "FORWARD_25",
+    "result": "done"
+   },
+   "violations": [],
+   "validator": {
+    "latched": false,
+    "latch_reason": null,
+    "consecutive_contacts": 0
+   },
+   "episode_end": null,
+   "safety": {
+    "forward_allowed": [
+     "FORWARD_25",
+     "FORWARD_10"
+    ],
+    "backward_allowed": true,
+    "turn_allowed": true,
+    "scan_allowed": true,
+    "done_range_m": 0.55
+   },
+   "last_move_seen": {
+    "action": "FORWARD_25",
+    "result": "done"
+   },
+   "latched_seen": false,
+   "truth_xy_theta": [
+    0.25,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "step": 2,
+   "decision": "FORWARD_25",
+   "move_calls": [
+    {
+     "action": "FORWARD_25",
+     "tool_result": "done",
+     "tool_reason": null,
+     "validator_ok": true,
+     "validator_reason": null,
+     "agree": true
+    }
+   ],
+   "executed_move": {
+    "action": "FORWARD_25",
+    "result": "done",
+    "reason": null,
+    "odometry": {
+     "forward_m": 0.25,
+     "left_m": 0.0,
+     "dtheta_deg": 0.0
+    }
+   },
+   "next_last_move": {
+    "action": "FORWARD_25",
+    "result": "done"
+   },
+   "violations": [],
+   "validator": {
+    "latched": false,
+    "latch_reason": null,
+    "consecutive_contacts": 0
+   },
+   "episode_end": null,
+   "safety": {
+    "forward_allowed": [
+     "FORWARD_25",
+     "FORWARD_10"
+    ],
+    "backward_allowed": true,
+    "turn_allowed": true,
+    "scan_allowed": true,
+    "done_range_m": 0.55
+   },
+   "last_move_seen": {
+    "action": "FORWARD_25",
+    "result": "done"
+   },
+   "latched_seen": false,
+   "truth_xy_theta": [
+    0.5,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "step": 3,
+   "decision": "FORWARD_10",
+   "move_calls": [
+    {
+     "action": "FORWARD_10",
+     "tool_result": "done",
+     "tool_reason": null,
+     "validator_ok": true,
+     "validator_reason": null,
+     "agree": true
+    }
+   ],
+   "executed_move": {
+    "action": "FORWARD_10",
+    "result": "done",
+    "reason": null,
+    "odometry": {
+     "forward_m": 0.09,
+     "left_m": 0.0,
+     "dtheta_deg": 0.0
+    }
+   },
+   "next_last_move": {
+    "action": "FORWARD_10",
+    "result": "done"
+   },
+   "violations": [],
+   "validator": {
+    "latched": false,
+    "latch_reason": null,
+    "consecutive_contacts": 0
+   },
+   "episode_end": null,
+   "safety": {
+    "forward_allowed": [
+     "FORWARD_10"
+    ],
+    "backward_allowed": true,
+    "turn_allowed": true,
+    "scan_allowed": true,
+    "done_range_m": 0.55
+   },
+   "last_move_seen": {
+    "action": "FORWARD_25",
+    "result": "done"
+   },
+   "latched_seen": false,
+   "truth_xy_theta": [
+    0.75,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "step": 4,
+   "decision": "TURN_LEFT_30",
+   "move_calls": [
+    {
+     "action": "FORWARD_25",
+     "tool_result": "refused",
+     "tool_reason": "not in forward_allowed",
+     "validator_ok": false,
+     "validator_reason": "not in forward_allowed",
+     "agree": true
+    },
+    {
+     "action": "TURN_LEFT_30",
+     "tool_result": "done",
+     "tool_reason": null,
+     "validator_ok": true,
+     "validator_reason": null,
+     "agree": true
+    }
+   ],
+   "executed_move": {
+    "action": "TURN_LEFT_30",
+    "result": "done",
+    "reason": null,
+    "odometry": {
+     "forward_m": 0.0,
+     "left_m": 0.0,
+     "dtheta_deg": 30.3
+    }
+   },
+   "next_last_move": {
+    "action": "TURN_LEFT_30",
+    "result": "done"
+   },
+   "violations": [
+    {
+     "code": "guardrail",
+     "detail": "move 'FORWARD_25' refused: not in forward_allowed"
+    }
+   ],
+   "validator": {
+    "latched": false,
+    "latch_reason": null,
+    "consecutive_contacts": 0
+   },
+   "episode_end": null,
+   "safety": {
+    "forward_allowed": [],
+    "backward_allowed": true,
+    "turn_allowed": true,
+    "scan_allowed": true,
+    "done_range_m": 0.55
+   },
+   "last_move_seen": {
+    "action": "FORWARD_10",
+    "result": "done"
+   },
+   "latched_seen": false,
+   "truth_xy_theta": [
+    0.85,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "step": 5,
+   "decision": "BACKWARD_10",
+   "move_calls": [
+    {
+     "action": "BACKWARD_10",
+     "tool_result": "refused",
+     "tool_reason": "backward not allowed",
+     "validator_ok": false,
+     "validator_reason": "backward not allowed",
+     "agree": true
+    }
+   ],
+   "executed_move": null,
+   "next_last_move": {
+    "action": "BACKWARD_10",
+    "result": "refused"
+   },
+   "violations": [
+    {
+     "code": "guardrail",
+     "detail": "move 'BACKWARD_10' refused: backward not allowed"
+    },
+    {
+     "code": "decision_mismatch",
+     "detail": "report decision BACKWARD_10, accepted move call None"
+    }
+   ],
+   "validator": {
+    "latched": false,
+    "latch_reason": null,
+    "consecutive_contacts": 0
+   },
+   "episode_end": null,
+   "safety": {
+    "forward_allowed": [
+     "FORWARD_10"
+    ],
+    "backward_allowed": false,
+    "turn_allowed": true,
+    "scan_allowed": true,
+    "done_range_m": 0.55
+   },
+   "last_move_seen": {
+    "action": "TURN_LEFT_30",
+    "result": "done"
+   },
+   "latched_seen": false,
+   "truth_xy_theta": [
+    0.85,
+    0.0,
+    30.0
+   ]
+  },
+  {
+   "step": 6,
+   "decision": "STOPPED",
+   "move_calls": [
+    {
+     "action": "TURN_LEFT_30",
+     "tool_result": "refused",
+     "tool_reason": "latched",
+     "validator_ok": false,
+     "validator_reason": "latched",
+     "agree": true
+    }
+   ],
+   "executed_move": null,
+   "next_last_move": {
+    "action": "TURN_LEFT_30",
+    "result": "refused"
+   },
+   "violations": [
+    {
+     "code": "guardrail",
+     "detail": "move 'TURN_LEFT_30' refused: latched"
+    }
+   ],
+   "validator": {
+    "latched": true,
+    "latch_reason": "emergency_stop: scripted test",
+    "consecutive_contacts": 0
+   },
+   "episode_end": {
+    "ended_by": "latch",
+    "detail": "emergency_stop: scripted test"
+   },
+   "safety": {
+    "forward_allowed": [
+     "FORWARD_10"
+    ],
+    "backward_allowed": false,
+    "turn_allowed": true,
+    "scan_allowed": true,
+    "done_range_m": 0.55
+   },
+   "last_move_seen": {
+    "action": "BACKWARD_10",
+    "result": "refused"
+   },
+   "latched_seen": false,
+   "truth_xy_theta": [
+    0.85,
+    0.0,
+    30.0
+   ]
+  }
+ ]
+}

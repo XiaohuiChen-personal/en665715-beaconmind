@@ -80,7 +80,10 @@ disappears about 0.75 m before the wall.** What would change it:
 
 \* tag held at 0.095 m (a wall tag is not in view this close).
 
-The tag is still 57 px wide at 3.5 m. Detection stops between 5 m and 7 m (about 33 px), far beyond the room.
+The tag is still 57 px wide at 3.5 m. The rows beyond 5 m are cut by the detector's own range rule (`max_range_m`,
+6 m), not by the picture: with that rule lifted this tag is found in 95 % of frames out to 8.25 m, where it is 24 px
+wide (section "Smaller tags" below). (Corrected 2026-11-18: this paragraph first read "detection stops between 5 m and
+7 m (about 33 px)".)
 
 Harder pictures (detected / frames; range error mean ± sd; bearing error sd; median quality):
 
@@ -147,7 +150,7 @@ whole 2.0° budget (10 cm sideways at 3 m).
 
 - Nothing in the simulation gets worse between 2.0 m and 3.5 m except linearly: every tag is found, the per-frame
   noise is 3–4 mm at 3–3.5 m, the quality stays near 1, and the tag is 57 px wide at 3.5 m (it decodes down to about
-  35 px).
+  22 px).
 - The agent's own association gate is 0.3 m and 15° (up to 0.6 m and 30°), far wider than these errors.
 - **So the simulation supports raising the limit to 3.0 m (or 3.5 m) for real runs**, which matters in the room:
   `evidence/M3/M3.T10/layout/coverage.txt` (computed for a 60° view) gives one heading a tag in 42 % of samples at
@@ -157,6 +160,81 @@ whole 2.0° budget (10 cm sideways at 3 m).
   calibrated 46 % of the picture, frames taken before the car has stopped rocking (`obs_settle_s`), and corrupt frames
   (21 of the 10,233 XGA frames recorded so far are truncated JPEGs).
 - The decision is Xiaohui's; the frozen study's `configs/dv.json` is not edited here.
+
+## Smaller tags instead of tipping the camera (added 2026-11-18, simulated)
+
+The camera stays as it is. The tags are printed but not mounted, so their size can still change. Each alternative is a
+black square of side s with a white border of s/8, its sheet's bottom edge on the baseboard's top (0.12 m), so its
+centre is 0.12 + 0.625 s up. Script `sim_tag_sizes.py` (40 frames per cell, about 2 minutes); raw output
+`sim-tag-sizes-output.txt`, `sim-tag-sizes.csv`, `sim-tag-sizes-far.csv`.
+
+**Near limit:** range from the axle midpoint from which the whole black square is in the picture (in brackets: the
+whole sheet with its white border). The detector needs the black square and a few pixels of white around it, so the
+usable limit lies between the two numbers.
+
+| Black side | Centre height | Straight ahead | 10° left | 10° right | 15° left | 15° right |
+| --- | --- | --- | --- | --- | --- | --- |
+| 160 mm as printed (Letter sheet) | 0.230 m | 0.74 m (0.79 m) | 0.70 m (0.76 m) | 0.80 m (0.86 m) | 0.81 m (0.92 m) | 1.09 m (1.30 m) |
+| 160 mm (sheet trimmed to 200 mm) | 0.220 m | 0.71 m (0.77 m) | 0.68 m (0.73 m) | 0.77 m (0.83 m) | 0.80 m (0.92 m) | 1.10 m (1.31 m) |
+| 140 mm | 0.207 m | 0.65 m (0.70 m) | 0.62 m (0.67 m) | 0.71 m (0.76 m) | 0.74 m (0.84 m) | 1.01 m (1.19 m) |
+| 120 mm | 0.195 m | 0.59 m (0.63 m) | 0.57 m (0.61 m) | 0.64 m (0.69 m) | 0.68 m (0.77 m) | 0.92 m (1.07 m) |
+| 100 mm | 0.182 m | 0.53 m (0.57 m) | 0.51 m (0.54 m) | 0.58 m (0.62 m) | 0.62 m (0.69 m) | 0.83 m (0.95 m) |
+| 80 mm | 0.170 m | 0.47 m (0.50 m) | 0.45 m (0.48 m) | 0.51 m (0.54 m) | 0.55 m (0.61 m) | 0.73 m (0.84 m) |
+
+**Far behaviour** with real-like frames: detection rate; range error mean ± sd. For the last four columns the
+detector's own 6 m range rule (`max_range_m`) was lifted, so the picture decides.
+
+| Black side | 1.5 m | 2.0 m | 2.5 m | 3.0 m | 3.5 m | Detection at or above 95 % out to | Tag width there | 40 px wide at | 27 px wide at (quality 0.5) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 160 mm | 100 %; +0.2 ± 0.7 mm | 100 %; -0.4 ± 1.6 mm | 100 %; +0.2 ± 2.0 mm | 100 %; +1.5 ± 2.4 mm | 100 %; +1.3 ± 3.7 mm | 8.25 m | 24 px | 4.8 m | 7.1 m |
+| 140 mm | 100 %; +0.1 ± 0.8 mm | 100 %; -0.1 ± 1.8 mm | 100 %; +0.1 ± 2.4 mm | 100 %; +0.5 ± 2.8 mm | 100 %; +0.7 ± 5.7 mm | 7.50 m | 23 px | 4.3 m | 6.2 m |
+| 120 mm | 100 %; +0.1 ± 1.4 mm | 100 %; +0.6 ± 1.8 mm | 100 %; +0.9 ± 2.2 mm | 100 %; +0.1 ± 3.5 mm | 100 %; +2.1 ± 3.2 mm | 7.00 m | 21 px | 3.7 m | 5.4 m |
+| 100 mm | 100 %; +0.3 ± 1.0 mm | 100 %; +0.4 ± 2.2 mm | 100 %; +0.9 ± 3.5 mm | 100 %; +1.5 ± 3.1 mm | 100 %; +1.1 ± 4.3 mm | 5.25 m | 24 px | 3.1 m | 4.5 m |
+| 80 mm | 100 %; +0.1 ± 1.3 mm | 100 %; -0.2 ± 2.2 mm | 100 %; +2.3 ± 2.7 mm | 100 %; +1.3 ± 3.4 mm | 100 %; -0.8 ± 6.9 mm | 4.50 m | 22 px | 2.5 m | 3.6 m |
+
+- Every size is found in every frame out to 3.5 m, and the per-frame noise stays under 7 mm. In simulation the code
+  stops decoding at about 21–24 px of tag width whatever the size.
+- The last two columns are where to be careful. Real pictures will be softer than the simulated ones somewhere (off
+  axis, uneven light), and the quality value falls with size below 40 px and reaches the agent's rejection threshold
+  (0.5) at 27 px. A tag that is 40 px wide at the range limit keeps the margin the 160 mm tag has at 4.8 m.
+
+**Calibration-dominated error** (root sum of squares as in "The estimate"; parts: focal length 1 % / lens position
+5 mm / pitch 2° / tag size 0.5 mm / tone curve / frame noise):
+
+| Black side | Range error at 2 m (1 sigma) | parts (mm) | Range error at 3 m | parts (mm) | Bearing at 2 m / 3 m without the yaw term | with a 2° yaw error |
+| --- | --- | --- | --- | --- | --- | --- |
+| 160 mm | 21 mm | 19 / 5 / 4 / 6 / 4 / 2 | 33 mm | 29 / 5 / 3 / 9 / 11 / 2 | 0.25° / 0.26° | 1.9° / 1.94° |
+| 140 mm | 22 mm | 19 / 5 / 3 / 7 / 5 / 2 | 34 mm | 29 / 5 / 3 / 10 / 13 / 3 | 0.25° / 0.26° | 1.9° / 1.94° |
+| 120 mm | 22 mm | 19 / 5 / 3 / 8 / 5 / 2 | 34 mm | 29 / 5 / 2 / 12 / 11 / 4 | 0.25° / 0.26° | 1.9° / 1.94° |
+| 100 mm | 23 mm | 19 / 5 / 3 / 9 / 7 / 2 | 36 mm | 29 / 5 / 2 / 14 / 14 / 3 | 0.25° / 0.27° | 1.9° / 1.94° |
+| 80 mm | 24 mm | 19 / 5 / 2 / 12 / 8 / 2 | 39 mm | 29 / 5 / 2 / 18 / 18 / 3 | 0.26° / 0.27° | 1.9° / 1.94° |
+
+- The range error barely changes with size, because the focal-length term (1 % of the distance) does not depend on
+  it. What grows for a small tag is the share of a 0.5 mm error in its printed size (0.3 % for 160 mm, 0.6 % for
+  80 mm) and of the tone-curve bias. The bearing error does not depend on the size.
+
+**Reading the tables together** (simulated; the pilot must confirm whichever is chosen):
+
+| Black side | Near limit straight ahead (black square) | Against done_range_m 0.55 m | Comfortable far range (40 px) |
+| --- | --- | --- | --- |
+| 160 mm | 0.71 m | not whole at 0.55 m (short by 16 cm) | 4.8 m |
+| 140 mm | 0.65 m | not whole at 0.55 m (short by 10 cm) | 4.3 m |
+| 120 mm | 0.59 m | not whole at 0.55 m (short by 4 cm) | 3.7 m |
+| 100 mm | 0.53 m | whole at 0.55 m | 3.1 m |
+| 80 mm | 0.47 m | whole at 0.55 m | 2.5 m |
+
+- 100 mm is the largest size whose black square is whole at the 0.55 m done range straight ahead (0.53 m); 80 mm has
+  margin there (0.47 m). No size reaches the 0.35 m forward wall limit: even with the 80 mm tag the last 12 cm before
+  that limit are blind. (The 160 mm row is the sheet trimmed to 200 mm; as printed on the Letter sheet it is 0.74 m.)
+- Off to the right the picture is cut earlier (roll and yaw of the mount): at 15° right even the 80 mm tag needs
+  0.73 m.
+
+**Mixed sizes.** `detect_tags` now takes the tag size per ID: `tag_size_m` (and `tag_center_height_m`) may be a dict
+`{id: value}` with an optional `"default"` entry, for example `{**{i: 0.16 for i in range(15)}, "default": 0.10}`. A
+tag whose ID has no size is rejected (`no_size`), never guessed. Test: `test_mixed_tag_sizes_by_id` in
+`beaconmind/tests/test_perception_tags.py`. Two things to keep in mind for a mixed room: an ID must have one size
+everywhere (the two tags that share an ID on purpose must be the same size), and a wrong size for an ID scales that
+tag's lens distance by the size ratio without any other symptom, so the size table belongs next to the world file.
 
 ## Checks behind these numbers
 

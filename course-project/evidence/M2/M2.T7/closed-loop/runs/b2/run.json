@@ -1,0 +1,51 @@
+{
+ "driver": "b2",
+ "provider_entry": null,
+ "agent": {
+  "provider": "coded_procedure",
+  "settings": null,
+  "price_usd_per_mtok": null,
+  "max_turns": null
+ },
+ "arm": "B2",
+ "max_steps": 150,
+ "env": {
+  "env": "room",
+  "start": null,
+  "preset": "camera",
+  "max_range": 2.0,
+  "odometry": "study",
+  "world_sha12": "f8f5566bf02b"
+ },
+ "max_idle_steps": 3,
+ "autolatch_contacts": 2,
+ "sha12": {
+  "prompt": "d0b75b25a86e",
+  "dv.json": "be20213dd9c9",
+  "providers_file": null,
+  "geometry.py": "f7fc3d27c000",
+  "dv.py": "692a77bfad86",
+  "envs/kinsim_lite.py": "4fe853bf47ac",
+  "envs/kinsim_room.py": "eefded236771",
+  "harness/tools_d5.py": "61305f0008df",
+  "harness/replay.py": "27a210633184",
+  "harness/providers/anthropic_messages.py": "705c14614a2d",
+  "harness/closed_loop.py": "f5a28b21c15d",
+  "harness/validator.py": "b8820a8cb8eb"
+ },
+ "config": "1ba48d644e8e",
+ "run_id": "b2",
+ "prompt_file": "robot_system_prompt_v3.3.txt",
+ "provider_file": null,
+ "seeds": [
+  1
+ ],
+ "cap_usd": 0.0,
+ "git_commit": "898f3d0533aa",
+ "git_dirty": "18",
+ "host": "spark-2a60",
+ "python": "3.10.12",
+ "resume_reason": null,
+ "earlier_resumes": 0,
+ "started": "2026-11-18T08:38:29+0000"
+}

@@ -1,0 +1,28 @@
+{
+  "$comment": "AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this file for the closed-loop demo comparison (work list 4.1). configs/providers.json is frozen by the pre-registration (evidence/M4/M4.T1/prereg.json), so models that are not study arms live here; tools/closed_loop_run.py reads both files. Same schema (bm.providers/1).",
+  "schema": "bm.providers/1",
+  "models": {
+    "claude-fable-5-2": {
+      "provider": "anthropic_messages",
+      "model": "claude-fable-5-2",
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "price_usd_per_mtok": {
+        "input": 8.0,
+        "cached_input": 0.2,
+        "output": 40.0
+      },
+      "price_checked": "2026-11-18",
+      "request_timeout_s": 900,
+      "options": {
+        "max_tokens": 64000,
+        "effort": "medium",
+        "thinking": "adaptive (field omitted; always on for this model)",
+        "prompt_caching": true,
+        "price_cache_write_5m_usd_per_mtok": 10.0,
+        "harness": "harness/closed_loop.py AnthropicDriver over the frozen harness/providers/anthropic_messages.py agent_step",
+        "price_source": "Claude API skill bundled with Claude Code (cached 2026-11-03): Claude Fable 5.2 US$8 / US$40 per million input / output tokens, 5-minute cache writes US$10, cache reads US$0.20",
+        "settings_vs_opus_arm": "identical request shape to the frozen claude-opus-5-5 entry (max_tokens 64000, output_config.effort medium, thinking field omitted, no sampling parameters, no tool_choice, the same two cache breakpoints, non-streaming, 900 s client timeout, 7 attempts, 30 turns a step). Differences: the model id; the price; effort medium is one level below this model's default (high), while it is the Opus 5.5 default; no server-side refusal fallback is requested for either model, so a refusal (stop_reason refusal) is a counted harness fallback, not a silent switch to another model"
+      }
+    }
+  }
+}

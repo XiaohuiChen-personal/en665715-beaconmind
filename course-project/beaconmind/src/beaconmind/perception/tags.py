@@ -48,7 +48,8 @@ range); ``pnp_failed``; ``behind`` the pose is not in front of the lens; ``repro
 max_reproj_px + max_reproj_rel * side_px; ``hamming`` more than max_hamming data cells read wrong; ``low_margin`` the
 decision margin is under min_margin; ``oblique`` view_angle_deg is above max_view_angle_deg; ``range`` range_m is
 above max_range_m; ``height`` (only when tag_center_height_m is given) the tag centre's height above the floor is
-off by more than height_tol_m + height_tol_per_m * range_m; ``duplicate`` the detector returned the same tag twice
+off by more than height_tol_m + height_tol_per_m * range_m; ``no_size`` tag_size_m is a per-id dict without this id
+and without a "default"; ``duplicate`` the detector returned the same tag twice
 (same id, centres closer than half a side) and this is the one with the larger reprojection error.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this module. The approach (quad detection, edge-line
@@ -440,6 +441,18 @@ def _drop_duplicates(accepted, rejected):
     return kept
 
 
+def _per_id(value, tag_id):
+    """value for this id: a plain number (or None) applies to every id; a mapping gives id -> value, with an optional
+    "default" entry for the ids it does not list. Returns (found, value)."""
+    if isinstance(value, dict):
+        if tag_id in value:
+            return True, value[tag_id]
+        if "default" in value:
+            return True, value["default"]
+        return False, None
+    return True, value
+
+
 def detect_tags(image, camera, tag_size_m=0.16, *, tag_center_height_m=None, return_rejected=False,
                 refine=True, upright_prior=True, aruco_params=None, **settings):
     """Tags in one frame, with range and bearing from the axle midpoint (contract C1).
@@ -447,7 +460,9 @@ def detect_tags(image, camera, tag_size_m=0.16, *, tag_center_height_m=None, ret
     image: grey or BGR uint8 array of the camera's calibrated size (ValueError otherwise: intrinsics belong to one
     resolution). camera: beaconmind.camera_model.Camera. tag_size_m: edge of the black square (0.16 m; use the
     ruler-measured value). tag_center_height_m: the tags' centre height above the floor (0.23 for the wall tags)
-    turns on the ``height`` rule; None leaves it off. refine=False keeps the detector's own corners.
+    turns on the ``height`` rule; None leaves it off. For a room with tags of more than one size, either may be a
+    dict {id: value} with an optional "default" entry, for example {**{i: 0.16 for i in range(15)}, "default": 0.10};
+    a tag whose id has no size is rejected as ``no_size`` (its range cannot be known). refine=False keeps the detector's own corners.
     upright_prior=False always takes the pose with the smaller reprojection error. aruco_params: fields of
     cv2.aruco.DetectorParameters for a single quad search instead of the two of ARUCO_PASSES. settings: any key of
     DEFAULTS.
@@ -463,7 +478,8 @@ def detect_tags(image, camera, tag_size_m=0.16, *, tag_center_height_m=None, ret
     if gray.shape[1] != camera.width or gray.shape[0] != camera.height:
         raise ValueError("the frame is %d x %d but the camera is calibrated at %d x %d"
                          % (gray.shape[1], gray.shape[0], camera.width, camera.height))
-    if not tag_size_m > 0:
+    sizes = tag_size_m.values() if isinstance(tag_size_m, dict) else [tag_size_m]
+    if not all(v is not None and v > 0 for v in sizes):
         raise ValueError("tag_size_m must be positive")
     k = np.array(camera.camera_matrix, dtype=np.float64)
     d = np.array(camera.dist, dtype=np.float64)
@@ -473,7 +489,9 @@ def detect_tags(image, camera, tag_size_m=0.16, *, tag_center_height_m=None, ret
         return (accepted, rejected) if return_rejected else accepted
     gray_f = gray.astype(np.float32)
     for quad, tag_id in quads:
-        det = {"id": int(tag_id), "family": FAMILY, "tag_size_m": float(tag_size_m), "reject": None}
+        has_size, size_m = _per_id(tag_size_m, int(tag_id))
+        _has_height, height_m = _per_id(tag_center_height_m, int(tag_id))
+        det = {"id": int(tag_id), "family": FAMILY, "tag_size_m": float(size_m) if has_size else None, "reject": None}
         fitted = refine_corners(gray_f, quad, k, d) if refine else None
         if fitted is None:
             norm, pix = _undistort(quad, k, d), quad
@@ -497,6 +515,9 @@ def detect_tags(image, camera, tag_size_m=0.16, *, tag_center_height_m=None, ret
         if not lo <= det["id"] <= hi:
             reject("id_out_of_range")
             continue
+        if not has_size:
+            reject("no_size")
+            continue
         if det["min_side_px"] < s["min_side_px"]:
             reject("too_small")
             continue
@@ -505,7 +526,7 @@ def detect_tags(image, camera, tag_size_m=0.16, *, tag_center_height_m=None, ret
                 or pix[:, 1].max() > camera.height - 1 - edge):
             reject("at_border")
             continue
-        poses = _poses(norm, tag_size_m)
+        poses = _poses(norm, size_m)
         if not poses:
             reject("pnp_failed")
             continue
@@ -514,7 +535,7 @@ def detect_tags(image, camera, tag_size_m=0.16, *, tag_center_height_m=None, ret
             if tvec[2] <= 0:
                 continue
             fields = _pose_fields(camera, rvec, tvec)
-            fields["reproj_px"] = _reproj_px(rvec, tvec, tag_size_m, pix, k, d)
+            fields["reproj_px"] = _reproj_px(rvec, tvec, size_m, pix, k, d)
             cands.append(fields)
         if not cands:
             reject("behind")
@@ -545,8 +566,8 @@ def detect_tags(image, camera, tag_size_m=0.16, *, tag_center_height_m=None, ret
         if det["range_m"] > s["max_range_m"]:
             reject("range")
             continue
-        if tag_center_height_m is not None:
-            off = abs(det["base_xyz_m"][2] - float(tag_center_height_m))
+        if height_m is not None:
+            off = abs(det["base_xyz_m"][2] - float(height_m))
             if off > s["height_tol_m"] + s["height_tol_per_m"] * det["range_m"]:
                 reject("height")
                 continue

@@ -1,0 +1,11 @@
+{
+ "$comment": "AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: start poses for the real-room sessions (work list 3.2-3.4, plan M3.T12), chosen in evidence/M3/M3.T12/rehearsal-b2.md. Frame: the world file's (origin corner 5, y along the desk wall, x towards the window wall). Proposed; Xiaohui decides.",
+ "world": "configs/arenas/real-room-nominal.json",
+ "scenarios": [
+  {"id": "S1", "start_pose": {"x_m": 2.50, "y_m": 1.50, "theta_deg": 90.0}, "where": "south-east quarter, facing the doors wall", "runs": "practice run, then 2 B2 episodes"},
+  {"id": "S2", "start_pose": {"x_m": 1.75, "y_m": 1.40, "theta_deg": 0.0}, "where": "entrance side, facing the window wall", "runs": "2 B2 episodes"},
+  {"id": "S3", "start_pose": {"x_m": 2.60, "y_m": 3.90, "theta_deg": -90.0}, "where": "north-east quarter, facing the 295 cm wall", "runs": "2 B2 episodes"},
+  {"id": "S4", "start_pose": {"x_m": 1.50, "y_m": 4.00, "theta_deg": 45.0}, "where": "north-west quarter (few tags in reach), facing the far corner", "runs": "2 B2 episodes"},
+  {"id": "S5", "start_pose": {"x_m": 2.25, "y_m": 2.60, "theta_deg": 180.0}, "where": "centre of the room, facing the desk", "runs": "2 B2 episodes"}
+ ]
+}

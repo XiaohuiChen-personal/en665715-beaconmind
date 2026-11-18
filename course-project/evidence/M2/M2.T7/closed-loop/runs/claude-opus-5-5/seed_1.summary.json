@@ -1,0 +1,118 @@
+{
+ "arm": "L2:claude-opus-5-5",
+ "seed": 1,
+ "steps": 46,
+ "ended_by": "DONE",
+ "detail": "decision",
+ "n_tags": 12,
+ "n_dup_ids": 3,
+ "moves_executed": 45,
+ "moves_by_type": {
+  "FORWARD_25": 5,
+  "TURN_LEFT_30": 37,
+  "TURN_RIGHT_30": 3
+ },
+ "move_results": {
+  "done": 45
+ },
+ "move_calls": 45,
+ "refused_move_calls": 0,
+ "refused_by_reason": {},
+ "violations_by_code": {},
+ "steps_without_move": 1,
+ "fallbacks": 0,
+ "repaired_reports": 0,
+ "valid_rate": 1.0,
+ "step_errors": 0,
+ "emergency_stops": 0,
+ "path_length_m": 1.24,
+ "pose": {
+  "ate_m": 0.02011311428671833,
+  "heading_rmse_deg": 0.5393232474290272,
+  "final_pos_m": 0.033864797754381684,
+  "final_heading_deg": 0.3999999999999986,
+  "max_pos_m": 0.04123105625617665
+ },
+ "b0": {
+  "ate_m": 0.007307271179426281,
+  "heading_rmse_deg": 0.5393232474290378,
+  "final_pos_m": 0.013036698075774325,
+  "final_heading_deg": 0.4000000000000341,
+  "max_pos_m": 0.013036698075774325
+ },
+ "map": {
+  "map_rmse_m": 0.01762573875520297,
+  "map_precision": 1.0,
+  "map_recall": 0.25,
+  "phantoms": 0,
+  "n_entries": 3,
+  "confirmed": 3,
+  "tags_found": 3,
+  "tags_ever_detected": 3,
+  "assoc_precision": 1.0,
+  "assoc_recall": 1.0,
+  "assoc_precision_dup": 1.0,
+  "assoc_recall_dup": 1.0,
+  "assoc_counts": {
+   "precision": 1.0,
+   "recall": 1.0,
+   "tp": 8,
+   "fp": 0,
+   "fn": 0,
+   "new_bad": 0
+  }
+ },
+ "tools": {
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "tp": 64,
+  "fp": 0,
+  "fn": 0,
+  "calls": 155,
+  "calls_per_step": 3.369565217391304,
+  "by_tool": {
+   "exploration_summary": 46,
+   "move": 45,
+   "compose_odometry": 45,
+   "gate_detection": 8,
+   "update_beacon": 6,
+   "map_point": 3,
+   "fix_pose": 2
+  },
+  "gold_skipped": 0,
+  "scored_tools": [
+   "compose_odometry",
+   "gate_detection",
+   "fix_pose",
+   "map_point",
+   "update_beacon"
+  ]
+ },
+ "procedure_agreement": {
+  "steps_compared": 46,
+  "decision": 1.0,
+  "memory": 0.9782608695652174
+ },
+ "state_violations": {
+  "pose_checked": 46,
+  "pose_bad": 0,
+  "map_entries_bad": 0
+ },
+ "time": {
+  "total_s": 504.10000000000014,
+  "mean_s": 10.958695652173914,
+  "p50_s": 10.1,
+  "p95_s": 15.3,
+  "max_s": 20.8,
+  "turns_per_step": 4.195652173913044
+ },
+ "tokens": {
+  "in": 1857322,
+  "cached_in": 1731818,
+  "out": 51996
+ },
+ "cost_usd": 2.0134,
+ "cost_per_step_usd": 0.0437695652173913,
+ "complete": true
+}

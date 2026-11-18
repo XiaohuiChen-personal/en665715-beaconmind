@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.beaconmind.invalid/bm.report-1.schema.json",
-  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C6.",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C6. Claude Fable 5.2 via Claude Code, 2026-11-18: widened additively to what the frozen simulator and coded procedure write (note may be null; beacon may be null in an association whose result is rejected); every document valid before stays valid.",
   "title": "bm.report/1",
   "type": "object",
   "additionalProperties": false,
@@ -86,8 +86,15 @@
             ]
           },
           "beacon": {
-            "type": "string",
-            "pattern": "^(B[0-9]+b?|U[0-9]+)$"
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(B[0-9]+b?|U[0-9]+)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "result": {
             "enum": [
@@ -96,6 +103,23 @@
               "ambiguous",
               "rejected"
             ]
+          }
+        },
+        "if": {
+          "properties": {
+            "beacon": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "beacon"
+          ]
+        },
+        "then": {
+          "properties": {
+            "result": {
+              "const": "rejected"
+            }
           }
         }
       }
@@ -303,7 +327,10 @@
       ]
     },
     "note": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     }
   }
 }

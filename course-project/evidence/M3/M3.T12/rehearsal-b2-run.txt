@@ -1,0 +1,48 @@
+main study 2.0 study: 150 episodes
+main study 2.5 study: 150 episodes
+main camera 2.0 study: 150 episodes
+main camera 2.5 study: 150 episodes
+main study 2.0 drift2: 150 episodes
+main study 2.5 drift2: 150 episodes
+main camera 2.0 drift2: 150 episodes
+main camera 2.5 drift2: 150 episodes
+main study 2.0 carpet: 150 episodes
+main study 2.5 carpet: 150 episodes
+main camera 2.0 carpet: 150 episodes
+main camera 2.5 carpet: 150 episodes
+variant range / 1.5 m
+variant range / 2.0 m
+variant range / 2.5 m
+variant range / 3.0 m
+variant range / 3.5 m
+variant range / 4.0 m
+variant driver / 2.0 m, study: B2 as frozen
+variant driver / 2.0 m, study: dead end defined
+variant driver / 2.0 m, study: dead end defined, E1 after 4 scans
+variant driver / 2.0 m, carpet: B2 as frozen
+variant driver / 2.0 m, carpet: dead end defined
+variant driver / 2.0 m, carpet: dead end defined, E1 after 4 scans
+variant driver / 2.5 m, study: B2 as frozen
+variant driver / 2.5 m, study: dead end defined
+variant driver / 2.5 m, study: dead end defined, E1 after 4 scans
+variant driver / 2.5 m, carpet: B2 as frozen
+variant driver / 2.5 m, carpet: dead end defined
+variant driver / 2.5 m, carpet: dead end defined, E1 after 4 scans
+variant inset / 2.0 m, inset 0.0 m
+variant inset / 2.0 m, inset 0.2 m
+variant inset / 2.0 m, inset 0.4 m
+variant inset / 2.5 m, inset 0.0 m
+variant inset / 2.5 m, inset 0.2 m
+variant inset / 2.5 m, inset 0.4 m
+variant tags / 2.0 m, study: 12 tags
+variant tags / 2.0 m, study: 18 tags
+variant tags / 2.0 m, drift2: 12 tags
+variant tags / 2.0 m, drift2: 18 tags
+variant tags / 2.5 m, study: 12 tags
+variant tags / 2.5 m, study: 18 tags
+variant tags / 2.5 m, drift2: 12 tags
+variant tags / 2.5 m, drift2: 18 tags
+variant bearing_bias / 2.0 m, bearing bias +0 deg
+variant bearing_bias / 2.0 m, bearing bias +2 deg
+variant bearing_bias / 2.5 m, bearing bias +0 deg
+variant bearing_bias / 2.5 m, bearing bias +2 deg

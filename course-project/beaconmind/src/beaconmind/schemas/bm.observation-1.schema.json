@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.beaconmind.invalid/bm.observation-1.schema.json",
-  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C3.",
+  "$comment": "AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote this schema from plan/README.md C3. Claude Fable 5.2 via Claude Code, 2026-11-18: widened additively to what the frozen simulator and coded procedure write (last_move may be null: no move before this observation, as at step 0); every document valid before stays valid.",
   "title": "bm.observation/1",
   "type": "object",
   "additionalProperties": false,
@@ -106,34 +106,41 @@
       ]
     },
     "last_move": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "action",
-        "result"
-      ],
-      "properties": {
-        "action": {
-          "enum": [
-            "FORWARD_25",
-            "FORWARD_10",
-            "BACKWARD_10",
-            "TURN_LEFT_30",
-            "TURN_RIGHT_30"
-          ]
+      "anyOf": [
+        {
+          "type": "null"
         },
-        "result": {
-          "enum": [
-            "done",
-            "stalled",
-            "bumped",
-            "timeout",
-            "link_lost",
-            "refused",
-            "not_called"
-          ]
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "result"
+          ],
+          "properties": {
+            "action": {
+              "enum": [
+                "FORWARD_25",
+                "FORWARD_10",
+                "BACKWARD_10",
+                "TURN_LEFT_30",
+                "TURN_RIGHT_30"
+              ]
+            },
+            "result": {
+              "enum": [
+                "done",
+                "stalled",
+                "bumped",
+                "timeout",
+                "link_lost",
+                "refused",
+                "not_called"
+              ]
+            }
+          }
         }
-      }
+      ]
     },
     "counters": {
       "type": "object",

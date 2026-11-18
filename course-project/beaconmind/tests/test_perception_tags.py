@@ -350,6 +350,37 @@ def test_bgr_frame_gives_the_same_answer():
     assert a["range_m"] == pytest.approx(b["range_m"], abs=1e-9) and a["bearing_deg"] == pytest.approx(b["bearing_deg"], abs=1e-9)
 
 
+def test_mixed_tag_sizes_by_id():
+    # a room with two sizes: ids 0-14 are 160 mm tags 0.22 m up, the others 100 mm tags 0.1825 m up
+    big = tag_at(3, 2.0, 8.0, 0.22)
+    small = synth.tag_at(20, 1.5, -8.0, 0.1825, size_m=0.10)            # drawn at its true size by the renderer
+    picture = frame([big, small])
+    sizes = {**{i: 0.16 for i in range(15)}, "default": 0.10}
+    heights = {**{i: 0.22 for i in range(15)}, "default": 0.1825}
+    dets = tags.detect_tags(picture, CAM, tag_size_m=sizes, tag_center_height_m=heights)
+    assert [d["id"] for d in dets] == [3, 20]
+    assert dets[0]["range_m"] == pytest.approx(2.0, abs=0.006) and dets[0]["bearing_deg"] == pytest.approx(8.0, abs=0.1)
+    assert dets[1]["range_m"] == pytest.approx(1.5, abs=0.006) and dets[1]["bearing_deg"] == pytest.approx(-8.0, abs=0.1)
+    assert dets[0]["tag_size_m"] == 0.16 and dets[1]["tag_size_m"] == 0.10
+    assert dets[1]["base_xyz_m"][2] == pytest.approx(0.1825, abs=0.005)
+    # one size for all reads the small tag too far by the size ratio (on the lens distance)
+    wrong = [d for d in tags.detect_tags(picture, CAM, tag_size_m=0.16) if d["id"] == 20][0]
+    assert wrong["camera_range_m"] == pytest.approx(1.6 * dets[1]["camera_range_m"], rel=2e-3)
+    # the height rule uses each id's own height: with one height for all, the small tag fails it at close range
+    # only when the difference exceeds the tolerance, so check the per-id value directly
+    accepted, rejected = tags.detect_tags(picture, CAM, tag_size_m=sizes, return_rejected=True,
+                                          tag_center_height_m={**{i: 0.22 for i in range(15)}, "default": 0.60})
+    assert [d["id"] for d in accepted] == [3] and [(d["id"], d["reject"]) for d in rejected] == [(20, "height")]
+    # an id without a size is rejected, not guessed
+    accepted, rejected = tags.detect_tags(picture, CAM, tag_size_m={3: 0.16}, return_rejected=True)
+    assert [d["id"] for d in accepted] == [3] and [(d["id"], d["reject"]) for d in rejected] == [(20, "no_size")]
+    with pytest.raises(ValueError):
+        tags.detect_tags(picture, CAM, tag_size_m={3: 0.0})
+    # fused and listed as usual
+    listed = tags.to_observation_detections(tags.fuse_frames([dets, dets, dets]))
+    assert [(d["id"], d["range_m"]) for d in listed] == [(3, 2.0), (20, 1.5)]
+
+
 def test_tag_size_scales_the_range_from_the_lens():
     # the size convention: tag_size_m is the edge of the black square. A wrong size scales the lens distance.
     picture = frame([tag_at(3, 1.5, 0.0)])

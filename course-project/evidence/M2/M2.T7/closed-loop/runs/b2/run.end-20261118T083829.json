@@ -1,0 +1,15 @@
+{
+ "ended": "2026-11-18T08:38:29+0000",
+ "spent_usd": 0.0,
+ "failed": [],
+ "capped": [],
+ "results": {
+  "1": {
+   "complete": true,
+   "ended_by": "DONE",
+   "detail": "decision",
+   "steps": 46
+  }
+ },
+ "config": "1ba48d644e8e"
+}
