@@ -126,6 +126,14 @@ not as the spend cap).
 
 **Handoff (Xiaohui, 2026-11-18, about 15:00 CST):** "I will open up a new session when I am ready to continue with the project". Start the next session from this entry.
 
+**Containers stopped (Xiaohui, about 15:05 CST):** "turn off all the containers, including the ones you did not start,
+to release the memory and GPU resources". On the Spark `docker stop bm-micro-ros-agent deploy-comfyui-1`: no container
+is running, memory in use fell from 73 GB to 2 GB, no GPU process. `bm-micro-ros-agent` was started with `--rm`, so it
+is gone: bring it back with `bash course-project/tools/car_net.sh agent-start` before any work with the car.
+`deploy-comfyui-1` (not BeaconMind's; restart policy unless-stopped) stays stopped until someone runs
+`docker start deploy-comfyui-1`. Still up on the Spark: the access point and the tmux session `bm-cam-relay`.
+The Spark lines in the state paragraph below predate this.
+
 **State (2026-11-18, about 14:50 CST).** Tests on the Mac: 606 passed, 10 skipped; prereg verify OK. The Spark clone
 is at `353d49f` (one stale untracked file, `report/generated/tab-kinds.tex`). `caffeinate` stopped; all agents idle. Spark: access
 point, `bm-micro-ros-agent`, `bm-cam-relay` up; car on its power bank, motor battery off; no recording. Nothing has
