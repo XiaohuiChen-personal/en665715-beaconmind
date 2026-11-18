@@ -199,7 +199,7 @@ they exist.]
 Layout: One Column
 ### Body
 - One simulated episode per arm (n = 1) in the room simulator: {{cl.n-tags}} tags at nominal positions, {{cl.range-m}} m range
-- Opus 5.5 and Fable 5.2 made the identical {{cl.opus.moves}} moves (coded procedure: {{cl.b2.moves}}); given their tool results, every decision equals the procedure's
+- Opus 5.5 and Fable 5.2 made the identical {{cl.opus.moves}} moves (coded procedure: {{cl.b2.moves}}); from each model's own state, every decision equals the procedure's
 - All mapped {{cl.opus.tags-found}} of {{cl.n-tags}} tags; no move refused; no full pose fix
 - Error {{cl.opus.ate}} cm for each arm; dead reckoning {{cl.opus.b0-ate}} cm: no drift and {{cl.opus.path-m}} m of travel, little to correct
 - Prompt variant: range threshold 2.0 → {{cl.range-m}} m; cost US${{cl.opus.cost}} and US${{cl.fable.cost}}
@@ -209,9 +209,9 @@ Layout: One Column
 each move and the validator checks it. I ran one exploration episode per arm in a simulator of the real room,
 with the {{cl.n-tags}}-tag layout at its nominal positions: the coded procedure, Claude Opus 5.5 and Claude
 Fable 5.2, which is not an arm of the study and ran at effort {{cl.fable.effort}}, below its default. The coded
-procedure here is the frozen one with one added branch for a dead end that the room can produce. This is n equals one, so nothing here is a statistical result. The
-two models made the identical {{cl.opus.moves}} moves, and given the tool results each model obtained, every
-decision equals the coded procedure's. They left the procedure's path only after a pose argument one to two
+procedure here is the frozen one plus one rule for a dead end, which did not fire in this episode. This is n equals one, so nothing here is a statistical result. The
+two models made the identical {{cl.opus.moves}} moves, and at every step the frozen procedure, run on what the
+model saw and on the model's own previous report, makes the model's decision. They left the procedure's path only after a pose argument one to two
 centimeters from the procedure's changed one tool result: Opus's was rounded to two decimals, Fable's was not
 yet updated by that step's fix. So this shows agreement with the procedure, not a difference in driving. All three mapped
 {{cl.opus.tags-found}} of {{cl.n-tags}} tags, and no move was refused. The episode's

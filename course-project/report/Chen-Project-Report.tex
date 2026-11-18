@@ -682,13 +682,13 @@ run in a simulator of the real room: the \bmnum{cl.n-tags}-tag nominal layout, t
 \bmnum{cl.range-m}\,m range limit and one noise seed, with the arm choosing each move and the validator
 checking it. The arms were B2, Claude Opus~5.5 and Claude Fable~5.2 (\texttt{\bmnum{cl.fable.model}}, with
 Opus's request settings: effort \bmnum{cl.fable.effort}, below that model's default; not an arm of the
-study); B2 is the frozen procedure with one added branch for a dead end that the room can produce. The prompt was a variant of v3.3 in which one number
+study); B2 is the frozen procedure plus one rule for a dead end, which did not fire in this episode. The prompt was a variant of v3.3 in which one number
 differs, the range beyond which a detection is rejected (2.0 to \bmnum{cl.range-m}\,m); this is a deviation
 from the study prompt, so these numbers are not comparable with the replay results. All three episodes ended
 with DONE and mapped \bmnum{cl.opus.tags-found} of the \bmnum{cl.n-tags} tags without a phantom entry; no
 move was refused. The two models made the identical \bmnum{cl.opus.moves} moves (B2: \bmnum{cl.b2.moves}),
-and given the tool results each model obtained, every decision of both equals the coded procedure's; they
-left B2's path only after a pose argument 1--2\,cm from the procedure's (Opus's rounded to two decimals,
+and at each of their \bmnum{cl.opus.agree-steps} steps the frozen procedure, run on the observation the model
+received and the model's own previous report, makes the model's decision; they left B2's path only after a pose argument 1--2\,cm from the procedure's (Opus's rounded to two decimals,
 Fable's not yet updated by that step's fix) changed one tool result. The episode therefore shows agreement
 with the procedure, not a difference in driving. The episode's odometry had no 2\,\% over-read and the car
 traveled about \bmnum{cl.opus.path-m}\,m, so there was little to correct: no arm obtained a full pose fix,

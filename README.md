@@ -40,7 +40,8 @@ What this does and does not show:
   in a post hoc check of the logs).
 - In closed loop, where the model's own move is executed, there is so far one simulated episode per arm (n = 1) in a
   simulator of the real room, with a one-number variant of the prompt. Claude Opus 5.5 and Claude Fable 5.2 made
-  the same moves as each other and, given the tool results each obtained, the coded procedure's decisions. That
+  the same moves as each other, and at every step the coded procedure, run from the model's own state, makes the
+  model's decision. That
   shows agreement with the procedure; it is not a result about driving. The episode had no odometry over-read and
   little travel, so there was little to correct, and dead reckoning was at least as accurate.
 - **Limits.** Everything above is simulated: a kinematic simulator with placeholder sensor noise, one prompt, one

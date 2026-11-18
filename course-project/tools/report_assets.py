@@ -521,6 +521,9 @@ def build_numbers(src):
         raise SystemExit("report_assets: a closed-loop episode did not end cleanly; rewrite the report text")
     if cl["claude-opus-5-5"]["moves_by_type"] != cl["claude-fable-5-2"]["moves_by_type"]:
         raise SystemExit("report_assets: the two closed-loop models did not make the same moves")
+    if cl["claude-opus-5-5"]["procedure_agreement"]["steps_compared"] != \
+            cl["claude-fable-5-2"]["procedure_agreement"]["steps_compared"]:
+        raise SystemExit("report_assets: the two closed-loop models were compared on different numbers of steps")
     for arm, k in CLOSED_ARMS.items():
         d = cl[arm]
         note = cnote + arm + "/seed_3000.summary.json"

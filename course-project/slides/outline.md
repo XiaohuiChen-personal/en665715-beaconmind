@@ -200,7 +200,7 @@ they exist.]
 Layout: One Column
 ### Body
 - One simulated episode per arm (n = 1) in the room simulator: 20 tags at nominal positions, 3.0 m range
-- Opus 5.5 and Fable 5.2 made the identical 55 moves (coded procedure: 57); given their tool results, every decision equals the procedure's
+- Opus 5.5 and Fable 5.2 made the identical 55 moves (coded procedure: 57); from each model's own state, every decision equals the procedure's
 - All mapped 14 of 20 tags; no move refused; no full pose fix
 - Error 2.3 cm for each arm; dead reckoning 1.5 cm: no drift and 1.5 m of travel, little to correct
 - Prompt variant: range threshold 2.0 → 3.0 m; cost US$4.60 and US$8.33
@@ -210,9 +210,9 @@ Layout: One Column
 each move and the validator checks it. I ran one exploration episode per arm in a simulator of the real room,
 with the 20-tag layout at its nominal positions: the coded procedure, Claude Opus 5.5 and Claude
 Fable 5.2, which is not an arm of the study and ran at effort medium, below its default. The coded
-procedure here is the frozen one with one added branch for a dead end that the room can produce. This is n equals one, so nothing here is a statistical result. The
-two models made the identical 55 moves, and given the tool results each model obtained, every
-decision equals the coded procedure's. They left the procedure's path only after a pose argument one to two
+procedure here is the frozen one plus one rule for a dead end, which did not fire in this episode. This is n equals one, so nothing here is a statistical result. The
+two models made the identical 55 moves, and at every step the frozen procedure, run on what the
+model saw and on the model's own previous report, makes the model's decision. They left the procedure's path only after a pose argument one to two
 centimeters from the procedure's changed one tool result: Opus's was rounded to two decimals, Fable's was not
 yet updated by that step's fix. So this shows agreement with the procedure, not a difference in driving. All three mapped
 14 of 20 tags, and no move was refused. The episode's
