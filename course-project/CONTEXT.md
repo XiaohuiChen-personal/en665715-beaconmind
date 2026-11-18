@@ -10,7 +10,15 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
 
-## 2026-11-18 — work list 2.10 DONE: the session recorder (M3.T27); tags printed
+## 2026-11-18 — work list 2.10 and 2.2 DONE: the session recorder (M3.T27); camera size XGA (M1.T17); tags printed
+
+**2.2 capture size (M1.T17 done): XGA 1024 × 768, JPEG quality 12** (Xiaohui, after Claude's recommendation;
+`evidence/M1/M1.T17/size-decision.md`). Floor-spot probes, camera about 141 cm from a bare wall, recorded session
+`20261118-001733-capture-size`, 100 frames each: VGA q12 7.1 frames/s, p95 184 ms; XGA q12 5.4 frames/s, p95 237 ms;
+UXGA q10 1.75 frames/s, p95 665 ms (fails the plan's bar). XGA gives a tag about 57 px at 2.5 m against 35 px at VGA.
+The "must be 1600×1200" sentences in M1.T6 and M1.T7 are edited. bm_cam-0.2 boots at VGA, so
+`record_session.sh start` now sets XGA q12 (`--camera-size`, `keep` to leave it) and `camera_probe.py` gained `--save`.
+The camera is at XGA q12 now.
 
 **Tags printed** (2026-11-17, 23:57): the 13-page PDF on the Brother HL-3140CW, Letter, 100 %, black only, job
 completed. Xiaohui mounts them and records each centre on the mounting sheet.
@@ -34,9 +42,9 @@ client: use `--camera off` when the probe or the backend captures. Parked dry ru
 no recording active. Recorder sessions so far: `recorder-smoke`, `recorder-dry-run`, `recorder-check` (data on the
 Spark only).
 
-**Next:** 2.2 capture size (M1.T17): the camera at the floor spot, `camera_probe.py --n 100` at VGA q12 and UXGA q10
-inside a recorded session (`--camera off`, the probe is the camera's client), then Xiaohui chooses. Then 2.3
-calibration with the phone board.
+**Next:** 2.3 calibration (M1.T7) at XGA with the phone board: first check the XGA distance bands with
+`evidence/M1/M1.T7/board/detect_sim.py` at 1024 × 768, then Xiaohui holds the phone while the recorder's frame saver
+captures (live coverage from `frames/latest.jpg`).
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-18: wrote the recorder and its tests, ran the sessions, printed
 the tags at Xiaohui's request, and wrote this entry.

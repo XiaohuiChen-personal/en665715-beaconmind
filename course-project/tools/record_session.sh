@@ -3,10 +3,13 @@
 #
 #   bash course-project/tools/record_session.sh start <label> [--operator NAME] [--note TEXT]
 #                                                         [--camera poll|off] [--fps N] [--max-hours H]
+#                                                         [--camera-size xga|vga|...|keep] [--camera-quality Q]
 #   bash course-project/tools/record_session.sh run <name> -- <command> [args...]
 #   bash course-project/tools/record_session.sh status
 #   bash course-project/tools/record_session.sh stop
 #
+# start first sets the camera to the project's capture size (M1.T17, Xiaohui 2026-11-18: XGA 1024x768, JPEG quality 12;
+# bm_cam-0.2 boots at VGA and forgets /control settings on a reboot), unless --camera-size keep.
 # start makes course-project/data/real/<YYYYmmdd-HHMMSS>-<label>/ (git-ignored) and starts, each in a window of tmux
 # session bm-rec, from a script it writes into the session's meta/run/:
 #   bag       ros2 bag record -a: every topic on the ROS graph (the car's included), in a one-off beaconmind-ros container
@@ -84,7 +87,8 @@ window() {       # window <name> <script body>: write meta/run/<name>.sh and run
 
 start() {
   local label="${1:-}" operator="" note="" camera=poll fps=5 maxh=4
-  [ -n "$label" ] || die "usage: start <label> [--operator NAME] [--note TEXT] [--camera poll|off] [--fps N] [--max-hours H]"
+  local camsize="${BM_CAM_SIZE:-xga}" camq="${BM_CAM_QUALITY:-12}"
+  [ -n "$label" ] || die "usage: start <label> [--operator NAME] [--note TEXT] [--camera poll|off] [--fps N] [--max-hours H] [--camera-size S] [--camera-quality Q]"
   shift
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -93,10 +97,14 @@ start() {
       --camera) camera="$2"; shift 2 ;;
       --fps) fps="$2"; shift 2 ;;
       --max-hours) maxh="$2"; shift 2 ;;
+      --camera-size) camsize="$2"; shift 2 ;;
+      --camera-quality) camq="$2"; shift 2 ;;
       *) die "unknown option $1" ;;
     esac
   done
   [[ "$camera" =~ ^(poll|off)$ ]] || die "--camera must be poll or off"
+  [[ "$camsize" =~ ^(qvga|vga|svga|xga|uxga|keep)$ ]] || die "--camera-size must be qvga, vga, svga, xga, uxga or keep"
+  [[ "$camq" =~ ^[0-9]+$ ]] && [ "$camq" -ge 10 ] && [ "$camq" -le 63 ] || die "--camera-quality must be 10-63"
   [ -f "$ACTIVE" ] && die "session $(cat "$ACTIVE") is still active; stop it first"
   tmux has-session -t "$S" 2>/dev/null && die "tmux session $S exists without an active session; look at it, then: tmux kill-session -t $S"
   running "$BAG_C" && die "container $BAG_C is still running; look at it, then: docker stop $BAG_C"
@@ -122,11 +130,18 @@ start() {
   docker image inspect "$IMAGE" >/dev/null 2>&1 || die "image $IMAGE missing"
   avail=$(df -BG --output=avail "$ROOT" | tail -1 | tr -dc 0-9)
   [ "${avail:-0}" -ge 20 ] || die "only ${avail} GB free under $ROOT"
+  if [ -n "$cam" ] && [ "$camsize" != keep ]; then
+    if curl -sf -m 5 "http://$cam/control?framesize=$camsize&quality=$camq" > "$DIR/meta/camera_control.json"; then
+      echo "camera: set to $camsize quality $camq" | tee -a "$DIR/meta/checks.txt"
+    else
+      echo "camera: COULD NOT SET $camsize quality $camq" | tee -a "$DIR/meta/checks.txt"
+    fi
+  fi
   [ -n "$cam" ] && curl -sf -m 3 "http://$cam/status" > "$DIR/meta/camera_status_start.json"
   # the agent logs only events (a Pico joining), so keep its recent log: the car's connection state at the start
   running "$AGENT_C" && docker logs --timestamps --tail 200 "$AGENT_C" > "$DIR/logs/micro_ros_agent_before.log" 2>&1
 
-  ID="$ID" LABEL="$label" OPERATOR="$operator" NOTE="$note" CAMERA="$camera" FPS="$fps" MAXH="$maxh" \
+  ID="$ID" LABEL="$label" OPERATOR="$operator" NOTE="$note" CAMERA="$camera" FPS="$fps" MAXH="$maxh" CAMSIZE="$camsize" CAMQ="$camq" \
   START_ISO="$start_iso" CAM_IP="$cam" CAR_IP="$car" PICO_BUILD="$PICO_BUILD" REPO="$REPO" python3 - "$DIR/meta/session.json" <<'PY'
 import json, os, socket, subprocess, sys, time
 e = os.environ
@@ -136,7 +151,7 @@ json.dump({"id": e["ID"], "label": e["LABEL"], "operator": e["OPERATOR"], "note"
            "start_local": time.strftime("%Y-%m-%d %H:%M:%S %Z"), "host": socket.gethostname(),
            "git_commit": git("rev-parse", "--short=12", "HEAD"),
            "git_dirty": bool([l for l in git("status", "--porcelain").splitlines() if not l.startswith("??")]),
-           "camera_mode": e["CAMERA"], "fps": float(e["FPS"]), "max_hours": float(e["MAXH"]), "camera_ip": e["CAM_IP"],
+           "camera_mode": e["CAMERA"], "camera_size": e["CAMSIZE"], "camera_quality": e["CAMQ"], "fps": float(e["FPS"]), "max_hours": float(e["MAXH"]), "camera_ip": e["CAM_IP"],
            "car_ip": e["CAR_IP"], "pico_build": e["PICO_BUILD"], "ntp_synced": ntp or "unknown"},
           open(sys.argv[1], "w"), indent=1)
 PY

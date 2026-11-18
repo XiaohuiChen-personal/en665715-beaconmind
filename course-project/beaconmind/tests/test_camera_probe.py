@@ -53,3 +53,20 @@ def test_control_path():
         except ValueError:
             continue
         raise AssertionError("control_path accepted {0}".format(bad))
+
+
+def test_save_frames_keeps_every_good_frame_and_indexes_every_request(tmp_path):
+    """--save (rule R2). AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-18."""
+    import json
+
+    probe = load_probe()
+    good = b"\xff\xd8frame\xff\xd9"
+    probe.save_frames(str(tmp_path), [
+        (0, 200, {"X-BM-Seq": "5", "X-BM-Width": "1600", "Content-Type": "image/jpeg"}, good, 812.34),
+        (1, 503, {}, b"busy", 10.0),
+    ])
+    lines = [json.loads(l) for l in (tmp_path / "index.jsonl").read_text().splitlines()]
+    assert lines[0] == {"i": 0, "http": 200, "latency_ms": 812.3, "bytes": len(good), "file": "000.jpg",
+                        "headers": {"x-bm-seq": "5", "x-bm-width": "1600"}}
+    assert "file" not in lines[1] and lines[1]["http"] == 503
+    assert (tmp_path / "000.jpg").read_bytes() == good and not (tmp_path / "001.jpg").exists()

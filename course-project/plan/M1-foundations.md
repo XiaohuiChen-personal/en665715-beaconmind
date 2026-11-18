@@ -126,7 +126,7 @@ evidence is saved):
 | M1.T3 | M2.T4 and the Isaac track; M3.T2, M3.T9, M3.T11, M3.T13 |
 | M1.T5 | M2.T15 (Isaac arena; tag method) |
 | M1.T7, M1.T9, M1.T16 | M2.T4 (URDF), M2.T16 (Isaac car); M1.T9 also M3.T4, M3.T8, M3.T10. M1.T16 is the mass, two-scale split and bank box (2026-10-29); M2.T4 waits on those rows |
-| M1.T17 | M1.T7 (capture size must be chosen before calibration starts) |
+| M1.T17 | Settle the camera capture size before calibration | done | S | `evidence/M1/M1.T17/` | 2026-11-18 | **2026-11-18:** Xiaohui chose XGA 1024×768, JPEG quality 12, after floor-spot probes at VGA q12, XGA q12 and UXGA q10 (`size-decision.md`, `probe-n100.txt`; recorded session `20261118-001733-capture-size`). The 1600×1200 sentences in M1.T6 step 13 and M1.T7 are edited. **Re-scope 2026-11-09 (README §3.6):** kept: work list 2.2. |
 | M1.T8 | M2.T6 (sim perception and noise injection), M2.T11 (non-placeholder logs), M3.T16 |
 | M1.T11 (or the OD18 waiver) | M2.T7 (harness); M1.T11 itself for M2.T18 (frontier providers), M4.T2, M3.T18 |
 | M1.T6 | M3.T7 (latency with the camera streaming) |
@@ -145,7 +145,7 @@ evidence is saved):
 | M1.T4 | LLM latency re-measured without queueing; closed-loop model setting (OD8) | done | S | `evidence/M1/M1.T4/` | 2026-10-06 | pinned by Xiaohui 2026-10-06: Qwen3.8-Flash-Next thinking on |
 | M1.T5 | Isaac Sim version decision (OD7) + AprilTag render/decode spike + kit-lifetime check | done | M | `evidence/M1/M1.T5/` | 2026-10-07 | OD7 approved 2026-10-07: Isaac Sim 5.1.0-rc.19 |
 | M1.T6 | Camera: stand upright, flashing toolchain, project JPEG firmware, HTTP capture proven | in-progress | M | `evidence/M1/M1.T6/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: section 2 (camera on the floor, capture size, calibration). **2026-10-29:** floor pictures that passed were bm_cam-0.1 on 2026-10-07, UXGA, hmirror 0, USB out, 192.168.4.24. That address is gone. The image in the docs now is bm_cam-0.2 at 192.168.5.49, VGA boot, saved hmirror 1 (2026-10-25). Still open: level reading, h/d photo, named step-13 files (`overnight-gaps.md`). Desk UXGA timing misses ≥ 3 frames/s |
-| M1.T7 | Camera calibration (checkerboard), HFOV/VFOV, camera-to-base extrinsics | todo | S | `evidence/M1/M1.T7/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: work list 2.3. Not done. **2026-10-29:** Module 8's vision demo and bm_cam-0.2 are not this task. No `camera.json`, checkerboard, distortion, or RMS. Do not start until M1.T17 names the capture size. The 1600×1200 sentences below stay until that choice |
+| M1.T7 | Camera calibration (checkerboard), HFOV/VFOV, camera-to-base extrinsics | todo | S | `evidence/M1/M1.T7/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept: work list 2.3. Not done. **2026-10-29:** Module 8's vision demo and bm_cam-0.2 are not this task. No `camera.json`, checkerboard, distortion, or RMS. **2026-11-18:** unblocked: M1.T17 chose XGA 1024×768 q12. Do not start until M1.T17 names the capture size. The 1600×1200 sentences below stay until that choice |
 | M1.T8 | Tag pilot: range/bearing error vs distance and angle; `configs/detector_noise.json` | todo | M | `evidence/M1/M1.T8/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: work list 2.4 (tag error vs distance and angle on real frames -> real noise model for kinsim). Xiaohui at the bench |
 | M1.T9 | Car measurements [encoder counts moved to M3.T3, S13]; `configs/car.json` | blocked | S | `evidence/M1/M1.T9/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept blocked: lens pose comes from M1.T7, wheel scale and track from M3.T8 lite (work list 2.8). Blocked on Xiaohui (README §1.4 items 1, 8). `car.json` written from his 2026-10-10 readings (Module 6 lab) and valid (`bm.car/1` OK); `tools/car_measurements_template.csv` written. Not done: one reading per quantity (not 3), no roll-out (direct 67 mm diameter in `wheel_diameter_m`), encoder counts postponed (Pico), `car-top/side` and `imu-orientation` photos and `imu_axes` missing; for Xiaohui to accept or redo: single readings, the direct diameter, the encoder postponement, `chassis_*` = main body not whole car (deviation 7), corners/sweep radius assume the ESP32-CAM and plate strip centred (deviation 8) (`README.md`). **Revised 2026-10-24:** the encoder postponement and the missing roll-out are no longer for Xiaohui to accept or redo. No wheel is turned or rolled by hand (README S13), so step 4 and the roll-out are superseded. Counts per turn and signs come from M3.T3 (powered stand runs, filmed tyre flag) and M3.T24 (floor check against the IMU), and the driven scale from M3.T8. The direct diameter stays. **2026-10-29:** lens rows stay partial (one reading each: x 0.12 m, y 0.0 m, z 0.075 m above the floor). The power-bank mass and box are M1.T16, not this task. Status stays blocked |
 | M1.T10 | Settle the open decisions with Xiaohui; AGENT-DESIGN v3.4 incl. MCP servers | todo | S | `evidence/M1/M1.T10/` | 2026-11-10 | **Re-scope 2026-11-09 (README §3.6):** kept, reduced: record the 2026-11-09/10 decisions (roster, host-side bounded moves, verified-fix counters) in AGENT-DESIGN v3.4. |
@@ -1746,8 +1746,9 @@ and latency expectations, all unverified for this board).
       LED is very bright — do not look into it from close range; it will blink ten times.
     - **Pass thresholds** (proposed; M1.T10 confirms): `100/100` OK; capture p95 ≤ 500 ms; ≥ 3 frames/s;
       freshness p95 ≤ 1.0 s. If one fails, record it and stop and ask before changing frame size or
-      quality (that would redo M1.T7). The change to UXGA already happened on 2026-10-06, so M1.T7
-      must use 1600×1200.
+      quality (that would redo M1.T7). The capture size is XGA 1024×768, JPEG quality 12
+      (Xiaohui, 2026-11-18, M1.T17 `evidence/M1/M1.T17/size-decision.md`; the 2026-10-06 choice was UXGA 1600×1200 quality 10), so M1.T7
+      must use 1024×768.
 14. **Spark host, then Mac — forward-view picture quality** (required before this task is `done`, and
     before M1.T7). Steps 12–13 prove that HTTP returns fresh JPEGs. This step reads the pixels of the
     forward scene. It does not replace step 3's ±3° level report, and it does not replace the h/d
@@ -1880,22 +1881,23 @@ AI-assisted: Grok 4.7 via Cursor, 2026-10-06: updated the live camera frame to U
 ---
 ### M1.T7 — Camera calibration (checkerboard), intrinsics, HFOV/VFOV, camera-to-base extrinsics
 
-**2026-10-29.** This task stays **todo**. Module 8's vision demo (a model describing a photo and driving toward a ball) is not a calibration. `bm_cam-0.2` being flashed is not a calibration. There is no `configs/camera.json`, no checkerboard, no distortion, and no RMS (`evidence/M1/M1.T7/` does not exist). The Isaac 60° design and `fx=fy=1385.641` (`evidence/M1/M1.T5/checkpoint.md`) are not measurements of this lens. M1.T5 stays done and its design intrinsics are not copied into `camera.json`. Do not start until M1.T17 records a dated width, height, and JPEG quality. The "must be 1600×1200" sentences in this task are the 2026-10-06 UXGA quality-10 decision. They stay until M1.T17 edits them, if the choice is not UXGA. Intrinsics cannot be scaled from VGA to UXGA.
+**2026-10-29.** This task stays **todo**. Module 8's vision demo (a model describing a photo and driving toward a ball) is not a calibration. `bm_cam-0.2` being flashed is not a calibration. There is no `configs/camera.json`, no checkerboard, no distortion, and no RMS (`evidence/M1/M1.T7/` does not exist). The Isaac 60° design and `fx=fy=1385.641` (`evidence/M1/M1.T5/checkpoint.md`) are not measurements of this lens. M1.T5 stays done and its design intrinsics are not copied into `camera.json`. Do not start until M1.T17 records a dated width, height, and JPEG quality. The "must be 1600×1200" sentences in this task are the 2026-10-06 UXGA quality-10 decision. They stay until M1.T17 edits them, if the choice is not UXGA. Intrinsics cannot be scaled from VGA to UXGA. **2026-11-18:** M1.T17 chose XGA 1024×768, JPEG quality 12, and those sentences now say so.
 
 **2026-11-10 — the board is the phone screen** (Xiaohui's choice; record and checks in `evidence/M1/M1.T7/board/README.md`). Xiaohui shows `checkerboard_12x5_2868x1320.png` full screen on their phone (2868 × 1320 px, 460 ppi) and holds it in front of the camera. This changes the steps below as follows; the rest stands, and M1.T17 still comes first.
 - **Steps 1–2:** the generator is `tools/make_checkerboard.py` (screen mode). The board is 13 × 6 squares (**12 × 5 inner corners, 60**) of 165 px = 9.111 mm. The ruler check is the 13-square span 118.4 ± 1.0 mm and the 6-square span 54.7 ± 1.0 mm. On a pass `square_m` = 0.009111, otherwise the long span / 13. The printer, the stiff board and tape are needed only if the phone fails; the printed 10 × 7 board is the fallback.
-- **Step 4:** the distances shrink with the 118 mm board: 0.20–0.80 m at UXGA, 0.12–0.40 m at VGA (table in the README). Take a test frame first for focus, OLED flicker bands and glare.
+- **Step 4:** the distances shrink with the 118 mm board: 0.20–0.80 m at UXGA, 0.12–0.40 m at VGA (table in the README). At XGA (chosen 2026-11-18) the bands lie between those two columns, about 0.15–0.60 m; check them with `detect_sim.py` at 1024 × 768 before the capture. Take a test frame first for focus, OLED flicker bands and glare.
 - **Step 5:** use `--cols 12 --rows 5`; "all 54 corners" becomes all 60. The `cornerSubPix` half-window is 0.4 × the smallest detected corner spacing (at most 11), not a fixed 11 × 11. In a simulated check (`detect_sim*.txt`) the fixed window gave 2.6–8.8 px RMS from 0.5 m at UXGA and 0.18 m at VGA; the spacing rule stayed ≤ 0.35 px. `findChessboardCornersSB` is the fallback when the classic detector finds nothing.
-- **Step 7:** check the distance at **0.50 m and 0.75 m** instead of 1.00 m and 1.50 m. The 9.1 mm squares are about 11 px at 1.00 m in UXGA, too small for a sure `solvePnP`. Prop the phone upright and measure to the glass. The lens's few-millimetre optical-centre offset is now up to about 1 % of the 2 % tolerance, so note it.
+- **Step 7:** check the distance at **0.50 m and 0.75 m** instead of 1.00 m and 1.50 m. The 9.1 mm squares are about 11 px at 1.00 m in UXGA (about 7 px at XGA), too small for a sure `solvePnP`. Prop the phone upright and measure to the glass. The lens's few-millimetre optical-centre offset is now up to about 1 % of the 2 % tolerance, so note it.
 - **Step 9:** try 1.00 m first; if the corners are not found, use 0.60 m.
 
 **Why.** Every range and bearing the agent sees comes from the tag pose, which needs the camera's
 intrinsics; the observation geometry is measured from the **axle midpoint** (C1, D3), which needs the
 camera's position and angles in `base_link`. AGENT-DESIGN §W W2 asks for HFOV and VFOV; D3's 60° HFOV is
-a DV until this task measures it. Calibrate the live camera at UXGA 1600×1200, JPEG quality 10.
+a DV until this task measures it. Calibrate the live camera at XGA 1024×768, JPEG quality 12
+(Xiaohui, 2026-11-18, M1.T17 `evidence/M1/M1.T17/size-decision.md`; the 2026-10-06 choice was UXGA 1600×1200 quality 10).
 (2026-10-25, `bm_cam-0.2`: the camera boots at VGA, so the capture tools first send
-`/control?framesize=uxga&quality=10` and drop any frame whose `X-BM-Width`/`X-BM-Height` is not
-1600×1200. Calibrate only when `/status` shows `"orientation": "saved"` or `"build"`, never `"unsaved"`,
+`/control?framesize=xga&quality=12` and drop any frame whose `X-BM-Width`/`X-BM-Height` is not
+1024×768. Calibrate only when `/status` shows `"orientation": "saved"` or `"build"`, never `"unsaved"`,
 because an unsaved flip or mirror is undone by the next reboot. `camera.json` `firmware`: name and version
 from `fw.rsplit("-", 1)`, `vflip`/`hmirror` as booleans. Never scale K from another frame size: sizes up to
 XGA are binned and UXGA is not.)
@@ -2053,8 +2055,9 @@ OpenCV calibration documentation for `findChessboardCorners`, `cornerSubPix`, `c
 
 **Pitfalls and known gotchas.**
 - **Intrinsics belong to one resolution.** Never change `FRAMESIZE` after this task without
-  recalibrating (and saying so in `CONTEXT.md`). The change to UXGA already happened on 2026-10-06, so
-  M1.T7 must use 1600×1200.
+  recalibrating (and saying so in `CONTEXT.md`). The capture size is XGA 1024×768, JPEG quality 12
+  (Xiaohui, 2026-11-18, M1.T17 `evidence/M1/M1.T17/size-decision.md`; the 2026-10-06 choice was UXGA 1600×1200 quality 10), so
+  M1.T7 must use 1024×768.
 - `findChessboardCorners` wants the **inner** corner count (9 × 6 for a 10 × 7-square board).
 - A glossy print or a ceiling light reflection hides corners; tilt the board slightly.
 - The calibration frames come through the same JPEG path as runtime frames, which is intended.

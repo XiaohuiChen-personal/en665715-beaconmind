@@ -8,6 +8,7 @@ rule otherwise.
 AI-assisted: Grok 4.7 via Cursor, 2026-10-06: wrote the M1.T6 capture probe.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-10-25: added --mode/--quality (bm_cam-0.2 boots at
 VGA, so the probe sets the project mode through /control first) and the per-frame size check.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-18: added --save (every frame kept, rule R2).
 Derived from: course-project/beaconmind/src/beaconmind/metrics/latency.py:percentile_nearest_rank
 (same nearest-rank rule, reimplemented for the fallback).
 """
@@ -165,17 +166,40 @@ def mean_brightness(body):
     return sum(pixels) / len(pixels)
 
 
-def run_rate(url, n, timeout, expected_size=None):
-    """expected_size: (width, height) set by --mode; frames of another size count as size_mismatch."""
+def save_frames(out_dir, records):
+    """Write each kept frame as <i>.jpg and one index.jsonl line per request (rule R2: every frame is kept).
+    records: (i, status, headers, body, latency_ms). Called after the timed loop, so saving does not slow the probe."""
+    import json
+    import os
+
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "index.jsonl"), "w", encoding="utf-8") as index:
+        for i, status, headers, body, latency_ms in records:
+            line = {"i": i, "http": status, "latency_ms": round(latency_ms, 1), "bytes": len(body),
+                    "headers": {str(k).lower(): v for k, v in headers.items() if str(k).lower().startswith("x-bm-")}}
+            if status == 200 and jpeg_ok(body):
+                line["file"] = "{0:03d}.jpg".format(i)
+                with open(os.path.join(out_dir, line["file"]), "wb") as fh:
+                    fh.write(body)
+            index.write(json.dumps(line) + "\n")
+    print("saved {0} frames to {1}".format(sum(1 for r in records if r[1] == 200 and jpeg_ok(r[3])), out_dir))
+
+
+def run_rate(url, n, timeout, expected_size=None, save_dir=None):
+    """expected_size: (width, height) set by --mode; frames of another size count as size_mismatch.
+    save_dir: keep every frame there (save_frames) after the timing is done."""
     latencies_ms = []
     seqs = []
     sizes = []
     ok = 0
     size_mismatch = 0
+    kept = []
     wall_start = time.perf_counter()
-    for _ in range(n):
+    for i in range(n):
         status, headers, body, elapsed = fetch(_join(url, "/capture"), timeout)
         latencies_ms.append(elapsed * 1000.0)
+        if save_dir is not None:
+            kept.append((i, status, headers, body, elapsed * 1000.0))
         if status == 200 and jpeg_ok(body):
             ok += 1
             sizes.append(len(body))
@@ -203,6 +227,8 @@ def run_rate(url, n, timeout, expected_size=None):
         print("size_mismatch={0} (expected {1}x{2})".format(size_mismatch, *expected_size))
         passed = passed and size_mismatch == 0
     print("pass_rate={0}".format("yes" if passed else "no"))
+    if save_dir is not None:
+        save_frames(save_dir, kept)
     return 0
 
 
@@ -271,6 +297,7 @@ def build_parser():
     parser.add_argument("--mode", choices=MODES,
                         help="bm_cam-0.2: set this frame size through /control first (it boots at vga)")
     parser.add_argument("--quality", type=int, help="bm_cam-0.2: set this JPEG quality (10-63) first")
+    parser.add_argument("--save", help="with --n: keep every frame and an index.jsonl in this folder (rule R2)")
     return parser
 
 
@@ -284,7 +311,7 @@ def main(argv=None):
         if args.mode is not None or args.quality is not None:
             expected_size = set_mode(args.url, args.mode, args.quality, args.timeout)
         if args.n is not None:
-            return run_rate(args.url, args.n, args.timeout, expected_size)
+            return run_rate(args.url, args.n, args.timeout, expected_size, args.save)
         return run_freshness(args.url, args.freshness, args.timeout)
     except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
         print("camera_probe: {0}".format(exc), file=sys.stderr)

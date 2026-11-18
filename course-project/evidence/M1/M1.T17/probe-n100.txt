@@ -1,0 +1,67 @@
+# M1.T17 floor-spot probes, recorded session 20261118-001733-capture-size (Spark host, 2026-11-18)
+# camera bm_cam-0.2 about 141 cm from a bare wall (Xiaohui), car parked, motor battery off; 100 requests each; every frame kept in the session (frames/<setting>/)
+
+## terminal/01-status-before.log
+# session: 20261118-001733-capture-size
+# cmd: curl -s -m 3 http://10.42.0.89/status 
+# cwd: /home/xiaohui_chen/Projects/en665715-beaconmind
+# start: 2026-11-18T06:17:37.114Z
+{"fw": "bm_cam-0.2", "camera_ok": true, "sensor_id": "0x3660", "framesize": "VGA", "width": 640, "height": 480, "quality": 12, "vflip": 0, "hmirror": 1, "orientation": "saved", "max_framesize": "UXGA", "rssi_dbm": -59, "uptime_ms": 1165746, "free_heap": 160416, "psram": true, "frames": 583, "photos_served": 583, "stale_discards": 1153, "size_discards": 0, "fb_timeouts": 0, "fresh_timeouts": 0, "merged_buffers": 22, "led": 0}# end: 2026-11-18T06:17:37.200Z
+# exit: 0
+
+## terminal/02-probe-vga-q12.log
+# session: 20261118-001733-capture-size
+# cmd: python3 course-project/tools/camera_probe.py --url http://10.42.0.89 --n 100 --save course-project/data/real/20261118-001733-capture-size/frames/vga-q12 
+# cwd: /home/xiaohui_chen/Projects/en665715-beaconmind
+# start: 2026-11-18T06:17:37.209Z
+ok 100/100
+latency_ms p50=126.2 p95=184.3 max=233.0
+fps=7.107
+seq_strict=true
+mean_jpeg_bytes=9314
+pass_rate=yes
+saved 100 frames to course-project/data/real/20261118-001733-capture-size/frames/vga-q12
+# end: 2026-11-18T06:17:51.324Z
+# exit: 0
+
+## terminal/03-probe-xga-q12.log
+# session: 20261118-001733-capture-size
+# cmd: python3 course-project/tools/camera_probe.py --url http://10.42.0.89 --n 100 --mode xga --quality 12 --save course-project/data/real/20261118-001733-capture-size/frames/xga-q12 
+# cwd: /home/xiaohui_chen/Projects/en665715-beaconmind
+# start: 2026-11-18T06:17:51.334Z
+mode framesize=XGA width=1024 height=768 quality=12 fw=bm_cam-0.2
+ok 100/100
+latency_ms p50=181.1 p95=236.8 max=283.8
+fps=5.395
+seq_strict=true
+mean_jpeg_bytes=22394
+size_mismatch=0 (expected 1024x768)
+pass_rate=yes
+saved 100 frames to course-project/data/real/20261118-001733-capture-size/frames/xga-q12
+# end: 2026-11-18T06:18:10.100Z
+# exit: 0
+
+## terminal/04-probe-uxga-q10.log
+# session: 20261118-001733-capture-size
+# cmd: python3 course-project/tools/camera_probe.py --url http://10.42.0.89 --n 100 --mode uxga --quality 10 --save course-project/data/real/20261118-001733-capture-size/frames/uxga-q10 
+# cwd: /home/xiaohui_chen/Projects/en665715-beaconmind
+# start: 2026-11-18T06:18:10.112Z
+mode framesize=UXGA width=1600 height=1200 quality=10 fw=bm_cam-0.2
+ok 100/100
+latency_ms p50=557.5 p95=664.9 max=781.6
+fps=1.751
+seq_strict=true
+mean_jpeg_bytes=107194
+size_mismatch=0 (expected 1600x1200)
+pass_rate=no
+saved 100 frames to course-project/data/real/20261118-001733-capture-size/frames/uxga-q10
+# end: 2026-11-18T06:19:07.694Z
+# exit: 0
+
+## terminal/05-restore-vga-q12.log
+# session: 20261118-001733-capture-size
+# cmd: curl -s -m 5 http://10.42.0.89/control\?framesize=vga\&quality=12 
+# cwd: /home/xiaohui_chen/Projects/en665715-beaconmind
+# start: 2026-11-18T06:19:07.705Z
+{"fw": "bm_cam-0.2", "camera_ok": true, "sensor_id": "0x3660", "framesize": "VGA", "width": 640, "height": 480, "quality": 12, "vflip": 0, "hmirror": 1, "orientation": "saved", "max_framesize": "UXGA", "rssi_dbm": -60, "uptime_ms": 1256496, "free_heap": 160412, "psram": true, "frames": 883, "photos_served": 883, "stale_discards": 1691, "size_discards": 0, "fb_timeouts": 0, "fresh_timeouts": 0, "merged_buffers": 26, "led": 0}# end: 2026-11-18T06:19:07.922Z
+# exit: 0
