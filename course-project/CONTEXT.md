@@ -117,7 +117,13 @@ repo was rebuilt each round but no reviewer has read the deck itself.
   at least 0.7 m from every edge, first start pose at least 0.3 m away, first one or two episodes attended, wrapper
   inside tmux.
 
-**State (2026-11-18, about 14:25 CST).** Tests on the Mac: 590 passed, 10 skipped; prereg verify OK. Spark: access
+**Later the same afternoon (commits `26d541e`, `609737e`, `353d49f`):** a halted closed-loop episode now ends without a
+model request (`halted_without_request` in the summary); the batch runner's remaining halt paths have tests (91 in
+`test_car_batch.py`); `record-pass` now requires `--world <surveyed file>` and a batch on any other world file is
+refused. The batch-runner tests were written with the fixes and were not run against the old code.
+
+**State (2026-11-18, about 14:50 CST).** Tests on the Mac: 606 passed, 10 skipped; prereg verify OK. The Spark clone
+is at `353d49f` (one stale untracked file, `report/generated/tab-kinds.tex`). `caffeinate` stopped; all agents idle. Spark: access
 point, `bm-micro-ros-agent`, `bm-cam-relay` up; car on its power bank, motor battery off; no recording. Nothing has
 moved the real car. API spend today: US$18.84 (closed loop). **Needs Xiaohui next:** say yes to printing the 8 pages
 and the new mounting sheet; mount all 20 tags and record their centres; tag-accuracy pilot; stand test and floor check;
