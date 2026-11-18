@@ -1251,6 +1251,10 @@ class BatchRunner:
             entry["result"] = res
             entry["guard_blocked_moves"] = env.blocked
             entry["requests_not_sent_after_halt"] = agent.requests_refused
+            if agent.requests_refused and self.monitor.halted is not None and not res.get("complete"):
+                # the harness reports the wrapper's refusal as its spend cap; say what it really was
+                entry["result"] = dict(res, ended_by="halt", detail="batch halt: %s (no request was sent; the harness "
+                                       "saw this as its cap answer)" % self.monitor.halted["code"])
             if not res.get("complete"):
                 self.monitor.halt("usd_cap", "the spend cap stopped the episode at step %s" % res.get("steps"), safety=False)
             elif res.get("ended_by") == "latch" and self.monitor.halted is None:
