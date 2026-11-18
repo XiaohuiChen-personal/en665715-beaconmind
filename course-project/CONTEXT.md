@@ -10,7 +10,7 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
 
-## 2026-11-18 (later) — delegation, unattended batches, spend approvals; parallel agents at work (entry in progress)
+## 2026-11-18 (later) — delegation, unattended batches, spend approvals; parallel agents, room rehearsal, tag layout C20 decided
 
 **Delegation (Xiaohui, about 02:15 CST):** "fully automate the whole process and finish the tasks that could be done
 automatically … use subagents … choose the option that gives us the best quality. Do not try to save tokens … feel free
@@ -26,6 +26,46 @@ a spot check) are in plan/README.md §3.6 "Unattended batches". A batch runner i
 **Spend approved (Xiaohui):** the simulated Opus 5.5 and Fable 5.2 episodes; the 2–3 live Opus episodes on the car; the
 Opus replay of the 10 real logs ("Yes, I approve the replay as well"; quoted US$48–110, tell Xiaohui the tightened
 estimate first). The GPU is free for Xiaohui's other use until the Qwen3.8/Gemma replay of the real logs.
+
+**Overnight stall (04:19–11:55 CST).** The room option grid finished at 04:19 but its agent's final report never
+reached the lead, which was waiting on it; nothing ran for about 7.5 h. The Mac stayed awake (`caffeinate -ims`), no
+money was spent, the car was not touched. Work restarted at 11:55 when Xiaohui asked for the status; Xiaohui then asked
+for a status check every 5 minutes until everything is finished. Lesson: do not gate all remaining work on one agent's
+message; start the independent tasks at once and check the agents on a timer.
+
+**Room rehearsal done (M3.T12, commit `68ee4eb`; all simulated, nominal tag positions).** Report
+`evidence/M3/M3.T12/rehearsal-b2.md`, tables `rehearsal-b2-tables.md` (159 configurations × 150 episodes).
+**Decisions by Claude under the delegation:**
+- **Tag layout C20:** keep the 12 printed 160 mm pages, add 8 more 160 mm tags with new IDs: ID 1 on the angled
+  section 20 cm from corner 4; IDs 7, 5, 4, 6, 11 on the window wall 14, 125, 215, 314, 404 cm from corner 3; IDs 8, 9
+  on the 295 cm wall 200 and 269 cm from corner 5. World file `configs/arenas/real-room-plus8-160mm-nominal.json`
+  (`real-room-nominal.json` stays as the 12-tag layout). 100 mm tags rejected: full reprint, and 3.0 m is at their
+  simulated far limit. Nothing is reprinted. **The 8 new pages are not printed and no tag is mounted yet.**
+- **Range limit 3.0 m** (2.5 m if the real tag pilot does not confirm it). Prompt v3.3 says "rejected if range_m > 2.0"
+  in words; the frozen prompt is not edited, a real-room variant with that one number changed is a recorded deviation.
+- **Driving area inset 0.4 m** from every wall (geofence in the backend / tape).
+- **Start poses S1–S5** from `configs/arenas/real-room-scenarios.json`; S3 (2.60, 3.90, −90°) is the hard case
+  (9 of 30 run to the budget). B2 driver `kr.make_b2_policy()` (wraps frozen `decide_step`, handles the "E5 leg with no
+  forward move" branch the frozen code raises on; identical to frozen B2 on the study square).
+**Findings:** with study or carpet odometry B2 is no better than dead reckoning in any layout (B0 1.4–2.2 cm, B2
+1.6–3.1 cm median ATE). With the frozen `dv.json` sigmas a two-tag fix passes its own error test in under 1 % of
+steps, so heading is never corrected under 2 % drift (21–26° both). With the simulated detector's sigmas
+(0.01 + 0.012 r, 0.5°) and C20 at 3.0 m B2 halves the final heading error under drift (10.5° against 23.0°).
+**OPEN for Xiaohui:** approve a separate real-run DV file with the tag pilot's measured sigmas (frozen `dv.json`
+untouched). The 160 mm near limit (0.74 m) hides a tag in 3–8 % of B2 steps; `done_range_m` 0.55 m is inside it, so
+GO_TO_BEACON would lose its target (EXPLORE does not use it). `data/room/rehearsal/` (42 MB, git-ignored, superseded
+pinhole-model logs) can be deleted.
+
+**Slides and README (commit `c45cd6b`).** Public: `README.md` rewritten for graders, `slides/outline.template.md`
+(edit this), generated `slides/outline.md`, `numbers.json`, `figures/`; `report_assets.py --slides`. Private repo
+(uncommitted): `course-project/presentation/{build_deck.py,validate_deck.sh,Chen-BeaconMind-Final.pptx,REVIEW.md}`,
+15 slides on the JHU template, placeholders on slides 9, 10, 11, 13 matching `report/PENDING.md`. **OPEN for Xiaohui:**
+presentation requirements (assumed 15 minutes), whether the private `presentation/` folder is the right place, the long
+title crossing the shield graphic. Not done from M6.T6: disclosure audit script, code archive, submission checklist.
+
+**Started 12:15 CST, results to be added below:** closed-loop rerun (B2, Opus 5.5, Fable 5.2; C20, S1, seed 3000,
+study odometry, 3.0 m, frozen DV, caps US$8 / US$14); unattended batch runner with an adversarial review of its halts;
+the 8-page print PDF, 20-tag mounting sheet and coverage at 46.9° (`evidence/M3/M3.T10/layout-2/`).
 
 ## 2026-11-18 — work list 2.10 and 2.2 DONE, 2.3 intrinsics done: recorder (M3.T27); camera size XGA (M1.T17); camera.json; tags printed
 
