@@ -1,6 +1,6 @@
 # Course Project Context
 
-Last updated: 2026-11-13
+Last updated: 2026-11-17
 
 **Project name: BeaconMind** (chosen 2026-09-28). "Beacon" for the AprilTags on the walls, "Mind" for
 the language model that owns the pose belief, the beacon map and the SLAM decisions. Use this name in
@@ -9,6 +9,60 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
+
+## 2026-11-17 — section 2 started: the arena is the room; room surveyed; 12-tag layout and print sheets ready
+
+**Decisions of 2026-11-13 not recorded here before** (made in a session started from the private repo):
+- **R2 widened** (Xiaohui): "fully record the sensor data, camera streams, traces and logs as much as possible". Bench
+  sessions are recorded too (capture-size probe, calibration, tag pilot, floor checks): every raw camera frame, every
+  car topic, the micro-ROS agent and relay logs, link stats, terminal, traces. So the recorder (work list 2.10,
+  M3.T27) is built **first**, before 2.2.
+- Xiaohui's "one recording of the seed running" is the **first** real episode (3.3); the rest are kept (≥ 10 driven by
+  B2, 2–3 closed-loop Opus 5.5 episodes including the demo take).
+
+**Decision (Xiaohui, 2026-11-17): the real arena is the room the Spark is in.** The tags go on its own walls; no
+2.25 m foam-board square is built. The entrance door and the two closet doors stay closed during runs.
+
+**Survey** (`evidence/M3/M3.T10/room-survey.md`; Xiaohui's tape, Claude's least-squares fit). A 381 × 512 cm
+rectangle with one corner cut at 45° (cut 123 cm): all eight readings fit within 0.6 cm once a misread 195 cm for the
+cut was re-measured. Frame: origin at corner 5 (desk wall / 295 cm wall), y along the desk wall. The entrance door is
+on the desk wall against corner 5 (trim 2.5–102 cm); then the light switches and an outlet with the Spark's power
+brick, the desk (221–363 cm, 66 cm deep), and the Ethernet jack stretch (363–512 cm, cable on the floor, no tags). Doors
+wall from corner 1: bare 54 cm, door 1, bare 71 cm (outlet), door 2, bare 76 cm. Baseboard 12 cm. The room photos
+(`~/Downloads/IMG_8148`–`8151.HEIC` on the Mac) show a private room and stay out of this repo.
+
+**Layout `real-room-1`** (`tools/room_layout.py`, tests `beaconmind/tests/test_room_layout.py`; output
+`evidence/M3/M3.T10/layout/`). 12 tag36h11 tags, 160 mm black, kinsim's D3 ID rule (duplicated IDs 3, 0, 2). Each tag
+on a Letter page whose bottom edge rests on the baseboard, so every tag centre is 23 cm up. A tag may slide ≤ 20 cm to
+clear an outlet; the measured centre goes into the world file. Print PDF (13 pages: mounting sheet + 12 tags, each
+checked to decode as its ID with a 159.85 mm black side): `data/real/tags/room-layout-real-room-1.pdf` (git-ignored),
+copy at `~/Downloads/BeaconMind-tags-real-room-1.pdf` on the Mac. Driving area: the room with its desk-wall side moved to
+the desk's front line (x = 0.66 m) for the whole wall, which keeps it convex and puts the chair (tucked in) and the floor
+cables behind it.
+
+**Coverage, a real sim-to-real difference** (`layout/coverage.txt`, kinsim's visibility rule, 60° field of view): at
+the 2.0 m limit of `configs/dv.json`, 42 % of (position, heading) samples see a tag, against 98 % in the study's 2.25 m
+arena; a turn in place finds a tag from 97 % of positions and two tags from 85 % (2.5 m: 99.7 % and 98.7 %). Fifteen
+tags would add about 3 points, so twelve. **Open, for Xiaohui after the tag pilot (2.4):** keep 2.0 m for real runs or
+raise it to 2.5 m. Also open: the tag tops (31 cm) may leave the camera's vertical view when the car is within about
+0.5 m of a wall (lens 7.5 cm up; vertical field of view unmeasured until 2.3).
+
+**For 3.1:** `envs/kinsim_lite.py` hard-codes the 2.25 m square (`ARENA`), and `bm.world-1` holds only a rectangle
+(`arena.size_m`); the room needs a polygon arena (an additive schema field) and per-tag normals.
+
+**State.** Nothing committed: the tool, the test, the evidence, this entry and the M3.T10 status row (`in-progress`).
+Mac tests: 114 passed, 3 skipped (`PYTHONPATH=src python3 -m pytest -q`). On the Spark: the access point and the
+`bm-cam-relay` tmux still up; `bm-micro-ros-agent` stopped (`docker start bm-micro-ros-agent`); the car off. A
+non-project container, `deploy-comfyui-1`, holds about 64 GB: it must stop before Qwen3.8 (about 97 GB) serves the
+real-log replay (3.6). The tag PDF was drawn with OpenCV 5.1 in a scratch venv on the Mac (neither the Mac's Python nor
+the Spark host venv has `cv2`; `beaconmind-ros` does).
+
+**Next:** Xiaohui prints at 100 % (check 160 mm with a ruler), mounts, and measures each tag's centre on the mounting
+sheet. Claude: the recorder (2.10) first, then 2.2 capture size and 2.3 calibration with Xiaohui; in parallel the code
+items 2.6, 2.7, 2.9 and 4.1, and the report's Results (5) from `evidence/M4/M4.T16/results_summary.md`.
+
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-17: read the room photos, fitted the survey, wrote the layout
+tool, its tests and this entry. Xiaohui Chen took every measurement and made the arena decision.
 
 ## 2026-11-13 — work list 1.7 and 1.8 DONE: the main simulated study's results (section 1 complete)
 

@@ -1,0 +1,14 @@
+Coverage. One heading: share of (position, heading) samples that see at least 1 / at least 2 tags.
+Full turn: share of positions where a turn in place (36 headings) sees at least 1 tag / 2 different tags.
+Visibility as kinsim_lite.detect: field of view 60 deg, range 0.25 m to the limit below, incidence <= 60 deg,
+range and bearing from the pose point; no random drop-outs. Positions at least 0.30 m inside the driving
+area, headings every 10 deg. Room: 1102 positions (10 cm grid), the desk blocks the view. Study arena: the
+2.25 m square with make_world seeds 2000-2029 (256 positions each, 10 cm grid), averaged.
+kinsim's placeholder range limit is 1.5 m; configs/dv.json rejects detections beyond 2.0 m.
+
+             one heading: room      study      | full turn: room       study
+max range    >=1     >=2     >=1     >=2      |  >=1     >=2      >=1     >=2
+   1.5 m    25.5%    1.9%   78.5%   38.0%     |  77.4%   54.9%   100.0%  100.0%
+   2.0 m    41.8%    8.2%   97.8%   69.5%     |  96.6%   85.0%   100.0%  100.0%
+   2.5 m    57.1%   18.8%   97.9%   71.7%     |  99.7%   98.7%   100.0%  100.0%
+   3.0 m    69.0%   30.3%   97.9%   71.7%     | 100.0%   99.9%   100.0%  100.0%

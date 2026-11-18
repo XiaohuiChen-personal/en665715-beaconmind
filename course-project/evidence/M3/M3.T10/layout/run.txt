@@ -1,0 +1,39 @@
+Coverage. One heading: share of (position, heading) samples that see at least 1 / at least 2 tags.
+Full turn: share of positions where a turn in place (36 headings) sees at least 1 tag / 2 different tags.
+Visibility as kinsim_lite.detect: field of view 60 deg, range 0.25 m to the limit below, incidence <= 60 deg,
+range and bearing from the pose point; no random drop-outs. Positions at least 0.30 m inside the driving
+area, headings every 10 deg. Room: 1102 positions (10 cm grid), the desk blocks the view. Study arena: the
+2.25 m square with make_world seeds 2000-2029 (256 positions each, 10 cm grid), averaged.
+kinsim's placeholder range limit is 1.5 m; configs/dv.json rejects detections beyond 2.0 m.
+
+             one heading: room      study      | full turn: room       study
+max range    >=1     >=2     >=1     >=2      |  >=1     >=2      >=1     >=2
+   1.5 m    25.5%    1.9%   78.5%   38.0%     |  77.4%   54.9%   100.0%  100.0%
+   2.0 m    41.8%    8.2%   97.8%   69.5%     |  96.6%   85.0%   100.0%  100.0%
+   2.5 m    57.1%   18.8%   97.9%   71.7%     |  99.7%   98.7%   100.0%  100.0%
+   3.0 m    69.0%   30.3%   97.9%   71.7%     | 100.0%   99.9%   100.0%  100.0%
+T00 id=15 decoded=[15] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T01 id=10 decoded=[10] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T02 id=3 decoded=[3] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T03 id=23 decoded=[23] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T04 id=0 decoded=[0] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T05 id=3 decoded=[3] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T06 id=12 decoded=[12] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T07 id=28 decoded=[28] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T08 id=2 decoded=[2] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T09 id=0 decoded=[0] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T10 id=2 decoded=[2] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T11 id=29 decoded=[29] black_side_px=1888 (159.85 mm) centre_above_page_bottom=110.0 mm
+T00 15 desk wall corner 5 161 cm slide 141-181
+T01 10 295 cm wall corner 5 58 cm slide 38-78
+T02 3 295 cm wall corner 5 148 cm slide 128-168
+T03 23 295 cm wall corner 5 237 cm slide 217-257
+T04 0 angled section corner 4 85 cm slide 65-105
+T05 3 window wall corner 3 63 cm slide 43-83
+T06 12 window wall corner 3 163 cm slide 143-183
+T07 28 window wall corner 3 264 cm slide 244-284
+T08 2 window wall corner 3 364 cm slide 344-384
+T09 0 doors wall corner 1 27 cm slide 13-41
+T10 2 doors wall corner 1 165 cm slide 158-185
+T11 29 doors wall corner 1 343 cm slide 323-363
+duplicates: [['T02', 'T05'], ['T04', 'T09'], ['T08', 'T10']]
