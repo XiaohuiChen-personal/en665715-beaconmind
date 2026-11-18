@@ -18,9 +18,13 @@ Claude Opus 5.5, Claude Fable 5.2 and the coded procedure B2 in the simulated re
 start S1 (2.50, 1.50, 90°), measured-camera visibility, 3.0 m range limit, 0.4 m inset of the driving area, noise
 seed 3000. All three ended with DONE and mapped 14 of the 20 tags with no phantom; ATE 2.3 cm for all three; no
 move was refused, no report was invalid, no emergency stop. **The two models made the identical 55 moves (56
-steps); B2 made 57 (58 steps).** The models left B2's path at step 35, and the cause is one rounding: at step 31
-each passed a two-decimal pose to `exploration_summary` and was told a 1-move leg where the procedure's unrounded
-pose gives 2. On their own inputs both models decided what the coded procedure decides at every step. Cost
+steps); B2 made 57 (58 steps).** The models left B2's path at step 35, and the cause is the pose each gave to
+`exploration_summary` at step 31: B2 passed its unrounded pose (−0.4392, −0.2389) and was told a 2-move leg;
+Opus 5.5 passed that pose rounded to two decimals (−0.44, −0.24), and Fable 5.2 passed (−0.46, −0.23), the
+odometry prior of that step (the step-30 position, before the step's position fix), and both were told a 1-move
+leg. Given the tool result each model obtained there, every later decision is the coded procedure's: recomputed
+from each step's observation and the model's own previous report, the procedure's decision equals the model's at
+all 56 steps of both models. Cost
 US$4.60 (Opus 5.5) and US$8.33 (Fable 5.2); about 20 s a step for both. **n = 1 episode per arm: no difference
 between the models is statistically established, and the episode shows agreement with the coded procedure, not a
 difference in driving.**
@@ -238,16 +242,24 @@ How to read it:
   1 cm apart. With one episode each, none of these is more than an observation.
 - **Where the models left B2's path, and why it is not a driving decision.** Steps 0 to 34 are move for move
   B2's. At step 31 the procedure chooses a leg toward the −60° sector and reads its `max_leg_moves` from
-  `exploration_summary`. B2 calls the tool with its unrounded pose (−0.4392, −0.2389) and gets 2; Opus 5.5 called it
-  with the two-decimal pose of its report (−0.44, −0.24) and Fable 5.2 with the prior pose (−0.46, −0.23), and both
-  got 1 (the wall estimate in that sector moved from 1.18 m to 1.07 m). Their leg therefore ended one move earlier;
+  `exploration_summary`. B2 calls the tool with its unrounded pose (−0.4392, −0.2389) and gets 2 (wall estimate
+  1.18 m). Opus 5.5 called it with the two-decimal pose of its report (−0.44, −0.24) and got 1 (wall estimate
+  1.07 m): a rounding of 1 mm. Fable 5.2 called it with (−0.46, −0.23), the odometry prior of that step (the
+  step-30 position, which its `fix_pose` call had just corrected to (−0.439, −0.239)), and also got 1 (1.08 m):
+  not a rounding but the wrong pose, 2 cm away, although its report then carried the fixed pose. Both wrote
+  `leg_moves_left` 1 where the procedure writes 2. Their leg therefore ended one move earlier;
   at step 35 B2 took the leg's second forward move (FORWARD_10) and the models chose the next leg (the 90° sector),
   which is exactly what the coded procedure decides from the models' own state. From then on the trajectories
   differ: the models finished two steps earlier, with the same 14 tags. The prompt gives poses to two decimals and
-  tool results come back with three, so a threshold inside a tool can flip on that rounding; the study's replay could
-  not show this, because there the moves were the log's.
-- **Agreement with the coded procedure, not a difference in driving.** On its own input every one of the 112 model
-  decisions equals the coded procedure's. This episode is evidence that both models execute the written procedure
+  tool results come back with three, so a threshold inside a tool can flip on a millimetre (Opus 5.5's case); the
+  study's replay could not show this, because there the moves were the log's.
+- **Agreement with the coded procedure, not a difference in driving.** The agreement figure is computed per step
+  by running the frozen coded procedure (`kinsim_lite.estimate_step` and `decide_step`) on the observation the
+  model received and the model's own previous report, and comparing its decision with the report's `decision`; it
+  is 112 of 112. It takes the model's state as given: the memory that differs from B2's since step 31
+  (`leg_moves_left`) is part of that state, so the figure says the models followed the procedure from where they
+  were, not that they stayed on B2's path (they did not, from step 35). The procedure's memory equals the
+  model's at 55 of 56 steps; the one difference is step 31. This episode is evidence that both models execute the written procedure
   in a closed loop (validated, executed moves; no fallback), not evidence about how either would drive where the
   procedure is silent.
 - **No full fix in any arm; a position fix on 37.5 % to 41.4 % of steps.** Two confirmed tags were seldom in one
@@ -478,5 +490,10 @@ per paid episode only if that ledger exists.
   `operator_request: null`); the slip auto-latch; the out-of-band STOP hotkey itself (work list 2.7; the loop obeys
   the latch file it would write); drivers other
   than B2 and Anthropic models (the OpenAI-compatible provider would need the same thin driver).
-- B2 in the loop turns its unimplemented branches (`NotImplementedError`) into a counted fallback step; it does not
-  use `kinsim_room.make_b2_policy`'s dead-end branch.
+- **Which B2 ran.** First pair: the frozen procedure (`kinsim_lite.estimate_step` + `decide_step`) through the loop.
+  Final episodes: `kinsim_room.make_b2_policy()` through the loop (`run.json`: `"policy":
+  "kinsim_room.make_b2_policy()"`), which is the same frozen procedure plus a rule for the dead end the written
+  procedure leaves open. That rule did not fire in this episode: rerunning the frozen procedure on each of B2's 58
+  logged steps raises nowhere and reproduces all 58 reports, and it raises on none of the models' 112 steps either.
+  So the B2 column is the procedure as written. Had a branch the procedure does not implement been reached, the
+  B2 driver would have ended the episode (`error`, "driver stopped"), not driven on.
