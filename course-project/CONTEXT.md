@@ -42,7 +42,7 @@ client: use `--camera off` when the probe or the backend captures. Parked dry ru
 no recording active. Recorder sessions so far: `recorder-smoke`, `recorder-dry-run`, `recorder-check` (data on the
 Spark only).
 
-**2.3 calibration (M1.T7): INTRINSICS DONE (2026-11-18, about 02:00 CST); extrinsics (steps 8–9) remain.**
+**2.3 calibration (M1.T7): DONE (2026-11-18, about 02:10 CST), with accepted deviations.**
 `configs/camera.json` (XGA 1024 × 768 q12): fx 1181.5, fy 1176.6, cx 498.4, cy 380.8, k1 +0.083, k2 −0.070, rms 0.34 px
 over 20 views of the paper board **taped to a rigid backing** (7 turned, 4 tipped; session `20261118-014353-calibration-rigid`,
 free mode). **HFOV 46.9°, VFOV 36.2°, not the design's 60°.** Independent distance check: tape 103.5 cm, solvePnP
@@ -52,7 +52,7 @@ Known gap: the board covered only 46 % of the picture grid (corners span x 317�
 board are still owed. The earlier wall-frame estimate of 67° was wrong. With 46.9° the layout's coverage drops (one
 heading sees a tag in about a third of samples at 2 m instead of 42 %; rerun `room_layout.py` with the measured value),
 but a 160 mm tag is about 76 px wide at 2.5 m, which favours raising the 2.0 m range limit.
-**Extrinsics measured 02:06** (`evidence/M1/M1.T7/extrinsics.md`, in camera.json): lens (0.120, 0, 0.075) m from car.json; roll +4.4°, pitch −3.9° (nose up), yaw +2.5° ± 2°; second distance check −1.2 %. Roll exceeds the plan's 3° mount limit: Xiaohui to accept or re-seat. (Earlier:) the car was on a desk for the capture; steps 8–9 (lens position from car.json, pitch and yaw from an image
+**Extrinsics measured 02:06** (`evidence/M1/M1.T7/extrinsics.md`, in camera.json): lens (0.120, 0, 0.075) m from car.json; roll +4.4°, pitch −3.9° (nose up), yaw +2.5° ± 2°; second distance check −1.2 %. Roll exceeds the plan's 3° mount limit; **Xiaohui accepted it as it is (2026-11-18), with the 0.46 coverage and no ruler check of the board: M1.T7 is done.** Do not touch the camera in its bracket: a bump invalidates these angles. (Earlier:) the car was on a desk for the capture; steps 8–9 (lens position from car.json, pitch and yaw from an image
 with the car on the floor) are still to do. History of the night's failed attempts follows.
 
 **(Superseded) 2.3 first attempts: capture tooling built, first result rejected (2026-11-18, about 01:45 CST).**
@@ -74,7 +74,7 @@ night's recorded sessions (`data/real/20261118-00442*` … `-013214-calibration-
   Xiaohui prefers plain "left/right" (their own, facing the camera; the picture is a mirror for them) and holding the
   board over taping it to a wall. The car was raised on a desk for these sessions; motor battery off throughout.
 
-**Next:** finish 2.3 as above. (Earlier note:) 2.3 calibration (M1.T7) at XGA with the phone board: first check the XGA distance bands with
+**Next:** Xiaohui mounts the 12 tags and records each centre; then 2.4 tag accuracy (M1.T8) on the wall tags, which also refines yaw; rerun `room_layout.py` coverage at the measured 46.9°. Code items 2.6, 2.7, 2.9, 4.1 and the report's Results are open. (Earlier note:) 2.3 calibration (M1.T7) at XGA with the phone board: first check the XGA distance bands with
 `evidence/M1/M1.T7/board/detect_sim.py` at 1024 × 768, then Xiaohui holds the phone while the recorder's frame saver
 captures (live coverage from `frames/latest.jpg`).
 

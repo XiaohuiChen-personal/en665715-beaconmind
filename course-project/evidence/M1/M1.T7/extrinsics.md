@@ -20,9 +20,11 @@ bearing bias of the wall tags. Cross-checks: distance 103.0 cm against the tape'
 check, inside 2 %); lens 6.3 cm above the board's bottom edge against 7.5 cm above the floor in car.json (carpet pile and
 wheel sink are of that order).
 
-**Open (Xiaohui):** the roll is above the plan's 3° mount limit. It is recorded in `camera.json` and tag geometry
-corrects for it, so the choice is to accept it or re-seat the camera (which would need this step again, not the lens
-calibration).
+**Decision (Xiaohui, 2026-11-18): accepted as it is.** "I will document this potential over the limit and accept as
+it is. There are measurement errors … The tape measuring is not super accurate anyways." The roll reading (+4.4° against
+the 3° mount limit) stands in `camera.json` with `uncertainty_deg` 2.0, and tag geometry corrects for it; the camera is
+not re-seated. Accepted with it: the board covered 46 % of the picture grid (plan: 0.8), and the printed board's size
+was not checked with a ruler (the two distance checks, −0.1 % and −1.2 %, bound its scale error).
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: computed the angles and wrote this record. Xiaohui Chen
 placed the car and board and took the tape readings.
