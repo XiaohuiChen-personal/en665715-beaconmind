@@ -178,40 +178,47 @@ Layout: Two Column_50/50
 Figure: slides/figures/fig-room.png
 Alt: Plan of the room arena with the twenty nominal AprilTag positions and their IDs on the walls, the desk, and the dashed driving area.
 ### Body
-- A room of about 3.8 × 5.1 m; 20 tags, three IDs used twice
-- Camera calibrated: field of view 46.9°, not the design's 60°
-- One heading sees a tag from 54.9 % of poses (study arena: 78.5 %)
-- Rule 1: rehearse in simulation first. Rule 2: record every real run
-- [PENDING 4: measured tag positions; detector range and bearing error]
+- A 3.8 × 5.1 m room; 20 tags (12 printed), three IDs twice
+- Camera field of view 46.9°, not the design's 60°
+- One heading sees a tag center from 67.1 % of poses, a whole tag from 54.9 % (study: 78.5 %)
+- 3.0 m range limit, provisional
+- Rehearse in simulation first; record every real run
+- [PENDING 4: measured tag positions; detector error; confirmed range limit]
 ### Notes
 (60 s) The real arena is a room, not a small square. The layout has 20 tags on its walls, and three
-IDs are used twice; none is mounted yet. The camera is calibrated; its field of view is 46.9 degrees,
+IDs are used twice; 12 are printed and none is mounted yet. The camera is calibrated; its field of view is 46.9 degrees,
 not the sixty degrees the design and the simulator assumed. That matters. In the study arena as simulated, one
-heading saw a tag from 78.5 percent of poses. In the room, with the measured field of view, a
-camera model that needs the whole tag in the picture, and a 3.0 meter range limit, it is
-54.9 percent, although a full turn finds two different tags from 98.3
-percent of positions. Two rules govern the real car: every session is rehearsed in simulation first, and every
-real run is recorded in full. [PENDING 4: say the measured tag positions and the detector's error once they
-exist.]
+heading saw a tag from 78.5 percent of poses. In the room, with the measured field of view and a
+3.0 meter range limit, the same rule gives 67.1 percent, and a camera model that
+needs the whole tag in the picture gives 54.9 percent, although a full turn finds two
+different tags from 98.3 percent of positions. The 3.0 meter limit is the value
+used in the rehearsals; it is provisional until a tag-accuracy pilot on real frames confirms it. Two rules govern the real car: every session is rehearsed in simulation first, and every
+real run is recorded in full. [PENDING 4: say the measured tag positions, the detector's error and the confirmed range limit once
+they exist.]
 
 ## Slide 10 — Demo: The Agent in Closed Loop
 Layout: One Column
 ### Body
 - One simulated episode per arm (n = 1) in the room simulator: 20 tags at nominal positions, 3.0 m range
-- Opus 5.5 and Fable 5.2 made the identical 55 moves (coded procedure: 57); every decision equals the procedure's
+- Opus 5.5 and Fable 5.2 made the identical 55 moves (coded procedure: 57); given their tool results, every decision equals the procedure's
 - All mapped 14 of 20 tags; no move refused; no full pose fix
-- Error 2.3 cm for each arm; dead reckoning 1.5 cm: no gain here
+- Error 2.3 cm for each arm; dead reckoning 1.5 cm: no drift and 1.5 m of travel, little to correct
 - Prompt variant: range threshold 2.0 → 3.0 m; cost US$4.60 and US$8.33
 - [PENDING 6, 2: demo video and episodes on the car; executor and STOP as tested on the car]
 ### Notes
 (150 s, with the video) In the study the agent chose no move: it only estimated. In closed loop the arm chooses
 each move and the validator checks it. I ran one exploration episode per arm in a simulator of the real room,
 with the 20-tag layout at its nominal positions: the coded procedure, Claude Opus 5.5 and Claude
-Fable 5.2, which is not an arm of the study. This is n equals one, so nothing here is a statistical result. The
-two models made the identical 55 moves, and on their own inputs every decision equals the coded
-procedure's. So this shows agreement with the procedure, not a difference in driving. All three mapped
-14 of 20 tags, and no move was refused. No arm got a full pose fix, and dead
-reckoning was at least as accurate: 1.5 centimeters against 2.3. One deviation: the
+Fable 5.2, which is not an arm of the study and ran at effort medium, below its default. The coded
+procedure here is the frozen one with one added branch for a dead end that the room can produce. This is n equals one, so nothing here is a statistical result. The
+two models made the identical 55 moves, and given the tool results each model obtained, every
+decision equals the coded procedure's. They left the procedure's path only after a pose argument one to two
+centimeters from the procedure's changed one tool result: Opus's was rounded to two decimals, Fable's was not
+yet updated by that step's fix. So this shows agreement with the procedure, not a difference in driving. All three mapped
+14 of 20 tags, and no move was refused. The episode's
+odometry had no two percent over-read and the car traveled about 1.5 meters, so there was little to
+correct: no arm got a full pose fix, and dead reckoning was at least as accurate, 1.5 centimeters
+against 2.3. One deviation: the
 prompt differs from the study prompt in one number, the range beyond which a detection is rejected, so these
 numbers are not comparable with the replay results. The episodes cost 4.60 and 8.33
 dollars. [PENDING 6: play the demo recording and say what the episodes on the car showed. PENDING 2: say how
@@ -254,7 +261,7 @@ Layout: One Column
 - They did it by executing the procedure, which a short program also does at negligible cost
 - The model that skipped its tools failed (post hoc)
 - Not measured: what an LLM adds when the rules do not fit, such as close duplicates or operator requests
-- [PENDING 7: what the real car and the closed loop showed]
+- [PENDING 7: what the real car showed]
 ### Notes
 (60 s) To conclude. In this study two capable models kept a pose estimate that beats dead reckoning by
 2.83 and 4.00 centimeters, which is statistically supported and not practically supported. They did it by

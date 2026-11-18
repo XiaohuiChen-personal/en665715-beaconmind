@@ -89,6 +89,7 @@ cap.opus | 250 | prereg.json design
 cl.b2.ate | 2.3 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json pose ate_m (m to cm)
 cl.b2.b0-ate | 1.4 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json b0 ate_m (dead reckoning on this arm's path)
 cl.b2.moves | 57 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json moves_executed
+cl.b2.path-m | 1.6 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json path_length_m
 cl.b2.position-fixes | 24 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json pose_sources
 cl.b2.steps | 58 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json
 cl.b2.tags-found | 14 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json map tags_found
@@ -100,6 +101,7 @@ cl.fable.effort | medium | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable
 cl.fable.model | claude-fable-5-2 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/run.json
 cl.fable.moves | 55 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json moves_executed
 cl.fable.p95 | 23.7 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json time p95_s
+cl.fable.path-m | 1.5 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json path_length_m
 cl.fable.position-fixes | 21 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json pose_sources
 cl.fable.steps | 56 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json
 cl.fable.tags-found | 14 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json map tags_found
@@ -112,6 +114,7 @@ cl.opus.effort | medium | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5
 cl.opus.model | claude-opus-5-5 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/run.json
 cl.opus.moves | 55 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json moves_executed
 cl.opus.p95 | 25.0 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json time p95_s
+cl.opus.path-m | 1.5 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json path_length_m
 cl.opus.position-fixes | 21 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json pose_sources
 cl.opus.steps | 56 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json
 cl.opus.tags-found | 14 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json map tags_found
@@ -422,6 +425,7 @@ room.dup-ids | 0, 2 and 3 | layout.json duplicates
 room.tag-height-cm | 23 | layout.json tags z_m
 room.tag-size-mm | 160 | layout.json tag
 room.tags | 20 | layout.json tags
+room.tags-per-m | 1.15 | layout-2/layout.json: tags / length of the walls
 room.tags.added | 8 | layout-2/layout.json (added)
 room.tags.printed | 12 | layout-2/layout.json (tags not marked added)
 rubric.gemma | 0.407 | judge_summary.txt
@@ -470,6 +474,8 @@ spend.opus | 143.97 | study_summary.json per_seed cost_usd, summed
 status | confirmatory | study_summary.json status
 steps.max | 104 | study_summary.json
 steps.min | 51 | study_summary.json
+study.tags-per-m.max | 1.78 | study_summary.json per_seed n_tags / 9 m of wall
+study.tags-per-m.min | 1.33 | study_summary.json per_seed n_tags / 9 m of wall
 tag.gemma | 9cad251b7f18 | prereg.json config_tags
 tag.opus | b003c274bbb8 | prereg.json config_tags
 tag.qwen | 488f835d69b5 | prereg.json config_tags

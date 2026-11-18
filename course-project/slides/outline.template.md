@@ -177,40 +177,47 @@ Layout: Two Column_50/50
 Figure: slides/figures/fig-room.png
 Alt: Plan of the room arena with the twenty nominal AprilTag positions and their IDs on the walls, the desk, and the dashed driving area.
 ### Body
-- A room of about 3.8 × 5.1 m; {{room.tags}} tags, three IDs used twice
-- Camera calibrated: field of view {{cam.hfov}}°, not the design's 60°
-- One heading sees a tag from {{cov2.30.camera.one}} % of poses (study arena: {{cov.15.study.one}} %)
-- Rule 1: rehearse in simulation first. Rule 2: record every real run
-- [PENDING 4: measured tag positions; detector range and bearing error]
+- A 3.8 × 5.1 m room; {{room.tags}} tags ({{room.tags.printed}} printed), three IDs twice
+- Camera field of view {{cam.hfov}}°, not the design's 60°
+- One heading sees a tag center from {{cov2.30.rule.one}} % of poses, a whole tag from {{cov2.30.camera.one}} % (study: {{cov.15.study.one}} %)
+- {{cl.range-m}} m range limit, provisional
+- Rehearse in simulation first; record every real run
+- [PENDING 4: measured tag positions; detector error; confirmed range limit]
 ### Notes
 (60 s) The real arena is a room, not a small square. The layout has {{room.tags}} tags on its walls, and three
-IDs are used twice; none is mounted yet. The camera is calibrated; its field of view is {{cam.hfov}} degrees,
+IDs are used twice; {{room.tags.printed}} are printed and none is mounted yet. The camera is calibrated; its field of view is {{cam.hfov}} degrees,
 not the sixty degrees the design and the simulator assumed. That matters. In the study arena as simulated, one
-heading saw a tag from {{cov.15.study.one}} percent of poses. In the room, with the measured field of view, a
-camera model that needs the whole tag in the picture, and a {{cl.range-m}} meter range limit, it is
-{{cov2.30.camera.one}} percent, although a full turn finds two different tags from {{cov2.30.camera.turn2}}
-percent of positions. Two rules govern the real car: every session is rehearsed in simulation first, and every
-real run is recorded in full. [PENDING 4: say the measured tag positions and the detector's error once they
-exist.]
+heading saw a tag from {{cov.15.study.one}} percent of poses. In the room, with the measured field of view and a
+{{cl.range-m}} meter range limit, the same rule gives {{cov2.30.rule.one}} percent, and a camera model that
+needs the whole tag in the picture gives {{cov2.30.camera.one}} percent, although a full turn finds two
+different tags from {{cov2.30.camera.turn2}} percent of positions. The {{cl.range-m}} meter limit is the value
+used in the rehearsals; it is provisional until a tag-accuracy pilot on real frames confirms it. Two rules govern the real car: every session is rehearsed in simulation first, and every
+real run is recorded in full. [PENDING 4: say the measured tag positions, the detector's error and the confirmed range limit once
+they exist.]
 
 ## Slide 10 — Demo: The Agent in Closed Loop
 Layout: One Column
 ### Body
 - One simulated episode per arm (n = 1) in the room simulator: {{cl.n-tags}} tags at nominal positions, {{cl.range-m}} m range
-- Opus 5.5 and Fable 5.2 made the identical {{cl.opus.moves}} moves (coded procedure: {{cl.b2.moves}}); every decision equals the procedure's
+- Opus 5.5 and Fable 5.2 made the identical {{cl.opus.moves}} moves (coded procedure: {{cl.b2.moves}}); given their tool results, every decision equals the procedure's
 - All mapped {{cl.opus.tags-found}} of {{cl.n-tags}} tags; no move refused; no full pose fix
-- Error {{cl.opus.ate}} cm for each arm; dead reckoning {{cl.opus.b0-ate}} cm: no gain here
+- Error {{cl.opus.ate}} cm for each arm; dead reckoning {{cl.opus.b0-ate}} cm: no drift and {{cl.opus.path-m}} m of travel, little to correct
 - Prompt variant: range threshold 2.0 → {{cl.range-m}} m; cost US${{cl.opus.cost}} and US${{cl.fable.cost}}
 - [PENDING 6, 2: demo video and episodes on the car; executor and STOP as tested on the car]
 ### Notes
 (150 s, with the video) In the study the agent chose no move: it only estimated. In closed loop the arm chooses
 each move and the validator checks it. I ran one exploration episode per arm in a simulator of the real room,
 with the {{cl.n-tags}}-tag layout at its nominal positions: the coded procedure, Claude Opus 5.5 and Claude
-Fable 5.2, which is not an arm of the study. This is n equals one, so nothing here is a statistical result. The
-two models made the identical {{cl.opus.moves}} moves, and on their own inputs every decision equals the coded
-procedure's. So this shows agreement with the procedure, not a difference in driving. All three mapped
-{{cl.opus.tags-found}} of {{cl.n-tags}} tags, and no move was refused. No arm got a full pose fix, and dead
-reckoning was at least as accurate: {{cl.opus.b0-ate}} centimeters against {{cl.opus.ate}}. One deviation: the
+Fable 5.2, which is not an arm of the study and ran at effort {{cl.fable.effort}}, below its default. The coded
+procedure here is the frozen one with one added branch for a dead end that the room can produce. This is n equals one, so nothing here is a statistical result. The
+two models made the identical {{cl.opus.moves}} moves, and given the tool results each model obtained, every
+decision equals the coded procedure's. They left the procedure's path only after a pose argument one to two
+centimeters from the procedure's changed one tool result: Opus's was rounded to two decimals, Fable's was not
+yet updated by that step's fix. So this shows agreement with the procedure, not a difference in driving. All three mapped
+{{cl.opus.tags-found}} of {{cl.n-tags}} tags, and no move was refused. The episode's
+odometry had no two percent over-read and the car traveled about {{cl.opus.path-m}} meters, so there was little to
+correct: no arm got a full pose fix, and dead reckoning was at least as accurate, {{cl.opus.b0-ate}} centimeters
+against {{cl.opus.ate}}. One deviation: the
 prompt differs from the study prompt in one number, the range beyond which a detection is rejected, so these
 numbers are not comparable with the replay results. The episodes cost {{cl.opus.cost}} and {{cl.fable.cost}}
 dollars. [PENDING 6: play the demo recording and say what the episodes on the car showed. PENDING 2: say how
@@ -253,7 +260,7 @@ Layout: One Column
 - They did it by executing the procedure, which a short program also does at negligible cost
 - The model that skipped its tools failed (post hoc)
 - Not measured: what an LLM adds when the rules do not fit, such as close duplicates or operator requests
-- [PENDING 7: what the real car and the closed loop showed]
+- [PENDING 7: what the real car showed]
 ### Notes
 (60 s) To conclude. In this study two capable models kept a pose estimate that beats dead reckoning by
 {{h1.opus.gain}} and {{h1.qwen.gain}} centimeters, which is statistically supported and not practically supported. They did it by

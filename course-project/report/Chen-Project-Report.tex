@@ -254,15 +254,14 @@ procedure written as Python code is the baseline B2, the \emph{coded procedure}.
 latch; the validator of Table~\ref{tab:tools} together with the Pico's watchdog and stall detection; and the
 agent's own guardrails (never move on an error, refuse requests outside the missions, ask when a target is
 ambiguous). The car runs the author's build of the course's lab firmware, which has a watchdog, a deadman and
-a stall cut-off; bounded moves will be executed and stopped from the host (code written and tested against a
+a stall cut-off (the project firmware was dropped); bounded moves will be executed and stopped from the host (code written and tested against a
 simulated car, not yet run on the car). That firmware boots armed, and after a Pico reset the motor driver's inputs float for about 1.5\,s,
 so operator procedures (Section~\ref{sec:procedure}) replace the design's disarmed boot.
 \pending{one sentence on the host-side bounded-move executor and the out-of-band STOP as built and tested:
 stop time and the checks passed, from the evidence of work-list items 2.6 and 2.7 (\texttt{evidence/M3/})}
 
 \textbf{Runtimes.} The benchmark uses a minimal harness with only the nine tools, because ROSA adds 47
-tools and nine fixed prompts to every call, which would confound model comparisons; ROSA (1.0.10) is planned
-as the demonstration runtime.
+tools and nine fixed prompts to every call; ROSA (1.0.10) is planned as the demonstration runtime.
 
 Fig.~\ref{fig:trace} shows the ReAct trace of one pilot step.
 
@@ -374,16 +373,19 @@ turns a 0.3$^\circ$ error, and the drift condition adds a 2\,\% systematic over-
 \textbf{Real environment.} The real arena is a carpeted room, $381\times512$\,cm with one corner cut at
 45$^\circ$ (Fig.~\ref{fig:room}); its shape was fitted to eight tape readings, all within 0.6\,cm. The layout has
 \bmnum{room.tags} 36h11 tags with a \bmnum{room.tag-size-mm}\,mm black square (\bmnum{room.tags.printed}
-printed, \bmnum{room.tags.added} added after rehearsals in simulation; none mounted yet) on the baseboard of
-the room's own walls, nominal centers \bmnum{room.tag-height-cm}\,cm above the floor; IDs
-\bmnum{room.dup-ids} are each used twice. The room is larger and more sparsely tagged than the study arena. In the study arena as simulated (60$^\circ$, 1.5\,m
-range limit) one heading saw a tag from \bmnum{cov.15.study.one}\,\% of poses. In the room, with the
-measured \bmnum{cov2.fov}$^\circ$ field of view, a camera model that needs the whole tag in the picture, and
-the \bmnum{cl.range-m}\,m range limit chosen for real runs, one heading sees a tag from
-\bmnum{cov2.30.camera.one}\,\% of poses, and a full turn in place finds two different tags from
+printed; \bmnum{room.tags.added} more, added after rehearsals in simulation, not yet printed; none mounted)
+on the baseboard of the room's own walls, nominal centers \bmnum{room.tag-height-cm}\,cm above the floor;
+IDs \bmnum{room.dup-ids} are each used twice. The room is larger and more sparsely tagged than the study
+arena (\bmnum{room.tags-per-m} tags per meter of wall against
+\bmnum{study.tags-per-m.min}--\bmnum{study.tags-per-m.max}). In the study arena as simulated (60$^\circ$,
+1.5\,m range limit, tag center in view) one heading saw a tag from \bmnum{cov.15.study.one}\,\% of poses.
+In the room, with the measured \bmnum{cov2.fov}$^\circ$ field of view and a \bmnum{cl.range-m}\,m range
+limit (the value used in the rehearsals; provisional until a tag-accuracy pilot on real frames confirms it),
+the same rule gives \bmnum{cov2.30.rule.one}\,\%; a camera model that needs the whole tag in the picture
+gives \bmnum{cov2.30.camera.one}\,\%, with two different tags in a full turn from
 \bmnum{cov2.30.camera.turn2}\,\% of positions.
-\pending{the measured tag centers and start pose (the real world file) and the tag detector's range and
-bearing error on real frames, from \texttt{evidence/M3/M3.T10/} and \texttt{evidence/M1/M1.T8/}}
+\pending{the measured tag centers and start pose, the detector's range and bearing error on real frames,
+and the confirmed range limit (\texttt{evidence/M3/M3.T10/}, \texttt{evidence/M1/M1.T8/})}
 The car and the camera join a Wi-Fi access point run by the DGX Spark (2.4\,GHz), and the link is logged with
 pings.
 
@@ -444,7 +446,7 @@ $\geq80$\,\% of false claims caught and $\geq90$\,\% of levels unchanged. GPT-6.
 \begin{enumerate}
 \item Record the logs: for each seed \bmnum{seed.first}--\bmnum{seed.last}, generate the world and let B2
 drive one episode in the kinematic simulator until it reports DONE or reaches the 150-step budget. A seed on which B2 reaches an
-unimplemented branch would be replaced by the next seed from 2030 upward; none was. The logs hold
+unimplemented branch would be replaced by the next unused seed; none was. The logs hold
 \bmnum{n.steps} steps (\bmnum{steps.min}--\bmnum{steps.max} per episode).
 \item Freeze and verify the freeze; compute B0 and B1 with the frozen code (B2's estimates come with the log).
 \item Replay every log through each LLM arm from a clean checkout, in a seed order shuffled with a recorded
@@ -513,7 +515,8 @@ counters that widen the association gate reset only on a fix that a tool result 
 causal estimate and calibrates the odometry scale; reports are scored as written and no episode is stopped
 early; output caps for the local models; eight or 16 seeds in parallel; retry counts by kind of failure; B0
 rounded like a report; the closing-character repair; and Gemma~4 served by vLLM, with numeric strings in tool
-arguments converted to numbers for every arm. Nothing in the analysis was changed after the freeze.
+arguments converted to numbers for every arm. Nothing in the pre-registered analysis was changed
+after the freeze; later analyses are labeled post hoc.
 
 \subsection{Confounding Variables and Threats to Validity}\label{sec:confounders}
 \begin{itemize}
@@ -534,7 +537,7 @@ is asked; time-outs are retried (Section~\ref{sec:run}).
 measures fidelity to the procedure, not its correctness; where the model and the code disagree, as on seed
 2027 (Section~\ref{sec:fidelity}), the study does not say which is right. Claude Opus~5.5 helped write the procedure, the
 prompt and the harness and is also an agent under test, which may favor it. The parsing repair and the numeric
-coercion were introduced for the local models; they apply to every arm and are counted.
+coercion were introduced for the local models but apply to every arm.
 \emph{External:} one arena size, one drift level, one prompt, one tag family; a kinematic simulator whose
 placeholder detector sees from the axle with a 60$^\circ$ field of view. Copies of a duplicated ID are at least 1.5\,m apart while the gate is at most 0.6\,m, so they are easy
 to tell apart. B1 is given the true association, so it bounds what estimation can achieve and is not
@@ -596,10 +599,9 @@ reckoning on \bmnum{h1.gemma.worse} of \bmnum{n.seeds} seeds.
 \textbf{H2 was not tested.} The serial gate opens family~2 only if every H1 is rejected, and Gemma~4's was
 not; this is the pre-registered rule, not a choice made after seeing the data. Descriptively, H2 would have
 failed for every model: each arm's ATE is more than twice B1's on all \bmnum{h2.opus.above} seeds, and the
-Hodges--Lehmann estimate of the ratio to B1 (back-transformed from the log ratio) is \bmnum{h2.opus.ratio} (interval \bmnum{h2.opus.ratio-lo} to
-\bmnum{h2.opus.ratio-hi}) for Opus, \bmnum{h2.qwen.ratio} (\bmnum{h2.qwen.ratio-lo} to
-\bmnum{h2.qwen.ratio-hi}) for Qwen3.8 and \bmnum{h2.gemma.ratio} (\bmnum{h2.gemma.ratio-lo} to
-\bmnum{h2.gemma.ratio-hi}) for Gemma~4. 
+Hodges--Lehmann estimate of the ratio to B1 (back-transformed from the log ratio) is \bmnum{h2.opus.ratio}
+for Opus, \bmnum{h2.qwen.ratio} for Qwen3.8 and \bmnum{h2.gemma.ratio} for Gemma~4 (the lowest interval end
+is \bmnum{h2.qwen.ratio-lo}). 
 
 \textbf{H4: the models differ} (Friedman $\chi^2=\bmnum{h4.chi2}$, $p=\bmnum{h4.p}$, Kendall's
 $W=\bmnum{h4.w}$). Both stronger models are about 64--65\,cm better than Gemma~4 (Table~\ref{tab:tests}).
@@ -626,24 +628,24 @@ accepted as loop closures two revisits that the gate tool reported in gate and t
 Whether the code's rejection follows the prompt's own loop-closure rule was not checked.
 
 \textbf{Tool use.} Opus made every gold call (F1 \bmnum{f1.opus}); its \bmnum{toolerr.opus} tool errors are
-almost all \texttt{fix\_pose} calls without a matched confirmed beacon (\bmnum{es.opus.err.emptyfix}), which
-the tool refuses. Qwen3.8 (F1 \bmnum{f1.qwen}) made that call \bmnum{es.qwen.err.emptyfix} times; refused calls change
-nothing. Gemma~4's F1 is \bmnum{f1.gemma}, with recall \bmnum{rec.gemma}. All three called
-\texttt{move}, which replay refuses (\bmnum{moves.opus}, \bmnum{moves.qwen} and \bmnum{moves.gemma} calls),
-and Opus called \texttt{emergency\_stop} \bmnum{estops.opus} times.
+almost all \texttt{fix\_pose} calls without a matched confirmed beacon, which the tool refuses, and Qwen3.8
+(F1 \bmnum{f1.qwen}) made that call \bmnum{es.qwen.err.emptyfix} times. Gemma~4's F1 is \bmnum{f1.gemma},
+with recall \bmnum{rec.gemma}. All three called \texttt{move}, which replay refuses (\bmnum{moves.opus},
+\bmnum{moves.qwen} and \bmnum{moves.gemma} calls), and Opus called \texttt{emergency\_stop}
+\bmnum{estops.opus} times.
 
 \textbf{Association and maps.} Association precision is \bmnum{assoc.prec.opus} for Opus, Qwen3.8 and B2 on
 every seed, duplicated IDs included, above the 0.90 target; because the copies of an ID are far apart, this
-is weak evidence. Gemma~4's median precision on duplicated IDs is \bmnum{assoc.dup.gemma}, with a worst seed at
-\bmnum{assoc.dup.min.gemma}. Association recall is about one half for every arm. Gemma~4's maps hold \bmnum{phantoms.gemma} phantom entries against \bmnum{phantoms.opus}, \bmnum{phantoms.qwen} and
-\bmnum{phantoms.b2} for Opus, Qwen3.8 and B2.
+is weak evidence. Gemma~4's median precision on duplicated IDs is \bmnum{assoc.dup.gemma}, and its maps hold
+\bmnum{phantoms.gemma} phantom entries against \bmnum{phantoms.opus}, \bmnum{phantoms.qwen} and
+\bmnum{phantoms.b2} for Opus, Qwen3.8 and B2. Association recall is about one half for every arm.
 
-\textbf{Reports, notes and cost.} Gemma~4 made \bmnum{unverified.gemma} unverified fix claims. Its notes failed the judge's faithfulness gate
-\bmnum{rubric.gemma.gate} times in \bmnum{rubric.gemma.n}, against \bmnum{rubric.opus.gate} and
-\bmnum{rubric.qwen.gate}. The judged sample is drawn from valid reports only, which can only flatter the arm
-with the most invalid ones (\bmnum{rubric.gemma.judgeable}\,\% of Gemma's steps were judgeable). Opus cost a
-median of US\$\bmnum{cost.seed.opus} per episode. The local models cost no API fee but were far slower under
-load (Table~\ref{tab:study}), which is why the closed-loop episodes will use a hosted model.
+\textbf{Reports, notes and cost.} Gemma~4 made \bmnum{unverified.gemma} unverified fix claims, and its notes
+failed the judge's faithfulness gate \bmnum{rubric.gemma.gate} times in \bmnum{rubric.gemma.n}, against
+\bmnum{rubric.opus.gate} and \bmnum{rubric.qwen.gate}. The judged sample is drawn from valid reports only,
+which can only flatter the arm with the most invalid ones. Opus cost a median of
+US\$\bmnum{cost.seed.opus} per episode; the local models cost no API fee but were far slower under load
+(Table~\ref{tab:study}).
 
 \subsection{Why Gemma 4 Is Worse Than Dead Reckoning (Post Hoc)}\label{sec:gemma}
 Because a result this far in the wrong direction could be a bug, the run logs were checked afterwards. The result is not a parsing artifact: an independent JSON decoder recovers the scored pose from all
@@ -671,29 +673,32 @@ The real-car part was in progress when this draft was built (Sections~\ref{sec:s
 and~\ref{sec:procedure}); no real episode has been run.
 
 \textbf{Real-log replay and the sim-to-real gap (descriptive).}
-\pending{the number of recorded real episodes driven by B2 (target at least 10); per arm (B0, B2, Opus,
-Qwen3.8, Gemma~4) the median final-position error by tape, with the tape's uncertainty; the same quantity in
-each episode's simulated rehearsal and the difference (the sim-to-real gap); from work-list items 3.4 and 3.6
-(\texttt{evidence/M3/M3.T12/}, \texttt{evidence/M3/M3.T19/})}
+\pending{the number of recorded real episodes driven by B2 (target at least 10); per arm the median
+final-position error with its uncertainty; the same in each episode's simulated rehearsal and the difference
+(the sim-to-real gap); from \texttt{evidence/M3/M3.T12/} and \texttt{evidence/M3/M3.T19/}}
 
 \textbf{Closed loop in simulation (RQ3, descriptive; $n=1$ per arm).} One exploration episode per arm was
 run in a simulator of the real room: the \bmnum{cl.n-tags}-tag nominal layout, the camera model, a
 \bmnum{cl.range-m}\,m range limit and one noise seed, with the arm choosing each move and the validator
 checking it. The arms were B2, Claude Opus~5.5 and Claude Fable~5.2 (\texttt{\bmnum{cl.fable.model}}, with
-Opus's request settings; not an arm of the study). The prompt was a variant of v3.3 in which one number
+Opus's request settings: effort \bmnum{cl.fable.effort}, below that model's default; not an arm of the
+study); B2 is the frozen procedure with one added branch for a dead end that the room can produce. The prompt was a variant of v3.3 in which one number
 differs, the range beyond which a detection is rejected (2.0 to \bmnum{cl.range-m}\,m); this is a deviation
 from the study prompt, so these numbers are not comparable with the replay results. All three episodes ended
 with DONE and mapped \bmnum{cl.opus.tags-found} of the \bmnum{cl.n-tags} tags without a phantom entry; no
 move was refused. The two models made the identical \bmnum{cl.opus.moves} moves (B2: \bmnum{cl.b2.moves}),
-and on their own inputs every decision of both equals the coded procedure's; they left B2's path only after a
-rounded pose argument changed one tool result. The episode therefore shows agreement with the procedure, not
-a difference in driving. No arm obtained a full pose fix, and dead reckoning was at least as accurate: ATE
+and given the tool results each model obtained, every decision of both equals the coded procedure's; they
+left B2's path only after a pose argument 1--2\,cm from the procedure's (Opus's rounded to two decimals,
+Fable's not yet updated by that step's fix) changed one tool result. The episode therefore shows agreement
+with the procedure, not a difference in driving. The episode's odometry had no 2\,\% over-read and the car
+traveled about \bmnum{cl.opus.path-m}\,m, so there was little to correct: no arm obtained a full pose fix,
+and dead reckoning was at least as accurate: ATE
 \bmnum{cl.opus.ate}, \bmnum{cl.fable.ate} and \bmnum{cl.b2.ate}\,cm against \bmnum{cl.opus.b0-ate},
 \bmnum{cl.fable.b0-ate} and \bmnum{cl.b2.b0-ate}\,cm on the same paths. The 95th-percentile step time was
 \bmnum{cl.opus.p95}\,s (Opus) and \bmnum{cl.fable.p95}\,s (Fable), and the episodes cost
 US\$\bmnum{cl.opus.cost} and US\$\bmnum{cl.fable.cost}.
-\pending{closed-loop episodes on the car (2--3, work-list item 3.5): missions completed, steps, moves
-refused, emergency stops, final-position error, step latency and cost; from the recorded sessions}
+\pending{2--3 closed-loop episodes on the car: missions completed, steps, moves refused, emergency stops,
+final-position error, step latency and cost}
 
 \subsection{Discussion and Limitations}\label{sec:limits}
 In this simulated setting an LLM agent kept a landmark-SLAM estimate that beats dead reckoning, but the
@@ -720,8 +725,8 @@ Qwen3.8-Flash-Next kept a pose estimate better than dead reckoning by about 3 an
 factor graph was left untested by the pre-registered gate. Gemma~4 26B skipped its tools on over half of its steps and was much worse.
 
 In this study, with the geometry in tools and the procedure in the prompt, the two capable models were
-accurate but expensive interpreters of that procedure, in replay and in one simulated closed-loop episode;
-what they added beyond the code was small. The model that skipped its tools failed (a post hoc finding). What a language
+accurate but expensive interpreters of that procedure in replay; in one simulated closed-loop episode the
+two Claude models also made the procedure's decisions. What they added beyond the code was small. The model that skipped its tools failed (a post hoc finding). What a language
 model could add when the procedure's rules do not fit was not measured; close duplicates, hidden IDs and
 operator requests are the next test.
 \pending{two sentences on the real car: whether the simulated ordering of the arms held on the real logs, how
@@ -733,9 +738,9 @@ Generative AI did most of the drafting, coding and running in this project, unde
 GPT-5.6 Sol (through Cursor) helped compare project ideas, and AI-run
 literature searches preceded the Related Works. Grok~4.7 (through Cursor) wrote the early package: schemas, configuration files, the geometry port and its
 tests, the first camera sketch, the ROS~2 container and latency probes. Claude Opus~5.5 (Anthropic) drafted the
-design documents and the system prompt under the author's delegation, wrote the simulator, harness, baselines,
-metrics and analysis code, drafted the pre-registration and took the design decisions it records, ran the
-pilot, the main study and the frozen analysis on the author's DGX Spark, wrote the first draft of this report,
+design documents and the system prompt under the author's delegation, wrote the simulator, harness,
+baselines, metrics and analysis code, drafted the pre-registration and took the design decisions it records,
+ran the pilot, the main study and the frozen analysis, wrote the first draft of this report,
 and wrote the camera firmware, the car model, the recorder, the room-survey fit and the layout and
 calibration tools. Claude
 Fable~5.1 drafted the first Related Works section and its references. Claude Fable~5.2 (through Claude Code)

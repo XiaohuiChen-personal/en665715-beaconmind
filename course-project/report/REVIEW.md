@@ -254,3 +254,35 @@ included). `report_assets.py --check`: `assets: up to date`; `--pending`: 7. Tes
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: rewrote the report, ran the two review rounds with fresh
 subagents, verified the findings, applied the fixes and wrote this log.
+
+## Closed-loop and room-layout update — one review round (2026-11-18, after commit `eb5dd7c`)
+
+Commit `eb5dd7c` added the simulated closed-loop result (Section V-G) and moved the real setup to the 20-tag layout.
+An independent reviewer, arranged by the lead (not by the drafting agent), read that commit and returned 3 must-fix
+and 6 should-fix findings plus two open checks. The drafting agent verified each against
+`evidence/M2/M2.T7/closed-loop/` (README as corrected in `5766dd5`, `runs-final/*/run.json`,
+`seed_3000.summary.json`), `evidence/M3/M3.T10/layout-2/` and `envs/kinsim_room.py`, and applied all of them.
+
+| Finding | What was wrong | Fix |
+| --- | --- | --- |
+| M1 | The 3.0 m range limit read as settled | "the value used in the rehearsals; provisional until a tag-accuracy pilot on real frames confirms it"; the confirmation is now part of pending item 4; slide 9 says provisional |
+| M2 | "a rounded pose argument" was wrong for Fable 5.2, whose argument was the pose before that step's fix | The sentence now gives both causes (a pose argument 1–2 cm from the procedure's), and the agreement claim is qualified: given the tool results each model obtained |
+| M3 | A space cut had dropped "later analyses are labeled post hoc" | Restored |
+| S1 | "Dead reckoning was at least as accurate" lacked its reason | The episode's odometry had no 2 % over-read and the car traveled about 1.5 m (generated from `path_length_m`) |
+| S2 | "8 added" did not say they are not printed | "12 printed; 8 more … not yet printed; none mounted" |
+| S3 | 78.5 % (tag centre in view) was set against 54.9 % (whole tag in view) | The like-for-like 67.1 % (`coverage.txt` block A, 3.0 m) added, and both rules named; slide 9 the same |
+| S4 | The Conclusion called the closed-loop episode "accurate" | "in one simulated closed-loop episode the two Claude models also made the procedure's decisions" |
+| S5 | Fable 5.2's effort setting not stated | "effort medium, below that model's default" (generated from `run.json`) |
+| S6 | A cut had dropped why the host executes the moves | "(the project firmware was dropped)" restored |
+| Check 1 | Is the room "more sparsely tagged" with 20 tags? | Yes: 1.15 tags per metre of wall against 1.33–1.78 in the study arena; the numbers are now generated and printed |
+| Check 2 | What B2 ran in the room | `run.json`: `kinsim_room.make_b2_policy()`, the frozen procedure with one added dead-end branch; Section V-G says so, and the generator fails if that policy or the odometry preset changes |
+
+To hold 12 pages, about 20 lines were cut elsewhere (the tool-use, association and cost paragraphs of V-D, the H2
+ratio intervals, the placeholders' wording, the disclosure's list for Opus 5.5); the M3 and S6 losses above came from
+exactly such cuts in the previous step, so these cuts need a reader's eye too. No further review round was run on
+this revision.
+
+Validation: `latexmk` exit 0, 12 pages, no LaTeX, `bmnum` or BibTeX warning, no Type 3 font;
+`report_assets.py --check` up to date, `--pending` 6.
+
+AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: verified and applied the findings and wrote this entry.

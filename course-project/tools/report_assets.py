@@ -482,6 +482,12 @@ def build_numbers(src):
     put("room.tags.printed", len([t for t in L["tags"] if not t.get("added")]),
         "layout-2/layout.json (tags not marked added)")
     put("room.tags.added", len([t for t in L["tags"] if t.get("added")]), "layout-2/layout.json (added)")
+    order = ["corner 5", "corner 4", "corner 3", "corner 2", "corner 1"]
+    wall = sum(math.dist(L["corners_m"][order[i]], L["corners_m"][order[(i + 1) % 5]]) for i in range(5))
+    put("room.tags-per-m", "%.2f" % (len(L["tags"]) / wall), "layout-2/layout.json: tags / length of the walls")
+    study_wall = 4 * 2.25                      # the study arena's 2.25 m square (prereg.md section 2)
+    put("study.tags-per-m.min", "%.2f" % (min(tags) / study_wall), js + " per_seed n_tags / 9 m of wall")
+    put("study.tags-per-m.max", "%.2f" % (max(tags) / study_wall), js + " per_seed n_tags / 9 m of wall")
     c2 = src["coverage2"]
     put("cov2.fov", grab(c2, r"field of view ([\d.]+) deg", "layout-2 field of view"), "layout-2/coverage.txt")
     blocks = re.split(r"^B\. Camera model", c2, flags=re.M)
@@ -506,6 +512,8 @@ def build_numbers(src):
     put("cl.range-m", "%.1f" % env["max_range"], cnote + "*/run.json env max_range")
     put("cl.prompt", prompts.pop().replace("_", "\\_"), cnote + "*/run.json prompt_file")
     put("cl.n-tags", cl["b2"]["n_tags"], cnote + "*/seed_3000.summary.json n_tags")
+    if runs["b2"]["agent"]["settings"]["policy"] != "kinsim_room.make_b2_policy()" or env["odometry"] != "study":
+        raise SystemExit("report_assets: the closed-loop B2 policy or odometry preset changed; check the report text")
     if any(d["fix_share"]["full"] != 0 or d["fix_share"]["verified_full"] != 0 for d in cl.values()):
         raise SystemExit("report_assets: a closed-loop arm has a full fix; the report says none had")
     if any(d["ended_by"] != "DONE" or d["fallbacks"] or d["emergency_stops"] or d["refused_move_calls"]
@@ -522,6 +530,7 @@ def build_numbers(src):
         put("cl.%s.b0-ate" % k, num(d["b0"]["ate_m"] * 100, 1), note + " b0 ate_m (dead reckoning on this arm's path)")
         put("cl.%s.tags-found" % k, d["map"]["tags_found"], note + " map tags_found")
         put("cl.%s.position-fixes" % k, d["pose_sources"].get("position_fix", 0), note + " pose_sources")
+        put("cl.%s.path-m" % k, "%.1f" % d["path_length_m"], note + " path_length_m")
         if arm != "b2":
             if d["procedure_agreement"]["decision"] != 1.0:
                 raise SystemExit("report_assets: a closed-loop model's decisions differ from the procedure's")

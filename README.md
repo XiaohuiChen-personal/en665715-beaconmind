@@ -40,8 +40,9 @@ What this does and does not show:
   in a post hoc check of the logs).
 - In closed loop, where the model's own move is executed, there is so far one simulated episode per arm (n = 1) in a
   simulator of the real room, with a one-number variant of the prompt. Claude Opus 5.5 and Claude Fable 5.2 made
-  the same moves as each other and the same decisions as the coded procedure. That shows agreement with the
-  procedure; it is not a result about driving, and dead reckoning was at least as accurate in that episode.
+  the same moves as each other and, given the tool results each obtained, the coded procedure's decisions. That
+  shows agreement with the procedure; it is not a result about driving. The episode had no odometry over-read and
+  little travel, so there was little to correct, and dead reckoning was at least as accurate.
 - **Limits.** Everything above is simulated: a kinematic simulator with placeholder sensor noise, one prompt, one
   run per episode, one drift level. It is a replay, so the coded procedure chose every move and the agent's own moves
   were not evaluated. The factor graph was given the true association. Copies of a repeated tag ID were far apart,
@@ -55,7 +56,8 @@ minutes before the runs.
 ## Status (2026-11-18)
 
 Done: the simulated study and its analysis; the report for everything measured; the camera calibration; the survey
-of the real arena (a room) and its 20-tag layout; the recorder that keeps every real session; one closed-loop
+of the real arena (a room) and its 20-tag layout (a 3.0 m range limit is provisional until a tag pilot on real
+frames); the recorder that keeps every real session; one closed-loop
 episode per arm in a simulator of that room.
 
 In progress, and **not results yet**: 12 of the 20 tags are printed and none is mounted; the car executor, the out-of-band stop,
