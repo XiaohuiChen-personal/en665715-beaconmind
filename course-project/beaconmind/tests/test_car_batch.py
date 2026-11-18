@@ -287,6 +287,15 @@ class Batch:
         self.runner = B.BatchRunner(self.params, self.rig, WORLD, self.out, driver=driver or cl.B2Driver(),
                                     budget=self.budget, log=lambda *a: None, run_episode=cl.run_episode)
         self.fired = False
+        self.min_depth = 9.0            # the simulated car's true footprint depth inside the driving area, at its worst
+        walls = self.rig.link.on_step
+
+        def watch(link):
+            if walls:
+                walls(link)
+            if int(link.t * 1000) % 50 == 0:
+                self.min_depth = min(self.min_depth, self.runner.guard.footprint_depth(self.rig.sim_truth_fn()))
+        self.rig.link.on_step = watch
         self.sent_at_halt = None
         real_halt = self.runner.monitor.halt
 
@@ -310,6 +319,7 @@ class Batch:
     def run(self):
         self.result = self.runner.run()
         self.manifest = json.loads((self.out / "manifest.json").read_text())
+        assert self.min_depth > 0.0, "the simulated car's footprint left the driving area"
         return self.result
 
     def assert_halted(self, code, safety):
@@ -399,8 +409,8 @@ def test_halt_link_lost_when_telemetry_stops_mid_move(tmp_path):
     b = Batch(tmp_path, max_steps=40)
     b.at_moves(28, lambda b: b.rig.link.sim.p.telemetry_drop.append((b.rig.link.t + 0.3, 1e9)))
     b.run()
-    assert b.result["halt"]["code"] in ("link_lost", "telemetry_stale")
-    b.assert_halted(b.result["halt"]["code"], safety=True)
+    b.assert_halted("link_lost", safety=True)                   # the executor ended the move link_lost and latched
+    assert "telemetry_gap" in b.result["halt"]["detail"] and b.latch.read()["by"] == "executor"
 
 
 def test_halt_command_timeout_seen(tmp_path):
@@ -511,8 +521,7 @@ def test_halt_slow_car_times_out(tmp_path):
     b = Batch(tmp_path, max_steps=40)
     b.at_moves(28, lambda b: setattr(b.rig.link.sim.p, "speed_per_duty_mps", 0.03))
     b.run()
-    assert b.result["halt"]["code"] in ("move_timeout", "stall")
-    b.assert_halted(b.result["halt"]["code"], safety=True)
+    b.assert_halted("stall", safety=True)                       # under the stall floor: the host's stall rule fires
 
 
 def test_halt_slow_forward_move(tmp_path):
@@ -899,7 +908,9 @@ def test_detections_that_are_not_numbers_never_reach_the_pose(tmp_path):
     env.inner.detector = lambda jpegs, n=None: {"detections": [{"det": 0, "id": 23, "range_m": float("nan"), "bearing_deg": 1.0,
                                                                "quality": 1.0}], "internal": [], "per_frame": []}
     env.reset(1)
-    assert all(math.isfinite(v) for v in r.tracker.pose.values()) and r.monitor.halted is None
+    assert all(math.isfinite(v) for v in r.tracker.pose.values())              # the pose never took it
+    assert r.monitor.halted["code"] == "detector" and b.latch.is_set()         # and the batch halts on it
+    assert env.step("TURN_LEFT_30")["move"]["result"] == "refused" and b.rig.link.published == []
 
 
 def test_an_interrupted_episode_is_halted_in_the_manifest(tmp_path):
@@ -1227,3 +1238,223 @@ def test_a_weak_circle_is_blended_with_the_tracked_pose_not_trusted_alone(tmp_pa
     unconfirmed.run()
     assert unconfirmed.result["status"] == "halted" and unconfirmed.result["halt"]["code"] == "no_fix"
     assert unconfirmed.runner.monitor.steps == 24               # a first circle is never blended with a tape reading
+
+
+# ================================================================ the lead's list after the review (2026-11-18)
+
+def test_repeated_fixes_from_the_same_tag_do_not_shrink_the_uncertainty():
+    """Review finding 3: the same tag seen again repeats its survey error. The pose may follow it; sigma may not
+    shrink on it. A different tag is new information."""
+    t = B.PoseTracker(S1, 0.12, 3.0)
+    fix = {"pose": {"x_m": 2.55, "y_m": 1.5, "theta_deg": 90.0}, "sigma_xy_m": 0.10, "tags": ["T06"]}
+    t.correct_position(dict(fix))
+    once = t.sigma_xy_m
+    assert once < 0.12
+    for _ in range(10):
+        t.correct_position(dict(fix))
+    assert t.sigma_xy_m == once and t.pose["x_m"] > 2.54        # followed, not sharpened
+    t.correct_position(dict(fix, tags=["T05"]))
+    assert t.sigma_xy_m < once                                  # another tag: it shrinks, down to the floor at most
+    for name in ("T06", "T05", "T06", "T05", "T06", "T05"):
+        t.correct_position(dict(fix, tags=[name]))
+    assert t.sigma_xy_m == pytest.approx(0.05)
+
+
+def test_guard_margin_has_a_floor_that_no_fix_can_lower():
+    g = make_guard(margin=B.BatchParams(world_path="x", start_poses=[S1], initial_pose=TAPED).wall_margin_m)
+    assert g.need(0.0) == 0.15 and g.need(0.05) == pytest.approx(0.25) and g.need(1.0) == pytest.approx(0.30)
+    t = B.PoseTracker(S1, 0.2, 3.0)
+    t.set(S1, 0.001, 0.1)
+    assert t.sigma_xy_m == 0.05 and g.need(t.sigma_xy_m) == pytest.approx(0.25)        # never under 0.25 m in a batch
+
+
+class CountingThinker(Thinker):
+    def __init__(self, k, fault):
+        super().__init__(k, fault)
+        self.calls_after = 0
+
+    def step(self, *args, **kwargs):
+        if self.batch.runner.monitor.halted is not None:
+            self.calls_after += 1
+        return super().step(*args, **kwargs)
+
+
+@pytest.mark.parametrize("fault, code", [(lambda b: setattr(b.rig.link.sim.p, "vsys_mv", 4100), "supply_low"),
+                                         (_camera_dead, "camera")], ids=["supply", "camera"])
+def test_no_paid_request_is_sent_after_a_halt(tmp_path, fault, code):
+    """Review finding 9. A fault that shows at a sensing halts the batch; the harness would ask the agent once
+    more before it ends the episode. The request is not sent: the agent is not called and nothing is spent."""
+    class Paid(CountingThinker):
+        def step(self, system_text, obs, prev, budget, log, sample_key=None):
+            out = super().step(system_text, obs, prev, budget, log, sample_key=sample_key)
+            budget.add(0.20)
+            return out
+    # the fault is planted at move 30, during a move: it is seen at that move's sensing, after which the harness
+    # goes round its loop once more
+    driver = Paid(10 ** 6, lambda b: None)
+    budget = rp.Budget(100.0)
+    b = Batch(tmp_path, max_steps=30, driver=driver, budget=budget)
+    driver.batch = b
+    b.at_moves(36, fault)                                      # inside the episode (the scans and the transit take about 30)
+    b.run()
+    b.assert_halted(code, safety=True)
+    rows = [json.loads(line) for line in open(b.out / "episodes" / "ep01-a1" / "seed_1.jsonl")]
+    assert driver.calls_after == 0                              # the agent was never asked after the halt
+    paid = sum(1 for r in rows if r.get("cost_usd") or r.get("final_text"))
+    assert budget.spent == pytest.approx(0.20 * paid) and paid in (len(rows), len(rows) - 1)   # nothing paid after it
+    assert rows[-1]["episode_end"]["ended_by"] == "latch" or b.manifest["episodes"][0]["requests_not_sent_after_halt"] == 1
+
+
+def test_the_driver_wrapper_sends_no_request_once_halted(tmp_path):
+    """The second guard of finding 9, by itself: whatever the harness does, a halted batch's agent is not called."""
+    b = Batch(tmp_path)
+
+    class Never:
+        arm = "never"
+
+        def step(self, *args, **kwargs):
+            raise AssertionError("a request was sent after the halt")
+    agent = B.HaltAwareDriver(Never(), b.runner.monitor, b.rig.link)
+    assert agent.arm == "never"
+    b.rig.link.sim.p.vsys_mv = 4000                             # the fault appears while nobody is looking
+    b.rig.link.wait(0.1)
+    out = agent.step("", {}, None, rp.Budget(1.0), lambda *a: None)
+    assert out["error"] == "budget cap reached" and out["cost_usd"] == 0.0 and agent.requests_refused == 1
+    assert b.runner.monitor.halted["code"] == "supply_low" and b.latch.is_set()
+
+
+def test_a_request_refused_by_the_wrapper_is_recorded_as_the_halt_not_as_the_spend_cap(tmp_path):
+    """The fault appears while the agent is about to be asked (after the harness's own latch check): the wrapper
+    refuses the request with the harness's cap answer. The manifest must name the real cause, not "usd cap"."""
+    b = Batch(tmp_path, max_steps=20)
+    real_step = cl.B2Driver.step
+    calls = {"n": 0}
+
+    class LateFault(cl.B2Driver):
+        def step(self, *args, **kwargs):
+            calls["n"] += 1
+            return real_step(self, *args, **kwargs)
+    b.runner.driver = LateFault()
+    real_run = b.runner.run_episode
+
+    def run_episode(agent, *args, **kwargs):
+        inner_step = agent.step
+
+        def step(*a, **k):
+            if calls["n"] == 3:
+                b.rig.link.sim.p.vsys_mv = 4000        # between the harness's latch check and the request
+                b.rig.link.wait(0.1)
+            return inner_step(*a, **k)
+        agent.step = step
+        return real_run(agent, *args, **kwargs)
+    b.runner.run_episode = run_episode
+    b.run()
+    b.assert_halted("supply_low", safety=True)
+    entry = b.manifest["episodes"][0]
+    assert calls["n"] == 3 and entry["requests_not_sent_after_halt"] == 1
+    assert entry["result"]["ended_by"] == "halt" and "supply_low" in entry["result"]["detail"]
+    assert "usd_cap" not in (b.out / "summary.txt").read_text()
+
+
+def test_pass_marker_is_for_one_world_file(tmp_path):
+    """Review finding 10: the marker names the surveyed world file; a batch on another file is refused."""
+    root = tmp_path / "course"
+    for rel in B.MARKER_FILES:
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text("v1")
+    _session(root, "stand-1", done=6)
+    _session(root, "floor-1", done=12)
+    world, other = tmp_path / "room-measured.json", tmp_path / "room-nominal.json"
+    world.write_text("{\"measured\": true}")
+    other.write_text("{\"measured\": false}")
+    marker = root / "data" / "real" / "ATTENDED_PASS.json"
+    B.write_pass_marker(str(marker), str(root), "xiaohui", "stand-1", "floor-1", world_path=str(world), now_unix=1000.0)
+    assert B.check_pass_marker(str(marker), str(root), now_unix=1060.0, world_path=str(world)) == []
+    assert "not the one the pass was recorded for" in B.check_pass_marker(str(marker), str(root), now_unix=1060.0,
+                                                                        world_path=str(other))[0]
+    world.write_text("{\"measured\": true, \"edited\": 1}")     # the same file, edited after the pass
+    assert B.check_pass_marker(str(marker), str(root), now_unix=1060.0, world_path=str(world))
+    B.write_pass_marker(str(marker), str(root), "xiaohui", "stand-1", "floor-1", now_unix=1000.0)      # no world named
+    assert B.check_pass_marker(str(marker), str(root), now_unix=1060.0, world_path=str(other))
+    tool = load_batch_tool()
+    with pytest.raises(SystemExit):
+        tool.main(["record-pass", "--operator", "x", "--stand-session", "a", "--floor-session", "b"])   # --world is required
+
+
+def test_sigterm_during_a_batch_leaves_a_halt_record(tmp_path):
+    """Review finding 6, for real: a dry-run batch in its own process, SIGTERM in the middle (what `docker stop`
+    and `kill` send). The process ends with status 3, the manifest says halted: interrupted, HALT.LATCH exists, the
+    running episode is `halted`, and a rerun refuses."""
+    import os
+    import signal
+    import subprocess
+    import sys
+    import time
+    out = tmp_path / "batch"
+    cmd = [sys.executable, str(ROOT / "tools" / "car_batch.py"), "run", "--world", str(WORLD_PATH), "--start",
+           "S1:2.5,1.5,90", "--start", "S2:1.75,1.4,0", "--initial-pose", "2.4,1.6,70", "--episodes", "40", "--max-range",
+           "2.5", "--batch-steps", "100000", "--dry-run", "--out", str(out)]
+    env = dict(os.environ, PYTHONPATH=str(ROOT / "beaconmind" / "src"))
+    proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    end = time.time() + 60
+    while time.time() < end and not (out / "episodes" / "ep01-a1" / "seed_1.jsonl").exists():
+        time.sleep(0.05)
+    assert proc.poll() is None, proc.communicate()[0].decode(errors="replace")[-600:]
+    proc.send_signal(signal.SIGTERM)
+    text = proc.communicate(timeout=60)[0].decode(errors="replace")
+    assert proc.returncode == 3, text[-600:]
+    m = json.loads((out / "manifest.json").read_text())
+    assert m["status"] == "halted" and m["halt"]["code"] == "interrupted"
+    assert m["episodes"][-1]["status"] == "halted" and all(e["status"] != "running" for e in m["episodes"])
+    assert vd.read_latch_file(out / "HALT.LATCH")["reason"].startswith("batch halt: interrupted")
+    again = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=120)
+    assert again.returncode == 2 and "HALT.LATCH exists" in again.stdout + again.stderr
+
+
+def test_usd_cap_between_two_episodes(tmp_path):
+    """The cap is reached exactly as an episode ends: the next episode does not start (not even its scan)."""
+    budget = rp.Budget(1.0, 0.0, path=tmp_path / "spend.jsonl")
+    b = Batch(tmp_path, episodes=3, max_steps=5, driver=PaidB2(), budget=budget)       # five steps = US$1.00
+    b.run()
+    b.assert_halted("usd_cap", safety=False)
+    assert [(e["id"], e["status"]) for e in b.manifest["episodes"]] == [("ep01-a1", "done")]
+    assert budget.spent == pytest.approx(1.0) and not b.latch.is_set()
+
+
+def test_an_exception_from_the_car_link_inside_an_episode_halts(tmp_path):
+    b = Batch(tmp_path, max_steps=40)
+
+    def broken(b):
+        def execute(cmd):
+            raise RuntimeError("link exploded")
+        b.rig.link.execute = execute
+    b.at_moves(30, broken)
+    b.run()
+    b.assert_halted("error", safety=True)
+    assert "link exploded" in b.result["halt"]["detail"] and b.manifest["episodes"][0]["status"] == "failed"
+
+
+def test_a_blocked_turn_inside_a_scan_halts(tmp_path):
+    """guard_blocked raised from a scan: the tracked pose says the car is against the edge when the end circle
+    begins, so its first turn is refused and the batch halts (it does not skip the circle)."""
+    b = Batch(tmp_path, max_steps=4)
+    real_localise = b.runner.localise
+
+    def localise(env, what, required=True):
+        if "end pose" in what:
+            b.runner.tracker.set({"x_m": 0.80, "y_m": 2.9, "theta_deg": 0.0}, 0.05, 2.0)
+        return real_localise(env, what, required)
+    b.runner.localise = localise
+    b.run()
+    b.assert_halted("guard_blocked", safety=True)
+    assert "end pose" in b.result["halt"]["detail"] and "sweep circle" in b.result["halt"]["detail"]
+
+
+def test_a_car_restart_inside_a_scan_halts(tmp_path):
+    b = Batch(tmp_path, max_steps=4)
+    b.at_moves(6, lambda b: b.rig.link.sim.reboot())            # the sixth turn of the first circle
+    b.run()
+    assert b.result["halt"]["code"] in ("car_restart", "link_lost")
+    b.assert_halted(b.result["halt"]["code"], safety=True)
+    assert b.runner.monitor.steps <= 8 and "first_fix" not in b.manifest["episodes"][0]
+

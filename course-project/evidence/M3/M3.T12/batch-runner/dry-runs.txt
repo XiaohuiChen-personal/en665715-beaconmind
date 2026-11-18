@@ -2,41 +2,41 @@
 # python3 course-project/tools/car_batch.py run --world course-project/configs/arenas/real-room-nominal.json --scenarios course-project/configs/arenas/real-room-scenarios.json --initial-pose 2.4,1.6,70 --episodes 5 --policy b2 --max-range <R> --dry-run --dry-seed <N> --out <scratch>
 
 ## --max-range 2.0 --dry-seed 1: exit status 3
-status: halted   updated: 2026-11-18T20:08:57Z   resumes: 0
+status: halted   updated: 2026-11-18T20:30:18Z   resumes: 0
 world: real-room-nominal   policy: b2   episodes asked: 5   moves sent: 239   spent: US$0.00
-HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:08:57Z); the project latch was set
+HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:30:18Z); the project latch was set
 ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 54 steps  final pose error 0.02 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep02-a1  done    scenario S2  start miss 0.03 m / 14 deg  ended_by DONE (decision) after 48 steps  final pose error 0.02 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep03-a1  halted  scenario S3  start miss -  ended_by None (None) after None steps  HALT no_fix
 
 ## --max-range 2.0 --dry-seed 2: exit status 3
-status: halted   updated: 2026-11-18T20:09:02Z   resumes: 0
+status: halted   updated: 2026-11-18T20:30:23Z   resumes: 0
 world: real-room-nominal   policy: b2   episodes asked: 5   moves sent: 487   spent: US$0.00
-HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:09:02Z); the project latch was set
+HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:30:23Z); the project latch was set
 ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 52 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
-ep02-a1  done    scenario S2  start miss 0.04 m / 3 deg  ended_by DONE (decision) after 46 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep02-a1  done    scenario S2  start miss 0.04 m / 3 deg  ended_by DONE (decision) after 46 steps  final pose error 0.01 m / 0 deg (truth sigma 0.06 m, tracked since the last fix)
 ep03-a1  halted  scenario S3  start miss 0.19 m / 10 deg  ended_by DONE (decision) after 50 steps  HALT no_fix
 
 ## --max-range 2.0 --dry-seed 3: exit status 3
-status: halted   updated: 2026-11-18T20:09:07Z   resumes: 0
+status: halted   updated: 2026-11-18T20:30:28Z   resumes: 0
 world: real-room-nominal   policy: b2   episodes asked: 5   moves sent: 495   spent: US$0.00
-HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:09:07Z); the project latch was set
+HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:30:28Z); the project latch was set
 ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 51 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep02-a1  done    scenario S2  start miss 0.13 m / 6 deg  ended_by DONE (decision) after 50 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
 ep03-a1  halted  scenario S3  start miss 0.11 m / 10 deg  ended_by DONE (decision) after 52 steps  HALT no_fix
 
 ## --max-range 2.0 --dry-seed 4: exit status 3
-status: halted   updated: 2026-11-18T20:09:14Z   resumes: 0
+status: halted   updated: 2026-11-18T20:30:36Z   resumes: 0
 world: real-room-nominal   policy: b2   episodes asked: 5   moves sent: 717   spent: US$0.00
-HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:09:14Z); the project latch was set
+HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:30:36Z); the project latch was set
 ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 54 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep02-a1  done    scenario S2  start miss 0.03 m / 14 deg  ended_by DONE (decision) after 48 steps  final pose error 0.00 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
-ep03-a1  done    scenario S3  start miss 0.09 m / 10 deg  ended_by DONE (decision) after 52 steps  final pose error 0.00 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
-ep04-a1  done    scenario S4  start miss 0.02 m / 14 deg  ended_by DONE (decision) after 44 steps  final pose error 0.02 m / 0 deg (truth sigma 0.06 m, tracked since the last fix)
+ep03-a1  done    scenario S3  start miss 0.09 m / 10 deg  ended_by DONE (decision) after 52 steps  final pose error 0.00 m / 0 deg (truth sigma 0.06 m, tracked since the last fix)
+ep04-a1  done    scenario S4  start miss 0.02 m / 14 deg  ended_by DONE (decision) after 44 steps  final pose error 0.02 m / 0 deg (truth sigma 0.07 m, tracked since the last fix)
 ep05-a1  halted  scenario S5  start miss -  ended_by None (None) after None steps  HALT no_fix
 
 ## --max-range 2.5 --dry-seed 1: exit status 0
-status: complete   updated: 2026-11-18T20:09:22Z   resumes: 0
+status: complete   updated: 2026-11-18T20:30:43Z   resumes: 0
 world: real-room-nominal   policy: b2   episodes asked: 5   moves sent: 679   spent: US$0.00
 ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 51 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep02-a1  done    scenario S2  start miss 0.15 m / 6 deg  ended_by DONE (decision) after 46 steps  final pose error 0.02 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
@@ -45,27 +45,27 @@ ep04-a1  done    scenario S4  start miss 0.19 m / 1 deg  ended_by DONE (decision
 ep05-a1  done    scenario S5  start miss 0.03 m / 8 deg  ended_by DONE (decision) after 66 steps  final pose error 0.02 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
 
 ## --max-range 2.5 --dry-seed 2: exit status 0
-status: complete   updated: 2026-11-18T20:09:30Z   resumes: 0
+status: complete   updated: 2026-11-18T20:30:52Z   resumes: 0
 world: real-room-nominal   policy: b2   episodes asked: 5   moves sent: 803   spent: US$0.00
-ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 54 steps  final pose error 0.02 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 54 steps  final pose error 0.02 m / 0 deg (truth sigma 0.06 m, tracked since the last fix)
 ep02-a1  done    scenario S2  start miss 0.15 m / 10 deg  ended_by DONE (decision) after 51 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
 ep03-a1  done    scenario S3  start miss 0.04 m / 9 deg  ended_by DONE (decision) after 47 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep04-a1  done    scenario S4  start miss 0.08 m / 9 deg  ended_by DONE (decision) after 62 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep05-a1  done    scenario S5  start miss 0.11 m / 8 deg  ended_by DONE (decision) after 64 steps  final pose error 0.00 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 
 ## --max-range 2.5 --dry-seed 3: exit status 3
-status: halted   updated: 2026-11-18T20:09:35Z   resumes: 0
+status: halted   updated: 2026-11-18T20:30:56Z   resumes: 0
 world: real-room-nominal   policy: b2   episodes asked: 5   moves sent: 439   spent: US$0.00
-HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:09:35Z); the project latch was set
-ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 54 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+HALTED: no_fix: 24 steps without a tag fix (limit 24) (2026-11-18T20:30:56Z); the project latch was set
+ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 54 steps  final pose error 0.01 m / 0 deg (truth sigma 0.06 m, tracked since the last fix)
 ep02-a1  done    scenario S2  start miss 0.16 m / 10 deg  ended_by DONE (decision) after 51 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
 ep03-a1  halted  scenario S3  start miss 0.04 m / 9 deg  ended_by DONE (decision) after 51 steps  HALT no_fix
 
 ## --max-range 2.5 --dry-seed 4: exit status 0
-status: complete   updated: 2026-11-18T20:09:42Z   resumes: 0
+status: complete   updated: 2026-11-18T20:31:04Z   resumes: 0
 world: real-room-nominal   policy: b2   episodes asked: 5   moves sent: 685   spent: US$0.00
 ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by DONE (decision) after 51 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep02-a1  done    scenario S2  start miss 0.15 m / 6 deg  ended_by DONE (decision) after 46 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep03-a1  done    scenario S3  start miss 0.17 m / 8 deg  ended_by DONE (decision) after 57 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
 ep04-a1  done    scenario S4  start miss 0.19 m / 0 deg  ended_by DONE (decision) after 61 steps  final pose error 0.00 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
-ep05-a1  done    scenario S5  start miss 0.05 m / 10 deg  ended_by DONE (decision) after 71 steps  final pose error 0.01 m / 0 deg (truth sigma 0.06 m, tracked since the last fix)
+ep05-a1  done    scenario S5  start miss 0.05 m / 10 deg  ended_by DONE (decision) after 71 steps  final pose error 0.01 m / 0 deg (truth sigma 0.07 m, tracked since the last fix)

@@ -17,7 +17,7 @@ note. Xiaohui Chen approved unattended batches on 2026-11-18 (plan README §3.6)
 | `beaconmind/src/beaconmind/car/batch.py` (new) | `PoseTracker`, `MoveGuard`, `Monitor` (the halts), `BatchEnv` (the harness's environment), `BatchRunner`, `dry_rig`, the pass marker |
 | `tools/car_batch.py` (new) | `run`, `record-pass`, `clear-halt`, `status` |
 | `tools/car_batch.sh` (new) | Spark host: starts the R2 recorder for the whole batch, runs the tool in a `beaconmind-ros` container, stops the recorder |
-| `beaconmind/tests/test_car_batch.py` (new) | 80 tests |
+| `beaconmind/tests/test_car_batch.py` (new) | 91 tests |
 | `car/telemetry.py`, `link.py`, `ros_io.py`, `simcar.py` (my own, changed) | the Pico's supply voltage (telemetry field 5); `car_state` carries `drive_status`, `vsys_min_mv`, `agent_rx_age_ms` |
 | `car/camera.py` (my own, changed) | a frame whose counter (`X-BM-Seq`) repeats is a stale picture: an error |
 
@@ -66,16 +66,17 @@ World file, start poses and range limit are parameters (`--world`, `--scenarios`
 
 `course-project/data/real/ATTENDED_PASS.json` (git-ignored, on the Spark), written only by
 
-`bash course-project/tools/car_batch.sh - record-pass --operator <name> --stand-session <session> --floor-session <session>`
+`bash course-project/tools/car_batch.sh - record-pass --operator <name> --stand-session <session> --floor-session <session> --world <world file>`
 
 which a person runs after the attended stand test and floor check have passed. It requires two **different**
 recorded sessions under `data/real/`, the stand session with at least 5 and the floor session with at least 10 move
-logs that ended `done`. It stores hashes of `configs/car.json`, `configs/dv.json` and the twelve modules of the car
-package. A real batch is refused when the marker is missing, older than 7 days (or dated in the future), or any of
+logs that ended `done`. It stores hashes of `configs/car.json`, `configs/dv.json`, the twelve modules of the car
+package and the world file named with `--world` (the surveyed one). A real batch is refused when the marker is
+missing, older than 7 days (or dated in the future), when its `--world` is not that file byte for byte, or any of
 those files differs today (the comparison runs over today's file list, not over what the marker chooses to
 contain). What it cannot know: whether the tests' pass criteria were met. It records that a named person said so
 and which sessions show it. The firmware on the car is not in it (checked at the start through the telemetry
-layout and the drive map); the world file is a parameter of each batch.
+layout and the drive map).
 
 ## Ground truth
 
@@ -91,8 +92,10 @@ Per plan §3.6 the pose comes from the surveyed tags, not tape. All of it is rec
   tracked heading give a position; otherwise `no_fix: true`. A fix farther from the tracked pose than three
   combined sigmas plus 5 cm is not used; three in a row halt the batch.
 - **Tracked pose** (`truth_map`; also what `env.truth()` gives the harness, with `fix`, `sigma_xy_m`,
-  `sigma_theta_deg`, `steps_since_fix`): odometry between fixes, each fix blended in by inverse variance. The
-  position sigma never goes below 0.05 m: fixes of one tag repeat its survey and range-scale error.
+  `sigma_theta_deg`, `steps_since_fix`): odometry between fixes, each fix blended in by inverse variance. A fix
+  resting on exactly the tags of the fix before it moves the pose but does not shrink the sigma (it repeats that
+  tag's survey and range-scale error), and the position sigma never goes below 0.05 m, so the guard's margin is
+  never under 0.25 m.
 
 What the stated sigma covers: noise and geometry, with an assumed per-tag noise of 0.03 m + 0.04 × range
 (`fix_sigma_a_m`, `fix_sigma_b`: **assumed, to be replaced by the tag pilot's figures**, work list 2.4). What it
@@ -153,7 +156,8 @@ set, `car.sh clear-latch --operator <name>`; then the `run` command again.
 | `no_fix` | `--no-fix-steps` (24) steps without any tag fix; no full-circle fix at a start pose or at the first circle; the first circle disagrees with the tape | S | `test_halt_repeated_no_fix`, `test_the_first_circle_speaks_without_the_tape_and_a_disagreement_halts` |
 | `fix_conflict` | three fixes in a row far from the tracked pose | S | `test_halt_fix_conflict` |
 | `odometry_scale` | the transit's two lengths differ; or fixes keep landing ahead of / behind the odometry | S | `test_the_transit_checks_the_encoder_scale_before_any_episode`, `test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall` |
-| `pose_uncertain` | tracked position sigma above 0.25 m | S | `test_halt_pose_too_uncertain` |
+| `pose_uncertain` | tracked position sigma above 0.25 m, or a tracked pose that is not a number | S | `test_halt_pose_too_uncertain` |
+| `detector` | a detection whose range or bearing is not a number | S | `test_detections_that_are_not_numbers_never_reach_the_pose` |
 | `outside_drive_area` | the tracked pose is outside the free area | S | `test_halt_pose_outside_the_driving_area` |
 | `guard_blocked` | a scan or transit move was blocked; no room for the first circle | S | `test_halt_no_room_for_the_first_scan`, `test_the_first_circle_needs_room_for_a_wrong_tape` |
 | `start_pose` | the start pose not reached within tolerance after the attempts | S | `test_halt_start_pose_not_reached` |
@@ -208,10 +212,10 @@ real accuracy of resection.
 
 ## Tests
 
-- Mac (Python 3.13), `pytest-mac.txt`: `tests/test_car_batch.py` **80 passed**; whole suite **590 passed, 10
+- Mac (Python 3.13), `pytest-mac.txt`: `tests/test_car_batch.py` **91 passed**; whole suite **605 passed, 10
   skipped**; `prereg_freeze.py --verify` OK.
 - Container on the Spark (Python 3.10.12, `--network none`, ROS_DOMAIN_ID 42), `pytest-container.txt`: the batch
-  file with the five car test files **275 passed, 1 skipped**.
+  file with the five car test files **286 passed, 1 skipped**.
 
 Beyond the halts: resection recovers exact poses, stays inside three stated sigmas with 2 % / 1° noise in at least
 190 of 200 draws, refuses one tag, unknown ids, a pose far from the prior, a bad residual, numbers that are not
@@ -233,28 +237,33 @@ after a latch file existed. Its findings and what was done:
 | --- | --- | --- | --- |
 | 1 (critical) | a rerun through the wrapper got a fresh folder: earlier halt, manifest and spend unseen | fixed: the batch folder is `data/batches/<label>`, independent of the recorder session | `test_a_rerun_from_the_tracked_pose_with_a_new_process` |
 | 2 (critical) | after a restart the tracker believed the taped pose and a transit move ran on it; resume rarely worked | fixed: the first circle is required, solved without the tape and compared with it; no view is trusted and no forward move runs before it; room for a wrong tape is required; the tracked pose is saved and `--initial-pose last` restores it. The reviewer's probe: 128 of 128 wrong-pose restarts now halt at the first circle | `test_the_first_circle_speaks_...`, `test_no_forward_move_before_a_circle_has_confirmed_the_pose`, `test_the_first_circle_needs_room_for_a_wrong_tape`, `test_a_resumed_batch_takes_the_cars_new_taped_pose` |
-| 3 | one mis-surveyed tag made the tracker confidently wrong; the footprint reached the wall | reduced, not closed: sigma floor 0.05 m, fixes that disagree are refused, full-circle residual limit 0.08 m, wall margin 0.15 m. Reviewer's probe on the final code: no run reaches the edge; the smallest true clearance over all its tag cases is 4 cm (a tag 0.3 m wrong, tracked pose 0.33 m off). See "The guard" for what remains | `test_a_tag_surveyed_wrongly_halts_before_the_car_reaches_a_wall`, `test_a_fix_that_disagrees_with_the_tracked_pose_is_not_blended_in` |
+| 3 | one mis-surveyed tag made the tracker confidently wrong; the footprint reached the wall | reduced, not closed: no sigma shrink on a repeated tag set, sigma floor 0.05 m (so the margin is never under 0.25 m), fixes that disagree are refused, full-circle residual limit 0.08 m, wall margin 0.15 m. Reviewer's probe on the final code: no run reaches the edge; the smallest true clearance over all its tag cases is 4 cm (a tag 0.3 m wrong, tracked pose 0.33 m off). See "The guard" for what remains | `test_a_tag_surveyed_wrongly_halts_before_the_car_reaches_a_wall`, `test_repeated_fixes_from_the_same_tag_do_not_shrink_the_uncertainty`, `test_guard_margin_has_a_floor_that_no_fix_can_lower`, `test_a_fix_that_disagrees_with_the_tracked_pose_is_not_blended_in` |
 | 4 | a halt that could not be written was lost; `_save` raised out of `run()`; the rerun drove | fixed: project latch on a failed halt write; manifest write errors halt; a manifest left `running` refuses and writes the halt | `test_a_halt_that_cannot_be_written_sets_the_project_latch`, `test_a_run_that_died_without_a_record_needs_an_operator` |
 | 5 | health was judged on the previous sensing, so one more move ran | fixed: fresh car state and a camera probe before every move | `test_a_fault_while_the_agent_thinks_stops_the_next_move` (7 faults) |
-| 6 | SIGTERM and SIGHUP left no halt record | fixed: both end like Ctrl+C; the wrapper `exec`s Python and says to run under tmux | `test_terminate_and_hangup_end_like_an_interrupt` (handler and source text; not run under docker) |
+| 6 | SIGTERM and SIGHUP left no halt record | fixed: both end like Ctrl+C; the wrapper `exec`s Python and says to run under tmux | `test_sigterm_during_a_batch_leaves_a_halt_record` (a real process, SIGTERM mid-batch; not under docker), `test_terminate_and_hangup_end_like_an_interrupt` |
 | 7 | caps were per process | fixed: moves and wall clock count over all runs of the batch | `test_the_move_cap_counts_the_whole_batch_not_one_run`, `test_the_wall_clock_cap_counts_the_whole_batch` |
 | 8 | an odometer reading 25 % short was not covered by sigma; wall reached | fixed three ways: no straight move takes the distance driven since the last tag fix past 0.75 m; the transit of 0.3 m or more between two full-circle fixes is measured by odometry and by the tags before any episode; fixes that keep landing ahead of the odometry halt. The reviewer's probe now: smallest true clearance +0.885 m, no contact | `test_no_straight_move_takes_the_car_far_from_its_last_tag_fix`, `test_the_transit_checks_the_encoder_scale_before_any_episode`, `test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall` |
-| 9 | one paid request after a halt (the harness asks the agent once more before it ends the episode) | declined here: it is in `harness/closed_loop.py`; no move results (the move is refused); cost one request | — |
-| 10 | the pass marker could be satisfied by one arbitrary session; the fingerprint compared the marker's own keys; few files hashed | fixed: two different sessions with enough `done` moves; today's file list; `car.json`, `dv.json` and the whole car package | `test_pass_marker` |
+| 9 | one paid request after a halt (the harness asked the agent once more before it ended the episode) | fixed from this side: the agent is wrapped (`HaltAwareDriver`); before every request the latch, the clocks and the car are checked, and once halted no request is sent. (The harness as it stands today also ends the episode at its latch check before asking.) | `test_no_paid_request_is_sent_after_a_halt`, `test_the_driver_wrapper_sends_no_request_once_halted` |
+| 10 | the pass marker could be satisfied by one arbitrary session; the fingerprint compared the marker's own keys; few files hashed | fixed: two different sessions with enough `done` moves; today's file list; `car.json`, `dv.json`, the whole car package and the world file. Not in it: the firmware (not a file here) | `test_pass_marker`, `test_pass_marker_is_for_one_world_file` |
 | 11 | obstacles were never checked | fixed | `test_obstacles_count_even_without_a_separate_driving_area` |
 | 12 | after Ctrl+C the episode stayed `running` | fixed | `test_an_interrupted_episode_is_halted_in_the_manifest` |
-| 13 | a NaN range gave a NaN pose | fixed: such detections never reach a fix | `test_detections_that_are_not_numbers_never_reach_the_pose` |
+| 13 | a NaN range gave a NaN pose | fixed: such detections never reach a fix, and one halts the batch (`detector`) | `test_detections_that_are_not_numbers_never_reach_the_pose` |
 | 14 | a crashed recorder left `.active` behind | fixed: the wrapper checks the recorder's tmux session; the batch halts when the session's logs stop changing for 2 minutes | `test_a_recorder_that_stopped_writing_is_noticed` (the wrapper's check is untested) |
-| 15 | `supply_low` is the Pico's supply; fading motor batteries only show as stall/timeout | as designed; stated above ("Battery") | — |
+| 15 | `supply_low` is the Pico's supply; fading motor batteries only show as stall/timeout | documented, not fixable in software: the car has no motor-battery signal ("Battery" above). A supply reading of 0 or none does not halt (the simulated and real firmware always send one) | — |
 | 16 | wrapper: `--batch-hours=7` not parsed; `--out` outside the repository vanished with the container | fixed in the wrapper (syntax-checked only) | — |
-| 17 | wall-clock caps are checked only when the harness asks for a step; a hung model call overruns them | declined: the car is at rest during it, and the provider's own request timeout (900 s) ends it | — |
+| 17 | wall-clock caps are checked only when the harness asks for a step; a hung model call overruns them | documented limit: the caps are checked before every request and every move, not during a request. The car is at rest meanwhile, and the provider's own request timeout (900 s, `tools/closed_loop_run.py`) ends the call; a cap can therefore be overrun by at most one request | — |
 | 18 | telemetry lost between moves was called `executor_refused` | fixed | `test_telemetry_stopping_between_moves_is_named_and_sends_no_move` |
 
-Tests the review called weak: the halt helper now counts commands from the moment of the halt; the restart test
-asserts the manifest and the rerun; resume is tested through the tool with a new process and `last`; halts for
-`imu`, `fix_conflict`, `harness_latch`, `move_timeout`, `executor_refused`, the preflight latch and car checks and
-a halt file appearing mid-run have their own tests. Still without a test: `guard_blocked` and `car_restart` raised
-inside a scan, `usd_cap` between two episodes, and everything in `car_batch.sh`.
+Tests the review called weak: the halt helper now counts commands from the moment of the halt and watches the
+simulated car's true footprint in every batch test; the restart, link-lost and slow-car tests assert one code, the
+manifest and the rerun; resume is tested through the tool with a new process and `last`; the faults are also
+planted while the car stands (the agent thinking). Halt paths that had no test and now have one: `imu`,
+`fix_conflict`, `harness_latch`, `move_timeout`, `executor_refused`, `interrupted`, the preflight latch and car
+checks, a halt file appearing mid-run, `guard_blocked` and a car restart inside a scan, the first circle failing
+twice, `usd_cap` between two episodes, an exception from the car link inside an episode, the unwritable halt, and
+SIGTERM on a real process. The tests were written with the fixes; the old code's failures are the reviewer's
+reproductions (its probe scripts), which were re-run on the final code. Still without a test: `harness_error`
+other than the two non-halting kinds, and everything in `car_batch.sh` (syntax-checked only).
 
 ## Before the first real batch (attended)
 
