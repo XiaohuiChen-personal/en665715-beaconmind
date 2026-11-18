@@ -87,8 +87,41 @@ Coverage at 46.9°, whole tag in the picture, 3.0 m: one heading sees ≥ 1 tag 
 (11.8 %); full turn ≥ 2 tags 98.3 % (`evidence/M3/M3.T10/layout-2/coverage.txt`). `tag_pilot.py placements` gained
 `--tag-black-m`.
 
-**Still running at 12:50 CST:** the unattended batch runner (`beaconmind/car/batch.py`, `resection.py`,
-`tools/car_batch.py/.sh`, uncommitted) with an adversarial review of its halts.
+**Report and slides after two independent review rounds (commits `eb5dd7c`, `b014e38`, `8578a05`, `0055643`).**
+Section V-G "Closed loop in simulation" is in; Section IV-B and Fig. 3 describe the 20-tag layout (12 printed, 8 not yet
+printed, none mounted) with the 3.0 m limit called provisional. Still 12 pages with no slack (page 12 is full); six
+placeholders remain (`report/PENDING.md` 1, 2, 4, 5, 6 car part, 7). The page limit is an assumption: **OPEN for
+Xiaohui**; cut material can return if the limit is higher. Review record: `report/REVIEW.md`. The deck in the private
+repo was rebuilt each round but no reviewer has read the deck itself.
+
+**Unattended batch runner (plan §3.6, commit `1f73553`; simulated car only, never run on the real car).**
+`bash course-project/tools/car_batch.sh <label> run --world W --scenarios S --initial-pose x,y,th --episodes N
+--policy b2|<model key> [--max-range R] [--cap-usd X]`; code `beaconmind/car/batch.py`, `resection.py`,
+`tools/car_batch.py`; evidence and the halt-code table `evidence/M3/M3.T12/batch-runner/README.md`.
+- Batch folder `data/batches/<label>` (manifest, spend, HALT.LATCH survive reruns); recorder on for the whole batch.
+- Refuses a real run without `data/real/ATTENDED_PASS.json`, written only by `car_batch.py record-pass --operator
+  --stand-session --floor-session` (two different recorded sessions, file hashes, 7-day age limit).
+- Sets and reads back drive map 0.25/0.33; the first full circle is solved without the taped pose and must agree with
+  it; ground truth per step in `truth.jsonl` with sigma and a no-fix flag; a guard on every move (footprint + 2 sigma
+  inside the drive polygon, at most 0.75 m straight travel since the last tag fix); 25 halt codes end the whole batch.
+- An independent review (1,140 fault-injection runs) found 18 problems in the first version; 15 are fixed with tests.
+  **Not closed:** a tag surveyed 0.3 m wrong still moves the tracked pose 0.33 m (smallest wall clearance 4 cm in the
+  probe, no contact), so **the world file must hold measured tag centres before any unattended batch**. Stated limits:
+  no motor-battery signal exists; a hung model call overruns wall-clock caps with the car at rest. Untested:
+  `car_batch.sh` itself (syntax-checked only, it has never started a recorder or container), `usd_cap` between two
+  episodes, two halts raised inside a scan. `fix_sigma_a_m`/`fix_sigma_b` (0.03 m + 0.04 × range) are assumptions for
+  the tag pilot to replace.
+- Dry runs (B2, five start poses, 4 seeds): at range limit 2.0 m no batch of five completes (four `no_fix` halts); at
+  2.5 m 3 of 4 complete. Supports the longer range limit; 3.0 m with the 20-tag world was not dry-run.
+- Before the first real batch: stand test and floor check pass, `record-pass`, a dry run with the exact arguments, car
+  at least 0.7 m from every edge, first start pose at least 0.3 m away, first one or two episodes attended, wrapper
+  inside tmux.
+
+**State (2026-11-18, about 14:25 CST).** Tests on the Mac: 590 passed, 10 skipped; prereg verify OK. Spark: access
+point, `bm-micro-ros-agent`, `bm-cam-relay` up; car on its power bank, motor battery off; no recording. Nothing has
+moved the real car. API spend today: US$18.84 (closed loop). **Needs Xiaohui next:** say yes to printing the 8 pages
+and the new mounting sheet; mount all 20 tags and record their centres; tag-accuracy pilot; stand test and floor check;
+approve (or not) a real-run DV file with the pilot's sigmas; the report's page limit and presentation requirements.
 
 ## 2026-11-18 — work list 2.10 and 2.2 DONE, 2.3 intrinsics done: recorder (M3.T27); camera size XGA (M1.T17); camera.json; tags printed
 
