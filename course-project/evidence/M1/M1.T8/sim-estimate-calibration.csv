@@ -1,0 +1,55 @@
+perturbation,range_m,bearing_deg,range_err_m,bearing_err_deg
+focal length +1 % (the two tape checks read -0.1 % and -1.2 %),1.0,0.0,0.0088,0.022
+focal length +1 % (the two tape checks read -0.1 % and -1.2 %),1.0,15.0,0.0077,-0.105
+focal length +1 % (the two tape checks read -0.1 % and -1.2 %),2.0,0.0,0.0188,0.023
+focal length +1 % (the two tape checks read -0.1 % and -1.2 %),2.0,15.0,0.0164,-0.111
+focal length +1 % (the two tape checks read -0.1 % and -1.2 %),3.0,0.0,0.0287,0.024
+focal length +1 % (the two tape checks read -0.1 % and -1.2 %),3.0,15.0,0.025,-0.114
+principal point cx +5 px,1.0,0.0,-0.0002,0.214
+principal point cx +5 px,1.0,15.0,0.002,0.201
+principal point cx +5 px,2.0,0.0,-0.0005,0.228
+principal point cx +5 px,2.0,15.0,0.0043,0.213
+principal point cx +5 px,3.0,0.0,-0.0007,0.232
+principal point cx +5 px,3.0,15.0,0.0062,0.217
+principal point cy +5 px,1.0,0.0,-0.0002,-0.018
+principal point cy +5 px,1.0,15.0,-0.0006,-0.011
+principal point cy +5 px,2.0,0.0,-0.0004,-0.018
+principal point cy +5 px,2.0,15.0,-0.0014,-0.012
+principal point cy +5 px,3.0,0.0,-0.0007,-0.019
+principal point cy +5 px,3.0,15.0,-0.0025,-0.013
+distortion k1 and k2 set to zero (worst case for the picture's edges),1.0,0.0,-0.0024,-0.005
+distortion k1 and k2 set to zero (worst case for the picture's edges),1.0,15.0,-0.0129,0.058
+distortion k1 and k2 set to zero (worst case for the picture's edges),2.0,0.0,-0.0015,-0.002
+distortion k1 and k2 set to zero (worst case for the picture's edges),2.0,15.0,-0.0232,0.048
+distortion k1 and k2 set to zero (worst case for the picture's edges),3.0,0.0,-0.0018,-0.001
+distortion k1 and k2 set to zero (worst case for the picture's edges),3.0,15.0,-0.0341,0.048
+mount yaw +2 deg (uncertainty_deg in camera.json),1.0,0.0,-0.0001,1.76
+mount yaw +2 deg (uncertainty_deg in camera.json),1.0,15.0,-0.0011,1.769
+mount yaw +2 deg (uncertainty_deg in camera.json),2.0,0.0,-0.0001,1.88
+mount yaw +2 deg (uncertainty_deg in camera.json),2.0,15.0,-0.0012,1.885
+mount yaw +2 deg (uncertainty_deg in camera.json),3.0,0.0,-0.0001,1.92
+mount yaw +2 deg (uncertainty_deg in camera.json),3.0,15.0,-0.0012,1.923
+mount pitch +2 deg,1.0,0.0,0.0049,0.012
+mount pitch +2 deg,1.0,15.0,0.0048,-0.06
+mount pitch +2 deg,2.0,0.0,0.0043,0.005
+mount pitch +2 deg,2.0,15.0,0.0042,-0.027
+mount pitch +2 deg,3.0,0.0,0.0037,0.003
+mount pitch +2 deg,3.0,15.0,0.0036,-0.015
+mount roll +2 deg,1.0,0.0,0.0002,-0.188
+mount roll +2 deg,1.0,15.0,-0.0013,-0.189
+mount roll +2 deg,2.0,0.0,0.0002,-0.025
+mount roll +2 deg,2.0,15.0,-0.0013,-0.03
+mount roll +2 deg,3.0,0.0,0.0002,0.029
+mount roll +2 deg,3.0,15.0,-0.0013,0.023
+lens position x +5 mm (uncertainty_m in camera.json),1.0,0.0,0.005,0.0
+lens position x +5 mm (uncertainty_m in camera.json),1.0,15.0,0.0048,-0.074
+lens position x +5 mm (uncertainty_m in camera.json),2.0,0.0,0.005,0.0
+lens position x +5 mm (uncertainty_m in camera.json),2.0,15.0,0.0048,-0.037
+lens position x +5 mm (uncertainty_m in camera.json),3.0,0.0,0.005,0.0
+lens position x +5 mm (uncertainty_m in camera.json),3.0,15.0,0.0048,-0.025
+tag size given 1 mm too large (a 160 mm black square entered as 161 mm),1.0,0.0,0.0055,-0.0
+tag size given 1 mm too large (a 160 mm black square entered as 161 mm),1.0,15.0,0.0055,0.011
+tag size given 1 mm too large (a 160 mm black square entered as 161 mm),2.0,0.0,0.0118,0.0
+tag size given 1 mm too large (a 160 mm black square entered as 161 mm),2.0,15.0,0.0118,0.006
+tag size given 1 mm too large (a 160 mm black square entered as 161 mm),3.0,0.0,0.018,0.0
+tag size given 1 mm too large (a 160 mm black square entered as 161 mm),3.0,15.0,0.018,0.004
