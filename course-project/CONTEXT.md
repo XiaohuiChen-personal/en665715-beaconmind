@@ -40,7 +40,7 @@ message; start the independent tasks at once and check the agents on a timer.
   section 20 cm from corner 4; IDs 7, 5, 4, 6, 11 on the window wall 14, 125, 215, 314, 404 cm from corner 3; IDs 8, 9
   on the 295 cm wall 200 and 269 cm from corner 5. World file `configs/arenas/real-room-plus8-160mm-nominal.json`
   (`real-room-nominal.json` stays as the 12-tag layout). 100 mm tags rejected: full reprint, and 3.0 m is at their
-  simulated far limit. Nothing is reprinted. **The 8 new pages are not printed and no tag is mounted yet.**
+  simulated far limit. Nothing is reprinted. **The 8 new pages were printed on 2026-11-18 at 14:54 (see below); no tag is mounted yet.**
 - **Range limit 3.0 m** (2.5 m if the real tag pilot does not confirm it). Prompt v3.3 says "rejected if range_m > 2.0"
   in words; the frozen prompt is not edited, a real-room variant with that one number changed is a recorded deviation.
 - **Driving area inset 0.4 m** from every wall (geofence in the backend / tape).
@@ -80,7 +80,7 @@ agent is filling the simulator part of `report/PENDING.md` item 6 and the slide.
 it against the world file (agrees to the millimetre, no clash found). Print files (git-ignored):
 `data/real/tags/room-layout-real-room-2-new-tags.pdf` (8 pages, IDs 1, 4, 5, 6, 7, 8, 9, 11) and
 `room-layout-real-room-2-mounting-sheet.pdf` (all 20 tags), copies in `~/Downloads/BeaconMind-tags-real-room-2-*`.
-**Not printed: Xiaohui has not said yes.** The new sheet replaces the printed one: six printed tags (T02, T03, T05–T08)
+**Printed 2026-11-18, 14:54 CST** (Xiaohui: "yes, print the 8 pages and the mounting sheet"): both PDFs on the Brother HL-3140CW (queue `Brother_HL_3140CW_series_2`, jobs 981 and 982), Letter, actual size, black only, one-sided; both jobs completed. Xiaohui has not yet measured a printed square (should be 160 ± 1 mm). The new sheet replaces the printed one: six printed tags (T02, T03, T05–T08)
 have narrower slide ranges so pages cannot touch. Unchecked: outlets on the 295 cm wall, window wall and desk wall were
 never located; T16 (ID 7) is 3 cm from corner 3; T12 (ID 1) is about 13 cm from the angled section's estimated outlet.
 Coverage at 46.9°, whole tag in the picture, 3.0 m: one heading sees ≥ 1 tag 54.9 % (12 tags: 49.9 %), ≥ 2 tags 29.6 %
@@ -120,13 +120,17 @@ repo was rebuilt each round but no reviewer has read the deck itself.
 **Later the same afternoon (commits `26d541e`, `609737e`, `353d49f`):** a halted closed-loop episode now ends without a
 model request (`halted_without_request` in the summary); the batch runner's remaining halt paths have tests (91 in
 `test_car_batch.py`); `record-pass` now requires `--world <surveyed file>` and a batch on any other world file is
-refused. The batch-runner tests were written with the fixes and were not run against the old code.
+refused. The batch-runner tests were written with the fixes and were not run against the old code. The batch
+runner's evidence README does not mention the last change (`353d49f`: a batch halt is recorded as `ended_by: halt`,
+not as the spend cap).
+
+**Handoff (Xiaohui, 2026-11-18, about 15:00 CST):** "I will open up a new session when I am ready to continue with the project". Start the next session from this entry.
 
 **State (2026-11-18, about 14:50 CST).** Tests on the Mac: 606 passed, 10 skipped; prereg verify OK. The Spark clone
 is at `353d49f` (one stale untracked file, `report/generated/tab-kinds.tex`). `caffeinate` stopped; all agents idle. Spark: access
 point, `bm-micro-ros-agent`, `bm-cam-relay` up; car on its power bank, motor battery off; no recording. Nothing has
-moved the real car. API spend today: US$18.84 (closed loop). **Needs Xiaohui next:** say yes to printing the 8 pages
-and the new mounting sheet; mount all 20 tags and record their centres; tag-accuracy pilot; stand test and floor check;
+moved the real car. API spend today: US$18.84 (closed loop). **Needs Xiaohui next:** measure one printed square
+(160 ± 1 mm); mount all 20 tags from the NEW mounting sheet and record their centres; tag-accuracy pilot; stand test and floor check;
 approve (or not) a real-run DV file with the pilot's sigmas; the report's page limit and presentation requirements.
 
 ## 2026-11-18 — work list 2.10 and 2.2 DONE, 2.3 intrinsics done: recorder (M3.T27); camera size XGA (M1.T17); camera.json; tags printed
