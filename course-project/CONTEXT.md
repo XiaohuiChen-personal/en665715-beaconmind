@@ -70,8 +70,9 @@ deviation). All three arms ended DONE: steps 56 (Opus 5.5), 56 (Fable 5.2), 58 (
 1.4–1.5 cm); final heading 1.8°, 1.8°, 2.5°; 14 of 20 tags mapped, no phantom; validator rejections 0; no full fix in
 any arm; p95 step time 25.0 s and 23.7 s; cost **US$4.60 (Opus) and US$8.33 (Fable)**, under the US$8 / US$14 caps but
 above the US$6–8 the lead had told Xiaohui. The two models made the identical 55 moves; the one branch from B2 is a
-rounding (two-decimal pose passed to `exploration_summary` at step 31 flips a wall-distance threshold), and on their own
-inputs all 112 model decisions equal the coded procedure's. Evidence `evidence/M2/M2.T7/closed-loop/README.md`,
+pose argument 1–2 cm from B2's at step 31 (Opus passed its pose rounded to two decimals, Fable passed the step-30
+position from before that step's fix), which flips a wall-distance threshold in `exploration_summary`; given the tool
+results each model obtained, all 112 model decisions equal the coded procedure's (corrected after an independent review). Evidence `evidence/M2/M2.T7/closed-loop/README.md`,
 `runs-final/`; the first pair is kept there as superseded. Closed-loop API spend on 2026-11-18: US$18.84. The report
 agent is filling the simulator part of `report/PENDING.md` item 6 and the slide.
 
