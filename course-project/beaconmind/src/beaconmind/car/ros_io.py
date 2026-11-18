@@ -354,7 +354,7 @@ class RosCarLink:
     def car_state(self):
         with self._lock:
             state = car_state_from(self.executor, time.monotonic())
-        state.update({"ros_domain_id": self.domain, "drive_status": self.drive_status,
+        state.update({"ros_domain_id": self.domain, "drive_status_topic": self.drive_status,
                       "layout_error": self.layout_error, "latched": self.latch.is_set(),
                       "imu_topic_age_s": None if self.imu_last is None else round(time.monotonic() - self.imu_last[0], 3),
                       "cmd_vel_subscribers": None if self._pub is None else self._pub.get_subscription_count()})

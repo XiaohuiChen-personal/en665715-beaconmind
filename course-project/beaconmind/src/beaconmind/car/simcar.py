@@ -65,6 +65,7 @@ class SimCarParams:
     telemetry_drop: list = field(default_factory=list)   # [(t0, t1)]: samples sent in these windows are lost
     command_drop: list = field(default_factory=list)     # [(t0, t1)]: commands sent in these windows are lost
     imu_fail: list = field(default_factory=list)         # [(t0, t1)]: IMU reads fail (yaw reported as 0)
+    vsys_mv: int = 4680                 # the Pico's supply on its power bank (the recorded parked car read 4684)
     cutoff_after_s: float = 2.0         # a blocked, commanded wheel is cut off after this long
 
 
@@ -267,6 +268,7 @@ class SimCar:
             left=_to_int32(self.left0 + int(math.floor(self.travel[0] * p.ticks_per_m + 0.5))),
             right=_to_int32(self.right0 + int(math.floor(self.travel[1] * p.ticks_per_m + 0.5))),
             uptime_ms=int(round((t - self.boot_t) * 1000)), seq=self.seq, flags=flags,
+            vsys_min_mv=p.vsys_mv, vsys_max_mv=p.vsys_mv,
             yaw_cdeg=0 if imu_fail else int(round(yaw * 100)), imu_fails=self.imu_fails, commands=self.commands,
             boot_report=1100, sessions=self.sessions, stale_cmds=self.stale, cutoffs=self.cutoffs,
             agent_rx_age_ms=age, duty_left=int(round(self.duty[0] * 1000)), duty_right=int(round(self.duty[1] * 1000)),

@@ -21,6 +21,8 @@ TK_RIGHT = 1
 TK_LAYOUT = 2
 TK_UPTIME_MS = 3        # ms since this boot: falls after a restart
 TK_SEQ = 4              # wheel_ticks messages sent since this boot: a gap = messages lost on the way
+TK_VSYS_MIN_MV = 5      # the Pico's own supply (VSYS), lowest and highest since the previous message, mV
+TK_VSYS_MAX_MV = 6
 TK_DUTY_LEFT = 12       # applied duty x 1000, signed
 TK_DUTY_RIGHT = 13
 TK_FLAGS = 14
@@ -82,6 +84,7 @@ class Telemetry:
     duty_right: float
     map_min_duty: float
     map_max_speed_mps: float
+    vsys_min_mv: int = 0    # the Pico's supply, not the motor battery (the motors run from their own pack)
 
     @property
     def armed(self):
@@ -137,7 +140,7 @@ def decode_wheel_ticks(data, t_rx):
         cutoffs=int(data[TK_CUTOFFS]), agent_rx_age_ms=int(data[TK_AGENT_RX_AGE_MS]),
         disarms=int(data[TK_DISARMS]) & 0xFFFF, duty_left=int(data[TK_DUTY_LEFT]) / 1000.0,
         duty_right=int(data[TK_DUTY_RIGHT]) / 1000.0, map_min_duty=(drive_map & 0xFFFF) / 1000.0,
-        map_max_speed_mps=((drive_map >> 16) & 0xFFFF) / 1000.0)
+        map_max_speed_mps=((drive_map >> 16) & 0xFFFF) / 1000.0, vsys_min_mv=int(data[TK_VSYS_MIN_MV]))
 
 
 def encode_wheel_ticks(**fields):

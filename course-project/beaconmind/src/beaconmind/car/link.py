@@ -28,13 +28,15 @@ def car_state_from(executor, now):
         return {"telemetry_age_s": None, "armed": None, "imu_ready": None, "clock_ok": None, "drive_map": None,
                 "boots": executor.boots, "busy": executor.busy, "uptime_ms": None, "boot_report": None,
                 "sessions": None, "cutoffs": None, "locked": None, "left_ticks": None, "right_ticks": None,
-                "yaw_deg": None, "lost_samples": executor.lost_samples}
+                "yaw_deg": None, "lost_samples": executor.lost_samples, "drive_status": None, "vsys_min_mv": None,
+                "agent_rx_age_ms": None, "imu_fails": None}
     return {"telemetry_age_s": round(now - tel.t_rx, 3), "armed": tel.armed, "imu_ready": tel.imu_ready,
             "clock_ok": tel.clock_ok, "drive_map": [tel.map_min_duty, tel.map_max_speed_mps],
             "boots": executor.boots, "busy": executor.busy, "uptime_ms": tel.uptime_ms,
             "boot_report": tel.boot_report, "sessions": tel.sessions, "cutoffs": tel.cutoffs, "locked": tel.locked,
             "left_ticks": tel.left, "right_ticks": tel.right, "yaw_deg": tel.yaw_deg,
-            "lost_samples": executor.lost_samples}
+            "lost_samples": executor.lost_samples, "drive_status": tel.drive_status, "vsys_min_mv": tel.vsys_min_mv,
+            "agent_rx_age_ms": tel.agent_rx_age_ms, "imu_fails": tel.imu_fails}
 
 
 class SimLink:

@@ -67,6 +67,7 @@ class HttpCamera:
         self.n = 0
         self.last_ok_ns = None
         self.errors = 0
+        self.last_seq = None            # the camera's own frame counter (X-BM-Seq) of the last frame taken
 
     def configure(self, framesize=FRAME_SIZE, quality=JPEG_QUALITY):
         """Put the camera in its calibrated mode. Returns the camera's answer."""
@@ -95,6 +96,13 @@ class HttpCamera:
             if self.expected_size and None not in size and tuple(size) != tuple(self.expected_size):
                 raise CameraError("the camera sent %sx%s; the calibration is for %sx%s (run configure())"
                                   % (size[0], size[1], self.expected_size[0], self.expected_size[1]))
+            seq = hdr.get("x-bm-seq")
+            if isinstance(seq, int):
+                # the same or an older frame again (a relay or a cache answering for a camera that stopped) is not
+                # a picture of now. A counter that restarts low is a camera reboot: taken, and it shows in the log.
+                if self.last_seq is not None and seq == self.last_seq:
+                    raise CameraError("the camera sent frame %d again: a stale picture" % seq)
+                self.last_seq = seq
             if self.save_dir:
                 os.makedirs(self.save_dir, exist_ok=True)
                 rec["file"] = "%06d_%d.jpg" % (self.n, t_resp)
