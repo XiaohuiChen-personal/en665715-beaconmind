@@ -1,0 +1,93 @@
+18:19:47 start B2, env room, config 1c09f76c1651, seeds [3000], max 150 steps, spent so far $0.00, cap none
+18:19:47 seed 3000 step 0: 0.0s 2 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:47 seed 3000 step 1: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 2: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 3: 0.0s 4 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 4: 0.0s 4 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 5: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 6: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 7: 0.0s 4 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 8: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 9: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 10: 0.0s 6 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 11: 0.0s 6 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 12: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 13: 0.0s 7 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 14: 0.0s 9 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 15: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 16: 0.0s 7 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 17: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=FORWARD_25 executed=FORWARD_25:done total=$0.00 
+18:19:48 seed 3000 step 18: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=FORWARD_25 executed=FORWARD_25:done total=$0.00 
+18:19:48 seed 3000 step 19: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 20: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 21: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 22: 0.0s 7 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 23: 0.0s 7 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 24: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 25: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 26: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 27: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 28: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 29: 0.0s 7 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 30: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 31: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 32: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 33: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 34: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=FORWARD_25 executed=FORWARD_25:done total=$0.00 
+18:19:48 seed 3000 step 35: 0.0s 6 calls $0.000 valid=True fallback=False fix=None decision=FORWARD_10 executed=FORWARD_10:done total=$0.00 
+18:19:48 seed 3000 step 36: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 37: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 38: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 39: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 40: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 41: 0.0s 7 calls $0.000 valid=True fallback=False fix=None decision=TURN_RIGHT_30 executed=TURN_RIGHT_30:done total=$0.00 
+18:19:48 seed 3000 step 42: 0.0s 7 calls $0.000 valid=True fallback=False fix=None decision=FORWARD_25 executed=FORWARD_25:done total=$0.00 
+18:19:48 seed 3000 step 43: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=FORWARD_25 executed=FORWARD_25:done total=$0.00 
+18:19:48 seed 3000 step 44: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=FORWARD_25 executed=FORWARD_25:done total=$0.00 
+18:19:48 seed 3000 step 45: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 46: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 47: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 48: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 49: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 50: 0.0s 6 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 51: 0.0s 7 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 52: 0.0s 8 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 53: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 54: 0.0s 3 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 55: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 56: 0.0s 5 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+18:19:48 seed 3000 step 57: 0.0s 4 calls $0.000 valid=True fallback=False fix=None decision=DONE executed=None total=$0.00 
+18:19:48 seed 3000: episode ended by DONE (decision) after 58 steps
+| Measure | B2 |
+| --- | --- |
+| Episode end | DONE (decision) |
+| Steps | 58 |
+| Moves executed | 57 |
+| Moves by type | F_10 1, F_25 6, L_30 39, R_30 11 |
+| Path length (odometry, m) | 1.60 |
+| Refused move calls (reasons) | 0 |
+| Steps without an executed move | 1 |
+| Fallbacks / repaired reports | 0 / 0 |
+| ATE (cm) | 2.3 |
+| B0 ATE on the same odometry (cm) | 1.4 |
+| Final position error (cm) | 1.7 |
+| B0 final position error (cm) | 1.7 |
+| Final heading error (deg) | 2.5 |
+| Steps with a full fix / a position fix (%) | 0.0 / 41.4 |
+| Heading RMSE (deg) | 1.6 |
+| Tags found within 0.30 m / in the world | 14 / 20 |
+| Tags ever detected | 14 |
+| Map entries (confirmed, phantoms) | 14 (12, 0) |
+| Map RMSE (cm) | 4.4 |
+| Map precision / recall | 1.00 / 0.70 |
+| Association precision / recall | 1.00 / 1.00 |
+| Tool calls (per step) | 286 (4.9) |
+| Estimation-tool F1 vs the procedure (P / R) | 1.000 (1.000 / 1.000) |
+| Decision = procedure's / memory = procedure's | 1.000 / 1.000 |
+| State violations: pose / map entries | 0 of 58 / 0 |
+| Time per step: mean / median / max (s) | 0.0 / 0.0 / 0.0 |
+| Episode time (min) | 0.0 |
+| Tokens: input (cached) / output | 0 (0) / 0 |
+| Cost (US$): episode / per step | 0.00 / 0.000 |
+18:19:48 seed 3000: ended by DONE (decision) after 58 steps
+18:19:48 done: total spent $0.00; failed seeds: none; stopped at the cap: none

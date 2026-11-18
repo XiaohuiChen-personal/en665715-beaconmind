@@ -30,7 +30,8 @@ obs_id"; M2.T1: the `move` tool is the only path to motion):
 
 How an episode ends (C9.2 `ended_by`): the report's decision is DONE (`DONE`) or STOPPED (`STOPPED`); the latch is set
 by emergency_stop or the validator's auto-latch (`latch`); the step budget is used up (`budget`, detail `steps`, or
-`max_steps` for a shortened run); MAX_IDLE_STEPS consecutive steps executed no move (`error`, detail `no_progress`:
+`max_steps` for a shortened run); the driver itself stops (`error`, detail `driver stopped`: B2 on a branch the
+procedure does not implement); MAX_IDLE_STEPS consecutive steps executed no move (`error`, detail `no_progress`:
 nobody answers an ASK in an unattended run, and a model that never calls `move` would otherwise idle to the budget).
 The USD cap does not end an episode: the unfinished step is left unwritten and a rerun resumes it.
 
@@ -196,15 +197,16 @@ class RawStepEnv:
         return self._sense(self.sim.step(action), action)
 
 
-def room_env(world, start_pose=None, preset="camera", max_range_m=2.0, odometry="study"):
+def room_env(world, start_pose=None, preset="camera", max_range_m=2.0, odometry="study", drive_inset_m=0.0):
     """envs/kinsim_room.py KinSimEnv for a world file (the real room) behind the protocol."""
     from beaconmind.envs import kinsim_room as kr
-    sim = kr.KinSimEnv.room(world, start_pose=start_pose, preset_name=preset, max_range_m=max_range_m, odometry=odometry)
+    sim = kr.KinSimEnv.room(world, start_pose=start_pose, preset_name=preset, max_range_m=max_range_m, odometry=odometry,
+                            drive_inset_m=drive_inset_m)
 
     def describe(s):
         return {"env": "kinsim_room", "world_file": str(world) if not isinstance(world, dict) else None,
                 "start_pose": start_pose, "preset": preset, "max_range_m": max_range_m, "odometry": odometry,
-                "noise": s.noise, "carpet": s.carpet, "wall_limit_m": s.wall_limit_m, "scene": s.scene,
+                "drive_inset_m": drive_inset_m, "session": getattr(s, "session", None), "noise": s.noise, "carpet": s.carpet, "wall_limit_m": s.wall_limit_m, "scene": s.scene,
                 "world": s.world, "contacts_simulated": False}
 
     def idle(s):
@@ -216,14 +218,37 @@ def room_env(world, start_pose=None, preset="camera", max_range_m=2.0, odometry=
 # ---------------------------------------------------------------- drivers
 
 class B2Driver:
-    """The coded procedure (kinsim_lite.estimate_step + decide_step) as a driver with the provider interface: it
-    makes its tool calls through the same dispatcher as a model, including `move`, and answers with its report as
-    JSON text. Free and deterministic: the reference for every closed-loop episode."""
+    """The coded procedure as a driver with the provider interface: it makes its tool calls through the same
+    dispatcher as a model, including `move`, and answers with its report as JSON text. Free and deterministic: the
+    reference for every closed-loop episode.
+
+    `policy(raw, prev_report) -> (report, calls, est)` is the procedure: by default the frozen kinsim_lite one
+    (estimate_step + decide_step, as kinsim_lite.run_episode applies it); for the room, envs/kinsim_room.py
+    `make_b2_policy()` (the same code plus the dead-end branch the square never needed). A branch the procedure does
+    not implement stops the episode (`stop` in the step record; the loop ends it as `error`, "driver stopped")."""
 
     arm, provider = "B2", "coded_procedure"
 
+    def __init__(self, policy=None, policy_name="kinsim_lite"):
+        self.policy, self.policy_name = policy or self._frozen, policy_name
+
+    @staticmethod
+    def _frozen(raw, prev):
+        est = ks.estimate_step(raw, prev)
+        mem = ks.initial_memory() if prev is None else prev["memory"]
+        decision, m2 = ks.decide_step(est, mem, raw["safety"], raw["counters"]["steps_left"])
+        for e in est["new_entries"]:
+            e["first_seen_scan"] = m2["scan_index"]
+        report = {"step": raw["step"], "mode": "closed_loop", "mission": MISSION, "pose": ks.rp(est["pose"]),
+                  "pose_source": est["pose_source"],
+                  "associations": [{k: v for k, v in a.items() if k != "conflict"} for a, _ in est["assoc"]],
+                  "loop_closure": est["loop_closure"], "map": est["new_map"], "memory": m2, "decision": decision,
+                  "move_result": "not_called", "requested_mission": None, "message": None, "note": None}
+        return report, est["calls"], est
+
     def header(self):
-        return {"provider": self.provider, "settings": None, "price_usd_per_mtok": None, "max_turns": None}
+        return {"provider": self.provider, "settings": {"policy": self.policy_name}, "price_usd_per_mtok": None,
+                "max_turns": None}
 
     def step(self, system_text, obs, prev, budget, log, sample_key=None):
         t0 = time.perf_counter()
@@ -234,27 +259,25 @@ class B2Driver:
             calls.append({"tool": name, "args": args, "result": res})
             return res
 
+        def out(final, error, stop=None):
+            rec = {"final_text": final, "calls": calls, "turns": [], "state": state, "error": error,
+                   "seconds": round(time.perf_counter() - t0, 3), "cost_usd": 0.0}
+            if stop:
+                rec["stop"] = stop
+            return rec
+
         try:
-            est = ks.estimate_step(obs, prev)
-            for name, args in est["calls"]:
-                call(name, args)
-            mem = ks.initial_memory() if prev is None else prev["memory"]
-            decision, m2 = ks.decide_step(est, mem, obs["safety"], obs["counters"]["steps_left"])
-        except (NotImplementedError, ks.GoldUnavailable, KeyError, TypeError) as exc:
-            return {"final_text": None, "calls": calls, "turns": [], "state": state,
-                    "error": "B2 cannot process this step: %s: %s" % (type(exc).__name__, exc),
-                    "seconds": round(time.perf_counter() - t0, 3), "cost_usd": 0.0}
+            report, gold, est = self.policy(obs, prev)
+        except NotImplementedError as exc:
+            return out(None, "B2 stopped: %s" % exc, stop="B2 stopped: %s" % exc)
+        except (ks.GoldUnavailable, KeyError, TypeError) as exc:
+            return out(None, "B2 cannot process this step: %s: %s" % (type(exc).__name__, exc))
+        for name, args in gold:
+            call(name, args)
         call("exploration_summary", {"pose": est["pose"]})
-        for e in est["new_entries"]:
-            e["first_seen_scan"] = m2["scan_index"]
-        move_result = call("move", {"action": decision})["result"] if decision in vd.MOVES else "not_called"
-        report = {"step": obs["step"], "mode": "closed_loop", "mission": MISSION, "pose": ks.rp(est["pose"]),
-                  "pose_source": est["pose_source"],
-                  "associations": [{k: v for k, v in a.items() if k != "conflict"} for a, _ in est["assoc"]],
-                  "loop_closure": est["loop_closure"], "map": est["new_map"], "memory": m2, "decision": decision,
-                  "move_result": move_result, "requested_mission": None, "message": None, "note": None}
-        return {"final_text": json.dumps(report), "calls": calls, "turns": [], "state": state, "error": None,
-                "seconds": round(time.perf_counter() - t0, 3), "cost_usd": 0.0}
+        decision = report["decision"]
+        report["move_result"] = call("move", {"action": decision})["result"] if decision in vd.MOVES else "not_called"
+        return out(json.dumps(report), None)
 
 
 def price_cost(usage, price):
@@ -508,6 +531,8 @@ def run_episode(agent, system_text, env, seed, out_path, budget, max_steps=STEPS
         idle = 0 if (executed and executed["result"] in vd.MOTION_RESULTS) else idle + 1
         if ep.val.latched:
             end = ("latch", ep.val.latch_reason)
+        elif out.get("stop"):
+            end = ("error", "driver stopped: %s" % out["stop"])
         elif decision == "DONE":
             end = ("DONE", "decision")
         elif decision == "STOPPED":

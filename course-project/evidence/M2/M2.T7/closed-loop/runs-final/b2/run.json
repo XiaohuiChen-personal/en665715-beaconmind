@@ -1,0 +1,55 @@
+{
+ "driver": "b2",
+ "provider_entry": null,
+ "agent": {
+  "provider": "coded_procedure",
+  "settings": {
+   "policy": "kinsim_room.make_b2_policy()"
+  },
+  "price_usd_per_mtok": null,
+  "max_turns": null
+ },
+ "arm": "B2",
+ "max_steps": 150,
+ "env": {
+  "env": "room",
+  "start": "2.5,1.5,90",
+  "preset": "camera",
+  "max_range": 3.0,
+  "odometry": "study",
+  "drive_inset": 0.4,
+  "world_sha12": "5fbd24da13ce"
+ },
+ "max_idle_steps": 3,
+ "autolatch_contacts": 2,
+ "sha12": {
+  "prompt": "807e29927b2b",
+  "dv.json": "be20213dd9c9",
+  "providers_file": null,
+  "geometry.py": "f7fc3d27c000",
+  "dv.py": "692a77bfad86",
+  "envs/kinsim_lite.py": "4fe853bf47ac",
+  "envs/kinsim_room.py": "33a3c5d49239",
+  "harness/tools_d5.py": "61305f0008df",
+  "harness/replay.py": "27a210633184",
+  "harness/providers/anthropic_messages.py": "705c14614a2d",
+  "harness/closed_loop.py": "e3764ab6480d",
+  "harness/validator.py": "f713f548012e"
+ },
+ "config": "1c09f76c1651",
+ "run_id": "b2",
+ "prompt_file": "robot_system_prompt_v3.3-room.txt",
+ "provider_file": null,
+ "seeds": [
+  3000
+ ],
+ "cap_usd": 0.0,
+ "world_file": "/workspace/course-project/configs/arenas/real-room-plus8-160mm-nominal.json",
+ "git_commit": "898f3d0533aa",
+ "git_dirty": "41",
+ "host": "spark-2a60",
+ "python": "3.10.12",
+ "resume_reason": null,
+ "earlier_resumes": 0,
+ "started": "2026-11-18T18:19:47+0000"
+}

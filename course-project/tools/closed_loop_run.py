@@ -12,7 +12,9 @@ env_file, and passes the git commit); B2 needs no key and also runs on any host 
   configs/providers_demo.json whose provider is anthropic_messages. The frozen `claude-opus-5-5` entry runs with the
   study's request settings unchanged; other entries take model, max_tokens and effort from their `options`.
 - --env square: the study's 2.25 m arena (envs/kinsim_lite.py; the seed picks the world and the noise).
-  --env room: envs/kinsim_room.py on --world with --start, --preset, --max-range, --odometry (the seed picks the noise).
+  --env room: envs/kinsim_room.py on --world with --start, --preset, --max-range, --odometry, --drive-inset (the seed
+  picks the noise); B2 is then kinsim_room.make_b2_policy(). --prompt selects the system prompt (default: the
+  study's frozen v3.3; prompts/robot_system_prompt_v3.3-room.txt states the room's 3.0 m range limit).
 - The spend cap is hard: spend is appended to <out>/spend.jsonl as it happens (and counted again on a resume), no
   request is sent once it is reached, and an API driver needs a positive --cap-usd. If the project ledger
   data/budget/ledger.jsonl (plan C13) exists, one line per paid episode is appended to it.
@@ -108,9 +110,12 @@ def anthropic_settings(key, cfg):
              "cache_read": p["cached_input"], "output": p["output"]})
 
 
-def build_driver(key, with_client=True):
+def build_driver(key, with_client=True, room=False):
     """(driver, provider entry or None, provider file or None, sdk versions)."""
     if key.lower() == "b2":
+        if room:        # the room needs the dead-end branch the square never reaches (kinsim_room.make_b2_policy)
+            from beaconmind.envs import kinsim_room as kr
+            return cl.B2Driver(kr.make_b2_policy(), "kinsim_room.make_b2_policy()"), None, None, {}
         return cl.B2Driver(), None, None, {}
     cfg, path = provider_entry(key)
     if cfg["provider"] != "anthropic_messages":
@@ -136,11 +141,12 @@ def build_env(args):
     if args.start:
         x, y, th = (float(v) for v in args.start.split(","))
         start = {"x_m": x, "y_m": y, "theta_deg": th}
-    return cl.room_env(args.world, start_pose=start, preset=args.preset, max_range_m=args.max_range, odometry=args.odometry)
+    return cl.room_env(args.world, start_pose=start, preset=args.preset, max_range_m=args.max_range, odometry=args.odometry,
+                       drive_inset_m=args.drive_inset)
 
 
 def env_args(args):
-    keys = ("env",) if args.env == "square" else ("env", "start", "preset", "max_range", "odometry")
+    keys = ("env",) if args.env == "square" else ("env", "start", "preset", "max_range", "odometry", "drive_inset")
     out = {k: getattr(args, k) for k in keys}
     if args.env == "room":
         out["world_sha12"] = sha12(args.world)
@@ -168,6 +174,7 @@ def main():
     ap.add_argument("--preset", default="camera", help="room: noise preset of envs/kinsim_room.py")
     ap.add_argument("--max-range", type=float, default=2.0, help="room: detection range limit (m)")
     ap.add_argument("--odometry", default="study", help="room: study or carpet")
+    ap.add_argument("--drive-inset", type=float, default=0.0, help="room: driving area moved in from every wall (m)")
     ap.add_argument("--seeds", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--max-steps", type=int, default=cl.STEPS_BUDGET)
@@ -181,7 +188,7 @@ def main():
     if not 1 <= args.max_steps <= cl.STEPS_BUDGET:
         sys.exit("--max-steps must be 1..%d (the EXPLORE step budget)" % cl.STEPS_BUDGET)
 
-    driver, cfg, cfg_path, sdk = build_driver(args.driver)
+    driver, cfg, cfg_path, sdk = build_driver(args.driver, room=args.env == "room")
     paid = cfg is not None
     if paid and args.cap_usd <= 0:
         sys.exit("an API driver needs a positive --cap-usd")
@@ -216,6 +223,7 @@ def main():
     run_id = out_dir.name
     header = dict(invariant, config=config, run_id=run_id, prompt_file=pathlib.Path(args.prompt).name,
                   provider_file=cfg_path.name if cfg_path else None, seeds=seeds, cap_usd=args.cap_usd,
+                  world_file=args.world,
                   git_commit=os.environ.get("BM_GIT_COMMIT"), git_dirty=os.environ.get("BM_GIT_DIRTY"),
                   host=os.environ.get("BM_HOST"), python=sys.version.split()[0], **sdk,
                   resume_reason=args.resume_reason, earlier_resumes=len(resumes),

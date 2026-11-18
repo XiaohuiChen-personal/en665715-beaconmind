@@ -13,13 +13,20 @@ is checked, executed in the simulator, and decides what it sees next. The pieces
 pre-registration (prompt v3.3, tools, provider tool loop, report parser, fallback and repair rules, counter rule) are
 imported unchanged; `prereg_freeze.py --verify` still prints OK (`prereg_verify.txt`).
 
-**Result in one paragraph.** One EXPLORE episode each of Claude Opus 5.5 and Claude Fable 5.2 in the simulated real
-room (nominal tag layout, start (2.2, 2.6, 90°), measured-camera visibility, 2.0 m range, noise seed 1), and the coded
-procedure B2 on the same world. **Both models made exactly the 45 moves B2 made, in the same order, and ended with
-DONE at step 45**; no move was refused, no report was invalid. All three mapped 3 of the 12 tags in the simulator version these
-runs used (a later version of the room simulator sees more: B2 then maps 5; see "What went wrong"). Cost US$2.01 (Opus 5.5)
-and US$3.53 (Fable 5.2); about 10 s a step for both. **n = 1 episode per model: no difference between the models is
-statistically established.**
+**Result in one paragraph (final episodes, 2026-11-18, final room simulator).** One EXPLORE episode each of
+Claude Opus 5.5, Claude Fable 5.2 and the coded procedure B2 in the simulated real room: 20-tag nominal layout,
+start S1 (2.50, 1.50, 90°), measured-camera visibility, 3.0 m range limit, 0.4 m inset of the driving area, noise
+seed 3000. All three ended with DONE and mapped 14 of the 20 tags with no phantom; ATE 2.3 cm for all three; no
+move was refused, no report was invalid, no emergency stop. **The two models made the identical 55 moves (56
+steps); B2 made 57 (58 steps).** The models left B2's path at step 35, and the cause is one rounding: at step 31
+each passed a two-decimal pose to `exploration_summary` and was told a 1-move leg where the procedure's unrounded
+pose gives 2. On their own inputs both models decided what the coded procedure decides at every step. Cost
+US$4.60 (Opus 5.5) and US$8.33 (Fable 5.2); about 20 s a step for both. **n = 1 episode per arm: no difference
+between the models is statistically established, and the episode shows agreement with the coded procedure, not a
+difference in driving.**
+
+A first pair of episodes, run earlier the same night on a draft of the room simulator, is kept below, labelled
+superseded.
 
 ## Files
 
@@ -122,7 +129,7 @@ retention on the account; the requests were accepted. Fable prices are from the 
 Claude Code (cached 2026-11-03); the frozen loop books Opus prices, so the Fable driver books the difference per
 turn and the spend cap counts real dollars (tested).
 
-## Commands
+## Commands (tests, and the first pair)
 
 ```bash
 # Mac: tests
@@ -144,7 +151,122 @@ The room configuration is `KinSimEnv.room`'s defaults as of this run (`envs/kins
 from `configs/camera.json`), 2.0 m range limit, the study's odometry noise (not the `carpet` option). The seed (1)
 selects the noise stream. The tag positions are the mounting sheet's **nominal** ones, not measurements.
 
-## Smoke tests (3 steps each, room)
+## Final episodes (final room simulator, 2026-11-18 12:19 to 12:39 CST)
+
+Configuration, set by the lead and identical for the three arms:
+
+| Item | Value |
+| --- | --- |
+| Simulator | `envs/kinsim_room.py`, SHA-256 prefix `33a3c5d49239` (final; unchanged since commit `ea6263f`) |
+| World | `configs/arenas/real-room-plus8-160mm-nominal.json` (layout C20: 20 tags, 160 mm, **nominal** positions), SHA-256 prefix `5fbd24da13ce` |
+| Start pose | S1 of `configs/arenas/real-room-scenarios.json`: (2.50, 1.50, 90°) in the room frame |
+| Sensing | `camera` preset (`beaconmind.camera_model`), range limit 3.0 m |
+| Odometry | `study` preset; noise seed 3000 |
+| Driving area | inset 0.4 m from every side |
+| Design values | the frozen `configs/dv.json`, no sigma override |
+| Prompt | `prompts/robot_system_prompt_v3.3-room.txt` (SHA-256 prefix `807e29927b2b`), see the deviation below |
+| B2 | `kinsim_room.make_b2_policy()` through the same loop and tools |
+| Spend caps | US$8 (Opus 5.5), US$14 (Fable 5.2); neither was reached |
+
+**Documented deviation from the study prompt.** The frozen v3.3 prompt says "rejected if ... range_m > 2.0", which
+contradicts a 3.0 m range limit. The frozen file is untouched; the room variant differs from it in that one number
+and nothing else (`diff prompts/robot_system_prompt_v3.3.txt prompts/robot_system_prompt_v3.3-room.txt`):
+
+```
+33c33
+< 3 Per detection: rejected if quality < 0.5, range_m > 2.0, or a non-null id outside 0-29. ...
+---
+> 3 Per detection: rejected if quality < 0.5, range_m > 3.0, or a non-null id outside 0-29. ...
+```
+
+The variant file carries no comment line of its own because every character of it is sent to the model; it was made
+by Claude Fable 5.2 via Claude Code on 2026-11-18 by replacing that number. So these episodes are **not** runs of the
+study's prompt, and their numbers are not comparable with the study's replay results on that account either.
+
+```bash
+# Spark; D=course-project/data/closed-loop/20261118-room-final
+W="--env room --world course-project/configs/arenas/real-room-plus8-160mm-nominal.json --start 2.5,1.5,90 --preset camera \
+   --max-range 3.0 --odometry study --drive-inset 0.4 --seeds 3000 --prompt course-project/prompts/robot_system_prompt_v3.3-room.txt"
+bash course-project/tools/closed_loop_run.sh --driver b2               $W --cap-usd 0  --out $D/b2
+bash course-project/tools/closed_loop_run.sh --driver claude-opus-5-5  $W --cap-usd 8  --out $D/claude-opus-5-5     # tmux bm-cl-opus
+bash course-project/tools/closed_loop_run.sh --driver claude-fable-5-2 $W --cap-usd 14 --out $D/claude-fable-5-2    # tmux bm-cl-fable
+```
+
+| Measure | Opus 5.5 | Fable 5.2 | B2 (coded procedure) |
+| --- | --- | --- | --- |
+| Outcome | DONE (decision), not capped | DONE (decision), not capped | DONE (decision) |
+| Steps | 56 | 56 | 58 |
+| Moves executed | 55 | 55 | 57 |
+| Moves by type | F_25 6, L_30 44, R_30 5 | F_25 6, L_30 44, R_30 5 | F_10 1, F_25 6, L_30 39, R_30 11 |
+| Path length (odometry, m) | 1.51 | 1.51 | 1.60 |
+| Validator rejections (refused move calls) | 0 | 0 | 0 |
+| Emergency stops | 0 | 0 | 0 |
+| Fallbacks / repaired reports | 0 / 0 | 0 / 0 | 0 / 0 |
+| ATE (cm) | 2.3 | 2.3 | 2.3 |
+| B0 (dead reckoning) ATE on the same odometry (cm) | 1.5 | 1.5 | 1.4 |
+| Final position error (cm) | 2.0 | 2.0 | 1.7 |
+| B0 final position error (cm) | 2.2 | 2.2 | 1.7 |
+| Final heading error (deg) | 1.8 | 1.8 | 2.5 |
+| Heading RMSE (deg) | 1.3 | 1.3 | 1.6 |
+| Steps with a full fix / a position fix | 0 % / 37.5 % (21 of 56) | 0 % / 37.5 % (21 of 56) | 0 % / 41.4 % (24 of 58) |
+| Tags mapped within 0.30 m / in the world | 14 / 20 | 14 / 20 | 14 / 20 |
+| Tags ever detected | 14 | 14 | 14 |
+| Map entries (confirmed, phantoms) | 14 (12, 0) | 14 (12, 0) | 14 (12, 0) |
+| Map RMSE (cm) | 4.6 | 4.5 | 4.4 |
+| Association precision / recall | 1.00 / 1.00 | 1.00 / 1.00 | 1.00 / 1.00 |
+| Tool calls (per step) | 280 (5.0) | 286 (5.1) | 286 (4.9) |
+| Estimation-tool F1 against the procedure (P / R) | 0.985 (0.971 / 1.000) | 0.973 (0.948 / 1.000) | 1.000 |
+| Decision equals the procedure's on the arm's own input / memory equals | 1.000 / 0.982 | 1.000 / 0.982 | 1.000 / 1.000 |
+| State violations: pose / map entries | 0 of 56 / 0 | 0 of 56 / 0 | 0 of 58 / 0 |
+| Invalid tool calls | 2 | 0 | 0 |
+| Model turns (per step) | 286 (5.1) | 248 (4.4) | none |
+| Time per step: mean / median / 95th percentile / max (s) | 20.2 / 21.3 / 25.0 / 29.5 | 18.7 / 19.6 / 23.7 / 26.5 | 0.0 |
+| Wall time of the episode (min) | 18.8 | 17.5 | 0.0 |
+| Tokens: input (of which cached) / output | 3,164,131 (2,908,947) / 137,258 | 2,737,356 (2,483,218) / 132,409 | none |
+| Cost (US$): episode / per step | 4.60 / 0.082 | 8.33 / 0.149 | 0 |
+
+How to read it:
+
+- **n = 1 per arm.** One world, one start, one noise seed, one sample of each model. Nothing here supports a
+  statement that one model is better than the other, or than B2.
+- **Opus 5.5 against Fable 5.2: the same episode.** Both made the identical 55 moves, so they received the identical
+  56 observations (checked row for row) and wrote the same pose at 55 of 56 steps. What differs: Fable 5.2 made 6
+  more tool calls (8 more `gate_detection`, 2 more `exploration_summary`, 2 fewer `update_beacon` and `fix_pose`),
+  9 estimation calls the procedure does not make against Opus 5.5's 5; Opus 5.5 called `fix_pose` twice with an
+  empty match list (a tool error it recovered from), Fable 5.2 never; Fable 5.2 used fewer turns (248 against 286)
+  and 1.3 minutes less; it cost 1.81 times as much. Map RMSE 4.5 against 4.6 cm comes from map entries written
+  1 cm apart. With one episode each, none of these is more than an observation.
+- **Where the models left B2's path, and why it is not a driving decision.** Steps 0 to 34 are move for move
+  B2's. At step 31 the procedure chooses a leg toward the −60° sector and reads its `max_leg_moves` from
+  `exploration_summary`. B2 calls the tool with its unrounded pose (−0.4392, −0.2389) and gets 2; Opus 5.5 called it
+  with the two-decimal pose of its report (−0.44, −0.24) and Fable 5.2 with the prior pose (−0.46, −0.23), and both
+  got 1 (the wall estimate in that sector moved from 1.18 m to 1.07 m). Their leg therefore ended one move earlier;
+  at step 35 B2 took the leg's second forward move (FORWARD_10) and the models chose the next leg (the 90° sector),
+  which is exactly what the coded procedure decides from the models' own state. From then on the trajectories
+  differ: the models finished two steps earlier, with the same 14 tags. The prompt gives poses to two decimals and
+  tool results come back with three, so a threshold inside a tool can flip on that rounding; the study's replay could
+  not show this, because there the moves were the log's.
+- **Agreement with the coded procedure, not a difference in driving.** On its own input every one of the 112 model
+  decisions equals the coded procedure's. This episode is evidence that both models execute the written procedure
+  in a closed loop (validated, executed moves; no fallback), not evidence about how either would drive where the
+  procedure is silent.
+- **No full fix in any arm; a position fix on 37.5 % to 41.4 % of steps.** Two confirmed tags were seldom in one
+  picture, and when they were the full fix was not well conditioned (the models say so in their notes).
+- **Dead reckoning (B0) is again at least as good as every arm on ATE** (1.4 to 1.5 cm against 2.3 cm): 1.5 m of
+  travel with the study's small odometry noise and no drift, so there is little for a position fix to correct.
+- **14 of 20 tags are mapped by every arm.** The procedure ends by rule E1 after two scans without a new beacon.
+- **The validator never had to refuse**: all 110 model `move` calls were allowed by the flags the model had been
+  given, accepted by both checks and executed. `seed_3000.moves.jsonl` lists each commanded move and its result.
+- Time per step doubled against the first pair (20 s against 10 s) because most steps of this episode had
+  detections to associate (5 turns a step against 4).
+
+## First pair, superseded (draft room simulator, 02:37 to 02:47 CST)
+
+Kept as the first run. It is superseded because it ran on a draft of the room simulator (`envs/kinsim_room.py`
+SHA-256 prefix `eefded236771`, never committed) with the 12-tag world, the 2.0 m limit and the frozen v3.3 prompt;
+the final simulator's camera model sees tags that draft did not. Its numbers must not be quoted as the rehearsal.
+
+### Smoke tests (3 steps each, room, draft simulator)
 
 | | Opus 5.5 | Fable 5.2 |
 | --- | --- | --- |
@@ -154,7 +276,7 @@ selects the noise stream. The tag positions are the mounting sheet's **nominal**
 | Mean time per step | 8.1 s | 6.4 s |
 | Cost | US$0.13 | US$0.24 |
 
-## Full episodes (room, noise seed 1; one episode per arm)
+### Full episodes of the first pair (12-tag room, noise seed 1; one episode per arm)
 
 | Measure | Opus 5.5 | Fable 5.2 | B2 (coded procedure) |
 | --- | --- | --- | --- |
@@ -223,7 +345,7 @@ How to read it:
 
 ## The validator acting
 
-**In the two full episodes the validator never had to refuse**: every one of the 90 model `move` calls was allowed
+**In no real episode did the validator have to refuse.** In the first pair every one of the 90 model `move` calls was allowed
 by the safety flags the model had been given, was accepted by the dispatcher and by the second check, and was
 executed. At step 44, where `forward_allowed` was empty, both models turned. One executed step as logged
 (Opus 5.5, step 14):
@@ -300,23 +422,26 @@ executor must itself enforce the caps of C2 (the simulators' own wall check is t
 
 ## Where the logs are
 
-Git-ignored, `course-project/data/closed-loop/20261118-room/` on the Spark, with a copy on the Mac (2.9 MB in all):
+Git-ignored, under `course-project/data/closed-loop/` on the Spark, with a copy on the Mac:
 
 | Folder | Content | Size |
 | --- | --- | --- |
-| `claude-opus-5-5/` | `seed_1.jsonl` (46 step rows, 584 kB), `seed_1.runlog.jsonl` (C9.2, 454 kB), `seed_1.summary.json`, `seed_1.world.json`, `run.json`, `spend.jsonl` | 1.0 MB |
-| `claude-fable-5-2/` | the same | 1.0 MB |
-| `b2/` | the same, no spend | 764 kB |
-| `smoke-claude-opus-5-5/`, `smoke-claude-fable-5-2/` | 3-step runs | 76 kB each |
+| `20261118-room-final/claude-opus-5-5/` | `seed_3000.jsonl` (56 step rows, 1.3 MB), `seed_3000.runlog.jsonl` (C9.2, 1.1 MB), `seed_3000.moves.jsonl`, `seed_3000.summary.json`, `seed_3000.world.json`, `run.json`, `spend.jsonl` | 2.3 MB |
+| `20261118-room-final/claude-fable-5-2/` | the same | 2.3 MB |
+| `20261118-room-final/b2/` | the same, no spend | 2.0 MB |
+| `20261118-room/` (first pair, superseded) | `claude-opus-5-5/`, `claude-fable-5-2/`, `b2/` (seed 1), two 3-step smoke folders | 2.9 MB |
 
-Copied here (`runs/<arm>/`): `run.json` (configuration tag, file hashes, request settings), `seed_1.summary.json`,
-`run.end-*.json`, and the terminal log of the three full runs. Also here: `scripted_validator_trace.json`,
-`pytest_mac.txt`, `prereg_verify.txt`.
+Copied here: `runs-final/<arm>/` and, for the first pair, `runs/<arm>/`, each with `run.json` (configuration tag,
+file hashes, request settings), the episode summary, `run.end-*.json` and the terminal log. Also here:
+`scripted_validator_trace.json`, `pytest_mac.txt`, `prereg_verify.txt`. The final runs' `run.json` shows git commit
+`898f3d0` with uncommitted files: the Spark clone had not been pulled, and the code was copied over it with
+`tools/sync_to_spark.sh`; the file hashes in `run.json` identify what ran (`harness/closed_loop.py` `e3764ab6480d`,
+`harness/validator.py` `f713f548012e`, `envs/kinsim_room.py` `33a3c5d49239`).
 
-**Spend:** smoke US$0.13 + US$0.24, full episodes US$2.01 + US$3.53, **total US$5.91** of the approved US$40. The
-plan's project ledger (`data/budget/ledger.jsonl`, C13) does not exist on the Spark, so, like `replay_run.py`, the
-runner recorded spend in each run folder's `spend.jsonl`; it appends a C13 line per paid episode only if that ledger
-exists.
+**Spend:** first pair US$5.91 (smoke 0.13 + 0.24, episodes 2.01 + 3.53); final episodes US$4.60 + US$8.33 =
+US$12.93; **total US$18.84**. The plan's project ledger (`data/budget/ledger.jsonl`, C13) does not exist on the
+Spark, so, like `replay_run.py`, the runner recorded spend in each run folder's `spend.jsonl`; it appends a C13 line
+per paid episode only if that ledger exists.
 
 ## What went wrong or is not as clean as it should be
 
@@ -334,8 +459,8 @@ exists.
   unused import was removed. Neither is on the path the runs took (no resume, no refusal); the B2 parity tests on
   the study square and in the room pass with the final code. Because the configuration tag hashes these files, the
   run folders cannot be resumed (they are complete).
-- **The episode did not exercise the validator's refusals or any branching**, so it is a weak test of "the model
-  chooses": the models chose what the procedure chooses, on an easy episode. A scenario that makes the loop branch
+- **Neither pair exercised the validator's refusals**, and the only branch (final episodes, step 35) came from a
+  rounding, so both are weak tests of "the model chooses": the models chose what the procedure chooses. A scenario that makes the loop branch
   (drift, a start near a wall, the `carpet` odometry, 2.5 m range) was not run: the approved spend was for one
   episode per model.
 - **Thinking text is not in the logs.** The frozen request omits `thinking.display`, whose default returns empty

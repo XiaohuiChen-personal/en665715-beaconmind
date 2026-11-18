@@ -408,10 +408,11 @@ def test_b2_in_the_room_reproduces_the_room_simulators_own_episode(tmp_path):
     world = beaconmind.course_root() / "configs" / "arenas" / "real-room-nominal.json"
     if not world.exists():
         pytest.skip("no room world file")
-    ref = kr.run_episode(kr.KinSimEnv.room(str(world)), 1)
-    env = cl.room_env(str(world))
+    kw = dict(start_pose={"x_m": 2.5, "y_m": 1.5, "theta_deg": 90.0}, max_range_m=3.0, drive_inset_m=0.4)
+    ref = kr.run_episode(kr.KinSimEnv.room(str(world), **kw), 3000, policy=kr.make_b2_policy())
+    env = cl.room_env(str(world), **kw)
     path = tmp_path / "room.jsonl"
-    res = cl.run_episode(cl.B2Driver(), "", env, 1, path, rp.Budget(1e9), log=NOLOG)
+    res = cl.run_episode(cl.B2Driver(kr.make_b2_policy(), "room"), "", env, 3000, path, rp.Budget(1e9), log=NOLOG)
     rows = [json.loads(x) for x in path.read_text().splitlines()]
     assert len(rows) == len(ref["records"]) and res["complete"]
     for row, rec in zip(rows, ref["records"]):
@@ -724,3 +725,15 @@ def test_fuzz_nothing_reaches_the_executor_without_passing_the_validator(tmp_pat
             assert rows[-1]["step"] == latched_at and res["ended_by"] == "latch"
         assert all(-1.0 < r["truth"]["x_m"] < 1.25 and -1.0 < r["truth"]["y_m"] < 1.25 for r in rows)
     assert total_sent > 100 and total_refused > 100
+
+
+def test_b2_on_an_unimplemented_branch_stops_the_episode(tmp_path):
+    def policy(raw, prev):
+        if raw["step"] == 2:
+            raise NotImplementedError("E5 leg with no forward move and no E4")
+        return cl.B2Driver._frozen(raw, prev)
+    path = tmp_path / "b2.jsonl"
+    res = cl.run_episode(cl.B2Driver(policy, "test"), "", cl.KinsimSquareEnv(), 1010, path, rp.Budget(1e9), 10, NOLOG)
+    rows = [json.loads(x) for x in path.read_text().splitlines()]
+    assert res["ended_by"] == "error" and res["detail"].startswith("driver stopped: B2 stopped: E5 leg") and res["steps"] == 3
+    assert rows[2]["fallback"] is True and rows[2]["executed_move"] is None and rows[1]["executed_move"] is not None

@@ -76,6 +76,16 @@ def summarize(rows, world):
                emergency_stops=sum(1 for r in rows for c in r["calls"] if c.get("tool") == "emergency_stop"),
                path_length_m=sum(abs((r["raw"]["odometry"] or {}).get("forward_m", 0.0)) for r in rows))
 
+    # ---- pose sources of the reports carried forward (a fallback counts as odometry)
+    src = {}
+    for r in rows:
+        k = str((r["next_prev"] or {}).get("pose_source"))
+        src[k] = src.get(k, 0) + 1
+    full = src.get("beacon_fix", 0) + src.get("relocalised", 0)
+    out["pose_sources"] = dict(sorted(src.items()))
+    out["fix_share"] = {"full": full / n, "position": src.get("position_fix", 0) / n,
+                        "verified_full": sum(1 for r in rows if r.get("fix_verified") is True) / n}
+
     # ---- trajectory: the arm and B0 on the same odometry
     for name, poses in (("pose", [r["estimate_pose"] for r in rows]), ("b0", ks.dead_reckoning(rows))):
         e = pm.trajectory_errors(poses, truth)
@@ -164,6 +174,8 @@ def table(summaries):
         ("Final position error (cm)", lambda s: cm(s["pose"]["final_pos_m"])),
         ("B0 final position error (cm)", lambda s: cm(s["b0"]["final_pos_m"])),
         ("Final heading error (deg)", lambda s: f(s["pose"]["final_heading_deg"], "%.1f")),
+        ("Steps with a full fix / a position fix (%)", lambda s: "%.1f / %.1f" % (100 * s["fix_share"]["full"], 100 * s["fix_share"]["position"])
+            if "fix_share" in s else "n/a"),
         ("Heading RMSE (deg)", lambda s: f(s["pose"]["heading_rmse_deg"], "%.1f")),
         ("Tags found within 0.30 m / in the world", lambda s: "%d / %d" % (s["map"]["tags_found"], s["n_tags"])),
         ("Tags ever detected", lambda s: str(s["map"]["tags_ever_detected"])),

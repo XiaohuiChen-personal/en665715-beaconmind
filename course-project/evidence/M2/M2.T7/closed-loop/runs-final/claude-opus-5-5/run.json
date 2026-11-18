@@ -1,0 +1,82 @@
+{
+ "driver": "claude-opus-5-5",
+ "provider_entry": {
+  "provider": "anthropic_messages",
+  "model": "claude-opus-5-5",
+  "api_key_env": "ANTHROPIC_API_KEY",
+  "price_usd_per_mtok": {
+   "input": 4.0,
+   "cached_input": null,
+   "output": 20.0
+  },
+  "price_checked": "2026-09-27",
+  "options": {
+   "max_tokens": 64000,
+   "effort": "medium",
+   "thinking": "adaptive (field omitted)",
+   "prompt_caching": true,
+   "harness": "harness/providers/anthropic_messages.py SETTINGS"
+  }
+ },
+ "agent": {
+  "provider": "anthropic_messages",
+  "settings": {
+   "model": "claude-opus-5-5",
+   "max_tokens": 64000,
+   "output_config": {
+    "effort": "medium"
+   }
+  },
+  "price_usd_per_mtok": {
+   "input": 4.0,
+   "cache_write_5m": 5.0,
+   "cache_read": 0.2,
+   "output": 20.0
+  },
+  "max_turns": 30
+ },
+ "arm": "L2:claude-opus-5-5",
+ "max_steps": 150,
+ "env": {
+  "env": "room",
+  "start": "2.5,1.5,90",
+  "preset": "camera",
+  "max_range": 3.0,
+  "odometry": "study",
+  "drive_inset": 0.4,
+  "world_sha12": "5fbd24da13ce"
+ },
+ "max_idle_steps": 3,
+ "autolatch_contacts": 2,
+ "sha12": {
+  "prompt": "807e29927b2b",
+  "dv.json": "be20213dd9c9",
+  "providers_file": "60ada1c463ff",
+  "geometry.py": "f7fc3d27c000",
+  "dv.py": "692a77bfad86",
+  "envs/kinsim_lite.py": "4fe853bf47ac",
+  "envs/kinsim_room.py": "33a3c5d49239",
+  "harness/tools_d5.py": "61305f0008df",
+  "harness/replay.py": "27a210633184",
+  "harness/providers/anthropic_messages.py": "705c14614a2d",
+  "harness/closed_loop.py": "e3764ab6480d",
+  "harness/validator.py": "f713f548012e"
+ },
+ "config": "d1cafbcc0bf0",
+ "run_id": "claude-opus-5-5",
+ "prompt_file": "robot_system_prompt_v3.3-room.txt",
+ "provider_file": "providers.json",
+ "seeds": [
+  3000
+ ],
+ "cap_usd": 8.0,
+ "world_file": "/workspace/course-project/configs/arenas/real-room-plus8-160mm-nominal.json",
+ "git_commit": "898f3d0533aa",
+ "git_dirty": "41",
+ "host": "spark-2a60",
+ "python": "3.10.12",
+ "anthropic_sdk": "1.11.0",
+ "resume_reason": null,
+ "earlier_resumes": 0,
+ "started": "2026-11-18T18:19:50+0000"
+}

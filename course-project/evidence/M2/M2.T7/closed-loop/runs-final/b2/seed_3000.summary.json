@@ -1,0 +1,128 @@
+{
+ "arm": "B2",
+ "seed": 3000,
+ "steps": 58,
+ "ended_by": "DONE",
+ "detail": "decision",
+ "n_tags": 20,
+ "n_dup_ids": 3,
+ "moves_executed": 57,
+ "moves_by_type": {
+  "FORWARD_10": 1,
+  "FORWARD_25": 6,
+  "TURN_LEFT_30": 39,
+  "TURN_RIGHT_30": 11
+ },
+ "move_results": {
+  "done": 57
+ },
+ "move_calls": 57,
+ "refused_move_calls": 0,
+ "refused_by_reason": {},
+ "violations_by_code": {},
+ "steps_without_move": 1,
+ "fallbacks": 0,
+ "repaired_reports": 0,
+ "valid_rate": 1.0,
+ "step_errors": 0,
+ "emergency_stops": 0,
+ "path_length_m": 1.6,
+ "pose_sources": {
+  "odometry": 34,
+  "position_fix": 24
+ },
+ "fix_share": {
+  "full": 0.0,
+  "position": 0.41379310344827586,
+  "verified_full": 0.0
+ },
+ "pose": {
+  "ate_m": 0.02331060604327649,
+  "heading_rmse_deg": 1.6175758789429118,
+  "final_pos_m": 0.01736246633862233,
+  "final_heading_deg": 2.5,
+  "max_pos_m": 0.06511475263174596
+ },
+ "b0": {
+  "ate_m": 0.013726538918287744,
+  "heading_rmse_deg": 1.6175758789429264,
+  "final_pos_m": 0.017308127031942504,
+  "final_heading_deg": 2.500000000000014,
+  "max_pos_m": 0.01785824852481653
+ },
+ "map": {
+  "map_rmse_m": 0.04371416900077792,
+  "map_precision": 1.0,
+  "map_recall": 0.7,
+  "phantoms": 0,
+  "n_entries": 14,
+  "confirmed": 12,
+  "tags_found": 14,
+  "tags_ever_detected": 14,
+  "assoc_precision": 1.0,
+  "assoc_recall": 1.0,
+  "assoc_precision_dup": 1.0,
+  "assoc_recall_dup": 1.0,
+  "assoc_counts": {
+   "precision": 1.0,
+   "recall": 1.0,
+   "tp": 53,
+   "fp": 0,
+   "fn": 0,
+   "new_bad": 0
+  }
+ },
+ "tools": {
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "tp": 171,
+  "fp": 0,
+  "fn": 0,
+  "calls": 286,
+  "calls_per_step": 4.931034482758621,
+  "by_tool": {
+   "exploration_summary": 58,
+   "move": 57,
+   "compose_odometry": 57,
+   "gate_detection": 54,
+   "fix_pose": 24,
+   "update_beacon": 22,
+   "map_point": 14
+  },
+  "gold_skipped": 0,
+  "scored_tools": [
+   "compose_odometry",
+   "gate_detection",
+   "fix_pose",
+   "map_point",
+   "update_beacon"
+  ]
+ },
+ "procedure_agreement": {
+  "steps_compared": 58,
+  "decision": 1.0,
+  "memory": 1.0
+ },
+ "state_violations": {
+  "pose_checked": 58,
+  "pose_bad": 0,
+  "map_entries_bad": 0
+ },
+ "time": {
+  "total_s": 0.048,
+  "mean_s": 0.0008275862068965517,
+  "p50_s": 0.001,
+  "p95_s": 0.001,
+  "max_s": 0.001,
+  "turns_per_step": 0.0
+ },
+ "tokens": {
+  "in": 0,
+  "cached_in": 0,
+  "out": 0
+ },
+ "cost_usd": 0.0,
+ "cost_per_step_usd": 0.0,
+ "label": "B2"
+}
