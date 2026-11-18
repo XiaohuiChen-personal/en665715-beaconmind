@@ -63,9 +63,31 @@ pinhole-model logs) can be deleted.
 presentation requirements (assumed 15 minutes), whether the private `presentation/` folder is the right place, the long
 title crossing the shield graphic. Not done from M6.T6: disclosure audit script, code archive, submission checklist.
 
-**Started 12:15 CST, results to be added below:** closed-loop rerun (B2, Opus 5.5, Fable 5.2; C20, S1, seed 3000,
-study odometry, 3.0 m, frozen DV, caps US$8 / US$14); unattended batch runner with an adversarial review of its halts;
-the 8-page print PDF, 20-tag mounting sheet and coverage at 46.9° (`evidence/M3/M3.T10/layout-2/`).
+**Closed-loop rerun on the final room simulator (M2.T7, commit `fa4d758`; 12:19–12:39 CST; n = 1 per arm).**
+Configuration: C20 world, S1, noise seed 3000, study odometry, 3.0 m, inset 0.4 m, frozen `dv.json`, prompt
+`prompts/robot_system_prompt_v3.3-room.txt` (one number differs from frozen v3.3: range threshold 2.0 → 3.0; a recorded
+deviation). All three arms ended DONE: steps 56 (Opus 5.5), 56 (Fable 5.2), 58 (B2); ATE 2.3 cm each (dead reckoning
+1.4–1.5 cm); final heading 1.8°, 1.8°, 2.5°; 14 of 20 tags mapped, no phantom; validator rejections 0; no full fix in
+any arm; p95 step time 25.0 s and 23.7 s; cost **US$4.60 (Opus) and US$8.33 (Fable)**, under the US$8 / US$14 caps but
+above the US$6–8 the lead had told Xiaohui. The two models made the identical 55 moves; the one branch from B2 is a
+rounding (two-decimal pose passed to `exploration_summary` at step 31 flips a wall-distance threshold), and on their own
+inputs all 112 model decisions equal the coded procedure's. Evidence `evidence/M2/M2.T7/closed-loop/README.md`,
+`runs-final/`; the first pair is kept there as superseded. Closed-loop API spend on 2026-11-18: US$18.84. The report
+agent is filling the simulator part of `report/PENDING.md` item 6 and the slide.
+
+**Tag layout `real-room-2` (M3.T10, commit `d903cd1`).** `tools/room_layout.py` now builds the 20-tag layout and checks
+it against the world file (agrees to the millimetre, no clash found). Print files (git-ignored):
+`data/real/tags/room-layout-real-room-2-new-tags.pdf` (8 pages, IDs 1, 4, 5, 6, 7, 8, 9, 11) and
+`room-layout-real-room-2-mounting-sheet.pdf` (all 20 tags), copies in `~/Downloads/BeaconMind-tags-real-room-2-*`.
+**Not printed: Xiaohui has not said yes.** The new sheet replaces the printed one: six printed tags (T02, T03, T05–T08)
+have narrower slide ranges so pages cannot touch. Unchecked: outlets on the 295 cm wall, window wall and desk wall were
+never located; T16 (ID 7) is 3 cm from corner 3; T12 (ID 1) is about 13 cm from the angled section's estimated outlet.
+Coverage at 46.9°, whole tag in the picture, 3.0 m: one heading sees ≥ 1 tag 54.9 % (12 tags: 49.9 %), ≥ 2 tags 29.6 %
+(11.8 %); full turn ≥ 2 tags 98.3 % (`evidence/M3/M3.T10/layout-2/coverage.txt`). `tag_pilot.py placements` gained
+`--tag-black-m`.
+
+**Still running at 12:50 CST:** the unattended batch runner (`beaconmind/car/batch.py`, `resection.py`,
+`tools/car_batch.py/.sh`, uncommitted) with an adversarial review of its halts.
 
 ## 2026-11-18 — work list 2.10 and 2.2 DONE, 2.3 intrinsics done: recorder (M3.T27); camera size XGA (M1.T17); camera.json; tags printed
 
