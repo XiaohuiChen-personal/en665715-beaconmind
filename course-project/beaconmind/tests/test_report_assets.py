@@ -96,3 +96,35 @@ def test_generated_files_are_up_to_date(src):
 def test_pending_list_is_parsed():
     assert len(ra.pending()) == len(re.findall(
         r"^\| \d+ \|", (ROOT / "report" / "PENDING.md").read_text(), re.M))
+
+
+def test_slide_inputs_are_up_to_date(src):
+    for name, text in ra.render_slides(src, figures=False).items():
+        assert (ROOT / "slides" / name).read_text() == text, name
+    outline = (ROOT / "slides" / "outline.md").read_text()
+    assert "{{" not in outline
+    titles = re.findall(r"^## Slide (\d+) — ", outline, re.M)
+    assert titles == [str(i) for i in range(1, len(titles) + 1)]
+
+
+def test_plain_text_numbers():
+    assert ra.plain(ra.MINUS + "2.83") == "−2.83"
+    assert ra.plain("\\ensuremath{7.2\\times10^{-5}}") == "7.2 × 10⁻⁵"
+    assert ra.plain("\\ensuremath{\\approx}1.00") == "≈1.00"
+
+
+def test_readme_table_matches_the_evidence(numbers):
+    readme = (ROOT.parent / "README.md").read_text()
+    p = {k: ra.plain(v) for k, v in numbers.items()}
+    for arm in ("opus", "qwen", "gemma"):
+        row = "%s cm [%s, %s]" % (p["h1.%s.est" % arm], p["h1.%s.lo" % arm], p["h1.%s.hi" % arm])
+        assert row in readme, row
+    assert "%s cm [%s, %s]" % (p["b2b0.est"], p["b2b0.lo"], p["b2b0.hi"]) in readme
+    for key in ("ate.b0.median", "ate.b1.median", "ate.b2.median", "ate.opus.median", "ate.qwen.median",
+                "ate.gemma.median"):
+        assert "| %s cm |" % p[key] in readme, key
+    assert "Holm p = %s" % p["h1.opus.p-holm"] in readme and "Holm p = %s" % p["h1.qwen.p-holm"] in readme
+    assert "on %s and %s of %s episodes" % (p["fid.opus.within"], p["fid.qwen.within"], p["n.seeds"]) in readme
+    assert "%s held-out episodes (%s steps)" % (p["n.seeds"], p["n.steps"]) in readme
+    assert "worse on %s of %s episodes" % (p["h1.gemma.worse"], p["n.seeds"]) in readme
+    assert "field of view %s°" % p["cam.hfov"] in readme
