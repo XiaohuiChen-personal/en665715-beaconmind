@@ -8,9 +8,11 @@ Ground truth: the exact inner corners projected through the same homography. Cla
 findChessboardCorners + cornerSubPix with the half-window 0.4 x the smallest detected corner spacing
 (at most 11); SB = findChessboardCornersSB (exhaustive, accuracy).
 
-Usage: python3 detect_sim.py checkerboard_12x5_2868x1320.png checkerboard_12x5_2868x1320.json > detect_sim.txt
+Usage: python3 detect_sim.py checkerboard_12x5_2868x1320.png checkerboard_12x5_2868x1320.json [sizes] > detect_sim.txt
+sizes: a comma list of uxga, xga, vga (default uxga,vga, the 2026-11-10 run). XGA 1024 x 768 (fx 788.5 px at 66 deg)
+was added on 2026-11-18 after M1.T17 chose it: `... json xga > detect_sim_xga.txt`.
 
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-10: wrote this check.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-10: wrote this check; 2026-11-18: added the XGA size.
 """
 import json
 import math
@@ -20,6 +22,8 @@ import cv2
 import numpy as np
 
 png, side = sys.argv[1], sys.argv[2]
+SIZES = (sys.argv[3] if len(sys.argv) > 3 else "uxga,vga").split(",")
+NAME = {1600: "UXGA", 1024: "XGA", 640: "VGA"}
 spec = json.load(open(side))
 board = cv2.imread(png, cv2.IMREAD_GRAYSCALE)
 H0, W0 = board.shape
@@ -95,8 +99,10 @@ rng = np.random.default_rng(1)
 print(f"cv2 {cv2.__version__}; board {cols}x{rows} inner corners, square {spec['square_mm_predicted']} mm")
 print(f"{'res':5} {'d_m':>5} {'yaw':>4} {'pit':>4} {'pos':>9} {'sq_px':>6} | classic ok rms/max px | SB ok rms/max px")
 cases = []
-for res, fx, dists in [((1600, 1200), 1232.0, [0.15, 0.20, 0.30, 0.50, 0.70, 0.90, 1.10]),
-                       ((640, 480), 492.8, [0.12, 0.18, 0.25, 0.35, 0.45, 0.55])]:
+TABLE = {"uxga": ((1600, 1200), 1232.0, [0.15, 0.20, 0.30, 0.50, 0.70, 0.90, 1.10]),
+         "xga": ((1024, 768), 788.48, [0.12, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80]),
+         "vga": ((640, 480), 492.8, [0.12, 0.18, 0.25, 0.35, 0.45, 0.55])}
+for res, fx, dists in [TABLE[k] for k in SIZES]:
     for d in dists:
         for yaw, pit in [(0, 0), (40, 0), (0, 40), (30, 30)]:
             for du, dv in [(0, 0), (0.55, 0.55), (-0.6, -0.5)]:
@@ -110,9 +116,9 @@ for res, fx, d, yaw, pit, du, dv in cases:
     for sb in (False, True):
         ok, found = detect(img, sq_px, sb)
         row.append((ok, err(found, proj) if ok else (math.nan, math.nan)))
-    key = ("UXGA" if res[0] == 1600 else "VGA", d)
+    key = (NAME[res[0]], d)
     summary.setdefault(key, []).append(row)
-    tag = "UXGA" if res[0] == 1600 else "VGA"
+    tag = NAME[res[0]]
     print(f"{tag:5} {d:5.2f} {yaw:4d} {pit:4d} {f'{du:+.2f},{dv:+.2f}':>9} {sq_px:6.1f} | "
           f"{'Y' if row[0][0] else 'n'} {row[0][1][0]:5.3f}/{row[0][1][1]:5.3f} | "
           f"{'Y' if row[1][0] else 'n'} {row[1][1][0]:5.3f}/{row[1][1][1]:5.3f}")

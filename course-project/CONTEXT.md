@@ -42,7 +42,26 @@ client: use `--camera off` when the probe or the backend captures. Parked dry ru
 no recording active. Recorder sessions so far: `recorder-smoke`, `recorder-dry-run`, `recorder-check` (data on the
 Spark only).
 
-**Next:** 2.3 calibration (M1.T7) at XGA with the phone board: first check the XGA distance bands with
+**2.3 calibration (M1.T7): NOT done; capture tooling built, first result rejected (2026-11-18, about 01:45 CST).**
+`tools/calibrate_camera.py` (`live` with a spoken guide, `calibrate`; tests `test_calibrate_camera.py`). What the
+night's recorded sessions (`data/real/20261118-00442*` … `-013214-calibration-paper-free-2`, Spark only) showed:
+- The **phone board failed**: its screen saturates in the camera beyond about 25 cm (squares shrink apart), and at
+  20 cm there is no room to move. Dimming to 25 % helped detection, not reach.
+- **Paper board** (`evidence/M1/M1.T7/board/paper/`, 9 × 6 inner corners, 23.283 mm, printed at 100 %; Xiaohui has not
+  sent the two ruler readings yet): detected in about 80 % of frames at 45–75 cm.
+- Target positions spoken to an operator who cannot see the picture do not work. **Free mode** (`live --free --hold
+  board`: keep every steady, new view; hints only for moves that keep the board in view and add a new view) collected
+  23 views in about 4 minutes.
+- **The trial calibration is wrong and must not be used:** fx about 1575 px (hfov 36°) at rms 0.75 px, against about
+  765 px (67°) from the capture-size frame (the 12 cm baseboard is about 65 px tall at 1.41 m). Cause: the page was held
+  by hand without a backing and bends (planar-fit residual 1.1–1.4 px rms on the turned views, 0.3–0.7 on the flat ones),
+  and only 6 of 23 views were tilted, none tipped. No `configs/camera.json` was written.
+- **To finish:** tape the page flat to a book or stiff card; run free mode again; require tilted views (turned and
+  tipped, at least 8); calibrate with k3 fixed; check fx against the baseboard figure and M1.T7 step 7's distance check.
+  Xiaohui prefers plain "left/right" (their own, facing the camera; the picture is a mirror for them) and holding the
+  board over taping it to a wall. The car was raised on a desk for these sessions; motor battery off throughout.
+
+**Next:** finish 2.3 as above. (Earlier note:) 2.3 calibration (M1.T7) at XGA with the phone board: first check the XGA distance bands with
 `evidence/M1/M1.T7/board/detect_sim.py` at 1024 × 768, then Xiaohui holds the phone while the recorder's frame saver
 captures (live coverage from `frames/latest.jpg`).
 

@@ -1,0 +1,48 @@
+{
+  "schema": "bm.checkerboard-1",
+  "generated": "2026-11-18",
+  "generator": "course-project/tools/make_checkerboard.py",
+  "display": {
+    "label": "US Letter landscape, 300 dpi print",
+    "screen_px": [
+      3300,
+      2550
+    ],
+    "ppi": 300.0,
+    "orientation": "landscape"
+  },
+  "squares": [
+    10,
+    7
+  ],
+  "inner_corners": [
+    9,
+    6
+  ],
+  "inner_corner_count": 54,
+  "top_left_square": "black",
+  "quiet_min_squares": 1.0,
+  "square_px": 275,
+  "origin_px": [
+    275,
+    312
+  ],
+  "board_px": [
+    2750,
+    1925
+  ],
+  "quiet_px": {
+    "left": 275,
+    "right": 275,
+    "top": 312,
+    "bottom": 313
+  },
+  "square_mm_predicted": 23.2833,
+  "board_mm_predicted": [
+    232.83,
+    162.98
+  ],
+  "note": "Predicted sizes hold only when the phone shows the PNG 1:1 (full screen, not zoomed). Confirm with the ruler check in evidence/M1/M1.T7/board/README.md; calibration uses square_m = square_mm_predicted / 1000 if the check passes, else the measured long span / cols / 1000.",
+  "png": "checkerboard_9x6_letter_300dpi.png",
+  "png_sha256": "767a9d873585c8d9303881d7eac6db62561a7ac9f4700aed80ee3303c7aca625"
+}
