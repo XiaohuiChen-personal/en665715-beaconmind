@@ -4,6 +4,8 @@
 #   bash course-project/tools/car_net.sh status          radio, access point, the car and camera, the camera's /status
 #   bash course-project/tools/car_net.sh relay-start     start the camera relay for containers (tmux session bm-cam-relay)
 #   bash course-project/tools/car_net.sh relay-stop
+#   bash course-project/tools/car_net.sh agent-start     start the micro-ROS agent container (UDP 8888) the car joins
+#   bash course-project/tools/car_net.sh agent-stop      (added 2026-11-18 by Claude Opus 5.5 via Claude Code)
 #
 # Before it: Xiaohui runs the private course repo's access-point script in a terminal of his own, because it needs sudo:
 #   sudo bash ~/Projects/EN.665.715/discussions/module9/tools/ap_net.sh up 11
@@ -55,7 +57,16 @@ case "${1:-status}" in
   relay-stop)
     tmux kill-session -t bm-cam-relay 2>/dev/null && echo "relay stopped" || echo "relay was not running"
     ;;
+  agent-start)   # the micro-ROS agent the K2 firmware joins (as started on 2026-11-10; --rm, so agent-stop removes it)
+    docker ps -q --filter name=^bm-micro-ros-agent$ | grep -q . && { echo "agent already running"; exit 0; }
+    ss -uln 2>/dev/null | grep -q ":8888 " && { echo "something else listens on UDP 8888; stop it first"; exit 1; }
+    docker run -d --rm --name bm-micro-ros-agent --network host microros/micro-ros-agent:humble udp4 --port 8888 -v4 >/dev/null \
+      && echo "agent started (bm-micro-ros-agent, UDP 8888); the car joins within about 30 s"
+    ;;
+  agent-stop)
+    docker stop bm-micro-ros-agent >/dev/null 2>&1 && echo "agent stopped" || echo "agent was not running"
+    ;;
   *)
-    echo "usage: $0 status|relay-start|relay-stop"; exit 2
+    echo "usage: $0 status|relay-start|relay-stop|agent-start|agent-stop"; exit 2
     ;;
 esac

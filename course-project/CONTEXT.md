@@ -1,6 +1,6 @@
 # Course Project Context
 
-Last updated: 2026-11-17
+Last updated: 2026-11-18
 
 **Project name: BeaconMind** (chosen 2026-09-28). "Beacon" for the AprilTags on the walls, "Mind" for
 the language model that owns the pose belief, the beacon map and the SLAM decisions. Use this name in
@@ -9,6 +9,37 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
+
+## 2026-11-18 — work list 2.10 DONE: the session recorder (M3.T27); tags printed
+
+**Tags printed** (2026-11-17, 23:57): the 13-page PDF on the Brother HL-3140CW, Letter, 100 %, black only, job
+completed. Xiaohui mounts them and records each centre on the mounting sheet.
+
+**Recorder** (`tools/record_session.sh start <label> | run <name> -- <cmd> | status | stop`, Spark host). One folder per
+session under `data/real/<YYYYmmdd-HHMMSS>-<label>/`: `ros2 bag record -a` in a one-off `beaconmind-ros` container,
+every camera frame with its X-BM headers (`record_frames.py`, `frames/latest.jpg` for live viewers), 5 Hz pings to the car
+and camera, the access point's station dump (MACs cut to 3 bytes), the micro-ROS agent's log (and its last 200 lines at
+start), the camera relay's output, commands run through `run` with exit codes, a 4 h watchdog; `stop` closes the bag
+with SIGINT and writes README.md (`record_report.py`), plus `tape.md` and `notes.md` for the operator.
+`tools/session_clock.py` is the clock to film at the start of each phone video. Only one program may be the camera's
+client: use `--camera off` when the probe or the backend captures. Parked dry run with the car on ROS passed
+(`evidence/M3/M3.T27/dry-run.md`): IMU 49.5 Hz, 300 frames at 4.9/s, pings 0 % loss. `/pico/cmd_vel` and
+`/pico/imu/std` are the car's inputs, so they enter a bag only when something publishes them.
+
+**Agent.** The 2026-11-10 agent container had `--rm`, so stopping it on 2026-11-13 deleted it.
+`bash course-project/tools/car_net.sh agent-start | agent-stop` now runs it the same way.
+
+**State (2026-11-18, about 00:15 CST).** Running on the Spark: the access point, `bm-cam-relay`, and
+`bm-micro-ros-agent` with the car joined as `/pico_fusion`; the car on its power bank, **motor battery off**, parked;
+no recording active. Recorder sessions so far: `recorder-smoke`, `recorder-dry-run`, `recorder-check` (data on the
+Spark only).
+
+**Next:** 2.2 capture size (M1.T17): the camera at the floor spot, `camera_probe.py --n 100` at VGA q12 and UXGA q10
+inside a recorded session (`--camera off`, the probe is the camera's client), then Xiaohui chooses. Then 2.3
+calibration with the phone board.
+
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-18: wrote the recorder and its tests, ran the sessions, printed
+the tags at Xiaohui's request, and wrote this entry.
 
 ## 2026-11-17 — section 2 started: the arena is the room; room surveyed; 12-tag layout and print sheets ready
 
