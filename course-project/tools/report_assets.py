@@ -14,7 +14,9 @@ Sources (all under course-project/):
   evidence/M4/M4.T16/results_summary.md                      run facts kept only there (timeouts, B2 - B0)
   evidence/M4/M4.T1/prereg.json, power.txt                   the freeze and the power table
   configs/camera.json, evidence/M1/M1.T7/distance-check.txt, evidence/M1/M1.T17/size-decision.md  the camera
-  evidence/M3/M3.T10/layout/layout.json, coverage.txt        the room layout and its coverage
+  evidence/M3/M3.T10/layout-2/layout.json, coverage.txt      the 20-tag room layout and its coverage at the measured
+                                                             field of view (layout/coverage.txt: the study arena)
+  evidence/M2/M2.T7/closed-loop/runs-final/*/seed_3000.summary.json, run.json   the simulated closed-loop episodes
 
 Usage (repository root, any Python >= 3.10, standard library only):
   python3 course-project/tools/report_assets.py            write report/generated/
@@ -47,6 +49,8 @@ T1 = ROOT / "evidence" / "M4" / "M4.T1"
 OUT = ROOT / "report" / "generated"
 TEX = ROOT / "report" / "Chen-Project-Report.tex"
 SLIDES = ROOT / "slides"
+CLOSED = ROOT / "evidence" / "M2" / "M2.T7" / "closed-loop"
+CLOSED_ARMS = {"b2": "b2", "claude-opus-5-5": "opus", "claude-fable-5-2": "fable"}
 
 ARMS = ["claude-opus-5-5", "qwen38-flash-xhigh", "gemma4-26b"]
 KEY = {"claude-opus-5-5": "opus", "qwen38-flash-xhigh": "qwen", "gemma4-26b": "gemma", "B0": "b0", "B1": "b1",
@@ -113,8 +117,13 @@ def load():
         "camera": json.loads((ROOT / "configs" / "camera.json").read_text()),
         "size": (ROOT / "evidence" / "M1" / "M1.T17" / "size-decision.md").read_text(),
         "distance": (ROOT / "evidence" / "M1" / "M1.T7" / "distance-check.txt").read_text(),
-        "layout": json.loads((ROOT / "evidence" / "M3" / "M3.T10" / "layout" / "layout.json").read_text()),
+        "layout": json.loads((ROOT / "evidence" / "M3" / "M3.T10" / "layout-2" / "layout.json").read_text()),
         "coverage": (ROOT / "evidence" / "M3" / "M3.T10" / "layout" / "coverage.txt").read_text(),
+        "coverage2": (ROOT / "evidence" / "M3" / "M3.T10" / "layout-2" / "coverage.txt").read_text(),
+        "closed": {arm: json.loads((CLOSED / "runs-final" / arm / "seed_3000.summary.json").read_text())
+                   for arm in CLOSED_ARMS},
+        "closed_runs": {arm: json.loads((CLOSED / "runs-final" / arm / "run.json").read_text())
+                        for arm in CLOSED_ARMS},
     }
 
 
@@ -468,6 +477,59 @@ def build_numbers(src):
         put("cov.%s.room.turn2" % tag, c[5], "coverage.txt (full turn, two different tags, room)")
         put("cov.%s.study.turn2" % tag, c[7], "coverage.txt (full turn, two different tags, study arena)")
     put("cov.fov", grab(src["coverage"], r"field of view (\d+) deg", "coverage field of view"), "coverage.txt")
+    study15 = re.search(r"^\s+1\.5 m\s+[\d.]+%\s+[\d.]+%\s+([\d.]+)%", src["coverage"], re.M)
+    put("cov.15.study.one", study15.group(1), "layout/coverage.txt (one heading, study arena, the study's 1.5 m limit)")
+    put("room.tags.printed", len([t for t in L["tags"] if not t.get("added")]),
+        "layout-2/layout.json (tags not marked added)")
+    put("room.tags.added", len([t for t in L["tags"] if t.get("added")]), "layout-2/layout.json (added)")
+    c2 = src["coverage2"]
+    put("cov2.fov", grab(c2, r"field of view ([\d.]+) deg", "layout-2 field of view"), "layout-2/coverage.txt")
+    blocks = re.split(r"^B\. Camera model", c2, flags=re.M)
+    if len(blocks) != 2:
+        raise SystemExit("report_assets: layout-2/coverage.txt does not hold blocks A and B")
+    for tag, block in (("rule", blocks[0]), ("camera", blocks[1])):
+        for m in re.finditer(r"^\s+([\d.]+) m\s+([\d.]+)%\s+([\d.]+)%\s+\|\s+([\d.]+)%\s+([\d.]+)%", block, re.M):
+            rng = m.group(1).replace(".", "")
+            src_note = "layout-2/coverage.txt, %s, 20 tags, %s m" % (
+                "simulator's rule" if tag == "rule" else "camera model", m.group(1))
+            put("cov2.%s.%s.one" % (rng, tag), m.group(2), src_note + " (one heading, at least one tag)")
+            put("cov2.%s.%s.turn2" % (rng, tag), m.group(5), src_note + " (full turn, two different tags)")
+
+    # ---- closed loop in the room simulator (one episode per arm)
+    cl, runs = src["closed"], src["closed_runs"]
+    envs = {json.dumps(runs[a]["env"], sort_keys=True) for a in runs}
+    prompts = {runs[a].get("prompt_file") for a in runs if a != "b2"}
+    if len(envs) != 1 or len(prompts) != 1:
+        raise SystemExit("report_assets: the closed-loop arms did not share one environment and prompt")
+    env = runs["b2"]["env"]
+    cnote = "evidence/M2/M2.T7/closed-loop/runs-final/"
+    put("cl.range-m", "%.1f" % env["max_range"], cnote + "*/run.json env max_range")
+    put("cl.prompt", prompts.pop().replace("_", "\\_"), cnote + "*/run.json prompt_file")
+    put("cl.n-tags", cl["b2"]["n_tags"], cnote + "*/seed_3000.summary.json n_tags")
+    if any(d["fix_share"]["full"] != 0 or d["fix_share"]["verified_full"] != 0 for d in cl.values()):
+        raise SystemExit("report_assets: a closed-loop arm has a full fix; the report says none had")
+    if any(d["ended_by"] != "DONE" or d["fallbacks"] or d["emergency_stops"] or d["refused_move_calls"]
+           or d["map"]["phantoms"] for d in cl.values()):
+        raise SystemExit("report_assets: a closed-loop episode did not end cleanly; rewrite the report text")
+    if cl["claude-opus-5-5"]["moves_by_type"] != cl["claude-fable-5-2"]["moves_by_type"]:
+        raise SystemExit("report_assets: the two closed-loop models did not make the same moves")
+    for arm, k in CLOSED_ARMS.items():
+        d = cl[arm]
+        note = cnote + arm + "/seed_3000.summary.json"
+        put("cl.%s.steps" % k, d["steps"], note)
+        put("cl.%s.moves" % k, d["moves_executed"], note + " moves_executed")
+        put("cl.%s.ate" % k, num(d["pose"]["ate_m"] * 100, 1), note + " pose ate_m (m to cm)")
+        put("cl.%s.b0-ate" % k, num(d["b0"]["ate_m"] * 100, 1), note + " b0 ate_m (dead reckoning on this arm's path)")
+        put("cl.%s.tags-found" % k, d["map"]["tags_found"], note + " map tags_found")
+        put("cl.%s.position-fixes" % k, d["pose_sources"].get("position_fix", 0), note + " pose_sources")
+        if arm != "b2":
+            if d["procedure_agreement"]["decision"] != 1.0:
+                raise SystemExit("report_assets: a closed-loop model's decisions differ from the procedure's")
+            put("cl.%s.agree-steps" % k, d["procedure_agreement"]["steps_compared"], note + " procedure_agreement")
+            put("cl.%s.p95" % k, "%.1f" % d["time"]["p95_s"], note + " time p95_s")
+            put("cl.%s.cost" % k, "%.2f" % d["cost_usd"], note + " cost_usd")
+            put("cl.%s.model" % k, runs[arm]["agent"]["settings"]["model"], cnote + arm + "/run.json")
+            put("cl.%s.effort" % k, runs[arm]["agent"]["settings"]["output_config"]["effort"], cnote + arm + "/run.json")
     return out
 
 
@@ -613,8 +675,8 @@ def figure_room(src, scale=1.2):
             % (x0 + s + 0.75),
             "\\end{tikzpicture}",
             "\\caption{The real arena seen from above, with the %d nominal AprilTag positions and their IDs. The "
-            "dashed outline is the driving area. The tags are printed but not yet mounted; the world file will use "
-            "the centers measured after mounting.}" % len(L["tags"]),
+            "dashed outline is the desk-side edge of the driving area. No tag is mounted yet; the world file will "
+            "use the centers measured after mounting.}" % len(L["tags"]),
             "\\label{fig:room}", "\\end{figure}", ""]
     return "\n".join(out)
 
@@ -646,7 +708,7 @@ def plain(value):
     value = re.sub(r"\\ensuremath\{([\d.]+)\\times10\^\{(-?\d+)\}\}",
                    lambda m: "%s \u00d7 10%s" % (m.group(1), m.group(2).translate(SUPERSCRIPT)), value)
     value = value.replace("\\ensuremath{-}", "\u2212").replace("\\ensuremath{\\approx}", "\u2248")
-    value = value.replace("\\,", " ")
+    value = value.replace("\\,", " ").replace("\\_", "_")
     if "\\" in value or "{" in value:
         raise SystemExit("report_assets: cannot write %r as plain text" % value)
     return value

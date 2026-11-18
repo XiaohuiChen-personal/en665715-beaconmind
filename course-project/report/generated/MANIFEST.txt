@@ -86,12 +86,44 @@ cam.yaw | +2.5 | configs/camera.json extrinsics
 cam.z | 0.075 | configs/camera.json extrinsics
 cap.judge | 25 | prereg.json design
 cap.opus | 250 | prereg.json design
+cl.b2.ate | 2.3 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json pose ate_m (m to cm)
+cl.b2.b0-ate | 1.4 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json b0 ate_m (dead reckoning on this arm's path)
+cl.b2.moves | 57 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json moves_executed
+cl.b2.position-fixes | 24 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json pose_sources
+cl.b2.steps | 58 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json
+cl.b2.tags-found | 14 | evidence/M2/M2.T7/closed-loop/runs-final/b2/seed_3000.summary.json map tags_found
+cl.fable.agree-steps | 56 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json procedure_agreement
+cl.fable.ate | 2.3 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json pose ate_m (m to cm)
+cl.fable.b0-ate | 1.5 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json b0 ate_m (dead reckoning on this arm's path)
+cl.fable.cost | 8.33 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json cost_usd
+cl.fable.effort | medium | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/run.json
+cl.fable.model | claude-fable-5-2 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/run.json
+cl.fable.moves | 55 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json moves_executed
+cl.fable.p95 | 23.7 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json time p95_s
+cl.fable.position-fixes | 21 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json pose_sources
+cl.fable.steps | 56 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json
+cl.fable.tags-found | 14 | evidence/M2/M2.T7/closed-loop/runs-final/claude-fable-5-2/seed_3000.summary.json map tags_found
+cl.n-tags | 20 | evidence/M2/M2.T7/closed-loop/runs-final/*/seed_3000.summary.json n_tags
+cl.opus.agree-steps | 56 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json procedure_agreement
+cl.opus.ate | 2.3 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json pose ate_m (m to cm)
+cl.opus.b0-ate | 1.5 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json b0 ate_m (dead reckoning on this arm's path)
+cl.opus.cost | 4.60 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json cost_usd
+cl.opus.effort | medium | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/run.json
+cl.opus.model | claude-opus-5-5 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/run.json
+cl.opus.moves | 55 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json moves_executed
+cl.opus.p95 | 25.0 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json time p95_s
+cl.opus.position-fixes | 21 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json pose_sources
+cl.opus.steps | 56 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json
+cl.opus.tags-found | 14 | evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json map tags_found
+cl.prompt | robot\_system\_prompt\_v3.3-room.txt | evidence/M2/M2.T7/closed-loop/runs-final/*/run.json prompt_file
+cl.range-m | 3.0 | evidence/M2/M2.T7/closed-loop/runs-final/*/run.json env max_range
 cost.seed.gemma | 0.00 | study_summary.json descriptive cost_usd median
 cost.seed.opus | 4.76 | study_summary.json descriptive cost_usd median
 cost.seed.qwen | 0.00 | study_summary.json descriptive cost_usd median
 cost.step.gemma | 0.000 | study_summary.json descriptive, median
 cost.step.opus | 0.074 | study_summary.json descriptive, median
 cost.step.qwen | 0.000 | study_summary.json descriptive, median
+cov.15.study.one | 78.5 | layout/coverage.txt (one heading, study arena, the study's 1.5 m limit)
 cov.20.room.one | 41.8 | coverage.txt (one heading, at least one tag, room)
 cov.20.room.turn | 96.6 | coverage.txt (full turn, at least one tag, room)
 cov.20.room.turn2 | 85.0 | coverage.txt (full turn, two different tags, room)
@@ -103,6 +135,19 @@ cov.25.room.turn2 | 98.7 | coverage.txt (full turn, two different tags, room)
 cov.25.study.one | 97.9 | coverage.txt (one heading, at least one tag, study arena)
 cov.25.study.turn2 | 100.0 | coverage.txt (full turn, two different tags, study arena)
 cov.fov | 60 | coverage.txt
+cov2.20.camera.one | 30.0 | layout-2/coverage.txt, camera model, 20 tags, 2.0 m (one heading, at least one tag)
+cov2.20.camera.turn2 | 80.3 | layout-2/coverage.txt, camera model, 20 tags, 2.0 m (full turn, two different tags)
+cov2.20.rule.one | 41.8 | layout-2/coverage.txt, simulator's rule, 20 tags, 2.0 m (one heading, at least one tag)
+cov2.20.rule.turn2 | 86.7 | layout-2/coverage.txt, simulator's rule, 20 tags, 2.0 m (full turn, two different tags)
+cov2.25.camera.one | 43.4 | layout-2/coverage.txt, camera model, 20 tags, 2.5 m (one heading, at least one tag)
+cov2.25.camera.turn2 | 96.3 | layout-2/coverage.txt, camera model, 20 tags, 2.5 m (full turn, two different tags)
+cov2.25.rule.one | 55.8 | layout-2/coverage.txt, simulator's rule, 20 tags, 2.5 m (one heading, at least one tag)
+cov2.25.rule.turn2 | 98.7 | layout-2/coverage.txt, simulator's rule, 20 tags, 2.5 m (full turn, two different tags)
+cov2.30.camera.one | 54.9 | layout-2/coverage.txt, camera model, 20 tags, 3.0 m (one heading, at least one tag)
+cov2.30.camera.turn2 | 98.3 | layout-2/coverage.txt, camera model, 20 tags, 3.0 m (full turn, two different tags)
+cov2.30.rule.one | 67.1 | layout-2/coverage.txt, simulator's rule, 20 tags, 3.0 m (one heading, at least one tag)
+cov2.30.rule.turn2 | 100.0 | layout-2/coverage.txt, simulator's rule, 20 tags, 3.0 m (full turn, two different tags)
+cov2.fov | 46.9 | layout-2/coverage.txt
 es.gemma.empty-args | 151 | error_sources.txt
 es.gemma.err.compose | 131 | error_sources.txt
 es.gemma.fallback.cm-per-step | 0.68 | error_sources.txt
@@ -376,7 +421,9 @@ room.dup | 3 | layout.json duplicates
 room.dup-ids | 0, 2 and 3 | layout.json duplicates
 room.tag-height-cm | 23 | layout.json tags z_m
 room.tag-size-mm | 160 | layout.json tag
-room.tags | 12 | layout.json tags
+room.tags | 20 | layout.json tags
+room.tags.added | 8 | layout-2/layout.json (added)
+room.tags.printed | 12 | layout-2/layout.json (tags not marked added)
 rubric.gemma | 0.407 | judge_summary.txt
 rubric.gemma.concise | 1.89 | judge_summary.txt mean_levels
 rubric.gemma.coverage | 1.61 | judge_summary.txt mean_levels

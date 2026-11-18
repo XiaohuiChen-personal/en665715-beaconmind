@@ -38,6 +38,10 @@ What this does and does not show:
   (H2) was **not tested**, because the pre-registered gate needed every H1 rejected.
 - Gemma 4 answered more than half of its steps without calling a tool and was much worse than dead reckoning (found
   in a post hoc check of the logs).
+- In closed loop, where the model's own move is executed, there is so far one simulated episode per arm (n = 1) in a
+  simulator of the real room, with a one-number variant of the prompt. Claude Opus 5.5 and Claude Fable 5.2 made
+  the same moves as each other and the same decisions as the coded procedure. That shows agreement with the
+  procedure; it is not a result about driving, and dead reckoning was at least as accurate in that episode.
 - **Limits.** Everything above is simulated: a kinematic simulator with placeholder sensor noise, one prompt, one
   run per episode, one drift level. It is a replay, so the coded procedure chose every move and the agent's own moves
   were not evaluated. The factor graph was given the true association. Copies of a repeated tag ID were far apart,
@@ -51,9 +55,10 @@ minutes before the runs.
 ## Status (2026-11-18)
 
 Done: the simulated study and its analysis; the report for everything measured; the camera calibration; the survey
-of the real arena (a room) and its 12-tag layout; the recorder that keeps every real session.
+of the real arena (a room) and its 20-tag layout; the recorder that keeps every real session; one closed-loop
+episode per arm in a simulator of that room.
 
-In progress, and **not results yet**: the tags are printed but not mounted; the car executor, the out-of-band stop,
+In progress, and **not results yet**: 12 of the 20 tags are printed and none is mounted; the car executor, the out-of-band stop,
 tag perception, the simulator of the real room and the closed loop are written and tested against a simulated car,
 not yet run on the car; no real episode has been recorded; the demo video does not exist yet. The report marks each
 missing result in red, and `course-project/report/PENDING.md` lists them.
@@ -153,7 +158,8 @@ Generative AI did most of the drafting, coding and running in this project, unde
 - **GPT-5.6 Sol** (through Cursor): early comparison of project ideas.
 - Fresh AI reviewer agents checked the code, the pre-registration, the analysis and the report; their findings are
   logged in the `REVIEW.md` files.
-- Claude Opus 5.5, Qwen3.8-Flash-Next and Gemma 4 26B are also the systems under test, and GPT-6.1 Sol scored the
+- Claude Opus 5.5, Qwen3.8-Flash-Next and Gemma 4 26B are also the systems under test, as is Claude Fable 5.2 in
+  the simulated closed-loop episode, and GPT-6.1 Sol scored the
   agents' notes.
 
 Files carry an `AI-assisted:` line naming the model and what it did. Xiaohui Chen chose the question, the models
