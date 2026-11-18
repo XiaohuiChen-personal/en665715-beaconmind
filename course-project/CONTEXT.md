@@ -52,7 +52,7 @@ Known gap: the board covered only 46 % of the picture grid (corners span x 317�
 board are still owed. The earlier wall-frame estimate of 67° was wrong. With 46.9° the layout's coverage drops (one
 heading sees a tag in about a third of samples at 2 m instead of 42 %; rerun `room_layout.py` with the measured value),
 but a 160 mm tag is about 76 px wide at 2.5 m, which favours raising the 2.0 m range limit.
-Extrinsics: the car was on a desk for the capture; steps 8–9 (lens position from car.json, pitch and yaw from an image
+**Extrinsics measured 02:06** (`evidence/M1/M1.T7/extrinsics.md`, in camera.json): lens (0.120, 0, 0.075) m from car.json; roll +4.4°, pitch −3.9° (nose up), yaw +2.5° ± 2°; second distance check −1.2 %. Roll exceeds the plan's 3° mount limit: Xiaohui to accept or re-seat. (Earlier:) the car was on a desk for the capture; steps 8–9 (lens position from car.json, pitch and yaw from an image
 with the car on the floor) are still to do. History of the night's failed attempts follows.
 
 **(Superseded) 2.3 first attempts: capture tooling built, first result rejected (2026-11-18, about 01:45 CST).**

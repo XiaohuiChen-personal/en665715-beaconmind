@@ -6,3 +6,5 @@ perpendicular distance to the board plane 102.6 cm (board tilted 7 deg): -0.9 %.
 Only one distance was checked (the plan names two); the board's squares are too small for the detector much beyond 1.2 m.
 Cross-check: refitting from all 30 steady, distinct views of the capture session gives fx 1180.4, fy 1176.2,
 cx 498.0, cy 382.2 (rms 0.374 px), against fx 1181.5, fy 1176.6, cx 498.4, cy 380.8 from the 20 kept views.
+Second distance (session 20261118-020555-calibration-extrinsics, car on the floor): tape 104-104.5 cm, solvePnP 103.0 cm
+(58 of 58 frames): -1.2 % against 104.25 cm. Pass.

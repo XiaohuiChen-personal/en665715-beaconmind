@@ -28,16 +28,16 @@
  "vfov_deg": 36.15,
  "n_images": 20,
  "extrinsics": {
-  "parent": null,
-  "child": null,
-  "x_m": null,
-  "y_m": null,
-  "z_m": null,
-  "roll_deg": null,
-  "pitch_deg": null,
-  "yaw_deg": null,
-  "uncertainty_m": null,
-  "uncertainty_deg": null
+  "parent": "base_link",
+  "child": "camera_optical_frame",
+  "x_m": 0.12,
+  "y_m": 0.0,
+  "z_m": 0.075,
+  "roll_deg": 4.4,
+  "pitch_deg": -3.9,
+  "yaw_deg": 2.5,
+  "uncertainty_m": 0.005,
+  "uncertainty_deg": 2.0
  },
  "firmware": {
   "name": "bm_cam",
