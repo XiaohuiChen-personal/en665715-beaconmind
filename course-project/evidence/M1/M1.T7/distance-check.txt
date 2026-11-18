@@ -1,0 +1,8 @@
+M1.T7 step 7, independent distance check, 2026-11-18 (recorded session 20261118-*-calibration-distance-check, Spark).
+Board (9x6 inner corners, 23.283 mm squares, on a rigid backing) propped upright, facing the camera.
+Tape, lens to board (Xiaohui Chen): 103.5 cm.
+solvePnP with configs/camera.json over 57 of 57 frames: lens to board centre 103.4 cm (sd 0.02 cm): -0.1 %;
+perpendicular distance to the board plane 102.6 cm (board tilted 7 deg): -0.9 %. Limit 2 %: pass.
+Only one distance was checked (the plan names two); the board's squares are too small for the detector much beyond 1.2 m.
+Cross-check: refitting from all 30 steady, distinct views of the capture session gives fx 1180.4, fy 1176.2,
+cx 498.0, cy 382.2 (rms 0.374 px), against fx 1181.5, fy 1176.6, cx 498.4, cy 380.8 from the 20 kept views.

@@ -1,0 +1,12 @@
+calibrate_camera.py calibrate, 2026-11-18 01:56:37 CST, OpenCV 4.13.0
+session course-project/data/real/20261118-014353-calibration-rigid; 20 frames kept by live; image 1024x768; board 9x6 inner corners, square 0.023283 m
+first pass: rms 0.3444 px over 20 images; per-image median 0.2822 px; dropped none
+final: rms 0.3444 px over 20 images (per-image max 0.7004 px)
+fx 1181.50 fy 1176.65 (fx/fy 1.0041, within 3 %: True) cx 498.44 cy 380.79
+distortion k1 k2 p1 p2 k3: +0.08327 -0.07027 -0.00183 -0.00851 +0.00000
+hfov 46.86 deg (design value 60), vfov 36.15 deg
+coverage 0.46 of the 8x6 grid
+bands kept: {'close': 0, 'middle': 0, 'far': 19}
+tilts kept: {'flat': 9, 'turned': 7, 'tipped': 4, 'slight': 0}
+pass (>= 15 images, rms <= 1.0 px, coverage >= 0.8, fx/fy within 3 %): False
+wrote /tmp/camera.json

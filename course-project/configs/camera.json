@@ -1,0 +1,50 @@
+{
+ "schema": "bm.camera/1",
+ "image_width": 1024,
+ "image_height": 768,
+ "frame_size": "XGA",
+ "jpeg_quality": 12,
+ "distortion_model": "plumb_bob",
+ "camera_matrix": [
+  1181.4979,
+  0.0,
+  498.4421,
+  0.0,
+  1176.6462,
+  380.7903,
+  0.0,
+  0.0,
+  1.0
+ ],
+ "distortion": [
+  0.08327,
+  -0.070267,
+  -0.001828,
+  -0.008513,
+  0.0
+ ],
+ "rms_px": 0.3444,
+ "hfov_deg": 46.86,
+ "vfov_deg": 36.15,
+ "n_images": 20,
+ "extrinsics": {
+  "parent": null,
+  "child": null,
+  "x_m": null,
+  "y_m": null,
+  "z_m": null,
+  "roll_deg": null,
+  "pitch_deg": null,
+  "yaw_deg": null,
+  "uncertainty_m": null,
+  "uncertainty_deg": null
+ },
+ "firmware": {
+  "name": "bm_cam",
+  "version": "0.2",
+  "vflip": false,
+  "hmirror": true
+ },
+ "capture_url": "http://10.42.0.89/capture",
+ "calibrated": "2026-11-18"
+}

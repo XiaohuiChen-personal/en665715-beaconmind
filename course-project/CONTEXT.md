@@ -10,7 +10,7 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
 
-## 2026-11-18 — work list 2.10 and 2.2 DONE: the session recorder (M3.T27); camera size XGA (M1.T17); tags printed
+## 2026-11-18 — work list 2.10 and 2.2 DONE, 2.3 intrinsics done: recorder (M3.T27); camera size XGA (M1.T17); camera.json; tags printed
 
 **2.2 capture size (M1.T17 done): XGA 1024 × 768, JPEG quality 12** (Xiaohui, after Claude's recommendation;
 `evidence/M1/M1.T17/size-decision.md`). Floor-spot probes, camera about 141 cm from a bare wall, recorded session
@@ -42,7 +42,20 @@ client: use `--camera off` when the probe or the backend captures. Parked dry ru
 no recording active. Recorder sessions so far: `recorder-smoke`, `recorder-dry-run`, `recorder-check` (data on the
 Spark only).
 
-**2.3 calibration (M1.T7): NOT done; capture tooling built, first result rejected (2026-11-18, about 01:45 CST).**
+**2.3 calibration (M1.T7): INTRINSICS DONE (2026-11-18, about 02:00 CST); extrinsics (steps 8–9) remain.**
+`configs/camera.json` (XGA 1024 × 768 q12): fx 1181.5, fy 1176.6, cx 498.4, cy 380.8, k1 +0.083, k2 −0.070, rms 0.34 px
+over 20 views of the paper board **taped to a rigid backing** (7 turned, 4 tipped; session `20261118-014353-calibration-rigid`,
+free mode). **HFOV 46.9°, VFOV 36.2°, not the design's 60°.** Independent distance check: tape 103.5 cm, solvePnP
+103.4 cm (−0.1 %; `evidence/M1/M1.T7/distance-check.txt`); a refit from 30 views gives the same fx within 0.1 %.
+Known gap: the board covered only 46 % of the picture grid (corners span x 317–1007, y 123–575), below the plan's
+0.8, so distortion near the left, top and bottom edges is extrapolated; Xiaohui's two ruler readings of the printed
+board are still owed. The earlier wall-frame estimate of 67° was wrong. With 46.9° the layout's coverage drops (one
+heading sees a tag in about a third of samples at 2 m instead of 42 %; rerun `room_layout.py` with the measured value),
+but a 160 mm tag is about 76 px wide at 2.5 m, which favours raising the 2.0 m range limit.
+Extrinsics: the car was on a desk for the capture; steps 8–9 (lens position from car.json, pitch and yaw from an image
+with the car on the floor) are still to do. History of the night's failed attempts follows.
+
+**(Superseded) 2.3 first attempts: capture tooling built, first result rejected (2026-11-18, about 01:45 CST).**
 `tools/calibrate_camera.py` (`live` with a spoken guide, `calibrate`; tests `test_calibrate_camera.py`). What the
 night's recorded sessions (`data/real/20261118-00442*` … `-013214-calibration-paper-free-2`, Spark only) showed:
 - The **phone board failed**: its screen saturates in the camera beyond about 25 cm (squares shrink apart), and at

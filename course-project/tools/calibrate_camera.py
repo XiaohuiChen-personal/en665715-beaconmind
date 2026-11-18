@@ -422,12 +422,20 @@ def live(args):
                 acc.flush()
                 prev = None
                 cov = coverage([k["corners"] for k in kept], w, h)
-                if len(kept) >= args.target and cov >= args.coverage:
+                turned = sum(abs(k["yaw_deg"]) >= 20 for k in kept)
+                tipped = sum(abs(k["pitch_deg"]) >= 20 for k in kept)
+                if len(kept) >= args.target and cov >= args.coverage and turned >= args.min_tilted and tipped >= args.min_tilted:
                     say("Done. %d views kept. You can put the car down." % len(kept))
                     break
                 say("Got it, %d." % len(kept))
             elif time.time() - last_say > say_every:
+                turned = sum(abs(k["yaw_deg"]) >= 20 for k in kept)
+                tipped = sum(abs(k["pitch_deg"]) >= 20 for k in kept)
+                need_tilt = len(kept) >= 6 and min(turned, tipped) < args.min_tilted   # tilts fix the focal length
                 say("Hold steady for a moment." if not kept or (not still and is_new_view(obs, kept)) else
+                    ("Turn the board about 30 degrees, like opening a door, and hold." if turned <= tipped else
+                     "Tip the top of the board about 30 degrees away from the camera, and hold.") if need_tilt
+                    and args.hold == "board" and abs(obs["yaw_deg"]) < 20 and abs(obs["pitch_deg"]) < 20 else
                     next_hint(obs, kept) if args.hold == "board" else aim_hint([k["corners"] for k in kept], w, h))
             continue
         if right_sign == 0:                       # learn left/right from the operator's move to their right
@@ -495,7 +503,9 @@ def calibrate(args):
     obj = [pts for _ in acc]
 
     def run(idx):
-        rms, K, dist, rv, tv = cv2.calibrateCamera([obj[i] for i in idx], [img[i] for i in idx], (w, h), None, None)
+        # k3 fixed: with hand-held views the sixth-order term fitted noise (k3 = -33 on 2026-11-18)
+        rms, K, dist, rv, tv = cv2.calibrateCamera([obj[i] for i in idx], [img[i] for i in idx], (w, h), None, None,
+                                                   flags=cv2.CALIB_FIX_K3)
         per = []
         for j, i in enumerate(idx):
             p, _ = cv2.projectPoints(obj[i], rv[j], tv[j], K, dist)
@@ -505,7 +515,7 @@ def calibrate(args):
     idx = list(range(len(acc)))
     rms, K, dist, per = run(idx)
     med = float(np.median(per))
-    drop = [i for i, e in zip(idx, per) if e > 2 * med]
+    drop = [i for i, e in zip(idx, per) if e > 3 * med]   # 3x: 2x dropped the tilted views, which carry the focal length
     lines.append("first pass: rms %.4f px over %d images; per-image median %.4f px; dropped %s" % (
         rms, len(idx), med, [acc[i]["file"] for i in drop] or "none"))
     if drop:
@@ -556,6 +566,7 @@ def main(argv):
     lv.add_argument("--free", action="store_true",
                     help="no target positions: keep every steady view that differs from the kept ones (board fixed "
                          "on a wall, the car held in the hands)")
+    lv.add_argument("--min-tilted", type=int, default=4, help="free mode: turned views and tipped views needed")
     lv.add_argument("--hold", choices=("car", "board"), default="car", help="free mode: what the operator moves")
     lv.add_argument("--bands", help="four distance edges in metres, close|middle|far, e.g. 0.25,0.40,0.60,0.85")
     lv.add_argument("--picture-left", help="spoken words for the picture's left side, e.g. 'away from the closet door'")
