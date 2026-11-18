@@ -28,6 +28,10 @@ obs_id"; M2.T1: the `move` tool is the only path to motion):
 - In this simulator a move completes at once, so the dispatcher's in-step answer `done` is true. An executor that
   can stall would report the real result in the next `last_move` (D7 row 1 reads it there).
 
+A latch that is already set when an observation is built (a latch file, a Pico reboot, repeated error observations)
+ends the episode on that observation without asking the driver: the row is written with `agent_called: false` and
+the previous report dead-reckoned, and no model request is paid for.
+
 How an episode ends (C9.2 `ended_by`): the report's decision is DONE (`DONE`) or STOPPED (`STOPPED`); the latch is set
 by emergency_stop or the validator's auto-latch (`latch`); the step budget is used up (`budget`, detail `steps`, or
 `max_steps` for a shortened run); the driver itself stops (`error`, detail `driver stopped`: B2 on a branch the
@@ -466,8 +470,15 @@ def run_episode(agent, system_text, env, seed, out_path, budget, max_steps=STEPS
             return {"complete": False, "ended_by": None, "detail": "usd cap", "steps": step}
         raw, obs = ep.observe(step)
         truth = ep.env.truth()
-        out = agent.step(system_text, obs, prev, budget, lambda m, s=step: log("seed %s step %d: %s" % (seed, s, m)),
-                         sample_key="%s-%d" % (seed, step))
+        if ep.val.latched:
+            # halted before the request (a latch file, a reboot, repeated errors): the episode ends on this
+            # observation without asking the driver, so a halt costs no model call and no time
+            out = {"final_text": None, "calls": [], "turns": [], "state": {"moved": None, "estop": False},
+                   "error": "latched before the request: the driver was not asked", "seconds": 0.0, "cost_usd": 0.0,
+                   "agent_called": False}
+        else:
+            out = agent.step(system_text, obs, prev, budget, lambda m, s=step: log("seed %s step %d: %s" % (seed, s, m)),
+                             sample_key="%s-%d" % (seed, step))
         if out["error"] == "budget cap reached":
             log("seed %s: budget cap reached during step %d; step not written, nothing executed" % (seed, step))
             return {"complete": False, "ended_by": None, "detail": "usd cap", "steps": step}
@@ -487,7 +498,9 @@ def run_episode(agent, system_text, env, seed, out_path, budget, max_steps=STEPS
         written = estimate.get("decision")
         decision = written if isinstance(written, str) and written in vd.DECISIONS else "NONE"
         violations = []
-        if fallback:
+        if out.get("agent_called") is False:
+            violations.append({"code": "latched", "detail": "no request was made: %s" % ep.val.latch_reason})
+        elif fallback:
             violations.append({"code": "format", "detail": "invalid report (%s); harness fallback" % (out["error"] or "no valid JSON report")})
         elif decision != written:
             violations.append({"code": "format", "detail": "decision %r is not a D8 decision; treated as NONE" % (written,)})

@@ -587,9 +587,14 @@ def test_watched_latch_file_between_steps_gives_a_latched_observation_and_no_mot
     assert res["ended_by"] == "latch" and res["steps"] == 3 and seen == ["TURN_LEFT_30", "TURN_LEFT_30"]
     r2 = rows[2]
     assert r2["observation"]["counters"]["latched"] is True
-    assert r2["move_calls"] == [{"action": "TURN_LEFT_30", "tool_result": "refused", "tool_reason": "latched",
-                                 "validator_ok": False, "validator_reason": "latched", "agree": True}]
+    # the halted step is logged but the model is not asked: no request, no cost, nothing executed
+    assert r2["agent_called"] is False and r2["turns"] == [] and r2["calls"] == [] and r2["cost_usd"] == 0.0
+    assert max(json.loads(q["messages"][0]["content"][0]["text"])["OBSERVATION"]["step"] for q in client.requests) == 1
+    assert r2["move_calls"] == [] and [v["code"] for v in r2["violations"]] == ["latched"]
+    assert r2["next_prev"] == rp.fallback_report(r2["prev_report"], r2["raw"]["odometry"], 2)
     assert r2["executed_move"] is None and not (tmp_path / "ep.LATCH").exists()
+    s = mc.summarize(rows, ks.make_world(1010))
+    assert s["fallbacks"] == 0 and s["halted_without_request"] == 1
 
 
 class RealLikeEnv(cl.KinsimSquareEnv):
@@ -667,7 +672,50 @@ def test_error_observation_refuses_the_move_and_two_in_a_row_latch(tmp_path):
     r4 = rows[4]
     assert res["ended_by"] == "latch" and res["steps"] == 5 and "2 consecutive error observations" in res["detail"]
     assert r4["observation"]["counters"]["latched"] is True and r4["observation"]["counters"]["consecutive_errors"] == 2
-    assert r4["move_calls"][0]["tool_reason"] == "latched" and r4["executed_move"] is None
+    assert r4["agent_called"] is False and r4["move_calls"] == [] and r4["executed_move"] is None
+
+
+class CountingAgent:
+    """Counts the requests it gets; answers like B2."""
+
+    arm = "counting"
+
+    def __init__(self):
+        self.b2, self.steps_asked = cl.B2Driver(), []
+
+    def step(self, system_text, obs, prev, budget, log, sample_key=None):
+        self.steps_asked.append(obs["step"])
+        budget.add(0.25)                                     # every request costs money
+        return self.b2.step(system_text, obs, prev, budget, log, sample_key)
+
+
+@pytest.mark.parametrize("halt", ["watched file", "own file", "reboot", "errors"])
+def test_no_request_is_made_after_a_halt(tmp_path, halt):
+    """A latch set before an observation (the batch runner's halts arrive as latch files) ends the episode without
+    one more paid request."""
+    watched, own = tmp_path / "HALT", tmp_path / "ep.LATCH"
+    env = FlakyEnv(errors=(3, 4) if halt == "errors" else (), reboot_at=4 if halt == "reboot" else None)
+    real_step, n = env.step, []
+
+    def step(action):
+        n.append(action)
+        if len(n) == 4 and halt == "watched file":
+            watched.write_text("supply_low")
+        if len(n) == 4 and halt == "own file":
+            vd.write_latch_file(own, "batch_steps", "batch runner")
+        return real_step(action)
+    env.step = step
+    agent, budget = CountingAgent(), rp.Budget(1e9)
+    res = cl.run_episode(agent, "", env, 1010, tmp_path / "ep.jsonl", budget, 20, NOLOG, watch_latch_paths=[watched])
+    rows = [json.loads(x) for x in (tmp_path / "ep.jsonl").read_text().splitlines()]
+    assert res["ended_by"] == "latch" and res["steps"] == 5
+    assert agent.steps_asked == [0, 1, 2, 3]                 # the halted observation (step 4) is not sent
+    assert budget.spent == pytest.approx(4 * 0.25)
+    assert rows[4]["agent_called"] is False and rows[4]["executed_move"] is None and rows[4]["cost_usd"] == 0.0
+    assert rows[4]["observation"]["counters"]["latched"] is True
+    assert rows[4]["episode_end"]["ended_by"] == "latch" and len(n) == 4
+    for line in cl.to_runlog(rows, "r", "e"):
+        assert validate("runlog", line) == []
 
 
 def test_null_odometry_after_step_0_latches_before_the_model_is_asked(tmp_path):
@@ -676,7 +724,7 @@ def test_null_odometry_after_step_0_latches_before_the_model_is_asked(tmp_path):
     assert res["ended_by"] == "latch" and res["steps"] == 3 and "Pico reboot" in res["detail"]
     r2 = rows[2]
     assert r2["observation"]["odometry"] is None and r2["observation"]["counters"]["latched"] is True
-    assert r2["executed_move"] is None and r2["move_calls"][0]["validator_reason"] == "latched"
+    assert r2["executed_move"] is None and r2["agent_called"] is False and r2["turns"] == []
     assert (tmp_path / "ep.LATCH").exists()
 
 
