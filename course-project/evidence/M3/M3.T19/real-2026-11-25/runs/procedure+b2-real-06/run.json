@@ -1,0 +1,96 @@
+{
+ "provider_key": "procedure",
+ "provider_entry": {
+  "provider": "coded_procedure",
+  "model": null
+ },
+ "agent": {
+  "provider": "coded_procedure",
+  "settings": {
+   "policy": "kinsim_lite.estimate_step + decide_step, decision NONE in replay"
+  },
+  "price_usd_per_mtok": null,
+  "max_turns": null
+ },
+ "arm": "L2:procedure-replay",
+ "repeat": 0,
+ "max_steps": 150,
+ "sha12": {
+  "prompt": "807e29927b2b",
+  "geometry.py": "f7fc3d27c000",
+  "dv.py": "692a77bfad86",
+  "envs/kinsim_lite.py": "4fe853bf47ac",
+  "harness/tools_d5.py": "61305f0008df",
+  "harness/replay.py": "27a210633184",
+  "harness/providers/anthropic_messages.py": "705c14614a2d",
+  "harness/providers/openai_chat.py": "2d2ae6fbc178"
+ },
+ "dv": {
+  "file": "configs/dv-real.json",
+  "sha12": "ea2cd23f9186",
+  "canonical_sha12": "6cb73ad812cc",
+  "frozen": false,
+  "differs_from_frozen": {
+   "sigma_range_a_m": [
+    0.05,
+    0.0063
+   ],
+   "sigma_range_b_per_m": [
+    0.05,
+    0.017
+   ],
+   "sigma_bearing_deg": [
+    2.0,
+    1.937
+   ],
+   "reject_range_above_m": [
+    2.0,
+    3.0
+   ]
+  }
+ },
+ "observation_overlay": [
+  "source",
+  "status",
+  "error",
+  "sensors",
+  "odometry.quality",
+  "counters.latched",
+  "counters.consecutive_contacts",
+  "counters.consecutive_slips",
+  "counters.consecutive_errors"
+ ],
+ "obslog_schema": "bm.real_obslog/1",
+ "runner": "tools/real_replay.py",
+ "runner_sha12": "c2ea1ba4d685",
+ "real_replay_sha12": "316a22bef78d",
+ "config": "f5b6ccd518a8",
+ "prompt_file": "robot_system_prompt_v3.3-room.txt",
+ "obslogs": "/workspace/course-project/data/real-replay/real-2026-11-25/obslogs",
+ "batch": "b2-real-01 + b2-real-02 + b2-real-03 + b2-real-05 + b2-real-06",
+ "batch_config": "611d90a41329, 1b3ab20f9758, af676fc3b9e6, 41867c0ec8b2, 2ba442d815b9",
+ "real_car": true,
+ "seeds": [
+  5001,
+  5002
+ ],
+ "order": [
+  5002,
+  5001
+ ],
+ "order_seed": 20261125,
+ "cap_usd": 0.0,
+ "workers": 2,
+ "git_commit": "19f71e63c498",
+ "git_dirty": "0",
+ "server": null,
+ "host": "spark-2a60",
+ "python": "3.10.12",
+ "resume_reason": null,
+ "earlier_resumes": 0,
+ "started": "2026-11-25T17:49:50+0000",
+ "obslog_sha12": {
+  "5001": "43c209c878ac",
+  "5002": "fa5b5e44f549"
+ }
+}

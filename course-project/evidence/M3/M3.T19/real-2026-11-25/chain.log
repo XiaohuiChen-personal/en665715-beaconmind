@@ -1,0 +1,20 @@
+14:16:25 chain: started; waiting for the Qwen3.8 arm's first run (tmux bm-rr-qwen) to end
+15:22:25 chain: qwen38-flash-xhigh first run: exit 0; 15:21:49 done: total spent $0.00; failed seeds: none; stopped at the cap: none
+15:22:25 chain: qwen38-flash-xhigh: resume runs/qwen38-flash-xhigh over the whole index (--cap-usd 0 --workers 3)
+17:26:01 chain2: started; waiting for the Qwen3.8 runner (pid 1942429) that chain.sh started
+17:27:06 chain2: the Qwen3.8 runner exited: 17:27:00 done: total spent $0.00; failed seeds: none; stopped at the cap: none
+17:27:07 chain2: ended chain.sh (pid 1890809, blocked on the FIFO before stopping Qwen3.8); chain.log restored
+17:27:07 chain2: qwen38-flash-xhigh: resume runs/qwen38-flash-xhigh over the whole index (--cap-usd 0 --workers 3)
+17:27:08 chain2: qwen38-flash-xhigh: the replay code changed on this clone (only its hashes differ); seeds 4001,4002,4003 go to runs/qwen38-flash-xhigh+b2-real-05
+17:50:22 chain3: started; waiting for the Qwen3.8 runner (pid 2050187) that the running chain (pid 2049891) started
+18:13:57 crash: the Spark crashed (the journal ends without a shutdown) and rebooted at 18:14:40 UTC; every tmux session, runner and the Qwen3.8 server were gone. chain2 and chain3 (takeover.sh) did not survive; restart.sh continues.
+18:27:52 restart: started
+18:27:53 restart: starting Qwen3.8: started bm-qwen38 (loading takes several minutes; run: course-project/tools/serve_qwen38.sh wait)
+18:29:12 restart: ended by hand before any runner started (replaced by replay_chain.sh, which can be re-run); the Qwen3.8 server keeps loading
+18:30:36 replay_chain: started (resume reason: the Spark lost power at 18:13:57 UTC (journal ends without a shutdown) and rebooted at 18:14:40; resumed by replay_chain.sh)
+18:30:36 replay_chain: claude-opus-5-5+b2-real-06: a runner holds its lock; waiting for it
+18:30:36 replay_chain: Qwen3.8 server: bm-qwen38 already running
+ready: nvidia/Qwen3.8-Flash-Next-NVFP4 on 127.0.0.1:8000
+18:31:56 replay_chain: qwen38-flash-xhigh+b2-real-06: seeds 5001,5002 to do (first run)
+18:31:56 replay_chain: qwen38-flash-xhigh+b2-real-05: seeds 4001,4002,4003 to do (resume)
+18:44:14 replay_chain: claude-opus-5-5+b2-real-06: complete

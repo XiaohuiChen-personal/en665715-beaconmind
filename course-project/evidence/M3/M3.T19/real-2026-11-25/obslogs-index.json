@@ -1,6 +1,6 @@
 {
  "schema": "bm.real_obslog_set/1",
- "batch": "b2-real-01 + b2-real-02 + b2-real-03",
+ "batch": "b2-real-01 + b2-real-02 + b2-real-03 + b2-real-05 + b2-real-06",
  "batches": [
   {
    "batch": "b2-real-01",
@@ -18,7 +18,7 @@
    "world_sha12": "35572d7656f3",
    "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
    "max_range_m": 3.0,
-   "converted": "2026-11-25T08:28:49-0600"
+   "converted": "2026-11-25T11:49:34-0600"
   },
   {
    "batch": "b2-real-02",
@@ -36,7 +36,7 @@
    "world_sha12": "35572d7656f3",
    "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
    "max_range_m": 3.0,
-   "converted": "2026-11-25T08:28:49-0600"
+   "converted": "2026-11-25T11:49:34-0600"
   },
   {
    "batch": "b2-real-03",
@@ -54,15 +54,51 @@
    "world_sha12": "35572d7656f3",
    "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
    "max_range_m": 3.0,
-   "converted": "2026-11-25T08:28:49-0600"
+   "converted": "2026-11-25T11:49:34-0600"
+  },
+  {
+   "batch": "b2-real-05",
+   "seed_base": 4000,
+   "batch_config": "41867c0ec8b2",
+   "real_car": true,
+   "status": "halted",
+   "halt": {
+    "code": "stall",
+    "detail": "FORWARD_25: stall_right",
+    "time_utc": "2026-11-25T17:19:57Z",
+    "safety": true
+   },
+   "world_file": "configs/arenas/real-room.json",
+   "world_sha12": "35572d7656f3",
+   "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
+   "max_range_m": 3.0,
+   "converted": "2026-11-25T11:49:34-0600"
+  },
+  {
+   "batch": "b2-real-06",
+   "seed_base": 5000,
+   "batch_config": "2ba442d815b9",
+   "real_car": true,
+   "status": "halted",
+   "halt": {
+    "code": "telemetry_stale",
+    "detail": "last telemetry 1.383 s ago (limit 1.0 s)",
+    "time_utc": "2026-11-25T17:43:22Z",
+    "safety": true
+   },
+   "world_file": "configs/arenas/real-room.json",
+   "world_sha12": "35572d7656f3",
+   "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
+   "max_range_m": 3.0,
+   "converted": "2026-11-25T11:49:34-0600"
   }
  ],
- "batch_config": "611d90a41329, 1b3ab20f9758, af676fc3b9e6",
+ "batch_config": "611d90a41329, 1b3ab20f9758, af676fc3b9e6, 41867c0ec8b2, 2ba442d815b9",
  "real_car": true,
  "world_file": "configs/arenas/real-room.json",
  "world_sha12": "35572d7656f3",
  "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
- "created": "2026-11-25T08:28:49-0600",
+ "created": "2026-11-25T11:49:34-0600",
  "episodes": [
   {
    "seed": 1001,
@@ -128,6 +164,71 @@
    "sha12": "3e528d2e659e",
    "note": "completed; end circle interrupted by stall",
    "end_pose_source": "last step's truth (no end circle)"
+  },
+  {
+   "seed": 4001,
+   "batch": "b2-real-05",
+   "episode": "ep01-a1",
+   "scenario": "S5",
+   "steps": 114,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.0501,
+   "truth_is_a_fix_last": false,
+   "sha12": "dcce72795a87",
+   "note": null,
+   "end_pose_source": "manifest end_pose_map"
+  },
+  {
+   "seed": 4002,
+   "batch": "b2-real-05",
+   "episode": "ep02-a1",
+   "scenario": "S4",
+   "steps": 132,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "bc2857c72b99",
+   "note": null,
+   "end_pose_source": "manifest end_pose_map"
+  },
+  {
+   "seed": 4003,
+   "batch": "b2-real-05",
+   "episode": "ep03-a1",
+   "scenario": "S3",
+   "steps": 141,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "d6673e735e43",
+   "note": null,
+   "end_pose_source": "manifest end_pose_map"
+  },
+  {
+   "seed": 5001,
+   "batch": "b2-real-06",
+   "episode": "ep01-a1",
+   "scenario": "S4",
+   "steps": 80,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "43c209c878ac",
+   "note": null,
+   "end_pose_source": "manifest end_pose_map"
+  },
+  {
+   "seed": 5002,
+   "batch": "b2-real-06",
+   "episode": "ep02-a1",
+   "scenario": "S3",
+   "steps": 45,
+   "ended_by": "error",
+   "truth_sigma_xy_m_last": 0.0557,
+   "truth_is_a_fix_last": true,
+   "sha12": "fa5b5e44f549",
+   "note": "flagged procedure_stopped: driver stopped: B2 stopped: E5 leg with no forward move and no E4",
+   "end_pose_source": "manifest end_pose_map"
   }
  ],
  "excluded": [
@@ -136,7 +237,19 @@
    "status": "halted",
    "reason": "did not end normally: {'code': 'odometry_scale', 'detail': 'tag fixes land -28 % (+-8 %) of the distance from where the odometry puts the car (10.5 m driven, 37 fixes; limit 12 %): the encoder scale is wrong, or the tags are', 'time_utc': '2026-11-25T12:24:02Z', 'safety': True}",
    "batch": "b2-real-02"
+  },
+  {
+   "episode": "ep04-a1",
+   "status": "halted",
+   "reason": "did not end normally: {'code': 'stall', 'detail': 'FORWARD_25: stall_right', 'time_utc': '2026-11-25T17:19:57Z', 'safety': True}",
+   "batch": "b2-real-05"
+  },
+  {
+   "episode": "ep03-a1",
+   "status": "halted",
+   "reason": "did not end normally: {'code': 'telemetry_stale', 'detail': 'last telemetry 1.383 s ago (limit 1.0 s)', 'time_utc': '2026-11-25T17:43:22Z', 'safety': True}",
+   "batch": "b2-real-06"
   }
  ],
- "steps": 338
+ "steps": 850
 }

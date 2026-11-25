@@ -1,4 +1,4 @@
-converted 5 episodes, 338 steps, into data/real-replay/real-2026-11-25/obslogs
+converted 10 episodes, 850 steps, into data/real-replay/real-2026-11-25/obslogs
   seed 1001  b2-real-01   ep01-a1  S1    83 steps  ended DONE      last truth sigma 0.050 m (tag fix)
            completed; batch halted after the end by odometry_scale; end pose from end_fix.pose_now
   seed 2001  b2-real-02   ep01-a1  S1    56 steps  ended DONE      last truth sigma 0.050 m (tag fix)
@@ -6,4 +6,12 @@ converted 5 episodes, 338 steps, into data/real-replay/real-2026-11-25/obslogs
   seed 3001  b2-real-03   ep01-a1  S1    56 steps  ended DONE      last truth sigma 0.050 m (tracked since the last fix)
   seed 3002  b2-real-03   ep02-a1  S2    81 steps  ended DONE      last truth sigma 0.056 m (tag fix)
            completed; end circle interrupted by stall; end pose from last step's truth (no end circle)
+  seed 4001  b2-real-05   ep01-a1  S5   114 steps  ended DONE      last truth sigma 0.050 m (tracked since the last fix)
+  seed 4002  b2-real-05   ep02-a1  S4   132 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+  seed 4003  b2-real-05   ep03-a1  S3   141 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+  seed 5001  b2-real-06   ep01-a1  S4    80 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+  seed 5002  b2-real-06   ep02-a1  S3    45 steps  ended error     last truth sigma 0.056 m (tag fix)
+           flagged procedure_stopped: driver stopped: B2 stopped: E5 leg with no forward move and no E4; end pose from manifest end_pose_map
   excluded b2-real-02 ep03-a1: did not end normally: {'code': 'odometry_scale', 'detail': 'tag fixes land -28 % (+-8 %) of the distance from where the odometry puts the car (10.5 m driven, 37 fixes; limit 12 %): the encoder scale is wrong, or the tags are', 'time_utc': '2026-11-25T12:24:02Z', 'safety': True}
+  excluded b2-real-05 ep04-a1: did not end normally: {'code': 'stall', 'detail': 'FORWARD_25: stall_right', 'time_utc': '2026-11-25T17:19:57Z', 'safety': True}
+  excluded b2-real-06 ep03-a1: did not end normally: {'code': 'telemetry_stale', 'detail': 'last telemetry 1.383 s ago (limit 1.0 s)', 'time_utc': '2026-11-25T17:43:22Z', 'safety': True}

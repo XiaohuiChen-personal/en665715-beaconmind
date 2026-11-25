@@ -1,0 +1,122 @@
+{
+ "provider_key": "claude-opus-5-5",
+ "provider_entry": {
+  "provider": "anthropic_messages",
+  "model": "claude-opus-5-5",
+  "api_key_env": "ANTHROPIC_API_KEY",
+  "price_usd_per_mtok": {
+   "input": 4.0,
+   "cached_input": null,
+   "output": 20.0
+  },
+  "price_checked": "2026-09-27",
+  "options": {
+   "max_tokens": 64000,
+   "effort": "medium",
+   "thinking": "adaptive (field omitted)",
+   "prompt_caching": true,
+   "harness": "harness/providers/anthropic_messages.py SETTINGS"
+  }
+ },
+ "agent": {
+  "provider": "anthropic_messages",
+  "settings": {
+   "model": "claude-opus-5-5",
+   "max_tokens": 64000,
+   "output_config": {
+    "effort": "medium"
+   }
+  },
+  "price_usd_per_mtok": {
+   "input": 4.0,
+   "cache_write_5m": 5.0,
+   "cache_read": 0.2,
+   "output": 20.0
+  },
+  "max_turns": 30
+ },
+ "arm": "L2:claude-opus-5-5",
+ "repeat": 0,
+ "max_steps": 150,
+ "sha12": {
+  "prompt": "807e29927b2b",
+  "dv.json": "be20213dd9c9",
+  "providers.json": "60ada1c463ff",
+  "geometry.py": "f7fc3d27c000",
+  "dv.py": "692a77bfad86",
+  "envs/kinsim_lite.py": "4fe853bf47ac",
+  "harness/tools_d5.py": "61305f0008df",
+  "harness/replay.py": "27a210633184",
+  "harness/providers/anthropic_messages.py": "705c14614a2d",
+  "harness/providers/openai_chat.py": "2d2ae6fbc178"
+ },
+ "dv": {
+  "file": "configs/dv-real.json",
+  "sha12": "ea2cd23f9186",
+  "canonical_sha12": "6cb73ad812cc",
+  "frozen": false,
+  "differs_from_frozen": {
+   "sigma_range_a_m": [
+    0.05,
+    0.0063
+   ],
+   "sigma_range_b_per_m": [
+    0.05,
+    0.017
+   ],
+   "sigma_bearing_deg": [
+    2.0,
+    1.937
+   ],
+   "reject_range_above_m": [
+    2.0,
+    3.0
+   ]
+  }
+ },
+ "observation_overlay": [
+  "source",
+  "status",
+  "error",
+  "sensors",
+  "odometry.quality",
+  "counters.latched",
+  "counters.consecutive_contacts",
+  "counters.consecutive_slips",
+  "counters.consecutive_errors"
+ ],
+ "obslog_schema": "bm.real_obslog/1",
+ "runner": "tools/real_replay.py",
+ "runner_sha12": "c2ea1ba4d685",
+ "real_replay_sha12": "316a22bef78d",
+ "config": "0940d79f59f3",
+ "prompt_file": "robot_system_prompt_v3.3-room.txt",
+ "obslogs": "/workspace/course-project/data/real-replay/real-2026-11-25/obslogs",
+ "batch": "b2-real-01 + b2-real-02 + b2-real-03 + b2-real-05 + b2-real-06",
+ "batch_config": "611d90a41329, 1b3ab20f9758, af676fc3b9e6, 41867c0ec8b2, 2ba442d815b9",
+ "real_car": true,
+ "seeds": [
+  5001,
+  5002
+ ],
+ "order": [
+  5002,
+  5001
+ ],
+ "order_seed": 20261125,
+ "cap_usd": 14.5,
+ "workers": 2,
+ "git_commit": "19f71e63c498",
+ "git_dirty": "0",
+ "server": null,
+ "host": "spark-2a60",
+ "python": "3.10.12",
+ "anthropic_sdk": "1.11.0",
+ "resume_reason": "the Spark crashed at 18:13:57 UTC (journal ends without a shutdown) and rebooted; spend ledger repaired (spend.jsonl.crash-20261125T181357 kept)",
+ "earlier_resumes": 0,
+ "started": "2026-11-25T18:26:52+0000",
+ "obslog_sha12": {
+  "5001": "43c209c878ac",
+  "5002": "fa5b5e44f549"
+ }
+}
