@@ -195,3 +195,15 @@ The earlier batches ran without the slip sigma. Their replays with it are in
 
 The stalls come at a move's slowest part: a turn's minimum duty (0.30–0.34), or the slow-down at a straight's end
 (duty 0.31–0.42). Raising those minimums is a code question for the lead, not something to check at the car.
+
+## Addendum, after b2-real-07 (12:27 CST): a third stall, away from the tape
+
+This note was written before b2-real-07. That batch ended on a third right-wheel stall: `FORWARD_25`, duty 0.375 at
+the stop (the move's highest 0.590), the left wheel at 0.067 m/s, tracked pose (3.16, 2.16, 72°). That is 0.8 m east of
+the old tape line, on fresh AA cells (CONTEXT.md; its records are not analysed here). The tape does not explain this
+one. **The order in §6 changes:** the right wheel, tyre and gearbox come first. All three stalls are on the right
+wheel at the slow end of a move (duty 0.36–0.42), and in b2-real-06 the right wheel needed 8 of the 9 assist kicks.
+The tape spot comes second: two stalls and most wheel-against-gyro flags sit there. §1 still holds: the right wheel's
+speed per duty did not fall over the day, so the fault comes and goes (drag, a fibre on the axle, a tyre, the
+gearbox), and the motor itself is not weakening.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this addendum.
