@@ -33,7 +33,8 @@ AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote the batch runne
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: added TagCheck, the `tag_survey` halt and the trusted-tag
 rule for a step's fix (conflicts still judged on every tag), and the fix sigma from the tag pilot's detector-noise file
 (fix_sigma_from_detector_noise, fix_sigma_source). 2026-11-25: the odometry-bias halt weighs each fix by its noise
-and asks for significance (a false halt of the first real practice batch).
+and asks for significance (a false halt of the first real practice batch); the scale is checked by the ranges along
+each straight move (range_scale_of_move), which the camera measures well, and over each episode between its circles.
 """
 import hashlib
 import json
@@ -88,6 +89,10 @@ class BatchParams:
                                         # this: whatever the odometer's error, it then stays inside the wall margin
     transit_scale_tol: float = 0.10     # the transit between two full-circle fixes must measure the same length by
     transit_scale_min_m: float = 0.30   # odometry and by the tags within this share, when it is at least this long
+    range_scale_tol: float = 0.12       # the ranges to the tags seen before and after each straight move must change
+                                        # by what the odometry says within this share (median over the moves so far)
+    range_scale_move_sigma: float = 0.05    # one move's scatter (the real car: 0.92 to 1.03 over six moves): with n
+                                        # moves the limit is at least 3 x this / sqrt(n), so one move alone needs 15 %
     # guard
     wall_margin_m: float = 0.15
     sigma_block_m: float = 0.25
@@ -172,6 +177,7 @@ class PoseTracker:
         self.bias_sxy = 0.0             # weighted least squares of (innovation along the leg) = scale x leg, weights
         self.bias_sxx = 0.0             # 1 / (fix sigma^2 + tracked sigma^2): see odometry_bias()
         self.dead_reckoned = None       # the pose by odometry alone since mark_dead_reckoning()
+        self.range_moves = []           # (tags over odometry, range pairs) of each straight move: range_scale()
         self.travel_since_fix_m = 0.0   # distance driven by odometry since the last fix that was taken
         self.last_tags = None           # the tags of the last fix taken
         self.steps_since_fix = 0
@@ -216,6 +222,16 @@ class PoseTracker:
             self.bias_sxx += leg * leg / var
         self._leg = [0.0, 0.0]
         self.travel_since_fix_m = 0.0
+
+    def range_scale(self, min_moves=1):
+        """(median over the straight moves of the distance by the tags' ranges over the distance by odometry, moves,
+        range pairs), or None while fewer than min_moves straight moves had a tag in view before and after."""
+        if len(self.range_moves) < max(1, min_moves):
+            return None
+        scales = sorted(m[0] for m in self.range_moves)
+        n = len(scales)
+        median = scales[n // 2] if n % 2 else 0.5 * (scales[n // 2 - 1] + scales[n // 2])
+        return median, n, sum(m[1] for m in self.range_moves)
 
     def mark_dead_reckoning(self):
         """From here on also keep the pose that odometry alone gives (no fix blended in)."""
@@ -639,6 +655,66 @@ class Monitor:
 
 # ---------------------------------------------------------------- the environment the harness drives
 
+def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10):
+    """The encoder scale from one straight move: (distance by the tags over distance by odometry, range pairs) or None.
+
+    For every tag id seen exactly once before the move and once after it: its position before, in the car frame
+    (range from the axle midpoint, bearing), and the odometry's displacement u predict the range after it; the scale
+    s solves |tag - s u| = the range measured after. Only ranges enter, which the camera measures to millimetres (the
+    tag pilot); a bearing error moves the prediction little for a tag near the line of motion. The pairs of one move
+    are weighted by how much the range says about s (d range / d s; a tag abeam says nothing and is left out below
+    min_info of it). A pair farther off than half the move plus gate_m is another tag of the same id, not a scale.
+    2026-11-25, after a false odometry_scale halt of the first real practice batch: see odometry_bias()."""
+    ux, uy = float(odo["forward_m"]), float(odo["left_m"])
+    uu = ux * ux + uy * uy
+    if uu <= 0.0:
+        return None
+    move = math.sqrt(uu)
+
+    def once(dets):
+        seen = {}
+        for d in dets:
+            if d.get("id") is not None and usable_detection(d):
+                seen.setdefault(int(d["id"]), []).append((float(d["range_m"]), math.radians(float(d["bearing_deg"]))))
+        return {k: v[0] for k, v in seen.items() if len(v) == 1}
+    a, b = once(before), once(after)
+    num = den = 0.0
+    pairs = 0
+    for tid, (r1, b1) in a.items():
+        if tid not in b:
+            continue
+        r2 = b[tid][0]
+        tx, ty = r1 * math.cos(b1), r1 * math.sin(b1)
+        tu = tx * ux + ty * uy
+        predicted = math.hypot(tx - ux, ty - uy)
+        info = abs(tu - uu) / max(predicted, 1e-6)
+        if info < min_info * move or abs(r2 - predicted) > 0.5 * move + gate_m:
+            continue
+        disc = tu * tu - uu * (r1 * r1 - r2 * r2)
+        if disc < 0.0:
+            continue
+        root = math.sqrt(disc)
+        s = min(((tu - root) / uu, (tu + root) / uu), key=lambda v: abs(v - 1.0))
+        num += info * info * s
+        den += info * info
+        pairs += 1
+    return None if pairs == 0 else (num / den, pairs)
+
+
+def range_scale_halt(tracker, params):
+    """Why the ranges along the straight moves so far say the encoder scale is wrong (the halt's detail), or None.
+    The limit is range_scale_tol, and at least three times one move's scatter over the root of the moves."""
+    ranges = tracker.range_scale()
+    if ranges is None:
+        return None
+    limit = max(params.range_scale_tol, 3.0 * params.range_scale_move_sigma / math.sqrt(ranges[1]))
+    if abs(ranges[0] - 1.0) <= limit:
+        return None
+    return ("over %d straight moves the ranges to the tags in view changed %.2f times the distance the odometry "
+            "reports (median, %d range pairs; limit 1 +- %.2f): the encoder scale in configs/car.json is wrong, or the "
+            "tags are" % (ranges[1], ranges[0], ranges[2], limit))
+
+
 class BatchEnv:
     """RealCarEnv with the tracker, the guard and the monitor on every step. Implements the closed-loop harness's
     environment protocol. `start` is the arena-frame pose that is the origin of the map frame the harness sees."""
@@ -654,6 +730,7 @@ class BatchEnv:
         self.blocked = 0
         self.rows = 0
         self.t_frame = monitor.clock()  # when the camera last answered
+        self.range_before = None        # the last sensing's detections, for the range check of the next straight move
         self.in_scan = False            # True while BatchRunner.scan turns a full circle (the circle is the fix)
         self.use_views = True           # False until a full circle has confirmed the pose: a view fix judged against
                                         # an unconfirmed (taped) pose says nothing, in either direction
@@ -718,6 +795,33 @@ class BatchEnv:
             except Exception as exc:    # noqa: BLE001
                 self.monitor.halt("camera", "no frame before the move: %s" % exc)
 
+    def _range_check(self, exact, sense, record, first):
+        """Note the encoder scale the ranges give over a straight move (range_scale_of_move) with the tracker. The
+        observation's ranges are rounded to the centimetre; where the detector's own record has the tag's position
+        to the millimetre (detections_internal, the real camera), that is taken for the same tag."""
+        now = []
+        precise = {}
+        for d in record.get("detections_internal") or []:
+            xyz = d.get("base_xyz_m")
+            if d.get("id") is not None and xyz and len(xyz) >= 2:
+                precise.setdefault(int(d["id"]), []).append((float(xyz[0]), float(xyz[1])))
+        for d in sense.get("detections") or []:
+            if d.get("id") is None or not usable_detection(d):
+                continue
+            exact_xy = precise.get(int(d["id"])) or []
+            if len(exact_xy) == 1:
+                r = math.hypot(*exact_xy[0])
+                if abs(r - float(d["range_m"])) < 0.05:
+                    d = {"id": d["id"], "range_m": r,
+                         "bearing_deg": math.degrees(math.atan2(exact_xy[0][1], exact_xy[0][0]))}
+            now.append(d)
+        before, self.range_before = self.range_before, now
+        if first or exact is None or before is None or abs(exact["forward_m"]) < 0.05:
+            return
+        est = range_scale_of_move(before, now, exact)
+        if est is not None:
+            self.tracker.range_moves.append(est)
+
     def _refuse(self, action, reason):
         sense = self.inner.step(None)           # sense again; nothing moves
         sense = self._post(sense, None)
@@ -730,6 +834,7 @@ class BatchEnv:
         exact = record.get("odometry_exact")
         if exact is not None:
             self.tracker.predict(exact)
+        self._range_check(exact, sense, record, first)
         self.monitor.check_sense(sense, record, first)
         if ((sense.get("status") or {}).get("sensors") or {}).get("camera") == "ok":
             self.t_frame = self.monitor.clock()
@@ -784,6 +889,9 @@ class BatchEnv:
             self.monitor.halt("no_fix", "%d steps without a tag fix (limit %d)" % (self.tracker.steps_since_fix, p.no_fix_steps))
         if self.tracker.conflicts >= p.fix_conflicts:
             self.monitor.halt("fix_conflict", "%d tag fixes in a row far from the tracked pose" % self.tracker.conflicts)
+        wrong_scale = range_scale_halt(self.tracker, p)
+        if wrong_scale:
+            self.monitor.halt("odometry_scale", wrong_scale)
         bias = self.tracker.odometry_bias()
         # the scale is off by more than the limit AND the fixes say so beyond their own noise (three standard errors)
         if bias is not None and abs(bias[0]) > p.odometry_bias_max and abs(bias[0]) > 3.0 * bias[3]:
@@ -1496,6 +1604,10 @@ class BatchRunner:
             else:
                 self.tracker.dead_reckoned = None
                 entry["odometry_scale_check_episode"] = {"checked": False, "why": "no full-circle fix at the end"}
+            ranges = self.tracker.range_scale(1)
+            entry["odometry_range_scale"] = None if ranges is None else {
+                "tags_over_odometry_median": round(ranges[0], 3), "straight_moves": ranges[1], "range_pairs": ranges[2],
+                "note": "the whole batch so far"}
             entry["end_pose_world"] = dict(self.tracker.pose)
             entry["end_pose_map"] = to_map_pose(start, self.tracker.pose)
             # how far the pose tracked through the episode was from what the end circle then measured

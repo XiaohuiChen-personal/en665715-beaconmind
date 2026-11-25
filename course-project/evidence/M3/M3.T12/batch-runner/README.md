@@ -13,8 +13,9 @@ note. Xiaohui Chen approved unattended batches on 2026-11-18 (plan README §3.6)
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: ran the wrapper on the Spark and fixed it, added the tag check
 (`tag_survey`), `--detector-noise`, `--dv` and `tools/real_dv.py`, the tests named below, the 3.0 m dry runs and the
 first batch's commands; edited this note.
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: replaced the per-step `odometry_scale` statistic after a false
-halt of the first real practice batch, added the episode scale check, ran the first batch's rehearsal
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: diagnosed the false `odometry_scale` halt of the first real
+practice batch (`practice-01b/`), added the range check along straight moves and the episode scale check, weighted the
+per-step statistic by the fixes' noise, ran the first batch's rehearsal
 (`rehearsal-2026-11-25.md`, `rehearse_drift.py`) and filled in the record-pass command; edited this note.
 
 ## Files (under `course-project/`)
@@ -260,7 +261,7 @@ set, `car.sh clear-latch --operator <name>`; then the `run` command again.
 | `executor_refused` | the executor refused a move the guard allowed (e.g. the drive map was lost) | S | `test_halt_executor_refusal` |
 | `no_fix` | `--no-fix-steps` (24) steps without any tag fix; no full-circle fix at a start pose or at the first circle; the first circle disagrees with the tape | S | `test_halt_repeated_no_fix`, `test_the_first_circle_speaks_without_the_tape_and_a_disagreement_halts` |
 | `fix_conflict` | three fixes in a row far from the tracked pose | S | `test_halt_fix_conflict` |
-| `odometry_scale` | the transit's two lengths differ; the episode's two lengths (start circle to end circle, odometry alone against the circles' fixes; 2026-11-25) differ; or the per-step fixes put the scale off by more than 12 % **and** three standard errors (weighted by each fix's noise; 2026-11-25, after a false halt of the first real practice batch: `rehearsal-2026-11-25.md`) | S | `test_the_transit_checks_the_encoder_scale_before_any_episode`, `test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall`, `test_noisy_fixes_after_short_legs_do_not_call_a_correct_odometer_biased` |
+| `odometry_scale` | the ranges to the tags seen before and after each straight move change by another distance than the odometry's (median over the moves so far off by more than 12 %, 15 % on the first move; 2026-11-25, after a false halt of the first real practice batch: `practice-01b/`, `rehearsal-2026-11-25.md`); the transit's two lengths differ; the episode's two lengths (start circle to end circle, odometry alone against the circles' fixes) differ; or the per-step fixes put the scale off by more than 12 % **and** three standard errors (weighted by each fix's noise) | S | `test_the_transit_checks_the_encoder_scale_before_any_episode`, `test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall` (unchanged since review finding 8), `test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms`, `test_the_practice_batch_ranges_say_its_odometer_was_right`, `test_the_range_of_a_tag_along_a_straight_move_measures_the_scale`, `test_noisy_fixes_after_short_legs_do_not_call_a_correct_odometer_biased` |
 | `pose_uncertain` | tracked position sigma above 0.25 m, or a tracked pose that is not a number | S | `test_halt_pose_too_uncertain` |
 | `detector` | a detection whose range or bearing is not a number | S | `test_detections_that_are_not_numbers_never_reach_the_pose` |
 | `outside_drive_area` | the tracked pose is outside the free area | S | `test_halt_pose_outside_the_driving_area` |

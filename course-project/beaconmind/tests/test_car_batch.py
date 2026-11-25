@@ -965,26 +965,19 @@ def test_a_stale_camera_frame_is_an_error():
 
 
 def test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall(tmp_path):
-    """The review's probe: the odometer reads 25 % short (a wrong car.json). Before review finding 8 the car drove into
-    the wall with a confident pose. Since 2026-11-25 (the false halt of the first real practice batch) the scale is
-    judged where the evidence is good: the transit and the episode itself between two full circles, and the per-step
-    fixes only when their own noise allows it (three standard errors). Here the start is too close for the transit
-    check (the 20-tag room at 3.0 m), so the episode's end circle has to catch it: in two of these three seeds it does;
-    in the third the end circle is weak and the per-step evidence is 1.9 standard errors, and the batch completes.
-    Every seed: the simulated car never comes near a wall."""
+    """The review's probe: the odometer reads 25 % short (a wrong car.json). The tracked pose then lags the car, and
+    before this check the car drove into the wall with a confident pose. Tag fixes that keep landing ahead of the
+    odometry along the way driven now halt the batch."""
     from beaconmind.car import config as C
     cfg = C.load_config()
     wrong = cfg.replace(ticks_per_m_left=cfg.ticks_per_m_left / 0.75, ticks_per_m_right=cfg.ticks_per_m_right / 0.75)
-    start = {"id": "S1", "x_m": 2.5, "y_m": 1.5, "theta_deg": 90.0}
-    place = {"x_m": 2.4, "y_m": 1.6, "theta_deg": 70.0}
-    halted = 0
     for seed in (1, 2, 3):
         out = tmp_path / ("s%d" % seed)
         latch = Latch(out / "LATCH")
-        params = B.BatchParams(world_path="x", start_poses=[start], initial_pose=dict(place), episodes=1, max_steps=80,
-                               max_range_m=3.0)
-        rig = B.dry_rig(WORLD20, place, latch=latch, seed=seed, max_range_m=3.0, cfg=wrong)
-        runner = B.BatchRunner(params, rig, WORLD20, out / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
+        params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(TAPED), episodes=1, max_steps=80,
+                               max_range_m=2.5)
+        rig = B.dry_rig(WORLD, PLACE, latch=latch, seed=seed, max_range_m=2.5, cfg=wrong)
+        runner = B.BatchRunner(params, rig, WORLD, out / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
                                log=lambda *a: None, run_episode=cl.run_episode)
         depth = {"min": 9.0}
         walls = rig.link.on_step
@@ -994,13 +987,9 @@ def test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall(tmp_path):
             depth["min"] = min(depth["min"], runner.guard.footprint_depth(rig.sim_truth_fn()))
         rig.link.on_step = watch
         result = runner.run()
+        assert result["status"] == "halted", (seed, result)
         assert depth["min"] > 0.03 and not rig.link.sim.p.blocked_left, (seed, depth, result)
-        if result["status"] == "halted":
-            halted += 1
-            assert result["halt"]["code"] in ("odometry_scale", "fix_conflict", "start_pose", "no_fix", "guard_blocked"), result
-            if result["halt"]["code"] == "odometry_scale":
-                assert "start circle to end circle" in result["halt"]["detail"]
-    assert halted >= 2, halted
+        assert result["halt"]["code"] in ("odometry_scale", "fix_conflict", "start_pose", "no_fix", "guard_blocked"), result
 
 
 def test_noisy_fixes_after_short_legs_do_not_call_a_correct_odometer_biased():
@@ -1960,3 +1949,116 @@ def test_the_recorder_check_compares_the_session_it_was_made_for(tmp_path):
     assert "no longer active" in check()
     source = (ROOT / "tools" / "car_batch.py").read_text()
     assert "recorder_check = make_recorder_check(session)" in source
+
+
+# The first real practice batch's six straight moves (data/batches/practice-01b on the Spark, 2026-11-25): the
+# odometry of the move (forward, left) and each tag's position in the car frame before and after it, from the
+# detector's own record (detections_internal, base_xyz_m). Its odometry_scale halt (-23 %) came from position fixes.
+PRACTICE_01B_STRAIGHTS = [
+    ((0.2443, 0.0135), [(1, 1.9585, 0.6948), (9, 2.0952, 0.2693), (23, 2.0885, -0.0464), (8, 2.076, -0.4143)],
+     [(1, 1.7548, 0.5845), (9, 1.8658, 0.152), (23, 1.8427, -0.1629), (8, 1.8172, -0.5317)]),
+    ((0.2447, 0.0122), [(1, 1.7548, 0.5845), (9, 1.8658, 0.152), (23, 1.8427, -0.1629), (8, 1.8172, -0.5317)],
+     [(1, 1.5332, 0.4725), (9, 1.6192, 0.0338), (23, 1.5785, -0.279)]),
+    ((0.0994, 0.0053), [(1, 1.5332, 0.4725), (9, 1.6192, 0.0338), (23, 1.5785, -0.279)],
+     [(1, 1.4545, 0.3822), (9, 1.523, -0.0591), (23, 1.464, -0.37)]),
+    ((0.0930, 0.0047), [(1, 1.4545, 0.3822), (9, 1.523, -0.0591), (23, 1.464, -0.37)],
+     [(1, 1.3837, 0.3089), (9, 1.4296, -0.1353)]),
+    ((0.2454, 0.0115), [(0, 1.3168, 0.2704), (1, 1.3315, -0.3538)], [(0, 1.0914, 0.2372)]),
+    ((0.2453, 0.0094), [(0, 1.0914, 0.2372)], [(0, 0.8798, 0.1665)]),
+]
+
+
+def _sense_and_record(tags_xy):
+    """An observation (centimetre ranges, as the agent sees them) and the detector's record (millimetres)."""
+    dets = [{"id": i, "range_m": round(math.hypot(x, y), 2), "bearing_deg": round(math.degrees(math.atan2(y, x)), 1)}
+            for i, x, y in tags_xy]
+    return {"detections": dets}, {"detections_internal": [{"id": i, "base_xyz_m": [x, y, 0.23]} for i, x, y in tags_xy]}
+
+
+def _range_replay(straights, odometry_factor=1.0):
+    env = B.BatchEnv.__new__(B.BatchEnv)
+    env.range_before = None
+    env.tracker = B.PoseTracker(S1, 0.05, 2.0)
+    params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
+    halts = []
+    for (fwd, left), before, after in straights:
+        sense, record = _sense_and_record(before)
+        env.range_before = None
+        env._range_check(None, sense, record, True)
+        sense, record = _sense_and_record(after)
+        env._range_check({"forward_m": fwd * odometry_factor, "left_m": left * odometry_factor, "dtheta_deg": 3.0},
+                         sense, record, False)
+        halts.append(B.range_scale_halt(env.tracker, params))
+    return env.tracker, halts
+
+
+def test_the_practice_batch_ranges_say_its_odometer_was_right():
+    """Replayed through the batch's own range check, the six straight moves of the practice batch that halted
+    `odometry_scale` (-23 %, from position fixes) say tags over odometry 0.92 to 1.03 per move, median 0.96: no halt
+    at any move. The same moves with an odometer reading 25 % short (or long) halt at the first move."""
+    tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS)
+    per_move = [round(m[0], 2) for m in tracker.range_moves]
+    assert per_move == [0.97, 1.03, 0.99, 0.95, 0.94, 0.92], per_move
+    assert [m[1] for m in tracker.range_moves] == [4, 3, 3, 2, 1, 1]
+    assert tracker.range_scale()[0] == pytest.approx(0.961, abs=0.002)
+    assert halts == [None] * 6
+    for factor, expect in ((0.75, 1.29), (1.25, 0.77)):
+        tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS, odometry_factor=factor)
+        assert halts[0] is not None and "configs/car.json is wrong" in halts[0], halts
+        assert tracker.range_scale()[0] == pytest.approx(expect, abs=0.02)
+
+
+def test_the_range_of_a_tag_along_a_straight_move_measures_the_scale():
+    """Geometry of range_scale_of_move: an exact case, a backward move (the other root), a tag abeam (no
+    information, left out), an id seen twice (ambiguous, left out) and a tag far from where it should be (another tag
+    of the same id, left out)."""
+    def det(i, x, y):
+        return {"id": i, "range_m": math.hypot(x, y), "bearing_deg": math.degrees(math.atan2(y, x))}
+    tag = (2.0, 0.4)
+    for s_true, odo in ((1.0, (0.25, 0.01)), (4.0 / 3.0, (0.25, 0.01)), (0.8, (0.25, -0.02)), (1.0, (-0.10, 0.0)),
+                        (1.25, (-0.10, 0.0))):
+        moved = (tag[0] - s_true * odo[0], tag[1] - s_true * odo[1])
+        est = B.range_scale_of_move([det(5, *tag)], [det(5, *moved)], {"forward_m": odo[0], "left_m": odo[1]})
+        assert est is not None and est[0] == pytest.approx(s_true, abs=1e-9) and est[1] == 1, (s_true, odo, est)
+    abeam = B.range_scale_of_move([det(5, 0.0, 1.5)], [det(5, -0.25, 1.5)], {"forward_m": 0.25, "left_m": 0.0})
+    assert abeam is None
+    twice = B.range_scale_of_move([det(5, 2.0, 0.4), det(5, 2.0, -1.0)], [det(5, 1.75, 0.4), det(5, 1.75, -1.0)],
+                                  {"forward_m": 0.25, "left_m": 0.0})
+    assert twice is None
+    other = B.range_scale_of_move([det(5, 2.0, 0.4)], [det(5, 2.6, 0.4)], {"forward_m": 0.25, "left_m": 0.0})
+    assert other is None
+
+
+def test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms(tmp_path):
+    """The range check against fault injection: odometers reading 25 % short and 25 % long, in the 8-tag room at
+    2.5 m and the 20-tag room at 3.0 m. Every run halts `odometry_scale` on the ranges, with the simulated car far
+    from any wall; a correct odometer completes."""
+    from beaconmind.car import config as C
+    cfg = C.load_config()
+    rooms = [(WORLD, PLACE, S1, TAPED, 2.5),
+             (WORLD20, {"x_m": 2.4, "y_m": 1.6, "theta_deg": 70.0}, {"id": "S1", "x_m": 2.5, "y_m": 1.5, "theta_deg": 90.0},
+              {"x_m": 2.4, "y_m": 1.6, "theta_deg": 70.0}, 3.0)]
+    for factor in (0.75, 1.25, 1.0):
+        wrong = cfg.replace(ticks_per_m_left=cfg.ticks_per_m_left / factor, ticks_per_m_right=cfg.ticks_per_m_right / factor)
+        for r, (world, place, start, initial, max_range) in enumerate(rooms):
+            for seed in (1, 2):
+                out = tmp_path / ("f%s-r%d-s%d" % (factor, r, seed))
+                params = B.BatchParams(world_path="x", start_poses=[start], initial_pose=dict(initial), episodes=1,
+                                       max_steps=80, max_range_m=max_range)
+                rig = B.dry_rig(world, place, latch=Latch(out / "LATCH"), seed=seed, max_range_m=max_range, cfg=wrong)
+                runner = B.BatchRunner(params, rig, world, out / "batch", driver=cl.B2Driver(),
+                                       budget=rp.Budget(float("inf")), log=lambda *a: None, run_episode=cl.run_episode)
+                depth = {"min": 9.0}
+                walls = rig.link.on_step
+
+                def watch(link, walls=walls, depth=depth, runner=runner, rig=rig):
+                    walls(link)
+                    depth["min"] = min(depth["min"], runner.guard.footprint_depth(rig.sim_truth_fn()))
+                rig.link.on_step = watch
+                result = runner.run()
+                if factor == 1.0:
+                    assert result["status"] == "complete", (r, seed, result)
+                    continue
+                assert result["status"] == "halted" and result["halt"]["code"] == "odometry_scale", (factor, r, seed, result)
+                assert "ranges to the tags" in result["halt"]["detail"], result
+                assert depth["min"] > 0.3 and not rig.link.sim.p.blocked_left, (factor, r, seed, depth)

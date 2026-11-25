@@ -41,9 +41,10 @@ esac
 """
 
 FAKE_DOCKER = r"""#!/usr/bin/env bash
-# stand-in for docker: logs its arguments, then behaves as the batch would
-echo "docker $*" >> "$FAKE_LOG"
+# stand-in for docker: logs its arguments, then behaves as the batch would (the trap first, so a test that waits
+# for the "docker run" line never signals it before its handler is in place: a race seen once under load)
 trap 'echo "docker got INT" >> "$FAKE_LOG"; exit "${FAKE_DOCKER_RC_ON_SIGNAL:-3}"' INT
+echo "docker $*" >> "$FAKE_LOG"
 if [ -n "${FAKE_DOCKER_SLEEP:-}" ]; then sleep "$FAKE_DOCKER_SLEEP" & wait $!; fi
 exit "${FAKE_DOCKER_RC:-0}"
 """

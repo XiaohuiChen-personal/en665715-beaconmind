@@ -1,0 +1,9 @@
+pre row 14 FORWARD_25   leg 0.247 m, fix 0.041 m along it (sigma 0.178, pose, tags ['T12', 'T18', 'T03', 'T17']) -> old statistic +16.5 %
+pre row 15 FORWARD_25   leg 0.245 m, fix -0.001 m along it (sigma 0.204, pose, tags ['T12', 'T18', 'T03']) -> old statistic +8.2 %
+pre row 16 FORWARD_10   leg 0.100 m, fix 0.000 m along it (sigma 0.182, pose, tags ['T12', 'T18', 'T03']) -> old statistic +6.9 %
+pre row 17 FORWARD_10   leg 0.093 m, fix -0.009 m along it (sigma 0.276, pose, tags ['T12', 'T18']) -> old statistic +4.7 %
+pre row 28 TURN_LEFT_30 leg 0.051 m, fix -0.209 m along it (sigma 0.123, position, tags ['T02']) -> old statistic -24.1 %
+ep row 18 FORWARD_25   leg 0.246 m, fix -0.017 m along it (sigma 0.076, position, tags ['T04']) -> old statistic -19.8 %
+ep row 19 FORWARD_25   leg 0.245 m, fix -0.032 m along it (sigma 0.062, position, tags ['T04']) -> old statistic -18.4 %
+old statistic: -18.4 % over 1.23 m, 7 fixes
+noise-weighted: -9.9 % +- 22.3 % (one standard error)
