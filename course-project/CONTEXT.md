@@ -58,7 +58,27 @@ Opus episodes, run automatically in batches); **only one run gets a phone video*
 `AGENTS.md` and plan §3.6; every episode still has the recorder's bag, frames, traces and terminal capture. The
 report's IV-D R2 sentence still says every folder has a phone video (listed in `report/PENDING.md`).
 
-**Still open for Xiaohui:** after the pilot, the range limit (3.0 or 2.5 m). **Needs Xiaohui next (unchanged):** measure one printed square
+**Tags.** Xiaohui checked a printed tag: about 16 × 16 cm (passes the printer-scaling check; the pilot's step A1 takes
+the exact reading). Mounting started 2026-11-25 from a mounting page Claude published (a to-scale plan and a
+wall-by-wall list generated from `layout-2/layout.json`; private claude.ai artifact). Xiaohui asked whether to fold the
+pages' printed labels so the model cannot "cheat": no, the model never receives an image (its nine D5 tools pass
+numbers only; frames go to `perception/tags.py`, which reports ID, range and bearing).
+
+**Agents' results so far.** Messages to both agents were partly lost (the batch agent never received the DV message;
+the video agent finished believing the length was still an assumption); all were resent on 2026-11-25.
+- **batch:** commits `2cd3415` (wrapper's first run on the Spark found and fixed a recorder-handling bug; a
+  `tag_survey` halt that checks the surveyed tags against each other; the pilot's noise model for the fix sigma) and
+  `05f64c4`. Told to start the `--dv` work next and to clear the Spark before the pilot. Final report pending.
+- **video:** commit `6a9c848`; `python3 course-project/tools/demo_video.py all` renders `data/video/parts/sim.mp4`
+  (1:59.76) and `data/video/BeaconMind-demo-silent.mp4` (2:41.76, without the car part), 1920 × 1080, 25 fps; checked
+  by the lead with ffmpeg. The Opus episode plays at ×24 and every move glides over 0.3 s of output (seen frame by
+  frame: a turn spreads over about seven frames, no jumps). Every number comes from `report_assets.py` or the logs.
+  Narration script `presentation/demo-voiceover.md`. Car part's input path tested on a stand-in. 677 passed, 10 skipped.
+  `data/video/venv` is an empty venv (pip only) the agent could not delete; Xiaohui may delete it.
+- The report's and slides' room figure is mirrored (listed in `report/PENDING.md`).
+
+**Still open for Xiaohui:** after the pilot, the range limit (3.0 or 2.5 m); watch the silent video once (is ×24
+too fast?); the voice-over, best recorded once the car part exists. **Needs Xiaohui next (unchanged):** measure one printed square
 (160 ± 1 mm); mount the 20 tags from the new sheet and record the centres; tag pilot; stand test and floor check.
 
 ## 2026-11-18 (later) — delegation, unattended batches, spend approvals; parallel agents, room rehearsal, tag layout C20 decided

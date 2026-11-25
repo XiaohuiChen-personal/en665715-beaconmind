@@ -19,6 +19,11 @@ Filled on 2026-11-18 and removed from the table (the numbers are kept, so 3 is u
 Also to update when the real work lands (not marked in the PDF): the real-car procedure in IV-D and the ground-truth paragraph in IV-C are written as *planned* (batches of episodes with the motor battery left on, software halts, resection ground truth; Xiaohui's approval of 2026-11-18) and must be changed to what was done; Table II's footnote and Fig. 1's dotted validator once the closed loop has run; Fig. 1's dashed nodes (camera relay and detector,
 bounded moves, room simulator, ROSA demo, tape ground truth) become solid as each is built; IV-D's R2 sentence, which lists "a phone video" in every session's folder (since 2026-11-24 only the one demo run is filmed; the batch episodes are recorded by the recorder alone); the sentence "No real
 episode has been run" in V-G; limitation (1) in V-H; the IV-F confounder "Real car"; Fig. 3's caption if the measured
-tag centres replace the nominal ones.
+tag centres replace the nominal ones; **Fig. 3 itself is a mirror image of the room** (found by the video agent,
+confirmed by the lead 2026-11-25): `report/generated/fig-room.tex` and `slides/figures/fig-room.png` draw the
+desk wall at the bottom with corner 5 on the left and the 295 cm wall on the left, while the survey frame "seen from
+above" (`evidence/M3/M3.T10/room-survey.md`, the world file, the simulator, the demo video) has the 295 cm wall on the
+right when the desk wall is at the bottom. The plot swaps x and y; draw it with the horizontal axis = −y (or rotate)
+in `tools/report_assets.py`, then rebuild the report, the slide figure and the deck.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this list with the report rewrite.
