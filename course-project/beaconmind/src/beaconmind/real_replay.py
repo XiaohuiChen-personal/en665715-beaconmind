@@ -137,13 +137,26 @@ END_NORMALLY = ("DONE", "budget")
 LAST_STEP_TRUTH = "last step's truth (no end circle)"
 
 
-def finished(entry):
-    """True when the episode ran to its own end (DONE, or the step budget) with every step written: status "done",
-    or status "halted" by something after the agent's last step (result complete, ended normally): a check after the
-    episode (car/batch.py checks the odometry over the episode after run_episode has returned), or a halt inside the
-    end circle (a stall)."""
+# The coded procedure stopping itself (closed_loop: `error`, detail "driver stopped: ..."; the frozen B2 on a branch it
+# does not implement, such as the dead end kinsim_room.make_b2_policy() handles). The harness writes that step as a
+# fallback (the previous report dead-reckoned), the study's rule for a step without a valid report, and no move
+# follows, so the log is complete to its last step and the end circle measured that step's pose. Converted, but
+# flagged: the analysis lists such an episode apart from the ones that ended by DONE or the budget.
+PROCEDURE_STOPPED = "procedure_stopped"
+
+
+def procedure_stopped(entry):
     res = entry.get("result") or {}
-    if not res.get("complete") or res.get("ended_by") not in END_NORMALLY:
+    return res.get("ended_by") == "error" and str(res.get("detail") or "").startswith("driver stopped")
+
+
+def finished(entry):
+    """True when the episode ran to its own end (DONE, or the step budget, or the coded procedure stopping itself,
+    which is flagged) with every step written: status "done", or status "halted" by something after the agent's last
+    step (result complete): a check after the episode (car/batch.py checks the odometry over the episode after
+    run_episode has returned), or a halt inside the end circle (a stall)."""
+    res = entry.get("result") or {}
+    if not res.get("complete") or (res.get("ended_by") not in END_NORMALLY and not procedure_stopped(entry)):
         return False
     return entry.get("status") in ("done", "halted")
 
@@ -201,7 +214,10 @@ def convert_batch(batch_dir, out_dir, world_path=None, seed_base=0, write_index=
             continue
         doc["real"]["real_car"] = man.get("real_car")
         note = None
-        if e.get("status") != "done":
+        if procedure_stopped(e):
+            note = "flagged %s: %s" % (PROCEDURE_STOPPED, (e.get("result") or {}).get("detail"))
+            doc["real"]["note"] = note
+        elif e.get("status") != "done":
             code = (e.get("halt") or {}).get("code") if isinstance(e.get("halt"), dict) else e.get("halt")
             if e.get("end_fix"):
                 note = "completed; batch halted after the end by %s" % code
@@ -441,7 +457,7 @@ def end_circle_truth(entry):
         return None, "the end circle gave no fix (%s)" % (ef.get("why") or "tracked pose only")
     if ef.get("blended_with_tracked_pose"):
         return None, "the end circle's fix was blended with the tracked pose (not independent of the tracker)"
-    if res.get("ended_by") != "DONE":
+    if res.get("ended_by") != "DONE" and not procedure_stopped(entry):
         return None, "ended by %s: the last move ran after the agent's last report" % res.get("ended_by")
     return {"pose": to_map_pose(entry["start_pose_world"], ef["pose"]), "rms_m": ef.get("rms_m"),
             "n_tags": ef.get("n_tags"), "sigma_xy_m": ef.get("sigma_xy_m"),
@@ -457,16 +473,24 @@ def independent_truths(docs, batches_root, recompute=None):
     for seed, d in sorted(docs.items()):
         real = d.get("real") or {}
         name, ep = real.get("batch"), real.get("episode")
-        t = {"end_circle": None, "end_circle_why": None, "recomputed": None, "recomputed_why": None}
+        t = {"end_circle": None, "end_circle_why": None, "recomputed": None, "recomputed_why": None,
+             "logged_tracker": None}
         bdir = os.path.join(batches_root, name) if name else None
         if name and name not in manifests:
             path = os.path.join(bdir, "manifest.json")
             manifests[name] = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else None
+        if manifests.get(name):
+            # the tracker the batch ran (its step truth): PoseTracker's slip-aware odometry sigma, 0 before b2-real-05
+            params = manifests[name].get("params") or {}
+            t["logged_tracker"] = {"slip_sigma_per_m": float(params.get("odometry_slip_sigma_per_m") or 0.0),
+                                   "slip_north_per_m": float(params.get("odometry_slip_north_per_m") or 0.0)}
         entry = next((e for e in (manifests.get(name) or {}).get("episodes", []) if e.get("id") == ep), None)
         if entry is None:
             t["end_circle_why"] = t["recomputed_why"] = "no manifest entry for %s %s under %s" % (name, ep, batches_root)
         else:
             t["end_circle"], t["end_circle_why"] = end_circle_truth(entry)
+            if procedure_stopped(entry):
+                t["flag"] = PROCEDURE_STOPPED
             if t["end_circle"]:
                 # how far the batch's logged (tracked) truth at the last step sits from the circle
                 last, ec = d["records"][-1]["truth"], t["end_circle"]["pose"]
@@ -517,6 +541,8 @@ def final_errors(docs, runs, truths=None):
                    "truth_sigma_xy_m": truth.get("sigma_xy_m"), "truth_is_a_fix": truth.get("fix"),
                    "estimate": est}
             t = (truths or {}).get(seed) or {}
+            if t.get("flag"):
+                row["flag"] = t["flag"]
             if t.get("end_circle"):
                 ec = _err(est, t["end_circle"]["pose"])
                 row["vs_end_circle_m"], row["vs_end_circle_deg"] = ec["m"], ec["deg"]
@@ -565,19 +591,21 @@ def _dist(m, deg=None):
 
 
 def summarize(errors):
-    """{arm: {n, n_incomplete, end_circle, last_step, recomputed, median_vs_sim_truth_m}}; each truth's entry is
-    {n, median_m, q1_m, q3_m, min_m, max_m, mean_m, median_deg} over the complete episodes that have that truth.
+    """{arm: {n, n_incomplete, n_flagged, end_circle, last_step, recomputed, median_vs_sim_truth_m}}; each truth's
+    entry is {n, median_m, q1_m, q3_m, min_m, max_m, mean_m, median_deg} over the complete episodes that have that
+    truth and are not flagged (a flagged episode, such as one the coded procedure stopped, is listed apart).
     end_circle is the primary truth; last_step (with median_truth_sigma_m, the tracker's stated sigma) and recomputed
     depend on the tracker."""
     out = {}
     for arm, by_seed in errors.items():
         if arm.startswith("_"):
             continue
-        rows = [r for r in by_seed.values() if r.get("complete")]
+        rows = [r for r in by_seed.values() if r.get("complete") and not r.get("flag")]
         ec = [r for r in rows if "vs_end_circle_m" in r]
         last = _dist([r["final_m"] for r in rows], [r["final_deg"] for r in rows])
         last["median_truth_sigma_m"] = _q([r["truth_sigma_xy_m"] for r in rows if r.get("truth_sigma_xy_m") is not None], 0.5)
         out[arm] = {"n": len(rows), "n_incomplete": sum(1 for r in by_seed.values() if not r.get("complete")),
+                    "n_flagged": sum(1 for r in by_seed.values() if r.get("complete") and r.get("flag")),
                     "end_circle": _dist([r["vs_end_circle_m"] for r in ec], [r["vs_end_circle_deg"] for r in ec]),
                     "last_step": last,
                     "recomputed": _dist([r["vs_recomputed_m"] for r in rows if "vs_recomputed_m" in r]),
@@ -619,23 +647,38 @@ def result_markdown(title, index, errors, summary, order, stats=None, truths=Non
     for arm in order:
         if arm in summary:
             lines.append(_dist_row([arm], summary[arm]["end_circle"]))
-    with_ec = [s for s in seeds if (truths.get(s) or {}).get("end_circle")]
+    flagged = [s for s in seeds if (truths.get(s) or {}).get("flag")]
+    with_ec = [s for s in seeds if (truths.get(s) or {}).get("end_circle") and s not in flagged]
+
+    def ec_table(chosen):
+        out = ["| Episode | Scenario | Steps | end circle | logged truth off | " + " | ".join(order) + " |",
+               "| --- | --- | --- | --- | --- | " + " | ".join("---" for _ in order) + " |"]
+        for seed in chosen:
+            b0, ec = errors["B0"][seed], truths[seed]["end_circle"]
+            cells = []
+            for arm in order:
+                r = errors.get(arm, {}).get(seed)
+                cells.append(_cm(r.get("vs_end_circle_m")) if r and r.get("complete") else "incomplete")
+            off = "%s, %+.1f deg" % (_cm(ec["logged_truth_off_m"]), ec["logged_truth_off_deg"]) \
+                if ec.get("logged_truth_off_m") is not None else ""
+            out.append("| %s %s | %s | %s | %s tags, rms %s, sigma %s | %s | %s |" % (
+                b0.get("batch") or "", b0["episode"], b0.get("scenario"), b0.get("steps"), ec.get("n_tags"),
+                _cm(ec.get("rms_m")), _cm(ec.get("sigma_xy_m")), off, " | ".join(cells)))
+        return out
+
     lines += ["", "Per episode (cm). `end circle`: tags, rms of its tag residuals, its stated sigma; `logged truth off`: "
-              "the batch's tracked truth at the last step minus the circle (cm, degrees):", "",
-              "| Episode | Scenario | Steps | end circle | logged truth off | " + " | ".join(order) + " |",
-              "| --- | --- | --- | --- | --- | " + " | ".join("---" for _ in order) + " |"]
-    for seed in with_ec:
-        b0, ec = errors["B0"][seed], truths[seed]["end_circle"]
-        cells = []
-        for arm in order:
-            r = errors.get(arm, {}).get(seed)
-            cells.append(_cm(r.get("vs_end_circle_m")) if r and r.get("complete") else "incomplete")
-        off = "%s, %+.1f deg" % (_cm(ec["logged_truth_off_m"]), ec["logged_truth_off_deg"]) \
-            if ec.get("logged_truth_off_m") is not None else ""
-        lines.append("| %s %s | %s | %s | %s tags, rms %s, sigma %s | %s | %s |" % (
-            b0.get("batch") or "", b0["episode"], b0.get("scenario"), b0.get("steps"), ec.get("n_tags"),
-            _cm(ec.get("rms_m")), _cm(ec.get("sigma_xy_m")), off, " | ".join(cells)))
-    without = [s for s in seeds if s not in with_ec]
+              "the batch's tracked truth at the last step minus the circle (cm, degrees):", ""] + ec_table(with_ec)
+    if flagged:
+        lines += ["", "Listed apart, not in n above: episodes the coded procedure stopped itself (the frozen B2 on a "
+                  "branch it does not implement; the harness wrote the stopping step as the study's fallback, the "
+                  "previous report dead-reckoned, and no move followed, so the end circle measured that step's pose):",
+                  ""]
+        lines += ec_table([s for s in flagged if truths[s].get("end_circle")])
+        for seed in flagged:
+            if not truths[seed].get("end_circle"):
+                b0 = errors["B0"][seed]
+                lines.append("- %s %s: %s." % (b0.get("batch") or "", b0["episode"], truths[seed].get("end_circle_why")))
+    without = [s for s in seeds if s not in with_ec and s not in flagged]
     if without:
         lines += ["", "Without an end circle at the final report (only the tracker-dependent truths below):"]
         for seed in without:
@@ -645,12 +688,20 @@ def result_markdown(title, index, errors, summary, order, stats=None, truths=Non
     rec_label = "recomputed with `%s` (slip sigma %.2f + %.2f x north per metre of forward move)" % (
         ts.get("recompute_tool", RECOMPUTE_TOOL), ts.get("slip_sigma") or 0.0, ts.get("slip_north") or 0.0) \
         if ts.get("recomputed") else None
+    trackers = {}
+    for seed in seeds:
+        lt = (truths.get(seed) or {}).get("logged_tracker")
+        if lt is not None:
+            trackers.setdefault((lt["slip_sigma_per_m"], lt["slip_north_per_m"]), []).append(errors["B0"][seed].get("batch"))
+    tracker_note = "; ".join("%s: slip sigma %.2f + %.2f x north per metre" % (
+        ", ".join(sorted(set(b for b in batches if b))), a, n) for (a, n), batches in sorted(trackers.items()))
     lines += ["", "## Against the last step's truth (secondary, tracker-dependent)", "",
               "The batch's own truth at the last step: the pose it tracks, odometry between tag fixes blended by "
-              "inverse variance (PoseTracker, 5 %% odometry sigma), with its stated sigma. On this carpet it is "
-              "overconfident northward. %s" % (
-                  "The second table recomputes it offline from the logged rows, %s." % rec_label if rec_label else
-                  "Not recomputed here."), "",
+              "inverse variance (PoseTracker: 5 %% odometry sigma, plus the slip sigma the batch ran with), with its "
+              "stated sigma. Without a slip sigma it is overconfident northward on this carpet. The batches' trackers: "
+              "%s. %s" % (tracker_note or "not known (no manifests)",
+                          "The second table recomputes it offline from the logged rows, %s." % rec_label if rec_label
+                          else "Not recomputed here."), "",
               "| Truth | Arm | n | median | IQR | min | max | median heading error (deg) |",
               "| --- | --- | --- | --- | --- | --- | --- | --- |"]
     for arm in order:
@@ -674,7 +725,9 @@ def result_markdown(title, index, errors, summary, order, stats=None, truths=Non
                 cells.append("incomplete")
             else:
                 cells.append(_cm(r["final_m"]) + ((" / " + _cm(r.get("vs_recomputed_m"))) if rec_label else ""))
-        lines.append("| %s %s | %s%s | %s |" % (b0.get("batch") or "", b0["episode"], _cm(b0.get("truth_sigma_xy_m")),
+        lines.append("| %s %s%s | %s%s | %s |" % (b0.get("batch") or "", b0["episode"],
+                                                " (flagged: %s)" % truths[seed]["flag"] if seed in flagged else "",
+                                                _cm(b0.get("truth_sigma_xy_m")),
                                               (" / " + _cm(rec["sigma_xy_m"]) if rec else " / ") if rec_label else "",
                                               " | ".join(cells)))
     sims = [summary[a]["median_vs_sim_truth_m"] for a in order if a in summary and summary[a]["median_vs_sim_truth_m"] is not None]

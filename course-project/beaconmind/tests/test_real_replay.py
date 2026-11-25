@@ -408,7 +408,40 @@ def test_the_analysis_recomputes_the_truth_with_the_batchs_own_tool(tmp_path, mo
             assert row["vs_end_circle_m"] >= 0
             circles += 1
     assert circles >= 1 and res["summary"]["B2"]["end_circle"]["n"] == circles
+    assert all(res["truths"][str(e["seed"])]["logged_tracker"] == {"slip_sigma_per_m": 0.0, "slip_north_per_m": 0.0}
+               for e in idx["episodes"])                              # the dry batch ran the tracker without a slip sigma
     md = (tmp_path / "r.md").read_text()
     assert "tools/recompute_truth.py" in md and "slip sigma 0.00" in md and "the primary truth" in md
+    assert "The batches' trackers: batch: slip sigma 0.00 + 0.00 x north per metre." in md
     assert tool.cmd_analyze(tool.parser().parse_args(argv + ["--slip-sigma", "0.3"])) == 0
     assert "slip sigma 0.30" in (tmp_path / "r.md").read_text()
+
+
+def test_an_episode_the_procedure_stopped_is_converted_flagged_and_listed_apart(batch, tmp_path):
+    """b2-real-06 ep02 (2026-11-25): the frozen B2 met a branch it does not implement ("driver stopped"); the harness
+    wrote that step as a fallback and no move followed, so the end circle measured that step's pose. Converted, with a
+    flag; its end circle is a truth; the main statistics leave it out and the result lists it apart."""
+    _as_real_folder(batch)
+    man = json.loads((batch / "manifest.json").read_text())
+    e = man["episodes"][0]
+    e.update(status="done", halt=None, result={"complete": True, "ended_by": "error", "steps": 6,
+                                               "detail": "driver stopped: B2 stopped: E5 leg with no forward move and no E4"})
+    (batch / "manifest.json").write_text(json.dumps(man))
+    o = tmp_path / "o"
+    idx = rr.convert_batch(str(batch), str(o))
+    ep = [x for x in idx["episodes"] if x["episode"] == "ep01-a1"][0]
+    assert ep["note"].startswith("flagged procedure_stopped: driver stopped")
+    _, docs = rr.load_obslogs(str(o))
+    truths = rr.independent_truths(docs, str(batch.parent))
+    assert truths[1]["flag"] == rr.PROCEDURE_STOPPED and truths[1]["end_circle"] is not None
+    assert "flag" not in truths[2]
+    err = rr.final_errors(docs, {}, truths)
+    s = rr.summarize(err)["B2"]
+    assert err["B2"][1]["flag"] == rr.PROCEDURE_STOPPED and "vs_end_circle_m" in err["B2"][1]
+    assert s["n"] == 1 and s["n_flagged"] == 1 and s["last_step"]["n"] == 1 and s["end_circle"]["n"] == 0
+    md = rr.result_markdown("t", idx, err, rr.summarize(err), ["B0", "B2"], truths=truths)
+    assert "Listed apart, not in n above" in md and "ep01-a1 (flagged: procedure_stopped)" in md
+    # the batch's other endings by error are still not converted
+    e["result"] = {"complete": True, "ended_by": "error", "detail": "no_progress", "steps": 6}
+    (batch / "manifest.json").write_text(json.dumps(man))
+    assert [x["episode"] for x in rr.convert_batch(str(batch), str(tmp_path / "o2"))["excluded"]][:1] == ["ep01-a1"]
