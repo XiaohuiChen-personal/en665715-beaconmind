@@ -98,3 +98,92 @@ refuses to start without it stated (0 states it off); dry runs and tests default
   With 0.6 m or more of net distance by the circles, the lowest is 0.604, at north 0.60.
 - **Not caused by the slip sigma:** the ratio does not use the tracker's sigma.
 - **A possible change, not made:** judge the under-travel side only over net distances of 0.6 m or more.
+
+## 4. The review of 927e44c: four findings, folded into this commit
+
+The reviewer's verdict on 927e44c was yes: 24 ten-episode batches, no wall contact, smallest depth 0.196 m, and every
+over-travel fault halted (12 of 12). It made four further findings; each is answered here.
+
+### Finding 1: the gross drift bound was not a clean scale test
+
+**The problem.** On a carpet that slips by direction, an out-and-back path changes the odometry's net displacement by
+any factor, so the net length ratio is no scale test. Two correct cars false-halted on it:
+- the reviewer's, at north 0.60: 0.79 m by odometry against 1.29 m by the circles, ratio 1.63 against the bound 1.6;
+- mine (above), at north 0.67: 0.73 m against 0.34 m, ratio 0.47 against 0.5.
+
+**The change.** The bound now compares the **miss with the path driven**. It halts when the miss, less the two circles'
+own 2 σ, is more than **0.6 of the path driven by odometry** (`path_gross_share`). The miss can never exceed the path
+times the largest share by which one move goes wrong (the triangle inequality): 0.45 at the 0.55 floor, plus what a
+heading error swings.
+
+**How it compares with what was seen:**
+- **Real:** the eight real transits and episodes that have a miss on record read 0.012 to 0.207 (b2-real-04's transit,
+  with its 20° heading miss).
+- **Simulated:** the carpets read up to 0.30 at north 0.67 and 0.37 at 0.60 (`margin_cost-output.jsonl`,
+  `final-dry-runs-log.txt`).
+- **Faults:** a factor-two error on a straight path (a transit) misses by the whole path, which is 1.0 of it, and
+  halts. The test uses b2-real-01's geometry, odometry reading half of 0.91 m.
+
+**What it no longer catches.** An odometer reading double, so that the car covers half its count, comes out at 0.5 of
+the path and passes this bound. That is the range floor's case (0.55) and a safe direction. The net ratio is still
+recorded (`tags_over_odometry`), and the fields `path_m`, `miss_over_path` and `gross_share` are new.
+
+### Finding 2: the turn margin against fix error
+
+**The problem.** With a start error of sd 0.06 m (a fix error, larger than the 0.05 m floor), the reviewer's Monte
+Carlo found 3 stretches in 60,000 whose real sweep circle crossed the edge by up to 0.016 m. Its suggestion: about
+0.10 m in place of 0.05 m, for the turn margin or the sigma floor.
+
+**The evaluation.** I ran it with the slip sigma both on and off (`guard_mc.py`, output `guard_mc-output.jsonl`), and
+measured the cost in ten-episode batches on the carpet with `--slip-sigma 0.3`, 3 seeds each at north 0.67 and 0.78
+(`margin_cost.py`, output `margin_cost-output.jsonl`):
+
+| Guard setting | Monte Carlo: stretches below 0 in 60,000 | Worst real turn room / footprint | Carpet batches completed | Guard refusals |
+| --- | --- | --- | --- | --- |
+| as before (turn margin 0.03, spare 0.05, floor 0.05) | 3 (every north, slip on or off) | −0.016 / −0.016 m | 6 of 6 | 0 |
+| spare 0.10 at the start and end of forward moves | 3 | −0.016 / −0.016 m | 6 of 6 | 0 |
+| sigma floor 0.10 | 0 | +0.007 / +0.009 m | **4 of 6** (2 × `pose_uncertain` at 0.67) | 0 |
+| turn margin 0.08 | 0 | +0.007 / +0.009 m | 6 of 6 | 0 |
+| **turn margin 0.10** | **0** | **+0.016 / +0.022 m** | **6 of 6** | **0** |
+
+**Reading the table:**
+- **The spare does not help.** The 3 stretches go wrong at a **turn** made where the believed pose, not the real one,
+  had just enough room. So the spare on forward moves changes nothing, and the turn's own margin (0.03 m plus one
+  sigma) is what was thin.
+- **The sigma floor is costly.** It fixes the Monte Carlo, but with the slip sigma it pushes the tracked sigma over
+  0.25 m on long northward runs, through the same-tag rule.
+
+**The choice:** `MoveGuard.turn_margin_m` and `BatchParams.turn_margin_m` are now **0.10 m** (were 0.03). Two guard
+tests were moved by 7 cm to the new margin: a turn 0.07 m from the edge is now refused and one at 0.14 m allowed, and
+a FORWARD_10 near the window wall is now tested from 3.30 m (was 3.35 m).
+
+### Finding 3: the concavity argument and a turn inside a blind stretch
+
+Written into `../b2-real-02/README.md` where the argument is made. It does not cover a blind stretch with a turn in it:
+the car is then beside the tracked path. By the reviewer's geometry the worst case leaves about 0.02 m of real turn
+room at 0.55 and 0.05 m at 0.67, positive only thanks to the start margin. The fix error at the stretch's start is
+finding 2.
+
+### Finding 4: an exception inside the end circle
+
+**Before:** a halt inside the end circle left the episode `done`, but an unexpected exception there marked it
+`failed`. Resume reruns every episode that is not `done` (`BatchRunner.run`), so a finished episode would have been
+driven again, and the replay converter skips it.
+
+**Now:** both leave it `done`, with the exception recorded as `post_episode_error`. The batch still halts on it (code
+`error`). Test: `test_an_error_inside_the_end_circle_leaves_the_episode_done_and_resume_skips_it`.
+
+### The final dry runs (this commit, `--slip-sigma 0.3`, exact real arguments)
+
+Log: `final-dry-runs-log.txt`.
+
+| Run | Result | Truth p95 / max against the car | Beyond 2 σ | Miss over path, max | Net ratios recorded |
+| --- | --- | --- | --- | --- | --- |
+| plain | 10 of 10 | 0.008 / 0.020 m | 0 % | 0.000 | 0.99–1.00 |
+| north 0.78 | 10 of 10 | 0.056 / 0.256 m | 0 % | 0.196 | 0.78–1.05 |
+| north 0.67 | **10 of 10** | 0.118 / 0.305 m | 0 % | 0.307 | 0.47–1.16 (the 0.47 no longer halts) |
+| north 0.60 | halted `pose_uncertain` after 8 done | 0.153 / 0.406 m | 1.9 % | 0.373 | 0.60–1.10 |
+
+**The 0.60 halt is the same-tag rule, not changed here** (proposed to the lead). On a long run of single-tag fixes of
+one tag, the tracked sigma may move with the fix but never shrink, so it climbs past 0.25 m by the slip sigma while
+the pose is within a few centimetres. North 0.60 is below anything measured on the real car.

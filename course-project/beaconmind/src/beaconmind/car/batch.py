@@ -97,10 +97,9 @@ class BatchParams:
                                         # this: whatever the odometer's error, it then stays inside the wall margin
     transit_scale_min_m: float = 0.30   # the dead-reckoning drift between two full-circle fixes (the transit, each
                                         # episode) gets a length ratio when both lengths are at least this
-    path_gross_ratio: float = 1.6       # ... and halts only above this ratio (a gross error: wrong units, a dead
-                                        # wheel); the real car reached 1.27 over one episode (b2-real-01)
-    path_gross_floor: float = 0.5       # ... or below this one (under-travel: the real car reached 0.73 over an
-                                        # episode and 0.66 between two circles of a transit, b2-real-02)
+    path_gross_share: float = 0.6       # ... and halts only when odometry alone ends farther from the second circle
+                                        # than this share of the path it drove (beyond the circles' own 2 sigma): a
+                                        # gross error (wrong units, a dead wheel); see BatchRunner._dead_reckoning
     range_scale_tol: float = 0.12       # the ranges to the tags seen before and after each forward move may say the
                                         # car went farther than its odometry by at most this share (median over the
                                         # moves so far): the dangerous direction
@@ -119,6 +118,9 @@ class BatchParams:
     # guard
     wall_margin_m: float = 0.15
     start_turn_margin_m: float = 0.05   # a forward move must start where a turn fits with this to spare, as it must end
+    turn_spare_m: float = 0.05          # ... end with this to spare (MoveGuard.turn_spare_m)
+    turn_margin_m: float = 0.10         # a turn needs its sweep circle this plus one sigma inside the area (0.03
+                                        # until the review of 2026-11-25: MoveGuard.turn_margin_m)
     sigma_block_m: float = 0.25
     initial_sigma_m: float = 0.10
     initial_sigma_deg: float = 10.0
@@ -206,6 +208,7 @@ class PoseTracker:
         self.bias_sxy = 0.0             # weighted least squares of (innovation along the leg) = scale x leg, weights
         self.bias_sxx = 0.0             # 1 / (fix sigma^2 + tracked sigma^2): see odometry_bias()
         self.dead_reckoned = None       # the pose by odometry alone since mark_dead_reckoning()
+        self.dead_reckoned_path_m = 0.0 # the distance driven since then (moves' forward and sideways parts)
         self.bias_gated = None          # the first time the range check held the per-step statistic's halt back
         self.bias_under = None          # the first time it read under-travel beyond odometry_bias_min (no halt)
         self.range_moves = []           # (tags over odometry, range pairs) of each straight move: range_scale()
@@ -224,6 +227,7 @@ class PoseTracker:
         self._leg[1] += self.pose["y_m"] - before["y_m"]
         if self.dead_reckoned is not None:
             self.dead_reckoned = compose(self.dead_reckoned, odo)
+            self.dead_reckoned_path_m += dist
         self.travel_since_fix_m += dist
         # errors of separate moves add in quadrature: 5 % of the distance plus 2 mm, the heading uncertainty swung
         # over the distance; for the heading 2 % of the turn plus 0.05 degrees (the gyro)
@@ -274,6 +278,7 @@ class PoseTracker:
     def mark_dead_reckoning(self):
         """From here on also keep the pose that odometry alone gives (no fix blended in)."""
         self.dead_reckoned = dict(self.pose)
+        self.dead_reckoned_path_m = 0.0
         return dict(self.pose)
 
     def odometry_bias(self):
@@ -493,11 +498,13 @@ class MoveGuard:
     straight move must also end where a turn is still allowed with 5 cm to spare, so the car is never driven to a
     spot it cannot turn away from."""
 
-    turn_margin_m = 0.03
+    turn_margin_m = 0.10    # 0.03 until the review of 2026-11-25: with a fix error of sd 0.06 m, 3 blind stretches in
+                            # 60,000 had the real sweep circle 0.016 m past the edge; 0.10 leaves none (truth-under-slip/)
     start_turn_margin_m = 0.0       # a forward move must also START where a turn fits with this much to spare (the
                                     # batch sets 0.05: see BatchParams.start_turn_margin_m)
 
-    def __init__(self, world, footprint, sweep_radius_m, margin_m, sigma_block_m, start_turn_margin_m=0.0):
+    def __init__(self, world, footprint, sweep_radius_m, margin_m, sigma_block_m, start_turn_margin_m=0.0,
+                 turn_spare_m=0.05, turn_margin_m=None):
         arena = world["arena"]
         self.drive = [tuple(p) for p in arena.get("drive_polygon_m") or arena["polygon_m"]]
         if _signed_area(self.drive) <= 0:
@@ -506,6 +513,9 @@ class MoveGuard:
         self.footprint = [tuple(p) for p in footprint]
         self.sweep_radius_m, self.margin_m, self.sigma_block_m = sweep_radius_m, margin_m, sigma_block_m
         self.start_turn_margin_m = start_turn_margin_m
+        self.turn_spare_m = turn_spare_m        # a forward move must END where a turn fits with this much to spare
+        if turn_margin_m is not None:
+            self.turn_margin_m = turn_margin_m      # (the class value, 0.03, unless the batch gives another)
 
     def point_depth(self, p):
         """How far a point is inside the free area: inside the driving area AND outside every obstacle box (the
@@ -561,8 +571,9 @@ class MoveGuard:
             turn_room = min(turn_room, self.axle_depth(end) - self.sweep_radius_m)
         if worst < need:
             return "%s would end %.2f m from the edge of the driving area, need %.2f m" % (action, worst, need)
-        if turn_room < turn_need + 0.05:
-            return "%s would end where the car cannot turn (%.2f m of room, need %.2f m)" % (action, turn_room, turn_need + 0.05)
+        if turn_room < turn_need + self.turn_spare_m:
+            return "%s would end where the car cannot turn (%.2f m of room, need %.2f m)" % (
+                action, turn_room, turn_need + self.turn_spare_m)
         return None
 
     def forward_allowed(self, pose, sigma_xy_m):
@@ -1369,7 +1380,8 @@ class BatchRunner:
         self.monitor = Monitor(params, self.halt_path, rig.latch, rig.clock, log, recorder_check)
         self.marker_path = marker_path          # episode markers inside the recorder's session
         self.guard = MoveGuard(world, self.footprint, self.sweep, params.wall_margin_m, params.sigma_block_m,
-                               start_turn_margin_m=params.start_turn_margin_m)
+                               start_turn_margin_m=params.start_turn_margin_m, turn_spare_m=params.turn_spare_m,
+                               turn_margin_m=params.turn_margin_m)
         self.tracker = PoseTracker(params.initial_pose, params.initial_sigma_m, params.initial_sigma_deg,
                                    params.fix_floor_m, params.odometry_slip_sigma_per_m, params.odometry_slip_north_per_m)
         self.tagcheck = TagCheck(params.tag_check_k, params.tag_check_min_m, params.tag_trust_max_m, params.tag_trust_k)
@@ -1607,12 +1619,18 @@ class BatchRunner:
         car dead reckoning drifted 0.09 m over a transit and 0.27 m over one episode (wheel slip on some moves, the
         gyro reading 0.6 to 0.8 % short), length ratios 1.14 and 1.27, while the encoder scale was right (the range
         check: 0.98 over 12 forward moves) and the tracked pose ended 0.06 m from the end circle. The encoder scale is
-        the range check's (range_scale_halt). Only a gross error halts here: a length ratio beyond path_gross_ratio
-        (1.6) above, or path_gross_floor (0.5) below: over-travel is the dangerous direction; under-travel is what the
-        carpet does northward (0.73 over an episode, 0.66 between two circles, b2-real-02); a factor-two error (wrong
-        units in car.json, a dead encoder) passes either bound. fix_sigmas: the two circles' position sigmas."""
+        the range check's (range_scale_halt).
+
+        Only a gross error halts here, judged against the PATH driven, not the net displacement (the review of
+        2026-11-25): on a carpet whose slip depends on direction, under-travel on an out-and-back path changes the
+        odometry's net displacement by any factor (at north 0.60 a correct car measured 0.79 m by odometry against
+        1.29 m by the circles, a ratio of 1.63, and 0.73 against 0.34, 0.47). The miss can never exceed the path
+        driven times the largest share by which one move goes wrong (the triangle inequality): 0.45 at the 0.55 floor,
+        plus what a heading error swings. So it halts when the miss, less the two circles' own 2 sigma, exceeds
+        path_gross_share (0.6) of the path. A factor-two error on a straight path (a transit) gives a miss of the
+        whole path (1.0) and halts. The net length ratio is recorded as before. fix_sigmas: the two circles' sigmas."""
         t, p = self.tracker, self.params
-        dr = t.dead_reckoned
+        dr, path = t.dead_reckoned, t.dead_reckoned_path_m
         t.dead_reckoned = None
         out = {"measurement": "dead-reckoning drift", "what": what, "checked": False,
                "circle_sigmas_xy_m": [round(float(v), 3) for v in fix_sigmas] if fix_sigmas else None}
@@ -1620,19 +1638,24 @@ class BatchRunner:
             return dict(out, why="no full-circle fix at the start of the %s" % what)
         by_odometry = math.hypot(dr["x_m"] - origin["x_m"], dr["y_m"] - origin["y_m"])
         by_tags = math.hypot(t.pose["x_m"] - origin["x_m"], t.pose["y_m"] - origin["y_m"])
-        out.update(by_odometry_m=round(by_odometry, 3), by_tags_m=round(by_tags, 3),
-                   miss_m=round(math.hypot(t.pose["x_m"] - dr["x_m"], t.pose["y_m"] - dr["y_m"]), 3),
+        miss = math.hypot(t.pose["x_m"] - dr["x_m"], t.pose["y_m"] - dr["y_m"])
+        slack = 2.0 * math.hypot(*[float(v or p.fix_floor_m) for v in (fix_sigmas or (p.fix_floor_m, p.fix_floor_m))])
+        out.update(by_odometry_m=round(by_odometry, 3), by_tags_m=round(by_tags, 3), path_m=round(path, 3),
+                   miss_m=round(miss, 3),
                    miss_world_m=[round(t.pose["x_m"] - dr["x_m"], 3), round(t.pose["y_m"] - dr["y_m"], 3)],
-                   heading_miss_deg=round(wrap_deg(t.pose["theta_deg"] - dr["theta_deg"]), 1))
-        if by_odometry < p.transit_scale_min_m or by_tags < p.transit_scale_min_m:
-            return dict(out, why="shorter than %.2f m: no length ratio" % p.transit_scale_min_m)
-        ratio = by_tags / by_odometry
-        out.update(checked=True, tags_over_odometry=round(ratio, 3), gross_bound=[p.path_gross_floor, p.path_gross_ratio])
-        if ratio > p.path_gross_ratio or ratio < p.path_gross_floor:
-            self.monitor.halt("odometry_scale", "dead reckoning over the %s is grossly off: %.2f m by odometry against "
-                              "%.2f m by the circles (ratio %.2f, bound %.2f to %.2f; the real car drifted to 1.27 "
-                              "and 0.73 over an episode): an encoder scale, a wheel or the gyro is grossly wrong, or "
-                              "the tags are" % (what, by_odometry, by_tags, ratio, p.path_gross_floor, p.path_gross_ratio))
+                   heading_miss_deg=round(wrap_deg(t.pose["theta_deg"] - dr["theta_deg"]), 1),
+                   miss_over_path=round(max(0.0, miss - slack) / path, 3) if path > 0 else None,
+                   gross_share=p.path_gross_share)
+        if by_odometry >= p.transit_scale_min_m and by_tags >= p.transit_scale_min_m:
+            out.update(tags_over_odometry=round(by_tags / by_odometry, 3))
+        if path < p.transit_scale_min_m:
+            return dict(out, why="shorter than %.2f m of path" % p.transit_scale_min_m)
+        out["checked"] = True
+        if miss - slack > p.path_gross_share * path:
+            self.monitor.halt("odometry_scale", "dead reckoning over the %s is grossly off: it ends %.2f m from the "
+                              "circle after %.2f m of path (%.0f %% of it beyond the circles' own %.2f m; limit %.0f "
+                              "%%): an encoder scale, a wheel or the gyro is grossly wrong, or the tags are"
+                              % (what, miss, path, 100 * (miss - slack) / path, slack, 100 * p.path_gross_share))
         return out
 
     # ------------------------------------------------------------ the batch
@@ -1821,8 +1844,12 @@ class BatchRunner:
             # log is complete; the halt is the batch's (entry["halt"])
             entry["status"] = "done" if completed else "halted"
             raise
-        except Exception:
-            entry["status"] = "failed"
+        except Exception as exc:
+            # as a halt there: an episode whose agent part and end pose are recorded stays done (its log is
+            # complete); the error is the batch's, recorded with it (the review of 2026-11-25)
+            entry["status"] = "done" if completed else "failed"
+            if completed:
+                entry["post_episode_error"] = "%s: %s" % (type(exc).__name__, exc)
             raise
         finally:
             if entry["status"] == "running":    # an interrupt: neither done nor to be replayed

@@ -1,0 +1,30 @@
+{"variant": "now", "north": 0.67, "seed": 1, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1649, "guard_refusals": 0, "miss_over_path_max": 0.302}
+{"variant": "now", "north": 0.67, "seed": 2, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1598, "guard_refusals": 0, "miss_over_path_max": 0.301}
+{"variant": "now", "north": 0.67, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1704, "guard_refusals": 0, "miss_over_path_max": 0.291}
+{"variant": "now", "north": 0.78, "seed": 1, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1593, "guard_refusals": 0, "miss_over_path_max": 0.176}
+{"variant": "now", "north": 0.78, "seed": 2, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1586, "guard_refusals": 0, "miss_over_path_max": 0.185}
+{"variant": "now", "north": 0.78, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1530, "guard_refusals": 0, "miss_over_path_max": 0.179}
+{"variant": "spare0.10", "north": 0.67, "seed": 1, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1649, "guard_refusals": 0, "miss_over_path_max": 0.302}
+{"variant": "spare0.10", "north": 0.67, "seed": 2, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1598, "guard_refusals": 0, "miss_over_path_max": 0.301}
+{"variant": "spare0.10", "north": 0.67, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1704, "guard_refusals": 0, "miss_over_path_max": 0.291}
+{"variant": "spare0.10", "north": 0.78, "seed": 1, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1593, "guard_refusals": 0, "miss_over_path_max": 0.176}
+{"variant": "spare0.10", "north": 0.78, "seed": 2, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1586, "guard_refusals": 0, "miss_over_path_max": 0.185}
+{"variant": "spare0.10", "north": 0.78, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1530, "guard_refusals": 0, "miss_over_path_max": 0.179}
+{"variant": "floor0.10", "north": 0.67, "seed": 1, "status": "halted", "halt": "pose_uncertain", "halt_detail": "position uncertainty 0.25 m above 0.25 m", "done": 7, "moves": 1167, "guard_refusals": 0, "miss_over_path_max": 0.302}
+{"variant": "floor0.10", "north": 0.67, "seed": 2, "status": "halted", "halt": "pose_uncertain", "halt_detail": "position uncertainty 0.25 m above 0.25 m", "done": 7, "moves": 1273, "guard_refusals": 0, "miss_over_path_max": 0.301}
+{"variant": "floor0.10", "north": 0.67, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1640, "guard_refusals": 0, "miss_over_path_max": 0.298}
+{"variant": "floor0.10", "north": 0.78, "seed": 1, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1552, "guard_refusals": 0, "miss_over_path_max": 0.176}
+{"variant": "floor0.10", "north": 0.78, "seed": 2, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1586, "guard_refusals": 0, "miss_over_path_max": 0.185}
+{"variant": "floor0.10", "north": 0.78, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1530, "guard_refusals": 0, "miss_over_path_max": 0.179}
+{"variant": "turn0.08", "north": 0.67, "seed": 1, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1649, "guard_refusals": 0, "miss_over_path_max": 0.302}
+{"variant": "turn0.08", "north": 0.67, "seed": 2, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1598, "guard_refusals": 0, "miss_over_path_max": 0.301}
+{"variant": "turn0.08", "north": 0.67, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1704, "guard_refusals": 0, "miss_over_path_max": 0.291}
+{"variant": "turn0.08", "north": 0.78, "seed": 1, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1593, "guard_refusals": 0, "miss_over_path_max": 0.176}
+{"variant": "turn0.08", "north": 0.78, "seed": 2, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1586, "guard_refusals": 0, "miss_over_path_max": 0.185}
+{"variant": "turn0.08", "north": 0.78, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1530, "guard_refusals": 0, "miss_over_path_max": 0.179}
+{"variant": "turn0.10", "north": 0.67, "seed": 1, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1649, "guard_refusals": 0, "miss_over_path_max": 0.302}
+{"variant": "turn0.10", "north": 0.67, "seed": 2, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1598, "guard_refusals": 0, "miss_over_path_max": 0.301}
+{"variant": "turn0.10", "north": 0.67, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1704, "guard_refusals": 0, "miss_over_path_max": 0.291}
+{"variant": "turn0.10", "north": 0.78, "seed": 1, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1663, "guard_refusals": 0, "miss_over_path_max": 0.176}
+{"variant": "turn0.10", "north": 0.78, "seed": 2, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1586, "guard_refusals": 0, "miss_over_path_max": 0.185}
+{"variant": "turn0.10", "north": 0.78, "seed": 3, "status": "complete", "halt": null, "halt_detail": "", "done": 10, "moves": 1522, "guard_refusals": 0, "miss_over_path_max": 0.179}

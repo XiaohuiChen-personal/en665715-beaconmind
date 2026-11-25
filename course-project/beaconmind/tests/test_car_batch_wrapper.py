@@ -45,7 +45,7 @@ FAKE_DOCKER = r"""#!/usr/bin/env bash
 # for the "docker run" line never signals it before its handler is in place: a race seen once under load)
 trap 'echo "docker got INT" >> "$FAKE_LOG"; exit "${FAKE_DOCKER_RC_ON_SIGNAL:-3}"' INT
 echo "docker $*" >> "$FAKE_LOG"
-if [ -n "${FAKE_DOCKER_SLEEP:-}" ]; then sleep "$FAKE_DOCKER_SLEEP" & wait $!; fi
+if [ -n "${FAKE_DOCKER_SLEEP:-}" ]; then sleep "$FAKE_DOCKER_SLEEP" & echo "docker waiting" >> "$FAKE_LOG"; wait $!; fi
 exit "${FAKE_DOCKER_RC:-0}"
 """
 
@@ -188,8 +188,8 @@ def test_ctrl_c_keeps_the_batch_status_and_a_kill_of_the_wrapper_alone_does_not_
     proc = subprocess.Popen(args, cwd=str(p["repo"]), env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             start_new_session=True)
     deadline = time.time() + 10
-    while time.time() < deadline and "docker run" not in p["log"].read_text():
-        time.sleep(0.05)
+    while time.time() < deadline and "docker waiting" not in p["log"].read_text():    # (its INT trap is set by now:
+        time.sleep(0.05)                                                               # it failed under load before)
     time.sleep(0.2)
     os.killpg(proc.pid, signal.SIGINT)                          # what Ctrl+C in the tmux window does
     out = proc.communicate(timeout=20)[0].decode()

@@ -167,10 +167,13 @@ def test_guard_blocks_moves_toward_every_edge():
     assert g.check("FORWARD_25", {"x_m": 2.0, "y_m": 0.65, "theta_deg": -90.0}, 0.05)
     assert g.check("FORWARD_25", {"x_m": 2.0, "y_m": 4.6, "theta_deg": 90.0}, 0.05)
     assert g.check("BACKWARD_10", {"x_m": 3.45, "y_m": 2.6, "theta_deg": 180.0}, 0.05)     # the rear toward the wall
-    # a turn sweeps the camera end (0.178 m): 0.20 m from the edge is not enough room, 0.25 m is; doubt needs more
+    # a turn sweeps the camera end (0.178 m) and needs the turn margin plus one sigma beyond it; doubt needs more.
+    # (Changed 2026-11-25 with the turn margin, 0.03 to 0.10 m, after the review's Monte Carlo of fix errors: 0.07 m
+    # of room, allowed before, is not enough now; 0.14 m is.)
     assert "sweep circle" in g.check("TURN_LEFT_30", {"x_m": 0.86, "y_m": 2.9, "theta_deg": 0.0}, 0.02)
-    assert g.check("TURN_RIGHT_30", {"x_m": 0.91, "y_m": 2.9, "theta_deg": 0.0}, 0.02) is None
-    assert g.check("TURN_RIGHT_30", {"x_m": 0.91, "y_m": 2.9, "theta_deg": 0.0}, 0.10)
+    assert "sweep circle" in g.check("TURN_RIGHT_30", {"x_m": 0.91, "y_m": 2.9, "theta_deg": 0.0}, 0.02)
+    assert g.check("TURN_RIGHT_30", {"x_m": 0.98, "y_m": 2.9, "theta_deg": 0.0}, 0.02) is None
+    assert g.check("TURN_RIGHT_30", {"x_m": 0.98, "y_m": 2.9, "theta_deg": 0.0}, 0.10)
     # and no straight move may end where the car could not turn away again
     checked = 0
     for x in (1.0, 1.1, 1.2, 1.3, 1.4, 1.6):                   # facing the drive-area edge from ever closer
@@ -188,7 +191,7 @@ def test_guard_blocks_everything_when_the_pose_is_uncertain_or_unknown():
     assert g.check("FORWARD_10", dict(centre, x_m=float("nan")), 0.05) == "pose unknown"
     assert g.check("FORWARD_10", centre, float("inf")) == "pose unknown"
     assert g.check("JUMP", centre, 0.05) == "not a move"
-    near = {"x_m": 3.35, "y_m": 2.6, "theta_deg": 0.0}
+    near = {"x_m": 3.30, "y_m": 2.6, "theta_deg": 0.0}          # (3.35 before the turn margin went to 0.10 m)
     assert g.check("FORWARD_10", near, 0.01) is None and g.check("FORWARD_10", near, 0.08)   # more doubt, more margin
 
 
@@ -2184,38 +2187,48 @@ class _Halts:
         self.calls.append((code, detail))
 
 
-def _drift(origin, dead_reckoned, circle, sigmas=(0.026, 0.024), what="episode (start circle to end circle)"):
+def _drift(origin, dead_reckoned, circle, path_m, sigmas=(0.026, 0.024), what="episode (start circle to end circle)"):
     runner = B.BatchRunner.__new__(B.BatchRunner)
     runner.params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
     runner.tracker = B.PoseTracker(circle, 0.024, 1.0)
     runner.tracker.dead_reckoned = dict(dead_reckoned)
+    runner.tracker.dead_reckoned_path_m = path_m
     runner.monitor = _Halts()
     return runner._dead_reckoning(origin, sigmas, what), runner.monitor.calls
 
 
 def test_the_dead_reckoning_drift_is_recorded_and_halts_only_on_a_gross_error():
     """b2-real-01 (2026-11-25), episode 1: start circle (2.540, 1.466, 105.9), odometry alone ends at (3.099, 1.019,
-    -1.5), the end circle at (3.098, 0.747, 11.9). Recorded as a measurement (0.27 m miss, length ratio 1.27, 13.4 deg
-    heading), no halt; it halted the batch under the episode check it replaces. A factor-two error (odometry reading
-    half the distance) passes the gross bound of 1.6 and halts."""
+    -1.5), the end circle at (3.098, 0.747, 11.9), after about 3.5 m of path (2.64 m of straights, 70 turns' axle
+    shifts). Recorded (0.27 m miss, 13.4 deg; the net length ratio 1.27 kept), no halt. Since the review of 2026-11-25
+    the gross bound is judged against the path driven (miss beyond the circles' 2 sigma over the path, limit 0.6): the
+    net ratio is no scale test on a carpet that slips by direction. The reviewer's out-and-back case at north 0.60
+    (net 0.79 m by odometry against 1.29 m by the circles, ratio 1.63) passes; a factor-two error on a straight path
+    (odometry reading half of 0.91 m) halts."""
     start = {"x_m": 2.5402, "y_m": 1.4662, "theta_deg": 105.88}
-    m, halts = _drift(start, {"x_m": 3.0986, "y_m": 1.0189, "theta_deg": -1.51}, {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89})
+    circle = {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89}
+    m, halts = _drift(start, {"x_m": 3.0986, "y_m": 1.0189, "theta_deg": -1.51}, circle, 3.5)
     assert halts == [] and m["measurement"] == "dead-reckoning drift" and m["checked"]
     assert m["tags_over_odometry"] == pytest.approx(1.272, abs=0.002) and m["miss_m"] == pytest.approx(0.272, abs=0.002)
     assert m["heading_miss_deg"] == pytest.approx(13.4, abs=0.1) and m["circle_sigmas_xy_m"] == [0.026, 0.024]
-    assert m["miss_world_m"] == pytest.approx([-0.001, -0.272], abs=0.002) and m["gross_bound"] == [0.5, 1.6]
-    half = {"x_m": start["x_m"] + 0.5 * (3.0976 - start["x_m"]), "y_m": start["y_m"] + 0.5 * (0.7473 - start["y_m"]),
+    assert m["miss_world_m"] == pytest.approx([-0.001, -0.272], abs=0.002) and m["gross_share"] == 0.6
+    assert m["miss_over_path"] == pytest.approx((0.272 - 2 * math.hypot(0.026, 0.024)) / 3.5, abs=0.002)
+    # the reviewer's out-and-back case: odometry's net 0.79 m, the circles' 1.29 m, after 3.2 m of path
+    origin = {"x_m": 2.0, "y_m": 2.0, "theta_deg": 0.0}
+    m, halts = _drift(origin, {"x_m": 2.79, "y_m": 2.0, "theta_deg": 0.0}, {"x_m": 3.29, "y_m": 2.0, "theta_deg": 0.0}, 3.2)
+    assert m["tags_over_odometry"] == pytest.approx(1.633, abs=0.01) and halts == [], m
+    # a factor-two error on a straight path: odometry says 0.455 m, the circle 0.91 m
+    half = {"x_m": start["x_m"] + 0.5 * (circle["x_m"] - start["x_m"]), "y_m": start["y_m"] + 0.5 * (circle["y_m"] - start["y_m"]),
             "theta_deg": 11.89}
-    m, halts = _drift(start, half, {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89})
-    assert m["tags_over_odometry"] == pytest.approx(2.0, abs=0.01)
-    assert len(halts) == 1 and halts[0][0] == "odometry_scale" and "grossly off" in halts[0][1]
-    for frac, halt in ((1.0 / 0.66, False), (1.0 / 0.45, True)):             # under-travel: b2-real-02's 0.66; 0.45
-        far = {"x_m": start["x_m"] + frac * (3.0976 - start["x_m"]), "y_m": start["y_m"] + frac * (0.7473 - start["y_m"]),
-               "theta_deg": 11.89}
-        m, halts = _drift(start, far, {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89})
-        assert m["tags_over_odometry"] == pytest.approx(1.0 / frac, abs=0.01) and bool(halts) == halt, (frac, m, halts)
-    m, halts = _drift(start, start, start)                                   # too short for a ratio
-    assert halts == [] and m["checked"] is False and "no length ratio" in m["why"]
+    m, halts = _drift(start, half, circle, 0.455)
+    assert m["miss_over_path"] > 0.6 and len(halts) == 1 and halts[0][0] == "odometry_scale" and "grossly off" in halts[0][1]
+    # odometry reading double (the car covering half its count): 0.91 m by odometry, 0.455 m on the floor
+    double = {"x_m": start["x_m"] + 2.0 * (half["x_m"] - start["x_m"]), "y_m": start["y_m"] + 2.0 * (half["y_m"] - start["y_m"]),
+              "theta_deg": 11.89}
+    m, halts = _drift(start, double, half, 0.91)
+    assert m["miss_over_path"] < 0.6 and halts == []            # under-travel by half: the range floor's (0.55) case
+    m, halts = _drift(start, start, start, 0.1)                 # too short a path to judge
+    assert halts == [] and m["checked"] is False and "of path" in m["why"]
 
 
 def test_a_completed_episode_keeps_its_end_pose_when_a_later_check_halts(tmp_path, monkeypatch):
@@ -2489,3 +2502,24 @@ def test_the_tool_takes_the_slip_sigma_and_a_real_batch_must_state_it(tmp_path, 
         assert "no pass marker" in err and "--slip-sigma" not in err
     with pytest.raises(SystemExit, match="--slip-sigma must be 0 to 1"):
         tool.main(base + ["--out", str(tmp_path / "c"), "--slip-sigma", "1.5"])
+
+
+def test_an_error_inside_the_end_circle_leaves_the_episode_done_and_resume_skips_it(tmp_path, monkeypatch):
+    """The review of 2026-11-25: a halt inside the end circle left the episode done, but an unexpected exception there
+    marked it failed, and resume reruns every episode not done. Now both leave it done (its log and end pose are
+    recorded), the exception is recorded with it, and the batch still halts on it (code "error")."""
+    real = B.BatchRunner.localise
+
+    def broken_end_circle(self, env, what, required=True):
+        if "end pose" in what:
+            raise RuntimeError("camera thread died (test)")
+        return real(self, env, what, required=required)
+    monkeypatch.setattr(B.BatchRunner, "localise", broken_end_circle)
+    b = Batch(tmp_path, episodes=2, max_steps=30, starts=(S1, S5))
+    result = b.runner.run()
+    assert result["status"] == "halted" and result["halt"]["code"] == "error" and "camera thread died" in result["halt"]["detail"]
+    m = json.loads((b.out / "manifest.json").read_text())
+    e = m["episodes"][0]
+    assert e["status"] == "done" and e["post_episode_error"] == "RuntimeError: camera thread died (test)"
+    assert e["end_pose_source"] == "tracked, before the end circle" and e.get("final_pose_error") is not None
+    assert {x["index"] for x in m["episodes"] if x["status"] == "done"} == {0}     # what resume skips

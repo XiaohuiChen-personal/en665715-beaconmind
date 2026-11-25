@@ -127,6 +127,14 @@ mildly, because its "north" spans 30° to 150°.
     every point between those two ends, the true position among them, has at least that room.
   - Without the start margin, the true position could have only as much room as the turn that preceded the stretch
     (0.03 m plus one sigma).
+  - **Not covered by this argument** (the review of 2026-11-25): a blind stretch with a turn in it. The car is then
+    beside the tracked path, not on the straight segment between its two ends, so concavity says nothing. By the
+    reviewer's geometry the worst case leaves about **0.02 m** of real turn room at 0.55 and **0.05 m** at 0.67. It is
+    positive only thanks to the start margin.
+  - **Not covered either:** the fix error at the stretch's start. With a start error of sd 0.06 m, the reviewer's
+    Monte Carlo found 3 stretches in 60,000 whose real sweep circle crossed the edge of the driving area by up to
+    0.016 m, at every slip value and with or without the start margin. The evaluation of a larger margin is in
+    `../truth-under-slip/`.
 - **A backward move stays inside the margin.** A BACKWARD_10, offered only right after a FORWARD_10, takes the car
   about 4.9 cm behind its start at 0.55 forward and 1.04 back: inside the 0.15 m wall margin.
 - **The next fix is where it shows, and this is not covered.** A precise fix (two or more tags, sigma 0.05 to 0.06 m)
