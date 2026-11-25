@@ -1,0 +1,100 @@
+{
+ "schema": "bm.detector_noise/1",
+ "range_bias_m": {
+  "a": 0.00492,
+  "b": -0.01658
+ },
+ "range_sigma_m": {
+  "a": 0.00129,
+  "b": 0.0004
+ },
+ "bearing_bias_deg": -0.077,
+ "bearing_sigma_deg": {
+  "a": 1.86,
+  "b": 0.0
+ },
+ "min_range_m": 0.785,
+ "max_range_m": 3.135,
+ "max_incidence_deg": 60.0,
+ "p_detect": [
+  {
+   "range_m": 0.735,
+   "incidence_deg": 0.0,
+   "p": 0.0
+  },
+  {
+   "range_m": 0.785,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 0.835,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 0.885,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 0.935,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 1.135,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 1.385,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 1.635,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 1.885,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 2.135,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 2.385,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 2.635,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 2.885,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  },
+  {
+   "range_m": 3.135,
+   "incidence_deg": 0.0,
+   "p": 1.0
+  }
+ ],
+ "obs_frames": 5,
+ "obs_min_frames": 3,
+ "tag_black_size_m": 0.1599,
+ "source": {
+  "log": "20261125-020811-tag-pilot frames.csv",
+  "date": "2026-11-25",
+  "n_frames": 420,
+  "n_placements": 14
+ }
+}

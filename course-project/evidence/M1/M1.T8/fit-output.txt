@@ -1,0 +1,39 @@
+Tag pilot analysis (tools/tag_pilot.py analyze), 2026-11-25
+session: 20261125-020811-tag-pilot
+camera: camera.json (1024 x 768, fx 1181.5, yaw +2.50 deg, pitch -3.90, roll +4.40)
+tag black square: 0.1599 m; wall offset added to x: 0.015 m
+placements analysed: 16 (480 frames); without a frame window, skipped: B01, B02, B03, B04, B05, B06, B07, B08, C01, C02, C03, C04, C05, C06, E03, E04
+
+place part   range  bearing   inc  rate     r err     r sd     b err     b sd   side
+A01   A      0.935    +0.00   0.0  1.00   -0.0089   0.0001    +1.230    0.002    232
+A02   A      1.135    +0.00   0.0  1.00   -0.0138   0.0003    +1.770    0.003    187
+A03   A      1.385    +0.00   0.0  1.00   -0.0206   0.0003    -0.189    0.007    151
+A04   A      1.635    +0.00   0.0  1.00   -0.0248   0.0006    +0.146    0.010    126
+A05   A      1.885    +0.00   0.0  1.00   -0.0232   0.0010    +0.034    0.002    108
+A06   A      2.135    +0.00   0.0  1.00   -0.0301   0.0016    -0.408    0.007     94
+A07   A      2.385    +0.00   0.0  1.00   -0.0335   0.0014    -0.682    0.007     84
+A08   A      2.635    +0.00   0.0  1.00   -0.0401   0.0019    -0.769    0.005     76
+D01   D      0.885    +0.00   0.0  1.00   -0.0141   0.0001    +2.976    0.002    250
+D02   D      0.835    +0.00   0.0  1.00   -0.0219   0.0001    +3.186    0.003    271
+D03   D      0.785    +0.00   0.0  1.00   -0.0227   0.0001    +3.307    0.002    292
+D04   D      0.735    +0.00   0.0  0.00                                             
+E01   E      2.885    +0.00   0.0  1.00   -0.0169   0.0033    -1.187    0.004     68
+E02   E      3.135    +0.00   0.0  1.00   -0.0425   0.0050    -1.563    0.003     63
+R01   R      1.135    +0.00   0.0  1.00   -0.0131   0.0003    +3.417    0.003    187
+R02   R      2.135    +0.00   0.0  1.00   -0.0362   0.0018    +0.251    0.004     95
+(errors = measured - tape; r in m, b in degrees; sd = frame to frame within the placement)
+
+model (bm.detector_noise-1):
+  range bias  = +0.0049 -0.0166 * r  m
+  range sigma = 0.0013 + 0.0004 * r  m   (1 m: 0.002, 2 m: 0.002, 3 m: 0.002)
+  bearing bias = -0.077 deg (median over part A)
+  bearing sigma = 0.876 + 0.000 * r deg (includes the operator's error in squaring the car)
+  reliable range 0.79 .. 3.13 m (rate >= 0.90 and |median range error| <= 0.10 m; parts A, D, E)
+  max incidence 0.0 deg
+  obs_frames / obs_min_frames = 5 / 3 (confirmed; worst window probability 1.000)
+
+frame-to-frame bearing sd, median over reliable placements: 0.003 deg (the detector alone)
+frame-to-frame range sd by placement: 0.79 m: 0.0001, 0.83 m: 0.0001, 0.89 m: 0.0001, 0.94 m: 0.0001, 1.14 m: 0.0003, 1.39 m: 0.0003, 1.64 m: 0.0006, 1.89 m: 0.0010, 2.14 m: 0.0016, 2.39 m: 0.0014, 2.64 m: 0.0019, 2.89 m: 0.0033, 3.14 m: 0.0050
+part-A bearing errors: 8 placements, sd between placements 0.91 deg (mostly how well the car was squared to the wall each time), so the bias is known to about +-0.32 deg
+camera yaw: the part-A bearing bias is -0.08 deg, within 1.0; extrinsics.yaw_deg stays 2.50.
+tag centre height seen: median 0.215 m (the tags hang at 0.23 m; a difference that grows with range points at the camera's pitch)

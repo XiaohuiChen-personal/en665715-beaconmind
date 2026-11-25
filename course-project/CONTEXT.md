@@ -68,6 +68,26 @@ passed, 4 skipped; prereg verify OK. **Room model's handedness confirmed** (Xiao
 corner is on the right and the angled wall on the left, as the survey frame predicts); the world file is not mirrored. The tag pilot's placement plan is on the Spark (`evidence/M1/M1.T8/placements.csv`, 32 placements, tag ID 23);
 Xiaohui is laying part A's floor marks; slanted lines on the entrance-corner side (2.37 m of wall against 0.58 m).
 
+**Tag pilot (M1.T8) DONE with deviations, 2026-11-25 02:08–02:50 CST** (session `20261125-020811-tag-pilot`, recorder
+on throughout: 8,533 frames, car and camera pings 0 % loss; motor battery off, car carried). Xiaohui's decisions:
+centre line only (0.60–3.00 m), laid by eye from a book corner; no side (B) or incidence (C) placements; tape measure
+instead of a ruler; the **camera lens, not the axle, over each tick** (truth = tick + `lens_x_m` 0.12 m, found when A01
+read 12 cm long and Xiaohui measured the lens at 0.80 m). Readings: black square 16 × 16 cm, tag centre 21.5 cm above
+the carpet (camera agrees: 0.215 m), baseboard 1.5 cm proud of the wall. **Detector fix:** OpenCV's default threshold
+windows found the close, low-contrast tag in only 3 of 30 frames; a third pass (63–103 px windows) finds 30 of 30 with
+the same range: commit `6fa8b0e` by the batch agent (synthetic reproduction; a later pass only adds quads). Results
+(`evidence/M1/M1.T8/fit-output.txt`): every frame detected from 0.785 to 3.135 m (axle to tag), none at 0.735 m; range
+bias +0.0049 − 0.0166 r m (1.2–1.7 % short), range sigma 0.0013 + 0.0004 r m; repeats agree within 6 mm; camera yaw
+stays 2.5° (part-A bearing bias −0.08°). **Unexplained:** the bearing error runs from +3.3° at 0.79 m to −1.6° at 3.14 m
+(fits −2.7° + atan(0.085 m / r)); `car.json` has the lens centred and the tape line meets the wall within about 1 cm of
+the tag. So `configs/detector_noise.json` (what the batch and `real_dv.py` read) has bearing sigma 1.86° (RMS of all 15
+placements) instead of the pilot's 0.88°, and max incidence 60° (design assumption) instead of the 0° the skipped part C
+produced; the raw output and the reasons are in `evidence/M1/M1.T8/` (`noise-model-adjustments.md`). World file rebuilt
+with tag centres at 0.215 m. The pilot supports the 3.0 m range limit (Xiaohui decides). Near limit 0.79 m stays above
+`done_range_m` 0.55 and `forward_wall_limit_m` 0.35 (already known; EXPLORE does not use done_range). Spark: agent
+`bm-micro-ros-agent` still up, recorder stopped, clone at `6fa8b0e`; scratch wrapper `~/bm-scratch/pilot_mark3.py` on the
+Spark (outside the repo) can be deleted.
+
 **Tags.** Xiaohui checked a printed tag: about 16 × 16 cm (passes the printer-scaling check; the pilot's step A1 takes
 the exact reading). Mounting started 2026-11-25 from a mounting page Claude published (a to-scale plan and a
 wall-by-wall list generated from `layout-2/layout.json`; private claude.ai artifact). Xiaohui asked whether to fold the

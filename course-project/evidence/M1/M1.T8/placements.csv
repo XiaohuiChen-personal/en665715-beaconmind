@@ -1,0 +1,33 @@
+placement,part,x_m,y_m,measured_x_m,measured_y_m,incidence_deg,bearing_trusted,tag_id,repeat_of,first_frame,last_frame,note
+A01,A,0.800,0.000,0.920,0.000,,1,23,,,,centre line; whole tag in view from 0.76 m
+A02,A,1.000,0.000,1.120,0.000,,1,23,,,,centre line
+A03,A,1.250,0.000,1.370,0.000,,1,23,,,,centre line
+A04,A,1.500,0.000,1.620,0.000,,1,23,,,,centre line
+A05,A,1.750,0.000,1.870,0.000,,1,23,,,,centre line
+A06,A,2.000,0.000,2.120,0.000,,1,23,,,,centre line
+A07,A,2.250,0.000,2.370,0.000,,1,23,,,,centre line
+A08,A,2.500,0.000,2.620,0.000,,1,23,,,,centre line
+B01,B,1.500,0.260,1.620,0.260,,1,23,,,,tag 9.8 deg to the car's left; car squared to the wall
+B02,B,1.500,0.470,1.620,0.470,,1,23,,,,tag 17.4 deg to the car's left; car squared to the wall
+B03,B,1.500,-0.210,1.620,-0.220,,1,23,,,,tag 8.0 deg to the car's right; car squared to the wall
+B04,B,1.500,-0.380,1.620,-0.390,,1,23,,,,tag 14.2 deg to the car's right; car squared to the wall
+B05,B,2.500,0.500,2.620,0.500,,1,23,,,,tag 11.3 deg to the car's left; car squared to the wall
+B06,B,2.500,0.890,2.620,0.890,,1,23,,,,tag 19.6 deg to the car's left; car squared to the wall
+B07,B,2.500,-0.400,2.620,-0.410,,1,23,,,,tag 9.1 deg to the car's right; car squared to the wall
+B08,B,2.500,-0.720,2.620,-0.730,,1,23,,,,tag 16.1 deg to the car's right; car squared to the wall
+C01,C,1.000,0.000,1.120,0.000,30,0,23,,,,"car on a floor line 30 deg off the wall's normal, 1.00 m from the tag, pointing at the tag"
+C02,C,1.000,0.000,1.120,0.000,45,0,23,,,,"car on a floor line 45 deg off the wall's normal, 1.00 m from the tag, pointing at the tag"
+C03,C,1.000,0.000,1.120,0.000,60,0,23,,,,"car on a floor line 60 deg off the wall's normal, 1.00 m from the tag, pointing at the tag"
+C04,C,1.500,0.000,1.620,0.000,30,0,23,,,,"car on a floor line 30 deg off the wall's normal, 1.50 m from the tag, pointing at the tag"
+C05,C,1.500,0.000,1.620,0.000,45,0,23,,,,"car on a floor line 45 deg off the wall's normal, 1.50 m from the tag, pointing at the tag"
+C06,C,1.500,0.000,1.620,0.000,60,0,23,,,,"car on a floor line 60 deg off the wall's normal, 1.50 m from the tag, pointing at the tag"
+D01,D,0.750,0.000,0.870,0.000,,1,23,,,,near limit: expect the tag's top to leave the picture; stop when two in a row fail
+D02,D,0.700,0.000,0.820,0.000,,1,23,,,,near limit: expect the tag's top to leave the picture; stop when two in a row fail
+D03,D,0.650,0.000,0.770,0.000,,1,23,,,,near limit: expect the tag's top to leave the picture; stop when two in a row fail
+D04,D,0.600,0.000,0.720,0.000,,1,23,,,,near limit: expect the tag's top to leave the picture; stop when two in a row fail
+E01,E,2.750,0.000,2.870,0.000,,1,23,,,,far limit: stop when the rate is under 0.9 or the room ends
+E02,E,3.000,0.000,3.120,0.000,,1,23,,,,far limit: stop when the rate is under 0.9 or the room ends
+E03,E,3.250,0.000,3.370,0.000,,1,23,,,,far limit: stop when the rate is under 0.9 or the room ends
+E04,E,3.500,0.000,3.620,0.000,,1,23,,,,far limit: stop when the rate is under 0.9 or the room ends
+R01,R,1.000,0.000,1.120,0.000,,1,23,A02,,,repeat of A02 at the end of the session
+R02,R,2.000,0.000,2.120,0.000,,1,23,A06,,,repeat of A06 at the end of the session
