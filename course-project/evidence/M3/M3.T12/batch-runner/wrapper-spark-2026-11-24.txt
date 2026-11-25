@@ -1,0 +1,160 @@
+# tools/car_batch.sh, first execution on the Spark (spark-2a60), 2026-11-24 evening CST (UTC times below are 2026-11-25).
+# The car powered off, the micro-ROS agent stopped, the camera off, no pass marker. Nothing was published on a /pico/* topic.
+# AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: ran these and collected the logs (session paths shortened).
+
+## 1. Dry run through the wrapper, in tmux, clone at 65173fe (the code of 2026-11-18)
+bash course-project/tools/car_batch.sh dry-wrapper-20261124 run --world course-project/configs/arenas/real-room-plus8-160mm-nominal.json --scenarios course-project/configs/arenas/real-room-scenarios.json --scenario-ids S1,S2 --initial-pose 2.4,1.6,70 --episodes 2 --policy b2 --max-range 3.0 --max-steps 30 --dry-run --out course-project/data/batches/dry-wrapper-20261124
+# 2026-11-25T05:38:16Z start
+# commit 65173fe152f3
+05:38:17 batch cae4800e543b: 2 episodes of b2 on the simulated car (dry run), world real-room-plus8-160mm-nominal, out /workspace/course-project/data/batches/dry-wrapper-20261124
+05:38:18 seed 1 step 0: 0.0s 2 calls $0.000 valid=True fallback=False fix=None decision=TURN_LEFT_30 executed=TURN_LEFT_30:done total=$0.00 
+   [... 60 step lines ...]
+Car batch cae4800e543b (simulated car, dry run)
+status: complete   updated: 2026-11-25T05:38:20Z   resumes: 0
+world: real-room-plus8-160mm-nominal   policy: b2   episodes asked: 2   moves sent: 168   spent: US$0.00
+
+ep01-a1  done    scenario S1  start miss 0.14 m / 4 deg  ended_by budget (max_steps) after 30 steps  final pose error 0.00 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+ep02-a1  done    scenario S2  start miss 0.07 m / 5 deg  ended_by budget (max_steps) after 30 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+
+# exit 0 at 2026-11-25T05:38:20Z
+
+## 2. Ways of stopping a dry run through docker (30 episodes each), same code
+== 1. Ctrl+C in the tmux window
+  manifest: halted interrupted episodes: [('ep01-a1', 'halted')]
+  HALT.LATCH: True
+  wrapper exit: 130
+  containers still running from the image: 0
+== 2. the tmux window closed (SIGHUP)
+  manifest: halted interrupted episodes: [('ep01-a1', 'halted')]
+  HALT.LATCH: True
+  wrapper exit: none
+  containers still running from the image: 0
+== 3. docker stop on the batch container
+  manifest: halted interrupted episodes: [('ep01-a1', 'halted')]
+  HALT.LATCH: True
+  wrapper exit: 3
+  containers still running from the image: 0
+== 4. kill -TERM to the wrapper process only
+  wrapper pid 1397990
+  3 s later: containers running 1
+  manifest: halted interrupted episodes: [('ep01-a1', 'done'), ('ep02-a1', 'done'), ('ep03-a1', 'halted')]
+  HALT.LATCH: True
+  wrapper exit: 130
+  containers still running from the image: 0
+== 5. Ctrl+C twice, 50 ms apart
+  manifest: halted interrupted episodes: [('ep01-a1', 'halted')]
+  HALT.LATCH: True
+  wrapper exit: 130
+  containers still running from the image: 0
+== done
+
+
+## 3. The real-car path with the car off, same code: the recorder started, the wrapper said it did not, and left it running
+# 2026-11-25T05:40:59Z start, commit 65173fe152f3
+ls: cannot access 'course-project/data/real/ATTENDED_PASS.json': No such file or directory
+ls: cannot access 'course-project/data/real/.active': No such file or directory
+ls: cannot access 'course-project/data/LATCH': No such file or directory
+checks at 2026-11-25T05:40:59.666Z
+access point: wlP9s9 holds 10.42.0.1
+micro-ROS agent: NOT RUNNING (bash course-project/tools/car_net.sh agent-start)
+camera relay: tmux bm-cam-relay up
+camera: NOT FOUND
+car: NOT FOUND on the access point
+ntp: yes
+
+recording session 20261124-234059-batch-real-refusal-a
+  folder  ~/Projects/en665715-beaconmind/course-project/data/real/20261124-234059-batch-real-refusal-a
+  windows watchdog bag wifi 
+  clock   python3 course-project/tools/session_clock.py 20261124-234059-batch-real-refusal-a   (film it at the start of the phone video)
+  stop    bash course-project/tools/record_session.sh stop
+active: 20261124-234059-batch-real-refusal-a
+  bag: running
+  watchdog: running
+  wifi: running
+  bag container: running
+  bag: 28K  frames: 0
+car_batch.sh: the recorder did not start; nothing was sent
+# wrapper exit 2 at 2026-11-25T05:41:06Z
+# after:
+-rw-r--r-- 1 xiaohui_chen xiaohui_chen 37 Nov 24 23:41 course-project/data/real/.active
+bm-rec still up
+bm-rec-bag
+dry-wrapper-20261124
+dry-wrapper-20261124.log
+real-refusal-a-20261124.log
+sig-ctrlc-20261124
+sig-dstop-20261124
+sig-hup-20261124
+sig-term-20261124
+sig-twice-20261124
+# stopped by hand at once: bash course-project/tools/record_session.sh stop "cleanup: left running by the car_batch.sh test of 2026-11-24 (wrapper bug)"; afterwards no .active, no bm-rec, no bm-rec-bag
+
+## 4. After the fixes (clone at 2cd3415)
+# commit 2cd341552039, 2026-11-25T06:16:36Z
+# ls: cannot access 'course-project/data/real/ATTENDED_PASS.json': No such file or directory
+# ls: cannot access 'course-project/data/real/.active': No such file or directory
+# ls: cannot access 'course-project/data/LATCH': No such file or directory
+== 1. real-car path, car/camera/agent off (expected: refused at the recorder's checks, its session stopped)
+  bash course-project/tools/car_net.sh status; nothing was sent (the session started here is stopped)
+stopping 20261125-001637-batch-real-refusal-b (batch ended)
+stopped: ~/Projects/en665715-beaconmind/course-project/data/real/20261125-001637-batch-real-refusal-b
+# Session 20261125-001637-batch-real-refusal-b
+wrapper exit 2
+after: .active absent; tmux bm-rec gone; containers: charming_gould 
+== 2. the same on ROS domain 42 (no recorder by design; expected: the batch refuses, no marker, no session)
+refused, nothing was sent:
+- no pass marker at /workspace/course-project/data/real/ATTENDED_PASS.json: the attended stand test and floor check must pass first (car_batch.py record-pass)
+- no recorder session is active (rule R2): start through tools/car_batch.sh, or record_session.sh start <label> --camera off
+wrapper exit 2
+== 3. dry run in tmux, Ctrl+C after episode 1 starts (expected: exit 3, halted interrupted)
+container while running: bm-batch-sig-ctrlc2 charming_gould 
+wrapper exit 3
+ep01-a1  halted  scenario S1  start miss 0.14 m / 4 deg  ended_by None (None) after None steps
+car_batch.sh: the batch was interrupted; its exit status is 3
+manifest halted interrupted [('ep01-a1', 'halted')]
+== 4. dry run, docker stop bm-batch-<label> (expected: exit 3, halted interrupted)
+a second run of the same label while it runs:
+Run 'docker run --help' for more information
+second exit 125
+wrapper exit 3
+manifest halted interrupted [('ep01-a1', 'halted')]
+== done; containers: charming_gould ; tmux: bm-cam-relay 
+
+## 4b. The same refusal, its whole message (clone at 2cd3415)
+checks at 2026-11-25T06:17:34.999Z
+access point: wlP9s9 holds 10.42.0.1
+micro-ROS agent: NOT RUNNING (bash course-project/tools/car_net.sh agent-start)
+camera relay: tmux bm-cam-relay up
+camera: NOT FOUND
+car: NOT FOUND on the access point
+ntp: yes
+recording session 20261125-001734-batch-real-refusal-d
+  folder  ~/Projects/en665715-beaconmind/course-project/data/real/20261125-001734-batch-real-refusal-d
+  windows watchdog bag wifi 
+  clock   python3 course-project/tools/session_clock.py 20261125-001734-batch-real-refusal-d   (film it at the start of the phone video)
+  stop    bash course-project/tools/record_session.sh stop
+active: 20261125-001734-batch-real-refusal-d
+  bag: running
+  watchdog: running
+  wifi: running
+  bag container: running
+  bag: 28K  frames: 0
+  car ping: none (no car found at the start)
+car_batch.sh: the recorder's start checks (~/Projects/en665715-beaconmind/course-project/data/real/20261125-001734-batch-real-refusal-d/meta/checks.txt) say:
+  micro-ROS agent: NOT RUNNING (bash course-project/tools/car_net.sh agent-start)
+camera: NOT FOUND
+car: NOT FOUND on the access point
+  bash course-project/tools/car_net.sh status; nothing was sent (the session started here is stopped)
+stopping 20261125-001734-batch-real-refusal-d (batch ended)
+stopped: ~/Projects/en665715-beaconmind/course-project/data/real/20261125-001734-batch-real-refusal-d
+# Session 20261125-001734-batch-real-refusal-d
+
+## Notes
+- In 4, `charming_gould` is the one-off container of the container test run going on at the same time; the second run of
+  the same label was refused by docker (exit 125, "Conflict. The container name /bm-batch-sig-dstop2 is already in use";
+  the message line was cut by the tail of the script) and left the running batch alone.
+- In 4b the second and third missing lines were not indented: the printf indented only the first line. Fixed in 05f64c4.
+- Left on the Spark (git-ignored, harmless): the recorder sessions data/real/20261124-234059-batch-real-refusal-a,
+  20261125-001637-batch-real-refusal-b and 20261125-001734-batch-real-refusal-d (no moves/ folder, so record-pass cannot
+  take them for a stand or floor session), and the dry-run batch folders under data/batches/ (dry-wrapper-20261124,
+  sig-*, b2-real-01-dry-standin-*). They may be deleted.

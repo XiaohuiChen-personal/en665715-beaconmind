@@ -1,13 +1,18 @@
 # Unattended batch runner for real-car episodes (plan §3.6 "Unattended batches"; tasks M3.T12 and M3.T18), 2026-11-18
 
 Status: **code and tests only, verified on the simulated car in the simulated room. Nothing was published on the
-real car's ROS graph; no batch has run on the car.** The stand test and the floor check
+real car's ROS graph; no batch has run on the car.** On 2026-11-24 the wrapper ran on the Spark for the first time
+(simulated car; the real-car path to its refusal), a check of the surveyed tags against each other closed the open
+review finding 3, and the fix sigma can come from the tag pilot (sections marked 2026-11-24). The stand test and the floor check
 (`../../M3.T6/README.md` section 5) stay attended and must pass first: the runner refuses a real batch without a
 recorded pass marker (below). The folder is M3.T12's because that task is the real B2 episodes; the same runner
 serves the live-model episodes of M3.T18 (`--policy <model key>`).
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote the runner, the resection, the tests and this
 note. Xiaohui Chen approved unattended batches on 2026-11-18 (plan README §3.6) and runs the attended tests.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: ran the wrapper on the Spark and fixed it, added the tag check
+(`tag_survey`), `--detector-noise`, the tests named below, the 3.0 m dry runs and the first batch's commands; edited
+this note.
 
 ## Files (under `course-project/`)
 
@@ -16,8 +21,10 @@ note. Xiaohui Chen approved unattended batches on 2026-11-18 (plan README §3.6)
 | `beaconmind/src/beaconmind/car/resection.py` (new) | pose from the surveyed tags: `resect` (two tags or more, repeated ids handled), `position_fix` (one tag and the tracked heading) |
 | `beaconmind/src/beaconmind/car/batch.py` (new) | `PoseTracker`, `MoveGuard`, `Monitor` (the halts), `BatchEnv` (the harness's environment), `BatchRunner`, `dry_rig`, the pass marker |
 | `tools/car_batch.py` (new) | `run`, `record-pass`, `clear-halt`, `status` |
-| `tools/car_batch.sh` (new) | Spark host: starts the R2 recorder for the whole batch, runs the tool in a `beaconmind-ros` container, stops the recorder |
-| `beaconmind/tests/test_car_batch.py` (new) | 91 tests |
+| `tools/car_batch.sh` (new) | Spark host: starts the R2 recorder for the whole batch, runs the tool in a `beaconmind-ros` container (`bm-batch-<label>`), stops the recorder |
+| `beaconmind/tests/test_car_batch.py` (new) | 114 tests (91 on 2026-11-18) |
+| `beaconmind/tests/test_car_batch_wrapper.py` (2026-11-24) | 11 tests: `car_batch.sh` and `record_session.sh status` under bash with stand-ins for docker, tmux and the recorder |
+| `tools/record_session.sh` (the recorder, M3.T27; one change 2026-11-24) | `status`, and so `start`, no longer exits 1 when the start checks found no car (see "First execution") |
 | `car/telemetry.py`, `link.py`, `ros_io.py`, `simcar.py` (my own, changed) | the Pico's supply voltage (telemetry field 5); `car_state` carries `drive_status`, `vsys_min_mv`, `agent_rx_age_ms` |
 | `car/camera.py` (my own, changed) | a frame whose counter (`X-BM-Seq`) repeats is a stale picture: an error |
 
@@ -48,12 +55,15 @@ halt, manifest and spend there (it is deliberately not inside a recorder session
    `run_episode` (B2 or a model) on `BatchEnv`; a last circle gives the end pose.
 5. **Every move** — the agent's, the scans', the transit's — passes the guard, and the car is looked at again
    (fresh telemetry; a camera frame if none arrived for 3 s) immediately before it.
-6. **Outputs** in the batch folder: `manifest.json` (`bm.car_batch/1`), `summary.txt`, `HALT.LATCH` when halted,
+6. **Tags** (2026-11-24): every full circle compares each tag with the others; a tag that keeps disagreeing halts the
+   batch (`tag_survey`), and only tags compared closely enough steer a step's fix ("The check of the surveyed tags").
+7. **Outputs** in the batch folder: `manifest.json` (`bm.car_batch/1`; `tag_check` holds each tag's comparison),
+   `summary.txt`, `HALT.LATCH` when halted,
    `spend.jsonl`, and per episode `episodes/<id>/`: the harness's `seed_<n>.jsonl` and `.moves.jsonl`,
    `truth.jsonl` (ground truth per step), `backend/steps.jsonl`, `pre/` and `post/` (scans and transit). In the
    recorder's session: every frame (`frames_backend/`), the move logs (`moves/`), `batch_markers.jsonl` with each
    episode's start and end.
-7. **Resume:** after an operator has looked at the car and cleared the halt, the same command with the car's new
+8. **Resume:** after an operator has looked at the car and cleared the halt, the same command with the car's new
    taped pose, or `--initial-pose last` when nobody moved the car (the pose the batch last tracked). Finished
    episodes are skipped. An unfinished episode is never replayed; it runs again as a new attempt (`ep02-a2`); one
    left `running` by a dead process becomes `abandoned`. Step, time and spend caps count the whole batch across its
@@ -97,10 +107,18 @@ Per plan §3.6 the pose comes from the surveyed tags, not tape. All of it is rec
   tag's survey and range-scale error), and the position sigma never goes below 0.05 m, so the guard's margin is
   never under 0.25 m.
 
-What the stated sigma covers: noise and geometry, with an assumed per-tag noise of 0.03 m + 0.04 × range
-(`fix_sigma_a_m`, `fix_sigma_b`: **assumed, to be replaced by the tag pilot's figures**, work list 2.4). What it
-does not cover: a common range-scale error of the camera and errors in the surveyed tag positions. The plan's three
-tape readings (first start, last end, one spot check) bound those. The agent sees none of this.
+What the stated sigma covers: noise and geometry, with a per-tag noise of `fix_sigma_a_m` + `fix_sigma_b` × range:
+by default the **assumed** 0.03 m + 0.04 × range; with `--detector-noise course-project/configs/detector_noise.json`
+(2026-11-24) the tag pilot's measured model (`bm.detector_noise/1`, written by `tools/tag_pilot.py analyze --out`),
+mapped by `batch.fix_sigma_from_detector_noise`: along the line of sight |range bias| + range sigma, across it the
+range times |bearing bias| + bearing sigma at `--max-range`, and the isotropic bound a + hypot(b_along, b_across) × r
+of the two (the detector does not correct the bias, so it counts as error). The manifest's
+`params.fix_sigma_source` says which was used (file, its sha256, the pilot's log and date, the numbers), the summary
+prints it, and a different source is a different batch configuration. A `--max-range` beyond the pilot's reliable
+range is printed and recorded as a WARNING. `configs/dv.json` (the frozen study's values) is neither read for this
+nor changed. What the sigma does not cover: a common range-scale error of the camera and errors in the surveyed tag
+positions. The plan's three tape readings (first start, last end, one spot check) bound those; a wrong tag position
+is also looked for by the tag check below. The agent sees none of this.
 
 `final_pose_error` compares the agent's last report with the tracked pose at that observation (the move decided in
 the last step runs afterwards); `tracked_minus_end_scan` says how far the tracked pose was from what the end circle
@@ -126,10 +144,57 @@ x = 0.66 m; convex, counter-clockwise, checked) minus every obstacle box. Everyt
 compared with the tape; fixes that disagree with it are refused; and the encoder scale is checked twice (the
 transit between two full-circle fixes must measure the same length by odometry and by the tags within 10 % plus
 the fixes' own uncertainty when it is 0.3 m or longer; and during episodes, fixes that keep landing ahead of or
-behind the odometry by more than 12 % of the distance driven halt the batch). What still gets through: one tag
-surveyed 0.3 m wrong, seen alone, pulls the tracked pose up to 0.33 m while the stated sigma stays near 0.1 m; in
-the reviewer's probe the simulated footprint then came within 4 cm of the edge of the driving area (not past it).
-**So the tag centres in the world file must be measured, not nominal, before an unattended batch.**
+behind the odometry by more than 12 % of the distance driven halt the batch). What got through until 2026-11-24:
+one tag surveyed 0.3 m wrong, seen alone, pulled the tracked pose up to 0.33 m while the stated sigma stayed near
+0.1 m; in the reviewer's probe the simulated footprint came within 4 cm of the edge of the driving area. That is
+now closed by the tag check (next section). **The tag centres in the world file must still be measured, not
+nominal:** the check halts on a wrong one, it does not correct it.
+
+## The check of the surveyed tags against each other (2026-11-24; review finding 3)
+
+The residual risk once the centres are measured is a wrong number on the mounting sheet (a misread or a slip of
+the pen). Nothing about the car tells a tag that is 0.3 m off from one that is right, except the other tags.
+
+- **Leave one out** (`resection.check_tags`, in every fit of four tags or more: in practice every full circle, ~15
+  tags at 3.0 m in the 20-tag room). Each tag is compared with where the other tags put it; its limit is
+  max(0.15 m, 4 sigma), sigma from its range (the fix sigma) and the fit's uncertainty at it. While the worst tag
+  exceeds its limit and more than three would remain, it is set aside and the rest compared again among themselves
+  (so one bad tag does not smear its error onto the good ones). Repeated ids (0, 2, 3 are on two tags each) are
+  compared by tag (`T02`, `T05`), after the assignment the fit chose; a check whose assignment is ambiguous is not
+  made.
+- **Adding up** (`batch.TagCheck`): each comparison is a vector with weight 1/sigma^2. A tag whose weighted mean is
+  farther from its survey than max(0.15 m, 4 sigma_mean) halts the batch: **`tag_survey`** (safety: the project
+  latch too), naming the tag, its id, its surveyed centre, where the other tags put it and over how many
+  comparisons. One circle names a tag 0.5 m off (assumed noise) or 0.3 m off (noise like the simulated camera's);
+  with the assumed noise a 0.3 m error at 1.7 m needs two circles. Under 0.15 m nothing is named: that is inside
+  the guard's 0.25 m and below what measurement on the wall should miss.
+- **Trust before use:** a step's fix (two tags, or one tag and the tracked heading) uses only tags whose mean is
+  within max(0.15 m, 3 sigma_mean) of their survey with that bound at most 0.30 m. So a tag more than 0.30 m off is
+  never trusted, and a tag not yet compared, or compared only from far, steers nothing. The disagreement test and
+  the `fix_conflict` count still use every tag, exactly as before: the trust rule only decides what moves the pose.
+  Full circles use every tag (they are where tags get compared). The evidence is per process: a resumed batch
+  compares again from its first circle. The manifest's `tag_check` lists every tag's mean, sigma, limits and verdict.
+
+What it costs and what it buys, all on the simulated car (`tag-check-probe.txt`, `dry-runs-2026-11-24.txt`):
+
+- **The hole, made direct** (`test_a_tag_surveyed_wrongly_by_d_cannot_pull_the_car_toward_its_wall`): T06 surveyed
+  d into the room, seen alone, the car driving FORWARD_10 at the window wall while the guard allows. Before: the
+  tracked pose lagged the truth by about two thirds of d and the true footprint came to 0.18 m (d = 0.3) and 0.08 m
+  (d = 0.5) of the edge while the guard believed it kept 0.25 m. Now: the circle halts `tag_survey` naming T06
+  (0.3 and 0.5 m) before any forward move; without a circle T06 is unchecked and steers nothing (tracked within
+  3 cm of the truth); 0.1 m is not named and keeps more than the 0.25 m.
+- **Whole batches with one tag moved** (every tag of the 20, 0.1 / 0.3 / 0.5 m along ±x and ±y, B2, S1, S3, S4,
+  3.0 m, assumed noise; 80 runs per size): with the check every 0.3 m and 0.5 m case (160 of 160) halted
+  `tag_survey` naming the moved tag, the tracked pose within 0.07 m of the truth until then; 0.1 m: 78 complete, 2
+  `odometry_scale`, none named. Before: 0.3 m gave 66 `no_fix`, 5 `odometry_scale` and 9 complete batches with the
+  tracked pose up to 0.17 m off (0.28 m at 0.5 m). No contact in any run (`tag-check-probe.txt`).
+- **Cost in the dry runs:** 20-tag room at 3.0 m: 4 of 4 batches complete with and without the check; no clean tag
+  came near its limit (largest mean/limit 0.06 with the assumed noise, 0.10 with pilot-like noise, 0.14 anywhere in
+  the grid). At 2.5 m one batch of four halts `no_fix` in S4 (the corner with fewest tags) where it completed
+  before: until a tag is compared it steers nothing. Clean runs of the probe: 7 of 8 complete (one `no_fix` in S4)
+  against 8 of 8. In the 12-tag layout at 2.0 m few circles hold four tags, so few tags can be
+  compared at all: there the rule turns into `no_fix` halts (two older tests about resume and the odometer bias
+  run with `tag_trust=False` for that reason, said in each).
 
 ## Health halts
 
@@ -165,13 +230,25 @@ set, `car.sh clear-latch --operator <name>`; then the `run` command again.
 | `recorder` | the recorder session is no longer active, or has written nothing for 2 minutes (rule R2) | S | `test_halt_recorder_stops`, `test_a_recorder_that_stopped_writing_is_noticed` |
 | `episode_wall_clock` | an episode (scans included) runs past `--episode-minutes` (60) | S | `test_halt_episode_wall_clock` |
 | `batch_wall_clock`, `batch_steps` | the batch, over all its runs, passes `--batch-hours` (6) or `--batch-steps` (2,500 moves) | — | `test_halt_batch_wall_clock_and_step_cap`, `test_the_move_cap_counts_the_whole_batch_not_one_run`, `test_the_wall_clock_cap_counts_the_whole_batch` |
-| `usd_cap` | spend reached `--cap-usd` (no request is sent after it; spend is appended to `spend.jsonl` as it happens and counted again on a rerun) | — | `test_halt_usd_cap` |
+| `tag_survey` (2026-11-24) | the other tags keep putting one tag farther from its surveyed centre than its limit ("The check of the surveyed tags") | S | `test_a_batch_with_one_tag_surveyed_wrongly_by_d`, `test_a_tag_surveyed_wrongly_by_d_cannot_pull_the_car_toward_its_wall`, `test_the_circle_names_the_tag_surveyed_wrongly` |
+| `usd_cap` | spend reached `--cap-usd` (no request is sent after it; spend is appended to `spend.jsonl` as it happens and counted again on a rerun) | — | `test_halt_usd_cap`; between two episodes, and a rerun at the cap: `test_usd_cap_between_two_episodes_is_the_check_before_the_next_episode` |
 | `harness_latch` | the harness latched the episode (two error observations, contacts) | S | `test_halt_harness_latch` |
-| `interrupted` | Ctrl+C, SIGTERM, SIGHUP | — | `test_an_interrupted_episode_is_halted_in_the_manifest`, `test_terminate_and_hangup_end_like_an_interrupt` |
+| `interrupted` | Ctrl+C, SIGTERM, SIGHUP (only the first counts; later ones are ignored while the car stops and the halt is written, 2026-11-24) | — | `test_an_interrupted_episode_is_halted_in_the_manifest`, `test_terminate_and_hangup_end_like_an_interrupt`, `test_signals_in_quick_succession_still_leave_one_halt_record`; through docker on the Spark: "First execution" |
 | `harness_error`, `error` | another harness error; any exception; a manifest that cannot be written; an earlier run that died without a record | — / S | `test_halt_on_an_unexpected_error`, `test_a_run_that_died_without_a_record_needs_an_operator`, `test_a_halt_that_cannot_be_written_sets_the_project_latch` |
 
 `test_a_fault_while_the_agent_thinks_stops_the_next_move` runs seven of these faults while a (simulated) model
 thinks for 20 s between two steps: no move is sent after the fault appears.
+
+**Two halts at once** (2026-11-24, `test_two_faults_inside_one_scan_keep_the_first_cause`): the first cause found is
+the batch's halt in the result, the manifest, the summary, `HALT.LATCH` and the project latch; a second one in the
+same sensing or later in the same circle does not write over it, and no move follows. (After a non-safety halt a
+later safety condition therefore does not set the project latch; the batch is halted and refuses to rerun until
+cleared either way.)
+
+**A halt is recorded as a halt, not as the spend cap** (commit `353d49f`): when the agent wrapper refuses a request
+because the batch has just halted, the harness reports its own "budget cap reached"; the episode entry then says
+`ended_by: halt` with the real cause in `detail`, and the batch's halt keeps the real code (`supply_low` in
+`test_a_request_refused_by_the_wrapper_is_recorded_as_the_halt_not_as_the_spend_cap`), not `usd_cap`.
 
 Not a halt: an episode the harness ends with `no_progress`, or the coded procedure stopping at a branch it does
 not implement (`driver stopped`). The car is healthy; it is that episode's result and the next episode starts
@@ -210,12 +287,36 @@ So with this layout an unattended batch needs the longer range limit or more tag
 mild (no scale error, no carpet veer unless asked), so the dry runs prove the logic and the bookkeeping, not the
 real accuracy of resection.
 
+**2026-11-24: the 20-tag world and 3.0 m** (`dry-runs-2026-11-24.txt`). The same command, seeds and settings, with
+`--world course-project/configs/arenas/real-room-plus8-160mm-nominal.json` (C20, nominal centres) and also at 3.0 m
+in the 12-tag world. First on the code of 2026-11-18 (commit `65173fe`; it reproduces the table above move for
+move), then on today's code with the tag check:
+
+| World | Range limit | Code of 2026-11-18: batches complete, episodes done, halts | With the tag check (2026-11-24) |
+| --- | --- | --- | --- |
+| 12 tags | 3.0 m | 3 of 4, 17 of 20, one `no_fix` (S3) | 3 of 4, 17 of 20, one `no_fix` (S3) |
+| 20 tags | 2.0 m | 0 of 4, 12 of 20, four `no_fix` (S3, S4, S4, S5) | 1 of 4, 13 of 20, three `no_fix` (S3, S4, S4) |
+| 20 tags | 2.5 m | 4 of 4, 20 of 20, none | 3 of 4, 18 of 20, one `no_fix` (S4) |
+| 20 tags | **3.0 m** | **4 of 4, 20 of 20, none** | **4 of 4, 20 of 20, none** |
+
+At 3.0 m with 20 tags (today's code) every episode reached its start pose (miss 0.01 to 0.14 m), the transit's
+odometer check read 0.994 to 1.003, no move of B2's was refused by the guard, B2's final pose error against the
+batch's pose was 0.00 to 0.04 m, all 20 episodes ended by B2's DONE (44 to 148 steps), all 20 tags were trusted by
+the end of each batch, and no tag came near its halt limit (largest mean/limit 0.08 over all 24 batches; no
+`tag_survey`). This supports the 3.0 m limit with the 20-tag layout, pending the tag pilot. At 2.5 m the check costs
+one batch of four (S4, the corner with fewest tags: until a tag is compared it steers nothing); 2.0 m is not usable
+with either code. In the 12-tag world 3.0 m changes little against 2.5 m (one S3 halt in four).
+
 ## Tests
 
-- Mac (Python 3.13), `pytest-mac.txt`: `tests/test_car_batch.py` **91 passed**; whole suite **605 passed, 10
-  skipped**; `prereg_freeze.py --verify` OK.
-- Container on the Spark (Python 3.10.12, `--network none`, ROS_DOMAIN_ID 42), `pytest-container.txt`: the batch
-  file with the five car test files **286 passed, 1 skipped**.
+- 2026-11-24, Mac (Python 3.13), `pytest-mac.txt`: `tests/test_car_batch.py` **114 passed**, `tests/test_car_batch_wrapper.py` **11 passed**; whole suite **643 passed, 10 skipped** (without the demo-video agent's three untracked test files, work in progress in the same tree); `prereg_freeze.py --verify` OK (29 files, 30 logs).
+- 2026-11-25, container on the Spark (Python 3.10.12, `--network none`, ROS_DOMAIN_ID 42), commit `05f64c4`,
+  `pytest-container.txt`: the batch file, the wrapper file and the five car test files **308 passed, 1 skipped**.
+  (On `2cd3415` the new quick-signals test failed there: Python 3.10 printed "Signal 2 ignored due to race
+  condition" for a signal already pending when the handler became SIG_IGN; the later signals now go to a no-op
+  Python handler instead.)
+- 2026-11-18: Mac `tests/test_car_batch.py` 91 passed, whole suite 605 passed, 10 skipped; container 286 passed,
+  1 skipped.
 
 Beyond the halts: resection recovers exact poses, stays inside three stated sigmas with 2 % / 1° noise in at least
 190 of 200 draws, refuses one tag, unknown ids, a pose far from the prior, a bad residual, numbers that are not
@@ -237,7 +338,7 @@ after a latch file existed. Its findings and what was done:
 | --- | --- | --- | --- |
 | 1 (critical) | a rerun through the wrapper got a fresh folder: earlier halt, manifest and spend unseen | fixed: the batch folder is `data/batches/<label>`, independent of the recorder session | `test_a_rerun_from_the_tracked_pose_with_a_new_process` |
 | 2 (critical) | after a restart the tracker believed the taped pose and a transit move ran on it; resume rarely worked | fixed: the first circle is required, solved without the tape and compared with it; no view is trusted and no forward move runs before it; room for a wrong tape is required; the tracked pose is saved and `--initial-pose last` restores it. The reviewer's probe: 128 of 128 wrong-pose restarts now halt at the first circle | `test_the_first_circle_speaks_...`, `test_no_forward_move_before_a_circle_has_confirmed_the_pose`, `test_the_first_circle_needs_room_for_a_wrong_tape`, `test_a_resumed_batch_takes_the_cars_new_taped_pose` |
-| 3 | one mis-surveyed tag made the tracker confidently wrong; the footprint reached the wall | reduced, not closed: no sigma shrink on a repeated tag set, sigma floor 0.05 m (so the margin is never under 0.25 m), fixes that disagree are refused, full-circle residual limit 0.08 m, wall margin 0.15 m. Reviewer's probe on the final code: no run reaches the edge; the smallest true clearance over all its tag cases is 4 cm (a tag 0.3 m wrong, tracked pose 0.33 m off). See "The guard" for what remains | `test_a_tag_surveyed_wrongly_halts_before_the_car_reaches_a_wall`, `test_repeated_fixes_from_the_same_tag_do_not_shrink_the_uncertainty`, `test_guard_margin_has_a_floor_that_no_fix_can_lower`, `test_a_fix_that_disagrees_with_the_tracked_pose_is_not_blended_in` |
+| 3 | one mis-surveyed tag made the tracker confidently wrong; the footprint reached the wall | **closed 2026-11-24** by the tag check (halt `tag_survey`, trust before use; "The check of the surveyed tags"); before that reduced, not closed: no sigma shrink on a repeated tag set, sigma floor 0.05 m (so the margin is never under 0.25 m), fixes that disagree are refused, full-circle residual limit 0.08 m, wall margin 0.15 m. Reviewer's probe on the final code: no run reaches the edge; the smallest true clearance over all its tag cases is 4 cm (a tag 0.3 m wrong, tracked pose 0.33 m off). See "The guard" for what remains | `test_a_tag_surveyed_wrongly_halts_before_the_car_reaches_a_wall`, `test_repeated_fixes_from_the_same_tag_do_not_shrink_the_uncertainty`, `test_guard_margin_has_a_floor_that_no_fix_can_lower`, `test_a_fix_that_disagrees_with_the_tracked_pose_is_not_blended_in` |
 | 4 | a halt that could not be written was lost; `_save` raised out of `run()`; the rerun drove | fixed: project latch on a failed halt write; manifest write errors halt; a manifest left `running` refuses and writes the halt | `test_a_halt_that_cannot_be_written_sets_the_project_latch`, `test_a_run_that_died_without_a_record_needs_an_operator` |
 | 5 | health was judged on the previous sensing, so one more move ran | fixed: fresh car state and a camera probe before every move | `test_a_fault_while_the_agent_thinks_stops_the_next_move` (7 faults) |
 | 6 | SIGTERM and SIGHUP left no halt record | fixed: both end like Ctrl+C; the wrapper `exec`s Python and says to run under tmux | `test_sigterm_during_a_batch_leaves_a_halt_record` (a real process, SIGTERM mid-batch; not under docker), `test_terminate_and_hangup_end_like_an_interrupt` |
@@ -248,9 +349,9 @@ after a latch file existed. Its findings and what was done:
 | 11 | obstacles were never checked | fixed | `test_obstacles_count_even_without_a_separate_driving_area` |
 | 12 | after Ctrl+C the episode stayed `running` | fixed | `test_an_interrupted_episode_is_halted_in_the_manifest` |
 | 13 | a NaN range gave a NaN pose | fixed: such detections never reach a fix, and one halts the batch (`detector`) | `test_detections_that_are_not_numbers_never_reach_the_pose` |
-| 14 | a crashed recorder left `.active` behind | fixed: the wrapper checks the recorder's tmux session; the batch halts when the session's logs stop changing for 2 minutes | `test_a_recorder_that_stopped_writing_is_noticed` (the wrapper's check is untested) |
+| 14 | a crashed recorder left `.active` behind | fixed: the wrapper checks the recorder's tmux session; the batch halts when the session's logs stop changing for 2 minutes | `test_a_recorder_that_stopped_writing_is_noticed`; the wrapper's check: `test_an_active_session_is_used_not_stopped_unless_it_polls_the_camera` (2026-11-24) |
 | 15 | `supply_low` is the Pico's supply; fading motor batteries only show as stall/timeout | documented, not fixable in software: the car has no motor-battery signal ("Battery" above). A supply reading of 0 or none does not halt (the simulated and real firmware always send one) | — |
-| 16 | wrapper: `--batch-hours=7` not parsed; `--out` outside the repository vanished with the container | fixed in the wrapper (syntax-checked only) | — |
+| 16 | wrapper: `--batch-hours=7` not parsed; `--out` outside the repository vanished with the container | fixed in the wrapper; run on the Spark 2026-11-24 | `test_refusals_before_anything_starts` |
 | 17 | wall-clock caps are checked only when the harness asks for a step; a hung model call overruns them | documented limit: the caps are checked before every request and every move, not during a request. The car is at rest meanwhile, and the provider's own request timeout (900 s, `tools/closed_loop_run.py`) ends the call; a cap can therefore be overrun by at most one request | — |
 | 18 | telemetry lost between moves was called `executor_refused` | fixed | `test_telemetry_stopping_between_moves_is_named_and_sends_no_move` |
 
@@ -265,26 +366,123 @@ SIGTERM on a real process. The tests were written with the fixes; the old code's
 reproductions (its probe scripts), which were re-run on the final code. Still without a test: `harness_error`
 other than the two non-halting kinds, and everything in `car_batch.sh` (syntax-checked only).
 
+## First execution of `car_batch.sh` on the Spark (2026-11-24)
+
+The car powered off, the micro-ROS agent stopped, the camera off; clone at `65173fe`. Logs in
+`wrapper-spark-2026-11-24.txt`. Nothing was published on a `/pico/*` topic; no pass marker exists or was written.
+
+- **A simulated batch is a `--dry-run` through the wrapper.** The wrapper starts no recorder for it (by design:
+  `--dry-run` or a ROS domain other than 0), and runs the batch in a one-off `beaconmind-ros` container. The first
+  run (`dry-wrapper-20261124`, 2 episodes S1, S2, 30 steps, 3.0 m, 20 tags) worked as written: complete, 168 moves,
+  the folder in `data/batches/` owned by the user, the container gone. A batch that drives a simulated car node over
+  ROS (`BM_ROS_DOMAIN_ID=42`, `car.sh sim-car`) is refused by `car_batch.py` for want of the pass marker and a
+  recorder session, as the refusal is meant to; it was not worked around. So the ROS path of a batch is untested
+  until the real car.
+- **Stopping it** (dry runs through docker, 30 episodes each): Ctrl+C in the tmux window, closing the window
+  (SIGHUP), `docker stop`, and Ctrl+C twice 50 ms apart all ended with `halted: interrupted`, `HALT.LATCH` written,
+  the running episode `halted`, no container left. A `kill -TERM` of the wrapper's own process did **not** stop the
+  batch (it finished two more episodes until the container was stopped): the wrapper waits for its container. Now
+  said in the wrapper; the container is named `bm-batch-<label>` so `docker stop bm-batch-<label>` is the way, and a
+  second run of the same batch cannot start beside the first.
+- **The real-car path, car off — a bug found.** `car_batch.sh real-refusal-a run ...` without `--dry-run`: the
+  recorder started (`car: NOT FOUND`, `camera: NOT FOUND`, `micro-ROS agent: NOT RUNNING`; no ping windows, since
+  there was nothing to ping) but `record_session.sh start` exited 1, because its closing `status` ended with `tail
+  ping_car.txt | sed` under `pipefail` and there was no ping log. The wrapper took that for "the recorder did not
+  start", exited 2 and **left the session recording** (`.active`, tmux `bm-rec`, container `bm-rec-bag`, a 7-hour
+  watchdog). It was stopped by hand at once (`record_session.sh stop`). Fixed twice: `status` returns 0 without a
+  ping log; the wrapper stops any session that is marked active after its start call, whatever the exit status.
+- **Hardened while there:** a real run is refused (nothing sent, the session it started stopped) when the
+  recorder's start checks say `car: NOT FOUND`, `camera: NOT FOUND` or `micro-ROS agent: NOT RUNNING` (the batch
+  could not run, and the session would hold no ping log of the link gaps, rule R2), or when an already active session
+  polls the camera (the batch must be its only client); the wrapper returns the batch's own exit status after
+  Ctrl+C (it returned 130); `car_batch.py` ignores every stop signal after the first, so a second Ctrl+C cannot
+  break off a move's stop or a half-written halt record. All of it in `test_car_batch_wrapper.py` (bash with
+  stand-ins; against the scripts of 2026-11-18 all 11 fail on the Mac).
+- **After the fixes, on the Spark** (clone at `2cd3415`): the same real-car-path run is refused at the recorder's
+  checks, naming the agent, the camera and the car, and the session it started is stopped (`.active` gone, no
+  `bm-rec`, no `bm-rec-bag`), exit 2; on ROS domain 42 the batch itself refuses (no pass marker, no recorder
+  session), exit 2; Ctrl+C on a dry run in tmux gives exit 3 (`halted: interrupted`); a second run of a running
+  label is refused by docker (exit 125) and leaves the first alone; `docker stop bm-batch-<label>` gives exit 3
+  (`halted: interrupted`).
+
 ## Before the first real batch (attended)
 
-1. Stand test and floor check pass; `record-pass`.
-2. The **measured** world file (tag centres as mounted), the chosen range limit, the start poses; one dry run
-   with exactly those arguments.
-3. Put the car at least 0.7 m from every edge of the driving area and tape its pose. Choose a first start pose
-   at least 0.3 m away, so the encoder scale is checked in the first transit.
+1. Stand test and floor check pass (`../../M3.T6/README.md` section 5).
+2. The tags mounted, their centres measured and written into
+   `evidence/M3/M3.T10/layout-2/mounting.md` (last column); the tag pilot analysed
+   (`tools/tag_pilot.py analyze ... --out course-project/configs/detector_noise.json`); both committed and pulled on
+   the Spark.
+3. Put the car at least **0.85 m** from every edge of the driving area (the first circle needs 0.83 m: sweep
+   0.178 + margin 0.15 + the 0.5 m the tape may be wrong; README said 0.7 m before 2026-11-24) and tape its pose.
+   Choose a first start pose at least 0.3 m away, so the encoder scale is checked in the first transit.
 4. The first one or two episodes attended (plan §3.6): watch the first circle, the transit and one guard
    refusal; tape the first start pose against `start_pose_world` in the manifest.
 5. `--min-forward-speed` from the floor check's peak speeds, if a fading pack should halt early.
 6. Run the wrapper inside tmux.
 
+**The commands, ready to paste** (Spark, `cd ~/Projects/en665715-beaconmind`). Only the world file changes after
+the measurements: `real-room.json` is what step a writes. Fill in the two session names, the date, the measured
+pose, and the label if this is not the first batch.
+
+```bash
+# a. the measured world (Mac or Spark; then commit it, push, git pull --ff-only on the other)
+python3 course-project/tools/room_world.py --variant plus8 \
+    --measured-md course-project/evidence/M3/M3.T10/layout-2/mounting.md \
+    --measured-by "Xiaohui Chen" --date <YYYY-MM-DD> --instrument "tape measure" --error-cm 0.5 \
+    --out course-project/configs/arenas/real-room.json
+
+# b. the pass marker, after the stand test and the floor check (their recorder session folders under data/real/)
+bash course-project/tools/car_batch.sh - record-pass --operator "Xiaohui Chen" \
+    --stand-session <YYYYmmdd-HHMMSS-stand-test> --floor-session <YYYYmmdd-HHMMSS-floor-check> \
+    --world course-project/configs/arenas/real-room.json
+
+# c. the dry run with exactly the real arguments (simulated car, the same container; no recorder, no car)
+bash course-project/tools/car_batch.sh b2-real-01-dry run \
+    --world course-project/configs/arenas/real-room.json \
+    --scenarios course-project/configs/arenas/real-room-scenarios.json \
+    --initial-pose 2.20,2.00,90 --episodes 10 --policy b2 --max-range 3.0 \
+    --detector-noise course-project/configs/detector_noise.json \
+    --dry-run --out course-project/data/batches/b2-real-01-dry
+bash course-project/tools/car_batch.sh - status --out course-project/data/batches/b2-real-01-dry
+
+# d. the real batch, inside tmux (tmux new -s bm-batch), the car taped at the --initial-pose
+bash course-project/tools/car_batch.sh b2-real-01 run \
+    --world course-project/configs/arenas/real-room.json \
+    --scenarios course-project/configs/arenas/real-room-scenarios.json \
+    --initial-pose 2.20,2.00,90 --episodes 10 --policy b2 --max-range 3.0 \
+    --detector-noise course-project/configs/detector_noise.json
+
+# e. after a halt: look at the car, then
+bash course-project/tools/car_batch.sh - clear-halt --out course-project/data/batches/b2-real-01 --operator "Xiaohui Chen"
+bash course-project/tools/car.sh clear-latch --operator "Xiaohui Chen"     # if the project latch is set
+#    and the same command as d with the car's new taped pose, or --initial-pose last if nobody moved it
+```
+
+Notes: `--initial-pose 2.20,2.00,90` is a suggestion (1.5 m or more from every edge, 0.58 m from S1); tape the car
+wherever it really stands and use that in c and d alike. `--episodes 10` runs S1 to S5 twice (the scenario file's
+"2 B2 episodes" each). `--max-range 3.0` is provisional: if the pilot's reliable range ends below it, the batch
+prints a WARNING and the plan says 2.5 m (change it in c and d). Without `detector_noise.json` drop that line: the
+assumed sigma is used and said so. Step c with the nominal 20-tag world as a stand-in for `real-room.json`
+(2026-11-25, `dry-runs-2026-11-24.txt` section C, without `--detector-noise`, which does not exist yet; through the
+wrapper on the Spark, commit `05f64c4`): **complete, 10 of 10 episodes** (S1 to S5 twice), 1,453 moves, start miss
+0.02 to 0.20 m, B2's final pose error 0.01 to 0.03 m, 9 episodes ended by B2's DONE and one (S4) ran its 150
+steps, all 20 tags compared and trusted, exit 0. On `2cd3415` the same command had halted `no_fix` after 35
+moves (from (2.20, 2.00) no tag is near enough for one circle to trust it with the assumed noise, and the second
+circle counted its own views); fixed in `05f64c4`.
+
 ## Open items
 
 - Nothing here has run on the car. Real resection accuracy is unknown (no real frame with a tag existed when this
-  was written); `fix_sigma_*` are assumptions; the dry runs use nominal tag positions.
+  was written); `fix_sigma_*` are assumed until `--detector-noise` is given the pilot's file; the dry runs use
+  nominal tag positions.
 - A full circle costs 12 moves (about half a minute on the car); three are made per episode.
-- `car_batch.sh` was syntax-checked only: it has not started a recorder or a container.
-- The guard's remaining hole is the one named above: a badly surveyed tag seen alone. A car placed with a pose
-  the tape got wrong by less than the first circle's gate (0.5 m, 30 degrees) turns its first circle on that pose:
-  hence the 0.7 m of room asked for at the start.
+- `car_batch.sh` has run on the Spark for dry runs and for its refusals; its real-car path past the refusal (the
+  recorder running for a whole batch, the recorder-silence halt, stopping the recorder after a real batch) has not
+  run, and cannot without the pass marker.
+- The tag check names a tag the others disagree with; it cannot name one that is wrong together with the others
+  (all tags shifted alike, a wrong room frame: the tape readings at the first start and last end bound that), nor
+  a tag never seen with three others in one circle (it then steers no fix: in a tag-poor corner that shows as
+  `no_fix` halts). Under 0.15 m nothing is named. A car placed with a pose the tape got wrong by less than the first
+  circle's gate (0.5 m, 30 degrees) turns its first circle on that pose: hence the 0.85 m of room asked for.
 - The limit on distance driven without a tag fix makes `no_fix` halts more likely where tags are sparse (table
   above); with the measured layout, check the dry run before choosing the range limit and the start poses.

@@ -1,0 +1,114 @@
+# Dry runs of tools/car_batch.py, 2026-11-24/25: the 20-tag world and the 3.0 m range limit (never run before), with the
+# settings of dry-runs.txt so the results compare: B2, scenarios S1-S5 in order, initial pose 2.4,1.6,70, full 150-step
+# budget, --dry-seed 1-4:
+# python3 course-project/tools/car_batch.py run --world course-project/configs/arenas/<world>.json --scenarios course-project/configs/arenas/real-room-scenarios.json --initial-pose 2.4,1.6,70 --episodes 5 --policy b2 --max-range <R> --dry-run --dry-seed <N> --out <scratch>
+# worlds: real-room-plus8-160mm-nominal (20t, the C20 layout, nominal centres) and real-room-nominal (12t).
+# AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: ran these and summarised the manifests.
+
+## A. The code of 2026-11-18 (commit 65173fe), Mac (Python 3.13). 12t at 2.0 and 2.5 m reproduce dry-runs.txt move for move.
+
+| World | Range limit | Batches complete | Episodes done | Halts | Moves sent (4 batches) | Steps per done episode | Start miss | Final pose error |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 12t | 2.0 m | 0 of 4 | 10 of 20 | 4 `no_fix` | 1938 | 44-54 | 0.02-0.14 m | 0.00-0.02 m |
+| 12t | 2.5 m | 3 of 4 | 17 of 20 | 1 `no_fix` | 2606 | 46-71 | 0.03-0.19 m | 0.00-0.02 m |
+| 12t | 3.0 m | 3 of 4 | 17 of 20 | 1 `no_fix` | 2333 | 43-68 | 0.03-0.17 m | 0.00-0.04 m |
+| 20t | 2.0 m | 0 of 4 | 12 of 20 | 4 `no_fix` | 2516 | 30-150 | 0.03-0.17 m | 0.01-0.02 m |
+| 20t | 2.5 m | 4 of 4 | 20 of 20 | none | 3096 | 46-116 | 0.03-0.19 m | 0.01-0.04 m |
+| 20t | 3.0 m | 4 of 4 | 20 of 20 | none | 2792 | 48-150 | 0.01-0.14 m | 0.00-0.03 m |
+
+12t 2.0 m seed 1: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 239
+12t 2.0 m seed 2: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 487
+12t 2.0 m seed 3: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 495
+12t 2.0 m seed 4: halted (no_fix at ep05-a1, S5); done 4 of 5; moves 717
+12t 2.5 m seed 1: complete; done 5 of 5; moves 679
+12t 2.5 m seed 2: complete; done 5 of 5; moves 803
+12t 2.5 m seed 3: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 439
+12t 2.5 m seed 4: complete; done 5 of 5; moves 685
+12t 3.0 m seed 1: complete; done 5 of 5; moves 561
+12t 3.0 m seed 2: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 445
+12t 3.0 m seed 3: complete; done 5 of 5; moves 731
+12t 3.0 m seed 4: complete; done 5 of 5; moves 596
+20t 2.0 m seed 1: halted (no_fix at ep04-a1, S4); done 3 of 5; moves 678
+20t 2.0 m seed 2: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 456
+20t 2.0 m seed 3: halted (no_fix at ep05-a1, S5); done 4 of 5; moves 692
+20t 2.0 m seed 4: halted (no_fix at ep04-a1, S4); done 3 of 5; moves 690
+20t 2.5 m seed 1: complete; done 5 of 5; moves 830
+20t 2.5 m seed 2: complete; done 5 of 5; moves 770
+20t 2.5 m seed 3: complete; done 5 of 5; moves 719
+20t 2.5 m seed 4: complete; done 5 of 5; moves 777
+20t 3.0 m seed 1: complete; done 5 of 5; moves 682
+20t 3.0 m seed 2: complete; done 5 of 5; moves 656
+20t 3.0 m seed 3: complete; done 5 of 5; moves 656
+20t 3.0 m seed 4: complete; done 5 of 5; moves 798
+
+## B. Today's code with the tag check (commit 05f64c4), Spark host venv (Python 3.12), the same command and seeds.
+
+| World | Range limit | Batches complete | Episodes done | Halts | Moves sent (4 batches) | Steps per done episode | Start miss | Final pose error |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 12t | 2.0 m | 0 of 4 | 6 of 20 | 4 `no_fix` | 1398 | 46-54 | 0.04-0.14 m | 0.01-0.02 m |
+| 12t | 2.5 m | 3 of 4 | 17 of 20 | 1 `no_fix` | 2878 | 42-118 | 0.03-0.20 m | 0.00-0.02 m |
+| 12t | 3.0 m | 3 of 4 | 17 of 20 | 1 `no_fix` | 2615 | 44-86 | 0.03-0.15 m | 0.00-0.04 m |
+| 20t | 2.0 m | 1 of 4 | 13 of 20 | 3 `no_fix` | 2738 | 44-150 | 0.03-0.15 m | 0.01-0.02 m |
+| 20t | 2.5 m | 3 of 4 | 18 of 20 | 1 `no_fix` | 2909 | 46-111 | 0.03-0.16 m | 0.01-0.04 m |
+| 20t | 3.0 m | 4 of 4 | 20 of 20 | none | 3002 | 44-148 | 0.01-0.14 m | 0.00-0.04 m |
+
+12t 2.0 m seed 1: halted (no_fix at ep02-a1, S2); done 1 of 5; moves 209
+12t 2.0 m seed 2: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 485
+12t 2.0 m seed 3: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 495
+12t 2.0 m seed 4: halted (no_fix at ep02-a1, S2); done 1 of 5; moves 209
+12t 2.5 m seed 1: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 430
+12t 2.5 m seed 2: complete; done 5 of 5; moves 830
+12t 2.5 m seed 3: complete; done 5 of 5; moves 799
+12t 2.5 m seed 4: complete; done 5 of 5; moves 819
+12t 3.0 m seed 1: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 352
+12t 3.0 m seed 2: complete; done 5 of 5; moves 796
+12t 3.0 m seed 3: complete; done 5 of 5; moves 757
+12t 3.0 m seed 4: complete; done 5 of 5; moves 710
+20t 2.0 m seed 1: halted (no_fix at ep04-a1, S4); done 3 of 5; moves 694
+20t 2.0 m seed 2: complete; done 5 of 5; moves 843
+20t 2.0 m seed 3: halted (no_fix at ep03-a1, S3); done 2 of 5; moves 471
+20t 2.0 m seed 4: halted (no_fix at ep04-a1, S4); done 3 of 5; moves 730
+20t 2.5 m seed 1: complete; done 5 of 5; moves 830
+20t 2.5 m seed 2: complete; done 5 of 5; moves 823
+20t 2.5 m seed 3: complete; done 5 of 5; moves 790
+20t 2.5 m seed 4: halted (no_fix at ep04-a1, S4); done 3 of 5; moves 466
+20t 3.0 m seed 1: complete; done 5 of 5; moves 761
+20t 3.0 m seed 2: complete; done 5 of 5; moves 649
+20t 3.0 m seed 3: complete; done 5 of 5; moves 722
+20t 3.0 m seed 4: complete; done 5 of 5; moves 870
+
+20 tags at 3.0 m, per episode (scenario, ended_by, steps, guard-blocked moves of B2, transit tags/odometry):
+20t-r3.0-s1 [('S1', 'DONE', 51, 0, None), ('S2', 'DONE', 50, 0, 1.0), ('S3', 'DONE', 55, 0, 0.999), ('S4', 'DONE', 129, 0, 1.003), ('S5', 'DONE', 62, 0, 1.001)] tags trusted at the end: 20
+20t-r3.0-s2 [('S1', 'DONE', 57, 0, None), ('S2', 'DONE', 48, 0, 1.002), ('S3', 'DONE', 52, 0, 1.001), ('S4', 'DONE', 69, 0, 0.998), ('S5', 'DONE', 59, 0, 0.999)] tags trusted at the end: 20
+20t-r3.0-s3 [('S1', 'DONE', 57, 0, None), ('S2', 'DONE', 48, 0, 1.0), ('S3', 'DONE', 52, 0, 0.999), ('S4', 'DONE', 113, 0, 0.994), ('S5', 'DONE', 53, 0, 1.002)] tags trusted at the end: 20
+20t-r3.0-s4 [('S1', 'DONE', 51, 0, None), ('S2', 'DONE', 69, 0, 1.002), ('S3', 'DONE', 148, 0, 0.999), ('S4', 'DONE', 44, 0, 1.001), ('S5', 'DONE', 89, 0, 1.0)] tags trusted at the end: 20
+all 24 batches: tag_survey halts 0 ; the largest mean/limit of any tag 0.081
+
+## C. The first real batch's dry-run command (README, "Before the first real batch", step c) with the nominal 20-tag
+## world standing in for the measured real-room.json, without --detector-noise (the pilot's file does not exist yet),
+## through the wrapper on the Spark, commit 05f64c4:
+# bash course-project/tools/car_batch.sh b2-real-01-dry run --world course-project/configs/arenas/real-room-plus8-160mm-nominal.json --scenarios course-project/configs/arenas/real-room-scenarios.json --initial-pose 2.20,2.00,90 --episodes 10 --policy b2 --max-range 3.0 --dry-run --out course-project/data/batches/b2-real-01-dry-standin-20261125b
+06:27:50 batch b674e37a2e01: 10 episodes of b2 on the simulated car (dry run), world real-room-plus8-160mm-nominal, out /workspace/course-project/data/batches/b2-real-01-dry-standin-20261125b
+06:27:50 fix sigma 0.0300 + 0.0400 x range m: assumed: 0.03 m + 0.04 x range (plan 3.6; the tag pilot's figures are to replace it)
+Car batch b674e37a2e01 (simulated car, dry run)
+status: complete   updated: 2026-11-25T06:28:23Z   resumes: 0
+world: real-room-plus8-160mm-nominal   policy: b2   episodes asked: 10   moves sent: 1453   spent: US$0.00
+tags checked against each other in this run: 20, trusted to steer a step's fix: 20
+fix sigma: assumed: 0.03 m + 0.04 x range (plan 3.6; the tag pilot's figures are to replace it)
+
+ep01-a1  done    scenario S1  start miss 0.05 m / 5 deg  ended_by DONE (decision) after 50 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+ep02-a1  done    scenario S2  start miss 0.20 m / 19 deg  ended_by DONE (decision) after 49 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep03-a1  done    scenario S3  start miss 0.03 m / 2 deg  ended_by DONE (decision) after 62 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+ep04-a1  done    scenario S4  start miss 0.03 m / 5 deg  ended_by DONE (decision) after 62 steps  final pose error 0.02 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+ep05-a1  done    scenario S5  start miss 0.16 m / 13 deg  ended_by DONE (decision) after 58 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+ep06-a1  done    scenario S1  start miss 0.14 m / 9 deg  ended_by DONE (decision) after 60 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep07-a1  done    scenario S2  start miss 0.13 m / 15 deg  ended_by DONE (decision) after 43 steps  final pose error 0.02 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep08-a1  done    scenario S3  start miss 0.02 m / 4 deg  ended_by DONE (decision) after 62 steps  final pose error 0.01 m / 0 deg (truth sigma 0.06 m, tag fix at that step)
+ep09-a1  done    scenario S4  start miss 0.12 m / 17 deg  ended_by budget (steps) after 150 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep10-a1  done    scenario S5  start miss 0.19 m / 4 deg  ended_by DONE (decision) after 92 steps  final pose error 0.03 m / 2 deg (truth sigma 0.05 m, tag fix at that step)
+
+# exit status 0
+# The same command on commit 2cd3415 (before the fix of 05f64c4) halted no_fix after 35 moves: from (2.20, 2.00) every
+# tag is 1.6 m or more away, so the first circle compared 14 tags but could trust none with the assumed noise, and the
+# second circle (at S1) counted its own views toward no_fix before it could check them. Fixed: the views of a full
+# circle with tags in them do not count (test_a_circle_of_tags_not_yet_trusted_does_not_count_toward_no_fix).

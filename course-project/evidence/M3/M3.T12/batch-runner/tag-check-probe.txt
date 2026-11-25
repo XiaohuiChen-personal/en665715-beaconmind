@@ -1,0 +1,68 @@
+# The check of the surveyed tags against each other (review finding 3), fault injection on the simulated car, 2026-11-24/25.
+# Code: commit 05f64c4. Runs on the Spark host venv (Python 3.12) except section 1 (Mac). Throwaway scripts in the
+# session scratchpad (tag_probe.py, grid_modes.py); the same cases at smaller scale are tests in
+# beaconmind/tests/test_car_batch.py. 'Before' = the code's parameters set as before 2026-11-24 (tag_check_k = inf,
+# tag_trust = False): no tag named, every tag steers fixes. Assumed noise 0.03 + 0.04 r unless said.
+# AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: ran these and wrote this summary.
+
+## 1. The hole, made direct (test_a_tag_surveyed_wrongly_by_d_cannot_pull_the_car_toward_its_wall)
+# T06 (window wall, id 12) surveyed d into the room (-x); the car at (2.6, 2.58), only T06 in view, FORWARD_10 at the
+# window wall while the guard allows (it keeps 0.25 m from the pose it believes). 'Depth' = the simulated car's true
+# footprint distance inside the driving area.
+d=0.0 m  before                           halt None        forward moves  7  smallest true footprint depth 0.372 m  tracked lags truth by -0.001 m
+d=0.0 m  with the check, after a circle   halt None        forward moves  7  smallest true footprint depth 0.370 m  tracked lags truth by -0.001 m
+d=0.0 m  with the check, no circle        halt None        forward moves  7  smallest true footprint depth 0.372 m  tracked lags truth by 0.000 m
+d=0.1 m  before                           halt None        forward moves  8  smallest true footprint depth 0.275 m  tracked lags truth by 0.073 m
+d=0.1 m  with the check, after a circle   halt None        forward moves  8  smallest true footprint depth 0.274 m  tracked lags truth by 0.084 m
+d=0.1 m  with the check, no circle        halt None        forward moves  7  smallest true footprint depth 0.372 m  tracked lags truth by 0.000 m
+d=0.3 m  before                           halt None        forward moves  9  smallest true footprint depth 0.177 m  tracked lags truth by 0.220 m
+d=0.3 m  with the check, after a circle   halt tag_survey  forward moves  0  smallest true footprint depth 1.040 m  tracked lags truth by -
+d=0.3 m  with the check, no circle        halt None        forward moves  7  smallest true footprint depth 0.372 m  tracked lags truth by 0.000 m
+d=0.5 m  before                           halt None        forward moves 10  smallest true footprint depth 0.081 m  tracked lags truth by 0.339 m
+d=0.5 m  with the check, after a circle   halt tag_survey  forward moves  0  smallest true footprint depth 1.040 m  tracked lags truth by -
+d=0.5 m  with the check, no circle        halt None        forward moves  7  smallest true footprint depth 0.372 m  tracked lags truth by 0.000 m
+
+## 2. Whole batches with one tag moved: every tag of the 20, d = 0.1, 0.3, 0.5 m along +x, -x, +y, -y (240 runs per
+# mode), and 8 clean runs (seeds 1-8). B2, episodes S1, S3, S4 of 60 steps, 3.0 m, initial pose 2.4,1.6,70, seed 1.
+# 'Tracked-pose error' = the tracked pose against the simulator's truth at every sensing until the batch halted.
+| Mode | Shift | Runs | Outcome | `tag_survey` naming the moved tag | Smallest true footprint depth | Largest tracked-pose error (sensings before a halt) | Contact |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| before (no check, every tag steers) | 0.0 m | 8 | 8 complete | 0 | 0.215 m | 0.009 m | 0 |
+| before (no check, every tag steers) | 0.1 m | 80 | 75 complete, 4 halted `odometry_scale`, 1 halted `no_fix` | 0 | 0.215 m | 0.080 m | 0 |
+| before (no check, every tag steers) | 0.3 m | 80 | 66 halted `no_fix`, 9 complete, 5 halted `odometry_scale` | 0 | 0.215 m | 0.172 m | 0 |
+| before (no check, every tag steers) | 0.5 m | 80 | 78 halted `no_fix`, 2 halted `odometry_scale` | 0 | 0.215 m | 0.276 m | 0 |
+| with the check | 0.0 m | 8 | 7 complete, 1 halted `no_fix` | 0 | 0.209 m | 0.012 m | 0 |
+| with the check | 0.1 m | 80 | 78 complete, 2 halted `odometry_scale` | 0 | 0.283 m | 0.076 m | 0 |
+| with the check | 0.3 m | 80 | 80 halted `tag_survey` | 80 | 0.335 m | 0.066 m | 0 |
+| with the check | 0.5 m | 80 | 80 halted `tag_survey` | 80 | 0.335 m | 0.009 m | 0 |
+
+closest before: [(None, 0.0, '+x', 0.215, 0.006, None), ('T00', 0.1, '+x', 0.215, 0.018, None), ('T00', 0.1, '-x', 0.215, 0.018, None), ('T00', 0.1, '-y', 0.215, 0.018, None), ('T00', 0.1, '+y', 0.215, 0.021, None), ('T00', 0.3, '-x', 0.215, 0.053, None), ('T00', 0.3, '+x', 0.215, 0.054, None), ('T01', 0.1, '-x', 0.215, 0.01, None)]
+closest with the check: [(None, 0.0, '+x', 0.209, 0.008, None), (None, 0.0, '+x', 0.224, 0.006, None), (None, 0.0, '+x', 0.242, 0.009, None), (None, 0.0, '+x', 0.242, 0.012, None), (None, 0.0, '+x', 0.255, 0.006, None), (None, 0.0, '+x', 0.259, 0.009, None), ('T01', 0.1, '-y', 0.283, 0.017, None), ('T02', 0.1, '-y', 0.283, 0.014, None)]
+0.3/0.5 m not named with the check: []
+# (This probe's episodes do not drive B2 straight at the wall a wrong tag faces; section 1 does. 'before' shows the
+# hole as a larger tracked-pose error, 0.17 m at 0.3 m and 0.28 m at 0.5 m; with the check every moved tag of 0.3 m
+# or more is named, the right one, by its own tag even for the repeated ids 0, 2, 3.)
+
+## 3. What the check costs: the dry-run grid of dry-runs.txt (5 episodes S1-S5, full budget, seeds 1-4)
+# pilot-like sigma = 0.01 + 0.0148 r, the simulated camera's noise (range 0.01 + 0.012 r, bearing 0.5 deg) put through
+# fix_sigma_from_detector_noise. 'mean/limit' = the largest weighted mean offset of a tag over its halt limit (1 = halt).
+| World | Range | Mode | Batches complete | Episodes done | Halts | Largest clean-tag mean/limit |
+| --- | --- | --- | --- | --- | --- | --- |
+| 20 tags | 2.0 m | before | 0 of 4 | 12 of 20 | 4 `no_fix` | - |
+| 20 tags | 2.0 m | check, assumed sigma | 1 of 4 | 13 of 20 | 3 `no_fix` | 0.05 |
+| 20 tags | 2.0 m | check, pilot-like sigma | 1 of 4 | 14 of 20 | 3 `no_fix` | 0.13 |
+| 20 tags | 2.5 m | before | 4 of 4 | 20 of 20 | none | - |
+| 20 tags | 2.5 m | check, assumed sigma | 3 of 4 | 18 of 20 | 1 `no_fix` | 0.05 |
+| 20 tags | 2.5 m | check, pilot-like sigma | 3 of 4 | 18 of 20 | 1 `no_fix` | 0.09 |
+| 20 tags | 3.0 m | before | 4 of 4 | 20 of 20 | none | - |
+| 20 tags | 3.0 m | check, assumed sigma | 4 of 4 | 20 of 20 | none | 0.06 |
+| 20 tags | 3.0 m | check, pilot-like sigma | 4 of 4 | 20 of 20 | none | 0.10 |
+| 12 tags | 2.0 m | before | 0 of 4 | 10 of 20 | 4 `no_fix` | - |
+| 12 tags | 2.0 m | check, assumed sigma | 0 of 4 | 6 of 20 | 4 `no_fix` | 0.05 |
+| 12 tags | 2.0 m | check, pilot-like sigma | 0 of 4 | 11 of 20 | 4 `no_fix` | 0.14 |
+| 12 tags | 2.5 m | before | 3 of 4 | 17 of 20 | 1 `no_fix` | - |
+| 12 tags | 2.5 m | check, assumed sigma | 3 of 4 | 17 of 20 | 1 `no_fix` | 0.08 |
+| 12 tags | 2.5 m | check, pilot-like sigma | 3 of 4 | 17 of 20 | 1 `no_fix` | 0.11 |
+| 12 tags | 3.0 m | before | 3 of 4 | 17 of 20 | 1 `no_fix` | - |
+| 12 tags | 3.0 m | check, assumed sigma | 3 of 4 | 17 of 20 | 1 `no_fix` | 0.06 |
+| 12 tags | 3.0 m | check, pilot-like sigma | 2 of 4 | 14 of 20 | 2 `no_fix` | 0.06 |
