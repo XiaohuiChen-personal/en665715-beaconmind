@@ -5,6 +5,8 @@
 % the two judges as built after the pilot code existed. Xiaohui Chen reviews it.
 % AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: updated the status of nodes to the re-scoped plan
 % (no Isaac twin, no project firmware, no overhead camera; three LLM back ends; one judge).
+% AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the real-car path, the room simulator and the ground truth
+% drawn as built (dotted); the tag resection replaces the tape; only the ROSA demo stays dashed (not built).
 \begin{figure*}[!t]
 \centering
 \begin{tikzpicture}[
@@ -19,6 +21,7 @@
   plan/.default=2cm,
   link/.style={->, line width=0.55pt},
   plink/.style={link, dashed},
+  ulink/.style={link, densely dotted, line width=0.8pt},
   biarrow/.style={<->, line width=0.55pt},
   lbl/.style={font=\scriptsize, inner sep=1pt, align=center},
   grp/.style={fill=black!7, draw=none, rounded corners=3pt},
@@ -47,7 +50,7 @@
   ([xshift=-0.15cm]mot.north |- pico.south);
 
 % ------------------------------------------------------------------ group 2: host
-\node[plan=1.95cm] (cb) at (5.88,9.1)
+\node[unused=1.95cm] (cb) at (5.88,9.1)
   {camera relay +\\ AprilTag detector\\ (tag36h11)};
 \node[comp=2.4cm] (ob) at (9.33,9.1)
   {\textbf{observation builder}\\ odometry, detections, counters, safety flags};
@@ -57,7 +60,7 @@
   {\textbf{validator}\\ move checks, safety flags, latch};
 \node[comp=2.4cm] (ha) at (9.33,6.2)
   {\textbf{benchmark harness}\\ replay (the study); run logs};
-\node[plan=1.95cm] (isaac) at (5.88,4.75)
+\node[unused=1.95cm] (isaac) at (5.88,4.75)
   {kinematic copy of the real room (sim-first rule)};
 \node[comp=2.4cm] (kin) at (9.33,4.75)
   {\textbf{kinematic simulator}\\ (pilot, main study)};
@@ -80,7 +83,7 @@
    \texttt{exploration\_summary}\\ \texttt{move}\\ \texttt{emergency\_stop}};
 \node[plan=2.85cm, below=0.25cm of tl] (rosa)
   {\textbf{ROSA demo}, same tools\\ (\texttt{rosa-ros2} container)};
-\node[plan=2.85cm] (gt) at (16.455,3.75) {tape ground truth\\ (real room)};
+\node[unused=2.85cm] (gt) at (16.455,3.75) {tag-resection ground truth\\ (real room)};
 \node[comp=2.9cm] (rp) at (12.98,6.2)
   {\textbf{JSON belief report}\\ pose, associations, map, memory, decision, note};
 \node[comp=2.9cm] (met) at (12.98,4.85)
@@ -89,25 +92,25 @@
   {\textbf{LLM judge}: GPT-6.1 Sol (API) scores the \textit{note}};
 
 % ------------------------------------------------------------------ links: car <-> host
-\draw[plink] (cam.east |- cb.west) -- node[lbl, above] {JPEG over\\ HTTP} (cb.west);
+\draw[ulink] (cam.east |- cb.west) -- node[lbl, above] {JPEG over\\ HTTP} (cb.west);
 \draw[link] ([yshift=0.3cm]pico.east |- mr.west) -- node[lbl, above] {odometry,\\ IMU}
   ([yshift=0.3cm]mr.west);
-\draw[plink] ([yshift=-0.3cm]mr.west) -- node[lbl, below] {bounded\\ moves (host)}
+\draw[ulink] ([yshift=-0.3cm]mr.west) -- node[lbl, below] {bounded\\ moves (host)}
   ([yshift=-0.3cm]pico.east |- mr.west);
 % out-of-band STOP (harness hotkey or /estop) straight to the Pico
-\draw[plink, red!70!black, line width=0.8pt]
+\draw[ulink, red!70!black, line width=0.9pt]
   ([yshift=0.15cm]ha.west) -- ([yshift=0.15cm]ha.west -| 3.25,0) -- (3.25,0 |- pico.south);
 \node[lbl, text=red!70!black, anchor=south] at (5.88,6.45)
   {out-of-band STOP\\ (key; zero velocity, latch)};
 % ------------------------------------------------------------------ links: host internal
-\draw[plink] (cb.east) -- node[lbl, above] {tags} (cb.east -| ob.west);
-\draw[plink] (mr.north east) -- (ob.south west);
+\draw[ulink] (cb.east) -- node[lbl, above] {tags} (cb.east -| ob.west);
+\draw[ulink] (mr.north east) -- (ob.south west);
 \draw[link] (va.north) -- node[lbl, right] {flags} (ob.south);
-\draw[plink] (va.west) -- (mr.east);
+\draw[ulink] (va.west) -- (mr.east);
 \draw[link] ([xshift=-0.6cm]va.south) -- node[lbl, right] {replay: logged}
   ([xshift=-0.6cm]ha.north);
 \draw[biarrow] (kin.north) -- (ha.south -| kin.north);
-\draw[plink] (isaac.north) |- ([xshift=-0.75cm]ha.south |- 0,5.3)
+\draw[ulink] (isaac.north) |- ([xshift=-0.75cm]ha.south |- 0,5.3)
   -- ([xshift=-0.75cm]ha.south);
 % ------------------------------------------------------------------ links: host <-> agent
 \draw[link] (ob.east) -- node[lbl, above] {step} (ob.east -| ag.west);
@@ -122,7 +125,7 @@
 \draw[link] ([yshift=-0.25cm]ha.east) -- (11.05,5.95) |- (jud.west);
 \draw[link] (11.05,4.85) -- (met.west);
 \node[lbl, rotate=90, anchor=south] at (11.05,4.3) {run logs};
-\draw[plink] (gt.west) -- (14.73,3.75) |- (met.east);
+\draw[ulink] (gt.west) -- (14.73,3.75) |- (met.east);
 
 % ------------------------------------------------------------------ groups, container, legend
 \begin{scope}[on background layer]
@@ -145,12 +148,13 @@
 \node[lbl, right=2pt of lg3] (lg3t) {built, not used in the study};
 \node[draw, line width=0.6pt, rounded corners=1pt, dashed, minimum width=0.45cm,
   minimum height=0.25cm, right=10pt of lg3t] (lg2) {};
-\node[lbl, right=2pt of lg2] {in progress or planned (borders and dashed arrows)};
+\node[lbl, right=2pt of lg2] {planned, not built (border and dashed arrow)};
 \end{tikzpicture}
 \caption{BeaconMind architecture as designed. Solid borders mark the components the simulated study used;
-dotted borders mark components that are built but were not used in it (the car and the validator); dashed
-borders and arrows mark the real-car path and the demonstration runtime, in progress or planned when this draft
-was built, and the room simulator, used after the study for the closed-loop episodes of Section~\ref{sec:real}. The language model owns the pose belief and the
+dotted borders and arrows mark components built since and not used in it: the car and its host-side path, the
+validator, the room simulator of the closed-loop episodes and the tag-resection ground truth of the real-car
+replay (Section~\ref{sec:real}). The dashed border marks the demonstration runtime, planned and not built. The
+language model owns the pose belief and the
 beacon map, while deterministic single-timestep tools compute every geometric quantity; in closed loop a
 validator below the model checks every move. Arrows show the designed data flow.}
 \label{fig:arch}

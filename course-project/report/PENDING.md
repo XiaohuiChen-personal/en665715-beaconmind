@@ -1,29 +1,41 @@
-# Placeholders in the report (2026-11-18)
+# Placeholders in the report (2026-11-18; updated 2026-11-25)
 
 Every `\pending{...}` in `Chen-Project-Report.tex` prints in red as **[PENDING: ...]**. List them with
-`python3 course-project/tools/report_assets.py --pending` (6 today). To fill one: add the numbers to
+`python3 course-project/tools/report_assets.py --pending` (5 today, in the four rows below). To fill one: add the numbers to
 `tools/report_assets.py` from the evidence file (so they stay generated), replace the `\pending{}` with prose that
-uses `\bmnum{...}`, rebuild, and delete the row here. The report is 12 full pages. The 12-page budget was an assumption; Xiaohui found no page limit on Canvas (2026-11-24), so the real-car results may take the room they need and material cut in the 2026-11-18 review rounds may return. Keep it tight anyway: every page is read by a grader.
+uses `\bmnum{...}`, rebuild, and delete the row here. Xiaohui found no page limit on Canvas (2026-11-24); the report
+is 15 pages. Keep it tight anyway: every page is read by a grader.
 
 | # | Where | What goes there | Evidence that will supply it | Work-list item |
 | --- | --- | --- | --- | --- |
-| 1 | Abstract, last sentence | One sentence: the number of recorded real episodes and each arm's final-position error on the real logs | the real-log replay's result file | 3.4, 3.6 |
-| 2 | III, Safety | One sentence on the host-side bounded-move executor and the out-of-band STOP as built and tested (stop time, checks passed) | the car executor's and the STOP's evidence under `evidence/M3/` | 2.6, 2.7 |
-| 4 | IV-B, Real environment | The measured tag centres and start pose (real world file); the detector's range and bearing error on real frames; **confirm or change the 3.0 m range limit after the tag pilot** (the report calls it provisional: the value used in the rehearsals) | `evidence/M3/M3.T10/` (mounting sheet, world file); `evidence/M1/M1.T8/` | 2.4, 2.5 |
-| 5 | V-G, Real-log replay | Number of real episodes driven by B2 and their steps; per arm (B0, B2, Opus, Qwen3.8, Gemma 4) the median final-position error (ground truth: the full-turn resection against the surveyed tags per episode, tape at the batch's first start and last end), with its uncertainty; the same in each simulated rehearsal; the difference (sim-to-real gap) | `evidence/M3/M3.T12/`, `evidence/M3/M3.T19/` (expected folders) | 3.2, 3.4, 3.6 |
-| 6 | V-G, Closed loop in simulation (end of the paragraph) | Closed-loop episodes **on the car** (2–3): missions completed, steps, moves refused, emergency stops, final-position error, step latency, cost. The simulator part is filled (2026-11-18): one episode each of B2, Opus 5.5 and Fable 5.2 from `evidence/M2/M2.T7/closed-loop/runs-final/` | the recorded car sessions | 3.5 |
-| 7 | VI, end | Two sentences: did the simulated ordering of the arms hold on the real logs, how large was the gap, what did the closed loop show | items 5 and 6 | — |
+| 1 | Abstract, last sentence but one | Qwen3.8's and Gemma 4's median final-position error on the real logs against the end circle | `evidence/M3/M3.T19/real-2026-11-25/result.json` when their replays finish (add their keys to `REAL_ARMS` in `tools/report_assets.py`) | 3.6 |
+| 5 | V-G, Table VI | The Qwen3.8 and Gemma 4 rows (median, IQR, range; n = 8) and a sentence in "Real-log replay" | the same `result.json` | 3.6 |
+| 6 | V-G, "Closed loop on the car" | The three closed-loop Opus 5.5 episodes on the car after the right motor is replaced (one filmed): missions completed, steps, moves refused, emergency stops, final-position error against the end circle, step latency, cost | the recorded car sessions and their batch folders | 3.5 |
+| 7 | VI, end | Whether Qwen3.8 and Gemma 4 keep the simulated ordering on the real logs, and what the closed-loop car episodes showed | rows 1, 5 and 6 | — |
 
-Filled on 2026-11-18 and removed from the table (the numbers are kept, so 3 is unused): item 3, the room's coverage at the measured 46.9° field of view and the 3.0 m range limit, from `evidence/M3/M3.T10/layout-2/coverage.txt` with the 20-tag layout; and the simulator part of item 6.
+Filled on 2026-11-25 and removed from the table: item 2 (III, Safety: the STOP and the host-side moves as checked on
+the car, `evidence/M3/M3.T13/smoke.md`, `evidence/M3/M3.T6/`); item 4 (IV-B: the mounted tags, the tag centre height,
+the detector on real frames, the confirmed 3.0 m range limit, `evidence/M1/M1.T8/`, `evidence/M3/M3.T10/layout-2/mounting.md`);
+item 5's episodes, steps and the B0, B2 and Opus 5.5 results with their uncertainty (Table VI); item 1's and item
+7's parts for those arms. Filled on 2026-11-18: item 3 (coverage) and the simulator part of item 6.
 
-Also to update when the real work lands (not marked in the PDF): the real-car procedure in IV-D and the ground-truth paragraph in IV-C are written as *planned* (batches of episodes with the motor battery left on, software halts, resection ground truth; Xiaohui's approval of 2026-11-18) and must be changed to what was done; Table II's footnote and Fig. 1's dotted validator once the closed loop has run; Fig. 1's dashed nodes (camera relay and detector,
-bounded moves, room simulator, ROSA demo, tape ground truth) become solid as each is built; IV-D's R2 sentence, which lists "a phone video" in every session's folder (since 2026-11-24 only the one demo run is filmed; the batch episodes are recorded by the recorder alone); the sentence "No real
-episode has been run" in V-G; limitation (1) in V-H; the IV-F confounder "Real car"; Fig. 3's caption if the measured
-tag centres replace the nominal ones; **Fig. 3 itself is a mirror image of the room** (found by the video agent,
-confirmed by the lead 2026-11-25): `report/generated/fig-room.tex` and `slides/figures/fig-room.png` draw the
-desk wall at the bottom with corner 5 on the left and the 295 cm wall on the left, while the survey frame "seen from
-above" (`evidence/M3/M3.T10/room-survey.md`, the world file, the simulator, the demo video) has the 295 cm wall on the
-right when the desk wall is at the bottom. The plot swaps x and y; draw it with the horizontal axis = −y (or rotate)
-in `tools/report_assets.py`, then rebuild the report, the slide figure and the deck.
+**Not a placeholder, an open point stated in V-G:** row 5 also asked for each arm's result "in each simulated
+rehearsal" and the difference (the sim-to-real gap). The room rehearsal ran only B2 and B0 (their gap is in V-G). For
+the model arms no simulated room set has been replayed; it would need simulated room episodes (the rehearsal's logs,
+or new ones with the pilot's noise model and a direction-dependent slip) converted like the real logs and replayed
+through each model arm with the same final-position metric. Do not fill it with anything else.
+
+Also to update when the car's closed loop has run (not marked in the PDF): Table II's footnote and Fig. 1's dotted
+validator (the closed-loop validator has run only in simulation); Section III's "ROSA (1.0.10) is planned as the
+demonstration runtime" if ROSA stays unbuilt (Fig. 1 already marks it planned, not built). The slide deck itself
+(not the generated `slides/numbers.json`, `outline.md` and `figures/`, which `tools/report_assets.py --slides` wrote
+on 2026-11-25 with the un-mirrored room figure) still has to be rebuilt from them.
+
+Done on 2026-11-25 from the old "also to update" list: IV-C's ground truth and IV-D's procedure as run; the R2
+sentence (only the demo run is filmed); "No real episode has been run" in V-G; limitation (1); the IV-F confounder
+"Real car"; Fig. 3 drawn as seen from above (it was a mirror image) with the mounted tags and a new caption; Fig. 1's
+built nodes (camera relay and detector, bounded moves, STOP, room simulator, tag-resection ground truth) drawn as
+built.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this list with the report rewrite.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: updated it after filling the real-car parts.

@@ -17,6 +17,12 @@ Sources (all under course-project/):
   evidence/M3/M3.T10/layout-2/layout.json, coverage.txt      the 20-tag room layout and its coverage at the measured
                                                              field of view (layout/coverage.txt: the study arena)
   evidence/M2/M2.T7/closed-loop/runs-final/*/seed_3000.summary.json, run.json   the simulated closed-loop episodes
+  evidence/M3/M3.T19/real-2026-11-25/result.json            the real-log replay (end circle, tracked truth, runs)
+  evidence/M3/M3.T12/rehearsal-b2-tables.md                  the room rehearsal in simulation (B2, B0)
+  evidence/M3/M3.T12/batch-runner/tape/split-output.txt      the range ratios by direction, on and off the tape line
+  evidence/M3/M3.T13/smoke.md, evidence/M3/M3.T6/floor-check.md   the STOP on the car
+  evidence/M1/M1.T8/fit-output.txt, configs/detector_noise.json   the tag pilot and the real-run noise model
+  configs/arenas/real-room.json                              the mounted tags (the world file)
 
 Usage (repository root, any Python >= 3.10, standard library only):
   python3 course-project/tools/report_assets.py            write report/generated/
@@ -28,6 +34,8 @@ Usage (repository root, any Python >= 3.10, standard library only):
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this generator for the report's study numbers,
 and its --slides mode for the presentation outline.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the real-car numbers (replay, rehearsal, slip, STOP, tag
+pilot, mounted tags) and the room figure drawn as seen from above (it was mirrored).
 """
 import argparse
 import csv
@@ -51,6 +59,8 @@ TEX = ROOT / "report" / "Chen-Project-Report.tex"
 SLIDES = ROOT / "slides"
 CLOSED = ROOT / "evidence" / "M2" / "M2.T7" / "closed-loop"
 CLOSED_ARMS = {"b2": "b2", "claude-opus-5-5": "opus", "claude-fable-5-2": "fable"}
+REAL = ROOT / "evidence" / "M3" / "M3.T19" / "real-2026-11-25"
+REAL_ARMS = {"B0": "b0", "B2": "b2", "claude-opus-5-5": "opus"}      # Qwen3.8 and Gemma 4: still running
 
 ARMS = ["claude-opus-5-5", "qwen38-flash-xhigh", "gemma4-26b"]
 KEY = {"claude-opus-5-5": "opus", "qwen38-flash-xhigh": "qwen", "gemma4-26b": "gemma", "B0": "b0", "B1": "b1",
@@ -124,6 +134,14 @@ def load():
                    for arm in CLOSED_ARMS},
         "closed_runs": {arm: json.loads((CLOSED / "runs-final" / arm / "run.json").read_text())
                         for arm in CLOSED_ARMS},
+        "real": json.loads((REAL / "result.json").read_text()),
+        "rehearsal": (ROOT / "evidence" / "M3" / "M3.T12" / "rehearsal-b2-tables.md").read_text(),
+        "tape": (ROOT / "evidence" / "M3" / "M3.T12" / "batch-runner" / "tape" / "split-output.txt").read_text(),
+        "stop": (ROOT / "evidence" / "M3" / "M3.T13" / "smoke.md").read_text(),
+        "floor": (ROOT / "evidence" / "M3" / "M3.T6" / "floor-check.md").read_text(),
+        "pilot": (ROOT / "evidence" / "M1" / "M1.T8" / "fit-output.txt").read_text(),
+        "noise": json.loads((ROOT / "configs" / "detector_noise.json").read_text()),
+        "world": json.loads((ROOT / "configs" / "arenas" / "real-room.json").read_text()),
     }
 
 
@@ -542,6 +560,126 @@ def build_numbers(src):
             put("cl.%s.cost" % k, "%.2f" % d["cost_usd"], note + " cost_usd")
             put("cl.%s.model" % k, runs[arm]["agent"]["settings"]["model"], cnote + arm + "/run.json")
             put("cl.%s.effort" % k, runs[arm]["agent"]["settings"]["output_config"]["effort"], cnote + arm + "/run.json")
+
+    # ---- the real car: replay of the real logs against the end circle (evidence/M3/M3.T19/real-2026-11-25/)
+    R = src["real"]
+    rnote = "evidence/M3/M3.T19/real-2026-11-25/result.json"
+    eps = R["index"]["episodes"]
+    done = [e for e in eps if e["ended_by"] == "DONE"]
+    flagged = [e for e in eps if e["ended_by"] != "DONE"]
+    if len(flagged) != 1 or set(R["summary"]) < set(REAL_ARMS):
+        raise SystemExit("report_assets: the real set is not nine episodes plus one flagged; rewrite the report text")
+    put("real.n", len(done), rnote + " index episodes ended_by DONE")
+    put("real.n-flagged", len(flagged), rnote + " index episodes not ended by DONE (the procedure stopped itself)")
+    put("real.steps", sum(e["steps"] for e in done), rnote + " steps of the DONE episodes")
+    put("real.steps-all", sum(e["steps"] for e in eps), rnote + " steps of all ten episodes")
+    put("real.steps.min", min(e["steps"] for e in done), rnote + " steps")
+    put("real.steps.max", max(e["steps"] for e in done), rnote + " steps")
+    put("real.flagged.steps", flagged[0]["steps"], rnote + " steps of the flagged episode")
+    by_start = {}
+    for e in done:
+        by_start[e["scenario"]] = by_start.get(e["scenario"], 0) + 1
+    for k in sorted(by_start):
+        put("real.start.%s" % k.lower(), by_start[k], rnote + " DONE episodes from start pose %s" % k)
+    put("real.n-starts", len(by_start), rnote + " distinct start poses")
+    put("real.n-circle", R["summary"]["B0"]["end_circle"]["n"], rnote + " summary end_circle n")
+    for arm, k in REAL_ARMS.items():
+        c = R["summary"][arm]["end_circle"]
+        for q in ("median", "q1", "q3", "min", "max"):
+            put("real.%s.%s" % (k, q), num(c[q + "_m"] * 100, 1), rnote + " summary %s end_circle %s_m (m to cm)" % (arm, q))
+        last, rec = R["summary"][arm]["last_step"], R["summary"][arm]["recomputed"]
+        put("real.%s.last" % k, num(last["median_m"] * 100, 1), rnote + " summary %s last_step median_m" % arm)
+        put("real.%s.recomputed" % k, num(rec["median_m"] * 100, 1), rnote + " summary %s recomputed median_m" % arm)
+    put("real.n-last", R["summary"]["B0"]["last_step"]["n"], rnote + " summary last_step n")
+    circles = [t["end_circle"] for t in R["truths"].values() if t.get("end_circle")]
+    put("real.circle.tags.min", min(c["n_tags"] for c in circles), rnote + " truths end_circle n_tags")
+    put("real.circle.tags.max", max(c["n_tags"] for c in circles), rnote + " truths end_circle n_tags")
+    put("real.circle.rms.max", num(max(c["rms_m"] for c in circles) * 100, 1), rnote + " truths end_circle rms_m")
+    put("real.circle.off.min", num(min(c["logged_truth_off_m"] for c in circles) * 100, 1),
+        rnote + " truths end_circle logged_truth_off_m (the batch's tracked truth minus the circle)")
+    put("real.circle.off.max", num(max(c["logged_truth_off_m"] for c in circles) * 100, 1),
+        rnote + " truths end_circle logged_truth_off_m")
+    o = R["run_stats"]["claude-opus-5-5"]
+    put("real.opus.cost", "%.2f" % o["cost_usd"], rnote + " run_stats claude-opus-5-5 cost_usd (all ten episodes)")
+    put("real.opus.mean-s", "%.1f" % o["mean_s"], rnote + " run_stats mean_s")
+    put("real.opus.p95-s", "%.1f" % o["p95_s"], rnote + " run_stats p95_s")
+    put("real.opus.valid", o["valid"], rnote + " run_stats valid")
+    put("real.opus.fallbacks", o["fallbacks"], rnote + " run_stats fallbacks")
+    # the largest Opus - B2 difference against the end circle, over the eight episodes with a circle
+    rep_rows = re.findall(r"^\| b2-real-\d+ ep\d+-a1 \| S\d \| \d+ \| [^|]+ \| [^|]+ \| ([\d.]+) \| ([\d.]+) \| ([\d.]+) \| ([\d.]+) \|$",
+                          (REAL / "result.md").read_text().split("Listed apart")[0], re.M)
+    if len(rep_rows) != len(circles) - 1:
+        raise SystemExit("report_assets: result.md's per-episode end-circle rows changed; check the parser")
+    put("real.opus-b2.maxdiff", num(max(abs(float(r[3]) - float(r[1])) for r in rep_rows), 1),
+        "evidence/M3/M3.T19/real-2026-11-25/result.md per-episode end-circle table: max |Opus - B2|")
+    apart = re.findall(r"^\| b2-real-\d+ ep\d+-a1 \| S\d \| \d+ \| [^|]+ \| [^|]+ \| ([\d.]+) \| ([\d.]+) \| ([\d.]+) \| ([\d.]+) \|$",
+                       (REAL / "result.md").read_text().split("Listed apart")[1].split("##")[0], re.M)
+    if len(apart) != 1:
+        raise SystemExit("report_assets: result.md does not list exactly one episode apart; check the report text")
+    for i, k in ((0, "b0"), (1, "b2"), (3, "opus")):
+        put("real.flagged.%s" % k, apart[0][i], "evidence/M3/M3.T19/real-2026-11-25/result.md, the episode listed apart (cm)")
+
+    # ---- the room rehearsal in simulation (B2 and B0 only; table 1c, the real layout and range, carpet odometry)
+    row = grab(src["rehearsal"], r"\*\*Table 1c\.[^\n]*\n.*?\n\| C20, 3\.0 m \|([^\n]*)", "rehearsal table 1c C20 3.0 m row")
+    cells = [c.strip() for c in row.split("|")]
+    fpe = cells[7].split("/")
+    put("reh.b2.final", fpe[0].strip(), "evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c, C20 3.0 m: final position error B2")
+    put("reh.b0.final", fpe[1].strip(), "evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c, C20 3.0 m: final position error B0")
+    put("reh.n", 150, "evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c: [150] episodes per row")
+
+    # ---- the carpet: range ratios by direction, off the tape line (lead's criterion; batch source)
+    tnote = "evidence/M3/M3.T12/batch-runner/tape/split-output.txt"
+    for name, label, k in (("north", "pooled, tape down", "down"), ("south", "pooled, tape down", "down"),
+                           ("north", "pooled, tape removed", "removed")):
+        m = re.search(r"^%s\s+%s\s+\|\s+(\d+) x\s+([\d.-]+)\s+\|\s+(\d+) x ([\d.]+)" % (re.escape(label), name),
+                      src["tape"], re.M)
+        if not m:
+            raise SystemExit("report_assets: cannot find %s %s in the tape split" % (label, name))
+        put("slip.%s.%s.n" % (name, k), m.group(3), tnote + " %s %s, off the line (n)" % (label, name))
+        put("slip.%s.%s" % (name, k), m.group(4), tnote + " %s %s, off the line (median ratio)" % (label, name))
+
+    # ---- the STOP on the car
+    st = grab(src["stop"], r"the car's duty 0 after \*\*([\d.]+) s\*\*, wheels still after \*\*([\d.]+) s\*\*",
+              "STOP stand-test times")
+    put("stop.duty-s", st[0], "evidence/M3/M3.T13/smoke.md step 4")
+    put("stop.still-s", st[1], "evidence/M3/M3.T13/smoke.md step 4 (wheels still, stand)")
+    put("stop.floor-s", grab(src["stop"], r"([\d.]+) s on the floor", "STOP floor time"), "evidence/M3/M3.T13/smoke.md (floor, F5)")
+    put("stop.max-s", grab(src["stop"], r"\(`estop_max_s` ([\d.]+) s\)", "estop_max_s"), "evidence/M3/M3.T13/smoke.md")
+
+    # ---- the tag pilot and the noise model the real runs used
+    P, N = src["pilot"], src["noise"]
+    pnote = "evidence/M1/M1.T8/fit-output.txt"
+    put("pilot.frames", grab(P, r"placements analysed: \d+ \((\d+) frames\)", "pilot frames"), pnote)
+    put("pilot.range-min", "%.2f" % N["min_range_m"], "configs/detector_noise.json min_range_m")
+    put("pilot.range-max", "%.2f" % N["max_range_m"], "configs/detector_noise.json max_range_m")
+    put("pilot.bias-a-mm", "%.1f" % (N["range_bias_m"]["a"] * 1000), "configs/detector_noise.json range_bias_m.a")
+    put("pilot.bias-b-pct", "%.2f" % (abs(N["range_bias_m"]["b"]) * 100), "configs/detector_noise.json range_bias_m.b (short)")
+    put("pilot.rsd-a-mm", "%.1f" % (N["range_sigma_m"]["a"] * 1000), "configs/detector_noise.json range_sigma_m.a")
+    put("pilot.rsd-b-mm", "%.1f" % (N["range_sigma_m"]["b"] * 1000), "configs/detector_noise.json range_sigma_m.b (per m)")
+    put("pilot.bsd", "%.2f" % N["bearing_sigma_deg"]["a"], "configs/detector_noise.json bearing_sigma_deg.a (as used)")
+    put("pilot.bsd-fit", "%.2f" % float(grab(P, r"bearing sigma = ([\d.]+)", "pilot bearing sigma")), pnote + " bearing sigma")
+    put("pilot.inc", "%.0f" % N["max_incidence_deg"], "configs/detector_noise.json max_incidence_deg (as used)")
+    put("pilot.height-cm", "%.1f" % (float(grab(P, r"tag centre height seen: median ([\d.]+) m", "tag height")) * 100),
+        pnote + " tag centre height seen")
+    berr = [float(m.group(1)) for m in re.finditer(r"^[ADER]\d\d\s+[ADER]\s+[\d.]+\s+\+0\.00\s+0\.0\s+1\.00\s+\S+\s+\S+\s+([+-][\d.]+)", P, re.M)]
+    put("pilot.berr-max", num(max(berr), 1), pnote + " largest median bearing error over the detected placements")
+    put("pilot.berr-min", num(min(berr), 1), pnote + " smallest median bearing error over the detected placements")
+
+    # ---- the mounted tags (the world file) against the layout
+    W = {t["uid"]: t for t in src["world"]["tags"]}
+    moved = []
+    for t in L["tags"]:
+        w = W.get(t["uid"])
+        if w is None:
+            raise SystemExit("report_assets: tag %s of the layout is not in the world file" % t["uid"])
+        d = math.hypot(w["x_m"] - t["x_m"], w["y_m"] - t["y_m"])
+        if d > 0.005:
+            moved.append((t["uid"], t["id"], d))
+    if len(moved) != 1:
+        raise SystemExit("report_assets: %d tags were mounted away from their nominal place; rewrite the text" % len(moved))
+    put("room.moved.uid", moved[0][0], "configs/arenas/real-room.json against layout-2/layout.json")
+    put("room.moved.id", moved[0][1], "configs/arenas/real-room.json against layout-2/layout.json")
+    put("room.moved.cm", "%.0f" % (moved[0][2] * 100), "configs/arenas/real-room.json against layout-2/layout.json")
     return out
 
 
@@ -656,16 +794,26 @@ LABEL_NUDGE = {"T11": (0.0, -0.2), "T01": (0.0, -0.17)}     # figure cm at the r
 
 
 def figure_room(src, scale=1.2):
-    """The room, its driving area and the twelve nominal tag positions as TikZ (plan view; 1 m = `scale` cm)."""
+    """The room, its driving area and the mounted tags as TikZ (plan view seen from above; 1 m = `scale` cm).
+
+    Seen from above with the desk wall along the bottom (evidence/M3/M3.T10/room-survey.md): the room's x axis runs
+    up the page and its y axis from right to left, so corner 5 is bottom right and the 295 cm wall is on the right.
+    Until 2026-11-25 the figure drew y left to right, a mirror image of the room. The tag centres are the world
+    file's (configs/arenas/real-room.json: the tags as mounted)."""
     L = src["layout"]
+    W = {t["uid"]: t for t in src["world"]["tags"]}
     s = scale
 
-    def pt(x, y):          # the room's y axis (desk wall) runs left to right, its x axis up the page
-        return "(%.3f,%.3f)" % (y * s, x * s)
+    def fx(x, y):           # figure coordinates of a room point
+        return -y * s, x * s
+
+    def pt(x, y):
+        return "(%.3f,%.3f)" % fx(x, y)
 
     order = ["corner 5", "corner 4", "corner 3", "corner 2", "corner 1"]
     wall = " -- ".join(pt(*L["corners_m"][c]) for c in order) + " -- cycle"
     drive = " -- ".join(pt(*p) for p in L["drive_polygon_m"]) + " -- cycle"
+    left = min(fx(*L["corners_m"][c])[0] for c in order)
     d = L["desk_box_m"]
     dup = {u for pair in L["duplicates"] for u in pair}
     out = [HEADER, "\\begin{figure}[t]", "\\centering",
@@ -674,26 +822,28 @@ def figure_room(src, scale=1.2):
            "\\draw[dashed, line width=0.4pt] %s;" % drive,
            "\\draw[line width=0.8pt] %s;" % wall,
            "\\draw[fill=black!22, line width=0.4pt] %s rectangle %s;" % (pt(d["x0"], d["y0"]), pt(d["x1"], d["y1"])),
-           "\\node at (%.3f,%.3f) {desk};" % ((d["y0"] + d["y1"]) / 2 * s, (d["x0"] + d["x1"]) / 2 * s)]
+           "\\node at (%.3f,%.3f) {desk};" % fx((d["x0"] + d["x1"]) / 2, (d["y0"] + d["y1"]) / 2)]
     for t in L["tags"]:
+        w = W[t["uid"]]
         a = math.radians(t["normal_deg"])
         nx, ny = math.cos(a), math.sin(a)                     # the tag's normal points into the room
-        px, py = t["y_m"] * s, t["x_m"] * s
-        lx, ly = px + ny * 0.27, py + nx * 0.27
+        px, py = fx(w["x_m"], w["y_m"])
+        ox, oy = fx(nx, ny)                                   # the normal in figure axes (scaled by s)
+        lx, ly = px + ox / s * 0.27, py + oy / s * 0.27
         dx, dy = LABEL_NUDGE.get(t["uid"], (0.0, 0.0))      # keep a label off a neighbour or the dashed line
         lx, ly = lx + dx * s / 1.2, ly + dy * s / 1.2
         style = "fill=black" if t["uid"] in dup else "fill=white"
         out.append("\\node[draw, %s, minimum size=3.2pt, inner sep=0pt] at (%.3f,%.3f) {};" % (style, px, py))
         out.append("\\node[inner sep=0pt] at (%.3f,%.3f) {%d};" % (lx, ly, t["id"]))
-    x0 = 0.25 * s
+    x0 = left + 0.25 * s
     out += ["\\draw[line width=0.6pt] (%.3f,-0.42) -- (%.3f,-0.42);" % (x0, x0 + s),
             "\\node[anchor=west] at (%.3f,-0.42) {1\\,m};" % (x0 + s + 0.05),
             "\\node[anchor=west] at (%.3f,-0.42) {$\\blacksquare$ ID used twice\\quad $\\square$ ID used once};"
             % (x0 + s + 0.75),
             "\\end{tikzpicture}",
-            "\\caption{The real arena seen from above, with the %d nominal AprilTag positions and their IDs. The "
-            "dashed outline is the desk-side edge of the driving area. No tag is mounted yet; the world file will "
-            "use the centers measured after mounting.}" % len(L["tags"]),
+            "\\caption{The real arena seen from above, desk wall at the bottom, with the %d AprilTags as mounted and "
+            "their IDs. The dashed outline is the desk-side edge of the driving area. Every tag hangs at its planned "
+            "place except one, moved along its wall for an outlet (Section~\\ref{sec:setup}).}" % len(L["tags"]),
             "\\label{fig:room}", "\\end{figure}", ""]
     return "\n".join(out)
 
