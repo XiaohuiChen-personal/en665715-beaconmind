@@ -208,3 +208,8 @@ The tape spot comes second: two stalls and most wheel-against-gyro flags sit the
 speed per duty did not fall over the day, so the fault comes and goes (drag, a fibre on the axle, a tyre, the
 gearbox), and the motor itself is not weakening.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this addendum.
+
+**Later (b2-real-07's records analysed):** the three stalls compared, each wheel's duty against speed through the day,
+the assist kicks and the verdict (intermittent binding or drag on the right wheel, not a weak motor) are in
+`stalls.md`. The tape split over all seven batches is in `../tape/README.md`.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: added this pointer.
