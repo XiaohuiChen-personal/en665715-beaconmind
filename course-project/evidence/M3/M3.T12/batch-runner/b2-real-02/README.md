@@ -9,7 +9,7 @@ recorder session `20261125-060452-batch-b2-real-02`).
   the distance from where the odometry puts the car (10.5 m driven, 37 fixes; limit 12 %)`. The car stopped and the
   project latch was set.
 
-The latch stays set: the halt is physical, and it waits for Xiaohui's inspection. Every number below comes from the
+The latch stays set: the halt is physical. Xiaohui's slip test (below) has since measured the cause. Every number below comes from the
 batch's text records, copied read-only from the Spark (no frames), by `analyse.py` (output `analyse-output.txt`).
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: analysed the records and wrote this note and `analyse.py`.
@@ -77,18 +77,67 @@ The wheels turned as before; the car went less far.
 - **The trend over time:** the decline on non-northward moves (0.97 to 0.94 within 10 minutes) also points at the
   wheels themselves: lint on the tyres, a tyre slipping on its hub, or grip.
 
-## The taped test for Xiaohui (at the car)
+## The slip test (Xiaohui, 2026-11-25, recorder session `20261125-064330-slip-test`)
 
-At about (2.5, 1.6), on the S3 path, before the next batch:
+**Setup:** 4 × FORWARD_25 each way on the tag pilot's centre line (x ≈ 2.37 m). The lens position was read on the tape
+ticks: distance from the baseboard under T03, perpendicular to the 295 cm wall, good to about ±2 cm. Recomputed by
+`slip_test.py` (output `slip_test-output.txt`) from the session's move logs with the floor check's F4 geometry: the
+lens is 0.12 m ahead of the axle, and the axle's chord is taken as an arc turning by the gyro's angle.
 
-1. Tape a start line and mark the lens position. Run one `FORWARD_25` **north** (toward the doors wall) and tape
-   the distance the lens moved. Note the move log's `achieved_forward_m`.
-2. From the same spot, run one `FORWARD_25` **south** (toward the 295 cm wall) and tape it the same way.
-3. Look at the floor along x 2.4 to 3.0, y 1.4 to 2.7 for a rug edge, a seam, a slope or the carpet's pile
-   direction. Look at both drive tyres for lint, and check each for a tyre turning on its hub.
+| Run | Lens (along the line) | Across, to the car's left | Gyro | Odometry | Axle path (arc) | True over odometry |
+| --- | --- | --- | --- | --- | --- | --- |
+| north, away from T03 | 2.00 → 2.75 m | 0.135 m | +12.10° | 0.9764 m | 0.7621 m | **0.780 ± 0.020** |
+| south, toward T03 | 3.00 → 2.00 m | 0.135 m | +11.83° | 0.9718 m | 1.0104 m | **1.040 ± 0.021** |
 
-**How to read it:** taped against `achieved_forward_m`, a ratio near 1.0 both ways clears the floor, and the slip is
-then in the wheels or the grip. About 0.85 north against 1.0 south confirms the floor or the direction.
+**What the wheels did:**
+- **Northward**, the left wheel counted more than the right on three of the four moves (5,129 against 4,448 at most),
+  while the gyro said the car turned left by 2.4° to 3.4° each time. The left wheel turned more than the car moved.
+- **Southward**, the counts follow the turn (the right wheel ahead), as on the floor check.
+- **Inspection:** Xiaohui found nothing unusual on the wheels or the floor.
+
+**Conclusion (the lead's, and these numbers agree):** travel on this carpet depends on direction (its pile). The
+encoder scale was calibrated southward (F4 drove toward the 295 cm wall). This is a property of the floor, not a
+fault. The range check's split in b2-real-02 (north median 0.88, other headings 0.97) shows the same thing more
+mildly, because its "north" spans 30° to 150°.
+
+## What the batch runner does with it (the version after b2-real-02, not used by it)
+
+**Limits by physical risk:**
+- **Farther than counted (dangerous):** the car going farther than its odometry says is the dangerous direction,
+  toward a wall ahead. It keeps its tight limit: the range check at +12 % (15 % on the first move); the per-step fix
+  statistic at +12 % beyond three standard errors.
+- **Less far than counted (safe):** allowed down to a floor: the range check's median to **0.65**, the per-step
+  statistic to **−35 %**. The measured slip is 0.78 taped northward and 0.82 to 0.94 by ranges, so 0.65 leaves 0.13
+  below the worst real value. A factor-two error (0.50) still halts.
+- **Dead-reckoning drift:** its gross bound is now 1.6 above and 0.5 below. The real car reached 0.73 over episode 2
+  and 0.66 between the S3 transit's circles.
+
+**What a 35 % under-travel does between fixes:**
+- **The tracked pose runs ahead.** The blind cap stops a straight run at 0.75 m by odometry, which at 0.65 is 0.49 m on
+  the floor. So the tracked pose can run up to 0.26 m ahead of the car, along its heading.
+- **Walls ahead and turns stay safe.** Toward a wall ahead that errs on the safe side: the guard sees the car nearer
+  the wall than it is. For a turn, the car's true position lies between the last fix and the tracked pose. The guard
+  allowed a turn at the end of every straight. The area where a turn fits is convex (the driving area is convex, and
+  the desk lies outside it), so the sweep circle also fits at every point between.
+- **A backward move stays inside the margin.** A BACKWARD_10, offered only right after a FORWARD_10, takes the car
+  about 2.6 cm behind its start at 0.78 forward and 1.04 back: inside the 0.15 m wall margin.
+- **The next fix still lands.** A 0.26 m gap stays inside what a fix may differ by (three combined sigmas plus 5 cm:
+  about 0.28 m for a 5 cm fix, more for a single far tag). No real batch has had a fix refused as far from the
+  tracked pose.
+- **The tracker's sigma understates the error.** The odometry noise of 5 % of the distance driven understates a
+  22 % slip. That error lies along the motion and in the safe direction, but the stated sigma is too small northward.
+
+**The cost:**
+- **Wrong scales that now pass:** an odometer reading up to 35 % long (the car covering 0.65 to 0.88 of what it counts)
+  no longer halts as a wrong scale. In fault injection, four-episode batches with odometers 25 % and 35 % long
+  completed in both rooms, 3 of 3 seeds each. The simulated car stayed at least 0.39 m inside the driving area, with
+  no contact.
+- **Wrong scales that still halt:** an odometer reading 25 % short halts in every run, as before.
+
+**An option for Xiaohui, not implemented:** correct the odometry by heading, for example forward distance ×
+(0.78 + 0.26 × sin² of the angle from north) fitted to the slip test and the ranges. That would remove most of the
+northward drift that misled B2 in episode 2, but it changes the odometry every agent sees. That is a design change for
+the study, to decide before any batch whose results are compared, not a safety fix.
 
 ## Episode 2's 0.20 m final error
 

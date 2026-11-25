@@ -87,16 +87,23 @@ class BatchParams:
     range_gate_min_moves: int = 3       # the per-step fix statistic halts only while the range check has fewer
                                         # measured forward moves than this, or is out of its own tolerance
                                         # (per_step_scale_halt; b2-real-02)
-    odometry_bias_max: float = 0.12     # fixes that keep landing ahead of (or behind) the odometry by more than this
-                                        # share of the distance driven halt the batch (a wrong encoder scale)
+    odometry_bias_max: float = 0.12     # fixes that keep landing AHEAD of the odometry by more than this share of
+                                        # the distance driven halt the batch (the car goes farther than it thinks)
+    odometry_bias_min: float = -0.35    # ... and BEHIND it by more than this (under-travel: the safe direction,
+                                        # allowed to the carpet's slip; see range_scale_floor)
     max_blind_travel_m: float = 0.75    # no straight move may take the distance driven since the last tag fix past
                                         # this: whatever the odometer's error, it then stays inside the wall margin
     transit_scale_min_m: float = 0.30   # the dead-reckoning drift between two full-circle fixes (the transit, each
                                         # episode) gets a length ratio when both lengths are at least this
-    path_gross_ratio: float = 1.6       # ... and halts only beyond this ratio either way (a gross error: wrong units,
-                                        # a dead wheel); the real car reached 1.27 over one episode (b2-real-01)
-    range_scale_tol: float = 0.12       # the ranges to the tags seen before and after each straight move must change
-                                        # by what the odometry says within this share (median over the moves so far)
+    path_gross_ratio: float = 1.6       # ... and halts only above this ratio (a gross error: wrong units, a dead
+                                        # wheel); the real car reached 1.27 over one episode (b2-real-01)
+    path_gross_floor: float = 0.5       # ... or below this one (under-travel: the real car reached 0.73 over an
+                                        # episode and 0.66 between two circles of a transit, b2-real-02)
+    range_scale_tol: float = 0.12       # the ranges to the tags seen before and after each forward move may say the
+                                        # car went farther than its odometry by at most this share (median over the
+                                        # moves so far): the dangerous direction
+    range_scale_floor: float = 0.65     # ... and less far down to this ratio: under-travel, the safe direction; the
+                                        # carpet's northward slip is 0.78 (taped, slip test) and 0.82 to 0.94 (ranges)
     range_scale_move_sigma: float = 0.05    # one move's scatter (the real car: 0.94 to 1.05 over six moves, range bias
                                         # removed): with n moves the limit is at least 3 x this / sqrt(n), so one
                                         # move alone needs 15 % (N = 1: see range_scale_halt)
@@ -191,6 +198,7 @@ class PoseTracker:
         self.dead_reckoned = None       # the pose by odometry alone since mark_dead_reckoning()
         self.bias_gated = None          # the first time the range check held the per-step statistic's halt back
         self.range_moves = []           # (tags over odometry, range pairs) of each straight move: range_scale()
+        self.range_log = []             # the same moves with time, world heading and place (slip_by_heading)
         self.travel_since_fix_m = 0.0   # distance driven by odometry since the last fix that was taken
         self.last_tags = None           # the tags of the last fix taken
         self.steps_since_fix = 0
@@ -724,18 +732,22 @@ def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10, max_beari
 
 
 def range_scale_halt(tracker, params):
-    """Why the ranges along the straight moves so far say the encoder scale is wrong (the halt's detail), or None.
+    """Why the ranges along the forward moves so far say the encoder scale is wrong (the halt's detail), or None.
 
-    The median over the straight moves so far (each move one estimate, its tags weighted) against a limit of
-    range_scale_tol, and at least three times one move's scatter over the root of the moves: 15 % for one move, 12 %
-    from two on. It may halt after N = 1 move: in the review's fault injection (8-tag room, 2.5 m, seed 3) only one
-    straight move of the episode has a tag in view before and after, and a 25 % error shows there as 1.29; one move
-    of the real car scattered 0.94 to 1.05 about its mean (practice-01b, range bias removed), so 15 % is three of its
-    sigmas from a correct odometer.
-
-    The same rule is applied to the last range_scale_window moves alone (10: limit 12 %), so a change in the middle of
-    a batch (a wheel that starts to slip, a loose tyre) is not hidden by the moves before it (the review of
-    2026-11-25, its finding 4). Only forward moves are measured (BatchEnv._range_check)."""
+    The median over the forward moves so far (each move one estimate, its tags weighted), with limits by physical risk
+    (2026-11-25, the slip test on this carpet: northward the car covers 0.78 of its counted distance, southward 1.04;
+    a property of the floor's pile, not a fault):
+    - the car going FARTHER than its odometry (median above 1) is the dangerous direction, toward a wall ahead: at most
+      range_scale_tol, and at least three times one move's scatter over the root of the moves: 15 % for one move,
+      12 % from two on. It may halt after N = 1 move: in the review's fault injection (8-tag room, 2.5 m, seed 3) only
+      one forward move of the episode has a tag in view before and after, and the injected error (an odometer reading
+      25 % short) shows there as 1.29; one move of the real car scattered 0.94 to 1.05 about its mean (practice-01b,
+      range bias removed), so 15 % is three of its sigmas from a correct odometer;
+    - the car covering LESS than its odometry is the safe direction: allowed down to range_scale_floor (0.65), below
+      the carpet's measured slip (0.78 taped northward, 0.82 to 0.94 by ranges). An odometer reading 25 % long (0.80)
+      therefore passes as slip; a factor-two error (0.50) halts.
+    The same rule is applied to the last range_scale_window moves alone (10), so a change in the middle of a batch is
+    not hidden by the moves before it (the review, its finding 4). Only forward moves are measured (_range_check)."""
     for last, what in ((None, "straight moves"), (params.range_scale_window, "most recent straight moves")):
         if last and len(tracker.range_moves) <= last:
             continue                    # the window is the whole batch so far: judged above
@@ -743,11 +755,33 @@ def range_scale_halt(tracker, params):
         if ranges is None:
             return None
         limit = max(params.range_scale_tol, 3.0 * params.range_scale_move_sigma / math.sqrt(ranges[1]))
-        if abs(ranges[0] - 1.0) > limit:
-            return ("over the %d %s the ranges to the tags in view changed %.2f times the distance the odometry "
-                    "reports (median, %d range pairs; limit 1 +- %.2f): the encoder scale in configs/car.json is "
-                    "wrong, or the tags are" % (ranges[1], what, ranges[0], ranges[2], limit))
+        if ranges[0] - 1.0 > limit:
+            return ("over the %d %s the ranges to the tags in view say the car went %.2f times the distance its "
+                    "odometry reports (median, %d range pairs; limit 1 + %.2f, the car going farther than it thinks): "
+                    "the encoder scale in configs/car.json is wrong, or the tags are"
+                    % (ranges[1], what, ranges[0], ranges[2], limit))
+        if ranges[0] < params.range_scale_floor:
+            return ("over the %d %s the ranges to the tags in view say the car went %.2f times the distance its "
+                    "odometry reports (median, %d range pairs; floor %.2f, below the carpet's slip): the encoder "
+                    "scale in configs/car.json is grossly wrong, a wheel is slipping badly, or the tags are"
+                    % (ranges[1], what, ranges[0], ranges[2], params.range_scale_floor))
     return None
+
+
+def slip_by_heading(range_log, sector_deg=45.0):
+    """The range check's moves as a table by world heading: [{"heading_deg" (sector centre), "moves", "median",
+    "min", "max"}], sectors of sector_deg centred on 0 (east), 45, 90 (north, toward the doors wall), ..."""
+    sectors = {}
+    for m in range_log:
+        centre = (round(m["heading_deg"] / sector_deg) * sector_deg) % 360.0
+        sectors.setdefault(centre, []).append(m["scale"])
+    out = []
+    for centre in sorted(sectors):
+        v = sorted(sectors[centre])
+        n = len(v)
+        out.append({"heading_deg": centre, "moves": n, "median": round(v[n // 2] if n % 2 else 0.5 * (v[n // 2 - 1] + v[n // 2]), 3),
+                    "min": round(v[0], 3), "max": round(v[-1], 3)})
+    return out
 
 
 def per_step_scale_halt(tracker, params):
@@ -761,8 +795,9 @@ def per_step_scale_halt(tracker, params):
     halts by itself). With the range check off it is still the layer that halts a wrong scale (the review). Held
     back, it is recorded (tracker.bias_gated, the manifest's per_step_drift)."""
     bias = tracker.odometry_bias()
-    # the scale is off by more than the limit AND the fixes say so beyond their own noise (three standard errors)
-    if bias is None or abs(bias[0]) <= params.odometry_bias_max or abs(bias[0]) <= 3.0 * bias[3]:
+    # beyond the limit of its direction (ahead: over-travel, dangerous, +12 %; behind: under-travel, safe, down to
+    # -35 %, the carpet's slip) AND beyond the fixes' own noise (three standard errors)
+    if bias is None or abs(bias[0]) <= 3.0 * bias[3] or params.odometry_bias_min <= bias[0] <= params.odometry_bias_max:
         return None
     if len(tracker.range_moves) >= params.range_gate_min_moves and range_scale_halt(tracker, params) is None:
         if tracker.bias_gated is None:
@@ -773,10 +808,10 @@ def per_step_scale_halt(tracker, params):
                                   "range_median_recent": round(recent[0], 3), "range_moves_recent": recent[1]}
         return None
     return ("tag fixes land %+.0f %% (+-%.0f %%) of the distance from where the odometry puts the car (%.1f m driven, "
-            "%d fixes; limit %.0f %%; the range check has %d measured forward moves, fewer than %d, to vouch for the "
-            "scale): the encoder scale is wrong, or the tags are" % (100 * bias[0], 100 * bias[3], bias[1], bias[2],
-                                                                     100 * params.odometry_bias_max,
-                                                                     len(tracker.range_moves), params.range_gate_min_moves))
+            "%d fixes; limits %+.0f %% ahead, %+.0f %% behind; the range check has %d measured forward moves, fewer "
+            "than %d, to vouch for the scale): the encoder scale is wrong, or the tags are"
+            % (100 * bias[0], 100 * bias[3], bias[1], bias[2], 100 * params.odometry_bias_max,
+               100 * params.odometry_bias_min, len(tracker.range_moves), params.range_gate_min_moves))
 
 
 class BatchEnv:
@@ -904,6 +939,11 @@ class BatchEnv:
         est = range_scale_of_move(before, now, exact)
         if est is not None:
             self.tracker.range_moves.append(est)
+            pose = self.tracker.pose        # (after the move by odometry; the heading taken mid-move)
+            self.tracker.range_log.append({
+                "time_utc": utc(), "heading_deg": round(wrap_deg(pose["theta_deg"] - 0.5 * exact["dtheta_deg"]), 1),
+                "x_m": round(pose["x_m"], 3), "y_m": round(pose["y_m"], 3), "forward_m": round(exact["forward_m"], 4),
+                "scale": round(est[0], 4), "pairs": est[1]})
 
     def _refuse(self, action, reason):
         sense = self.inner.step(None)           # sense again; nothing moves
@@ -1517,8 +1557,9 @@ class BatchRunner:
         gyro reading 0.6 to 0.8 % short), length ratios 1.14 and 1.27, while the encoder scale was right (the range
         check: 0.98 over 12 forward moves) and the tracked pose ended 0.06 m from the end circle. The encoder scale is
         the range check's (range_scale_halt). Only a gross error halts here: a length ratio beyond path_gross_ratio
-        (1.6) either way, more than twice the largest real drift (0.27), which a factor-two error (wrong units in
-        car.json, a dead encoder) passes. fix_sigmas: the two circles' position sigmas, recorded with it."""
+        (1.6) above, or path_gross_floor (0.5) below: over-travel is the dangerous direction; under-travel is what the
+        carpet does northward (0.73 over an episode, 0.66 between two circles, b2-real-02); a factor-two error (wrong
+        units in car.json, a dead encoder) passes either bound. fix_sigmas: the two circles' position sigmas."""
         t, p = self.tracker, self.params
         dr = t.dead_reckoned
         t.dead_reckoned = None
@@ -1535,13 +1576,12 @@ class BatchRunner:
         if by_odometry < p.transit_scale_min_m or by_tags < p.transit_scale_min_m:
             return dict(out, why="shorter than %.2f m: no length ratio" % p.transit_scale_min_m)
         ratio = by_tags / by_odometry
-        out.update(checked=True, tags_over_odometry=round(ratio, 3),
-                   gross_bound=[round(1.0 / p.path_gross_ratio, 3), p.path_gross_ratio])
-        if ratio > p.path_gross_ratio or ratio < 1.0 / p.path_gross_ratio:
+        out.update(checked=True, tags_over_odometry=round(ratio, 3), gross_bound=[p.path_gross_floor, p.path_gross_ratio])
+        if ratio > p.path_gross_ratio or ratio < p.path_gross_floor:
             self.monitor.halt("odometry_scale", "dead reckoning over the %s is grossly off: %.2f m by odometry against "
                               "%.2f m by the circles (ratio %.2f, bound %.2f to %.2f; the real car drifted to 1.27 "
-                              "over one episode): an encoder scale, a wheel or the gyro is grossly wrong, or the tags "
-                              "are" % (what, by_odometry, by_tags, ratio, 1.0 / p.path_gross_ratio, p.path_gross_ratio))
+                              "and 0.73 over an episode): an encoder scale, a wheel or the gyro is grossly wrong, or "
+                              "the tags are" % (what, by_odometry, by_tags, ratio, p.path_gross_floor, p.path_gross_ratio))
         return out
 
     # ------------------------------------------------------------ the batch
@@ -1630,6 +1670,7 @@ class BatchRunner:
         self._save()
         self._mark("episode_start", entry)
         completed = False
+        log_from = len(self.tracker.range_log)
         try:
             pre = self._service_env(ep_id + "-pre", os.path.join(ep_dir, "pre"))
             pre.reset(entry["seed"])
@@ -1737,6 +1778,10 @@ class BatchRunner:
                 entry["status"] = "halted"
             entry["ended"] = utc()
             entry["halt"] = self.monitor.halted
+            # the range check's moves of this episode (its transit included) with their world heading, and the slip
+            # by heading over the batch so far: a measurement of the floor for the report (b2-real-02)
+            entry["range_moves"] = self.tracker.range_log[log_from:]
+            entry["slip_by_heading"] = slip_by_heading(self.tracker.range_log)
             self.monitor.t_episode = None
             self._save()
             self._mark("episode_end", entry)

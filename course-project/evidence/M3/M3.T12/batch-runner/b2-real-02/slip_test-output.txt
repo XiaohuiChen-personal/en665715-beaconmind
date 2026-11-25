@@ -1,0 +1,12 @@
+north (away from T03), moves at 20261125T124416, 20261125T124421, 20261125T124426, 20261125T124432
+   20261125T124416 achieved_forward_m 0.2434, counts left 4869 right 4668, gyro +3.35 deg, 2.68 s
+   20261125T124421 achieved_forward_m 0.2459, counts left 5072 right 4558, gyro +3.31 deg, 2.83 s
+   20261125T124426 achieved_forward_m 0.2446, counts left 5129 right 4448, gyro +2.42 deg, 2.88 s
+   20261125T124432 achieved_forward_m 0.2425, counts left 4673 right 4830, gyro +3.02 deg, 2.81 s
+   odometry 0.9764 m, gyro +12.10 deg; lens 2.00 -> 2.75 m, 0.135 m to the left; axle chord 0.7606 m, arc 0.7621 m; true over odometry 0.780 (+-0.020 for 2 cm of tape)
+south (toward T03), moves at 20261125T124642, 20261125T124647, 20261125T124653, 20261125T124658
+   20261125T124642 achieved_forward_m 0.2421, counts left 4752 right 4735, gyro +2.62 deg, 2.67 s
+   20261125T124647 achieved_forward_m 0.2418, counts left 4656 right 4820, gyro +3.46 deg, 2.63 s
+   20261125T124653 achieved_forward_m 0.2436, counts left 4575 right 4976, gyro +3.03 deg, 2.61 s
+   20261125T124658 achieved_forward_m 0.2443, counts left 4663 right 4913, gyro +2.72 deg, 2.68 s
+   odometry 0.9718 m, gyro +11.83 deg; lens 3.00 -> 2.00 m, 0.135 m to the left; axle chord 1.0086 m, arc 1.0104 m; true over odometry 1.040 (+-0.021 for 2 cm of tape)

@@ -2011,7 +2011,8 @@ def test_the_practice_batch_ranges_say_its_odometer_was_right():
     transit check (1.008): 0.031 apart, 1.2 standard errors of the median (1.25 x 5 % / sqrt(6) = 0.026), before
     the transit's own uncertainty (two circle fixes over 0.69 m) is counted; without the bias removed 0.92 to 1.03,
     median 0.96. No halt at any move either way. The same moves with an odometer
-    reading 25 % short (or long) halt at the first move."""
+    reading 25 % short halt at the first move (the car going farther than it thinks); with one reading 25 % long they
+    read 0.78, under-travel, which passes as slip since the slip test (2026-11-25)."""
     tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS, **PILOT_RANGE)
     per_move = [m[0] for m in tracker.range_moves]
     assert per_move == pytest.approx([0.989, 1.049, 1.003, 0.965, 0.955, 0.935], abs=0.0015), per_move
@@ -2023,10 +2024,11 @@ def test_the_practice_batch_ranges_say_its_odometer_was_right():
     tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS)                     # raw ranges, as cfa3948 read them
     assert [round(m[0], 2) for m in tracker.range_moves] == [0.97, 1.03, 0.99, 0.95, 0.94, 0.92]
     assert tracker.range_scale()[0] == pytest.approx(0.961, abs=0.002) and halts == [None] * 6
-    for factor, expect in ((0.75, 1.30), (1.25, 0.78)):
-        tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS, odometry_factor=factor, **PILOT_RANGE)
-        assert halts[0] is not None and "configs/car.json is wrong" in halts[0], halts
-        assert tracker.range_scale()[0] == pytest.approx(expect, abs=0.02)
+    tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS, odometry_factor=0.75, **PILOT_RANGE)
+    assert halts[0] is not None and "configs/car.json is wrong" in halts[0], halts
+    assert tracker.range_scale()[0] == pytest.approx(1.30, abs=0.02)
+    tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS, odometry_factor=1.25, **PILOT_RANGE)
+    assert halts == [None] * 6 and tracker.range_scale()[0] == pytest.approx(0.78, abs=0.02)
 
 
 def test_the_range_check_resolves_repeated_ids_by_the_tracked_pose_and_keeps_to_the_window():
@@ -2107,9 +2109,12 @@ def test_the_range_of_a_tag_along_a_straight_move_measures_the_scale():
 
 
 def test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms(tmp_path):
-    """The range check against fault injection: odometers reading 25 % short and 25 % long, in the 8-tag room at
-    2.5 m and the 20-tag room at 3.0 m. Every run halts `odometry_scale` on the ranges, with the simulated car far
-    from any wall; a correct odometer completes."""
+    """The range check against fault injection, in the 8-tag room at 2.5 m and the 20-tag room at 3.0 m. An odometer
+    reading 25 % short (the car goes farther than it thinks: the dangerous direction) halts `odometry_scale` on the
+    ranges in every run, the simulated car far from any wall. Changed 2026-11-25 (the slip test): an odometer reading
+    25 % long (the car covers 0.80 of what it counts, the safe direction) now passes as carpet slip, as the real car's
+    0.78 northward does; the range log records the 0.80 and the car stays well inside the driving area. A correct
+    odometer completes."""
     from beaconmind.car import config as C
     cfg = C.load_config()
     rooms = [(WORLD, PLACE, S1, TAPED, 2.5),
@@ -2136,9 +2141,13 @@ def test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms(tmp_pat
                 if factor == 1.0:
                     assert result["status"] == "complete", (r, seed, result)
                     continue
+                assert depth["min"] > 0.3 and not rig.link.sim.p.blocked_left, (factor, r, seed, depth)
+                if factor == 1.25:                      # under-travel: slip, recorded, no scale halt
+                    assert result["halt"] is None or "ranges to the tags" not in result["halt"]["detail"], result
+                    assert runner.tracker.range_scale()[0] == pytest.approx(0.80, abs=0.03)
+                    continue
                 assert result["status"] == "halted" and result["halt"]["code"] == "odometry_scale", (factor, r, seed, result)
                 assert "ranges to the tags" in result["halt"]["detail"], result
-                assert depth["min"] > 0.3 and not rig.link.sim.p.blocked_left, (factor, r, seed, depth)
 
 
 def test_the_range_check_skips_backward_moves_and_watches_the_recent_moves_too():
@@ -2194,12 +2203,17 @@ def test_the_dead_reckoning_drift_is_recorded_and_halts_only_on_a_gross_error():
     assert halts == [] and m["measurement"] == "dead-reckoning drift" and m["checked"]
     assert m["tags_over_odometry"] == pytest.approx(1.272, abs=0.002) and m["miss_m"] == pytest.approx(0.272, abs=0.002)
     assert m["heading_miss_deg"] == pytest.approx(13.4, abs=0.1) and m["circle_sigmas_xy_m"] == [0.026, 0.024]
-    assert m["miss_world_m"] == pytest.approx([-0.001, -0.272], abs=0.002) and m["gross_bound"] == [0.625, 1.6]
+    assert m["miss_world_m"] == pytest.approx([-0.001, -0.272], abs=0.002) and m["gross_bound"] == [0.5, 1.6]
     half = {"x_m": start["x_m"] + 0.5 * (3.0976 - start["x_m"]), "y_m": start["y_m"] + 0.5 * (0.7473 - start["y_m"]),
             "theta_deg": 11.89}
     m, halts = _drift(start, half, {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89})
     assert m["tags_over_odometry"] == pytest.approx(2.0, abs=0.01)
     assert len(halts) == 1 and halts[0][0] == "odometry_scale" and "grossly off" in halts[0][1]
+    for frac, halt in ((1.0 / 0.66, False), (1.0 / 0.45, True)):             # under-travel: b2-real-02's 0.66; 0.45
+        far = {"x_m": start["x_m"] + frac * (3.0976 - start["x_m"]), "y_m": start["y_m"] + frac * (0.7473 - start["y_m"]),
+               "theta_deg": 11.89}
+        m, halts = _drift(start, far, {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89})
+        assert m["tags_over_odometry"] == pytest.approx(1.0 / frac, abs=0.01) and bool(halts) == halt, (frac, m, halts)
     m, halts = _drift(start, start, start)                                   # too short for a ratio
     assert halts == [] and m["checked"] is False and "no length ratio" in m["why"]
 
@@ -2245,27 +2259,35 @@ def _per_step(scale, se, travel=10.5, fixes=37, ranges=()):
 
 def test_the_per_step_statistic_halts_only_while_the_range_check_cannot_vouch_for_the_scale():
     """b2-real-02 halted on the per-step fixes, -27 % +- 8 % over 10.5 m and 37 fixes, from real slip on northward
-    moves, while the range check over 25 forward moves read 0.94 (0.90 over the last 10): held back now, and recorded.
-    With fewer than 3 measured forward moves the same statistic halts, as with the range check out of tolerance."""
+    moves, while the range check over 25 forward moves read 0.94 (0.90 over the last 10). Now: under-travel (fixes
+    behind the odometry) is the safe direction and allowed down to -35 % (the slip test), so it is no halt at all; and
+    an over-travel reading the range check contradicts is held back by the gate and recorded. With fewer than 3
+    measured forward moves the statistic halts beyond its limits, as with the range check out of tolerance."""
     params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
     t = _per_step(-0.273, 0.081, ranges=B2_REAL_02_RANGES)
     assert t.odometry_bias()[0] == pytest.approx(-0.273) and B.range_scale_halt(t, params) is None
+    assert B.per_step_scale_halt(t, params) is None and t.bias_gated is None
+    t = _per_step(0.273, 0.081, ranges=B2_REAL_02_RANGES)                     # ahead, but the ranges say 0.94
     assert B.per_step_scale_halt(t, params) is None
     g = t.bias_gated
-    assert g["per_step_scale"] == pytest.approx(-0.273) and g["range_moves"] == 25 and g["range_moves_recent"] == 10
+    assert g["per_step_scale"] == pytest.approx(0.273) and g["range_moves"] == 25 and g["range_moves_recent"] == 10
     assert g["range_median"] == pytest.approx(0.938, abs=0.002) and g["range_median_recent"] == pytest.approx(0.905, abs=0.003)
     for few in ([], [(1.0, 2)], [(1.0, 2), (0.99, 1)]):                      # fewer than 3 measured moves
-        why = B.per_step_scale_halt(_per_step(-0.273, 0.081, ranges=few), params)
-        assert why is not None and "tag fixes land -27 %" in why and "%d measured forward moves, fewer than 3" % len(few) in why
-    out = _per_step(-0.273, 0.081, ranges=[(0.80, 2)] * 3)                    # the range check itself out of tolerance
+        why = B.per_step_scale_halt(_per_step(0.273, 0.081, ranges=few), params)   # ahead: the car goes farther
+        assert why is not None and "tag fixes land +27 %" in why and "%d measured forward moves, fewer than 3" % len(few) in why
+        # behind (under-travel, the safe direction) halts only beyond -35 % (the slip test, 2026-11-25)
+        assert B.per_step_scale_halt(_per_step(-0.273, 0.081, ranges=few), params) is None
+        assert "tag fixes land -45 %" in B.per_step_scale_halt(_per_step(-0.45, 0.081, ranges=few), params)
+    out = _per_step(0.273, 0.081, ranges=[(1.20, 2)] * 3)                     # the range check itself out of tolerance
     assert B.range_scale_halt(out, params) is not None and B.per_step_scale_halt(out, params) is not None
     assert B.per_step_scale_halt(_per_step(-0.10, 0.22, ranges=[]), params) is None      # not significant: as before
 
 
 def test_with_the_range_check_off_the_per_step_fixes_still_halt_a_wrong_scale(tmp_path, monkeypatch):
     """The review (2026-11-25): with the range check off, the per-step fix statistic is the layer that halts a wrong
-    encoder scale. The gate keeps that: with no measured forward move, an odometer reading 25 % short or long halts
-    on the fixes in the 20-tag room, the simulated car inside the driving area."""
+    encoder scale. The gate keeps that: with no measured forward move, an odometer reading 25 % short (the car going
+    farther than it thinks) halts on the fixes in the 20-tag room, the simulated car inside the driving area. One
+    reading 25 % long (under-travel, -20 %) passes as slip since the slip test; the car stays inside the area."""
     from beaconmind.car import config as C
     monkeypatch.setattr(B.BatchEnv, "_range_check", lambda self, exact, sense, record, first: None)
     cfg = C.load_config()
@@ -2287,6 +2309,42 @@ def test_with_the_range_check_off_the_per_step_fixes_still_halt_a_wrong_scale(tm
             depth["min"] = min(depth["min"], runner.guard.footprint_depth(rig.sim_truth_fn()))
         rig.link.on_step = watch
         result = runner.run()
+        assert depth["min"] > 0.05 and not rig.link.sim.p.blocked_left, (factor, depth)
+        if factor == 1.25:
+            assert result["halt"] is None or "tag fixes land" not in result["halt"]["detail"], result
+            continue
         assert result["status"] == "halted" and result["halt"]["code"] == "odometry_scale", (factor, result)
         assert "tag fixes land" in result["halt"]["detail"] and "0 measured forward moves" in result["halt"]["detail"]
-        assert depth["min"] > 0.05 and not rig.link.sim.p.blocked_left, (factor, depth)
+
+
+# The slip test (2026-11-25, recorder session 20261125-064330-slip-test): 4 x FORWARD_25 each way on the pilot's
+# centre line, the lens read on the tape: northward the car covered 0.78 of its counted distance, southward 1.04
+SLIP_TEST = {"north": 0.7805, "south": 1.0397}
+
+
+def test_the_measured_carpet_slip_does_not_halt_and_is_recorded_by_heading(tmp_path):
+    """The slip test's ratios as range-check moves (four each way) and b2-real-02's 25 real moves: no halt. A car
+    going farther than it counts by as little as the southward 1.04 plus 12 % would halt. And a dry batch records each
+    measured move with its world heading, and the slip by heading over the batch, in the manifest."""
+    params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
+    for name, ratio in SLIP_TEST.items():
+        t = B.PoseTracker(S1, 0.05, 2.0)
+        for k in range(4):
+            t.range_moves.append((ratio, 1))
+            assert B.range_scale_halt(t, params) is None, (name, k)
+    north_then_south = B.PoseTracker(S1, 0.05, 2.0)
+    north_then_south.range_moves = [(SLIP_TEST["north"], 1)] * 12 + [(SLIP_TEST["south"], 1)] * 4
+    assert B.range_scale_halt(north_then_south, params) is None
+    t = B.PoseTracker(S1, 0.05, 2.0)
+    t.range_moves = list(B2_REAL_02_RANGES)
+    assert B.range_scale_halt(t, params) is None
+    t.range_moves = [(1.17, 1)] * 3                                           # 17 % farther: halts
+    assert "farther than it thinks" in B.range_scale_halt(t, params)
+    t.range_moves = [(0.60, 1)] * 3                                           # below the floor: halts
+    assert "floor 0.65" in B.range_scale_halt(t, params)
+    b = Batch(tmp_path, episodes=2, max_steps=30, starts=(S1, S5))
+    assert b.run()["status"] == "complete"
+    moves = [m for e in b.manifest["episodes"] for m in e["range_moves"]]
+    assert moves and all(set(m) >= {"time_utc", "heading_deg", "x_m", "y_m", "forward_m", "scale", "pairs"} for m in moves)
+    table = b.manifest["episodes"][-1]["slip_by_heading"]
+    assert sum(row["moves"] for row in table) == len(moves) and all(0.9 < row["median"] < 1.1 for row in table)
