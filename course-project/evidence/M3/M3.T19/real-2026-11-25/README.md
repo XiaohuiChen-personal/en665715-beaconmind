@@ -1,4 +1,4 @@
-# Real-log replay set `real-2026-11-25` (M3.T19 / M4.T13): final set; Opus 5.5 complete, Qwen3.8 and Gemma 4 running
+# Real-log replay set `real-2026-11-25` (M3.T19 / M4.T13): final set; Opus 5.5 and Qwen3.8 complete, Gemma 4 running
 
 The real car's B2 episodes of 2026-11-25 are replayed offline through the model arms. At each step the arm gets the
 observation the car's B2 saw, with the car's executed move held fixed. Its final pose report is scored against
@@ -46,7 +46,7 @@ Not replayed, because they did not end normally:
   `tools/report_assets.py`) handles this branch. The rehearsal measured the frozen one stopping there in 15–16 of 150
   room episodes. Before the branch both act identically, so the other nine episodes are unaffected.
 
-## Which truth: the end circle is primary
+## Which truth: the end circle first
 
 The batch's step truth is the pose it tracks: odometry between tag fixes, blended by inverse variance. On this carpet
 the car covers 0.67 to 0.78 of its counted distance northward. With the plain 5 % odometry sigma
@@ -78,6 +78,19 @@ From b2-real-05 on, the batches ran a slip sigma of 0.3 per metre. The final err
 | 5001 | 5, 3.2 cm, 3.4 cm | 5.9 cm, −5.1° | 5.0 cm | 5.0 cm |
 | 5002 (flagged) | 7, 4.5 cm, 3.1 cm | 5.1 cm, −6.9° | 5.6 cm | 5.6 cm |
 
+**What the end circle is not.**
+- **It is not independent of the estimators.** It shares the tags, the camera and the world file (the surveyed tag
+  positions) with B2's and the models' estimates. Dead reckoning (B0) shares none of them. An error in the survey or
+  the detector moves the truth and the tag-based estimates together.
+- **Its ranges read short.** The detector's ranges read 1.2–1.7 % short (range bias +0.0049 − 0.0166 r m,
+  `evidence/M1/M1.T8/noise-model-adjustments.md`).
+- **It is anchored on the start circle.** The map frame is the episode's start pose, which the start circle fixed.
+- **Nothing checks it.** There is no independent measurement of the final pose (no tape, motion capture or second
+  sensor).
+
+So it is the best truth these logs have, not an external one. The comparison it supports most firmly is between
+estimators of the same kind (B2 against the models), and less firmly any tag-based estimate against B0.
+
 The circle's positions are good to 2–5 cm. Its heading is not a reference. The circle solves its starting heading
 from views placed by the odometry's own turns, which slip too, and the tracked heading sits 3–7° clockwise of it in
 all nine circles. No heading result is drawn from the end circle.
@@ -88,65 +101,117 @@ The `procedure` arm runs the coded B2 through the same runner, container and obs
 B2's estimate at 850 of 850 steps. That includes 5002's stopping step, where it raises the same `NotImplementedError`
 and falls back to the same pose.
 
-## Results: Opus 5.5 complete ([`result.md`](result.md), [`result.json`](result.json))
+## Results: Opus 5.5 and Qwen3.8 complete, Gemma 4 running ([`result.md`](result.md), [`result.json`](result.json))
 
-**Final-position error against the end circle (primary; n = 8; 3002 has no circle, 5002 is listed apart), cm:**
+**Every table below is exploratory, not pre-registered.** The pre-registration reports the real logs descriptively,
+as the sim-to-real gap (prereg.md §6). The end-circle value was chosen after the data. Nothing here is a test.
+
+**Final-position error against the end circle (n = 8; 3002 has no circle, 5002 is listed apart), cm:**
 
 | Arm | median | IQR | min | max |
 | --- | --- | --- | --- | --- |
 | B0 (dead reckoning) | 38.2 | 26.2 to 73.1 | 11.1 | 111.6 |
 | B2 (the car's live procedure) | 7.9 | 5.6 to 15.2 | 1.3 | 23.2 |
-| claude-opus-5-5 | 7.7 | 5.2 to 14.1 | 2.3 | 25.3 |
+| Opus 5.5 | 7.7 | 5.2 to 14.1 | 2.3 | 25.3 |
+| Qwen3.8 | 7.5 | 4.0 to 13.4 | 1.2 | 56.2 |
 
-| Seed | Start | B0 | B2 | Opus 5.5 |
+| Seed | Start | Steps | B0 | B2 | Opus 5.5 | Qwen3.8 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1001 | S1 | 83 | 26.2 | 3.6 | 3.9 | 4.8 |
+| 2001 | S1 | 56 | 11.1 | 1.3 | 2.3 | 1.3 |
+| 2002 | S2 | 62 | 31.4 | 13.5 | 12.1 | 11.8 |
+| 3001 | S1 | 56 | 45.0 | 8.6 | 8.1 | 7.7 |
+| 4001 | S5 | 114 | 67.9 | 6.2 | 5.6 | 1.2 |
+| 4002 | S4 | 132 | 111.6 | 23.2 | 25.3 | 56.2 |
+| 4003 | S3 | 141 | 88.8 | 20.4 | 20.1 | 18.4 |
+| 5001 | S4 | 80 | 26.2 | 7.2 | 7.2 | 7.2 |
+| *apart:* 5002 (flagged) | S3 | 45 | 12.2 | 7.6 | 18.2 | 17.3 |
+
+**Against the last step's truth (tracker-dependent; n = 9 with 3002), median, logged / recomputed:**
+
+| Arm | median, logged / recomputed | 3002 alone, logged / recomputed |
+| --- | --- | --- |
+| B0 | 33.2 / 38.1 cm | 43.9 / 47.7 cm |
+| B2 | 10.1 / 9.5 cm | 8.2 / 4.9 cm |
+| Opus | 10.6 / 8.2 cm | 7.2 / 6.5 cm |
+| Qwen3.8 | 9.0 / 7.8 cm | 6.8 / 5.1 cm |
+
+**Runs** (all 850 steps; [`stats.md`](stats.md) has the nine main episodes alone):
+- **Opus 5.5** (Anthropic API):
+  - 850 of 850 valid reports, 0 fallbacks, 0 repaired, 0 step errors.
+  - 18.0 s per step (p95 24.5 s), 3 workers.
+  - Spend: US$63.02 by the replayed rows' costs (US$60.41 on the nine episodes, US$2.61 on 5002). The ledgers total
+    US$63.22, including the crash allowance below; the cap was US$70.
+  - 25 `move(NONE)` calls, all refused by the replay and all on steps with valid reports. That is 2.9 % of steps;
+    the study's simulated Opus did the same at 1.9 %.
+- **Qwen3.8** (`qwen38-flash-xhigh`, Qwen3.8-Flash-Next NVFP4 on **vLLM**, container `bm-qwen38`, 127.0.0.1:8000):
+  - 848 of 850 valid reports. The 2 fallbacks are invalid reports at 3001 step 8 and 4003 step 8.
+  - 61 reports repaired by the pre-registered closing-character rule, 0 step errors.
+  - 6 `move(NONE)` calls, all refused, on valid steps.
+  - 128.7 s per step (p95 230.4 s). Concurrency varied: 3 workers, then 3 + 2 side by side after the crash.
+- **Pose source as the procedure's:** Opus 98.5 % of 805 steps, Qwen3.8 98.5 % of 803. The tool names were the
+  procedure's on 97 % (Opus) and 81 % (Qwen3.8) of calls. Qwen3.8 made more calls per step: 3.92 against the
+  procedure's 3.20.
+
+**Paired differences ([`stats.md`](stats.md), [`stats.json`](stats.json); exploratory, not pre-registered).**
+- **Why exploratory:** the pre-registration reports the real logs descriptively (prereg.md §6), the end-circle value
+  was chosen after the data, and there is no significance claim from a handful of episodes
+  (`evidence/M5/requirements.md`).
+- **What it gives:** paired differences only, as the study's estimator (Hodges–Lehmann, or the median when the
+  pre-registered skewness switch applies) with its exact 95 % interval, and the episodes below and above zero. No
+  p-values and no verdicts.
+- **H2** (against B1) is not run: B1 needs oracle association, which the real logs do not have.
+
+Against the end circle (n = 8):
+
+| Difference | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
 | --- | --- | --- | --- | --- |
-| 1001 | S1 | 26.2 | 3.6 | 3.9 |
-| 2001 | S1 | 11.1 | 1.3 | 2.3 |
-| 2002 | S2 | 31.4 | 13.5 | 12.1 |
-| 3001 | S1 | 45.0 | 8.6 | 8.1 |
-| 4001 | S5 | 67.9 | 6.2 | 5.6 |
-| 4002 | S4 | 111.6 | 23.2 | 25.3 |
-| 4003 | S3 | 88.8 | 20.4 | 20.1 |
-| 5001 | S4 | 26.2 | 7.2 | 7.2 |
-| *apart:* 5002 (flagged) | S3 | 12.2 | 7.6 | 18.2 |
+| B2 − B0 | −40.1 | −68.4 to −16.1 | Hodges–Lehmann | 8 / 0 |
+| Opus 5.5 − B0 | −40.7 | −68.7 to −15.5 | Hodges–Lehmann | 8 / 0 |
+| Qwen3.8 − B0 | −37.9 | −62.9 to −15.5 | Hodges–Lehmann | 8 / 0 |
+| Opus 5.5 − B2 | −0.1 | −0.8 to +1.0 | Hodges–Lehmann | 4 / 3 |
+| Qwen3.8 − B2 | −0.4 | −5.0 to +33.0 | median | 4 / 2 |
+| Opus 5.5 − Qwen3.8 | +0.4 | −30.9 to +4.4 | median | 2 / 5 |
 
-**Against the last step's truth (secondary; n = 9 with 3002), median, logged / recomputed:** B0 33.2 / 38.1, B2
-10.1 / 9.5, Opus 10.6 / 8.2 cm. 3002 alone, logged / recomputed: B0 43.9 / 47.7, B2 8.2 / 4.9, Opus 7.2 / 6.5 cm.
+**The gain over dead reckoning is the procedure's, not the models':** B2 shows the same gain, and a model that
+follows the procedure inherits it. Neither model is within 1 cm of B2 on every episode. Eight episodes cannot order
+the two models: their intervals straddle zero by tens of centimetres.
 
-**Runs:**
-- Opus: 850 of 850 steps, 850 valid reports (805 of 805 on the nine episodes), 0 fallbacks, 0 repaired, 0 step
-  errors. 18.0 s per step (p95 24.5 s).
-- Spend: US$63.02 by the replayed rows' costs (US$60.41 on the nine, US$2.61 on 5002). The three ledgers total
-  US$63.22, which includes the crash allowance below. The cap was US$70 for the set.
-- Opus made 25 `move` calls, all `move(NONE)`, all refused by the replay ("the log's move is already executed"), all
-  on steps with valid reports. That is 2.9 % of steps; the study's simulated Opus did the same at 1.9 %.
+**What the per-step traces show** (the traces table in [`stats.md`](stats.md)):
+- **A prompt rule that the coded procedure does not have.**
+  - The room prompt's rule 2 says to compose the odometry with forward and left set to 0 when its quality is
+    `slip_suspected` (`prompts/robot_system_prompt_v3.3-room.txt`, line 32). The frozen procedure has no such rule:
+    `kinsim_lite` does not simulate slips, and its `estimate_step` ignores the quality flag.
+  - On the real logs the flag fired at four steps: 1001/24, 3001/41, 3002/78 and 4001/81, each a forward move of
+    0.24–0.25 m. Both models zeroed that move, as told; B2 composed it.
+  - At 3001/41 the move was real: both models then sat 25 cm behind B2 for seven steps, until a beacon fix at step 48
+    brought them back.
+  - So several of the places where the models part from B2 are this rule, not a model error. The study's simulation
+    never exercised it.
+- **Qwen3.8's miss on 4002** (56.2 cm, against B2's 23.2):
+  - From step 67, where it took a beacon fix and the procedure a position fix, Qwen3.8 carried a 10–20 cm offset.
+  - At steps 130–131 it kept its prior where the procedure accepted a beacon fix and then a position fix.
+  - Its last estimate is 33 cm from B2's.
+- **Opus's departures** were all transient:
+  - the slip rule above;
+  - opposite accept-or-keep decisions on single-tag position fixes at 4003 steps 109–119;
+  - each was closed by the next beacon fix, and Opus ends within 2.2 cm of B2 on all nine main episodes.
+  - Qwen3.8 ends within 2.2 cm of B2 on seven of them, 5.0 cm away on 4001 and 33.1 cm away on 4002.
+- **The flagged episode (5002, step 44):**
+  - The live B2 crashed in its decision step and fell back to dead reckoning, 7.6 cm from the end circle.
+  - Run on that observation, the frozen `estimate_step` would have made a position fix 7.7 cm from the circle, so the
+    crash did not change B2's error.
+  - Both models applied fixes there instead. Opus took a two-tag beacon fix that `fix_pose` verified and ended
+    18.2 cm from the circle; Qwen3.8 ended 17.3 cm away.
+- **Errors grow with episode length.** For every arm, the two largest errors are on the two longest episodes (4002
+  and 4003, 132 and 141 steps): B0 111.6 and 88.8, B2 23.2 and 20.4, Opus 25.3 and 20.1, Qwen3.8 56.2 and 18.4 cm.
 
-**Paired differences ([`stats.md`](stats.md), [`stats.json`](stats.json); exploratory, not pre-registered).** The
-pre-registration reports the real logs descriptively (prereg.md §6), the end-circle value was chosen after the data,
-and there is no significance claim from a handful of episodes (`evidence/M5/requirements.md`). So `stats.md` gives
-paired differences only: the study's estimator with its exact 95 % interval, and the episodes below and above zero.
-It has no p-values and no verdicts. H2 (against B1) is not run, because B1 needs oracle association and the real logs
-have none. Against the end circle (n = 8):
-- B2 − B0: −40.1 cm (−68.4 to −16.1), 8 episodes below and 0 above.
-- Opus − B0: −40.7 cm (−68.7 to −15.5), 8 / 0. **This gain over dead reckoning is the procedure's:** B2 shows the
-  same gain, and a model that follows the procedure inherits it.
-- Opus − B2: −0.1 cm (−0.8 to +1.0), 4 / 3. Not within 1 cm of B2 on every episode.
+## Gemma 4: running
 
-**Reading it.**
-- **Opus against B2:** against the end circle, Opus is within 2.1 cm of B2 in all eight episodes, so the two cannot
-  be separated here.
-- **Errors grow with episode length:** both lie at 20–25 cm on the two longest episodes (S4 and S3 of b2-real-05,
-  132 and 141 steps), where B0 is 89–112 cm off.
-- **The flagged episode** is the one place where they part: Opus 18.2 against B2 7.6 cm.
-- **The simulated study's arm comparison** stands on its own, larger sample.
-
-## Qwen3.8 and Gemma 4: running
-
-- **Qwen3.8** (`qwen38-flash-xhigh`, vLLM): 1001–3002 are complete. 4001–4003 resumed after the crash, and 5001/5002
-  started at 18:31:56, side by side on one server, 5 concurrent. Expected end about 23:30 UTC (seed 4003, about
-  2.6 min per step). At 19:13 UTC: 483 steps, 481 valid reports, 2 fallbacks (3001 step 8 and 4003 step 8, both
-  invalid reports), 31 repaired, 0 step errors.
-- **Gemma 4** (`gemma4-26b`, vLLM): starts after Qwen on all 10 seeds, one worker per episode.
+**Gemma 4** (`gemma4-26b`, Google's bf16 checkpoint of Gemma 4 26B-A4B on **vLLM** via
+`tools/serve_gemma4_vllm.sh`, container `bm-gemma4-vllm`, 127.0.0.1:8001, as in the study) started on all ten seeds
+at 23:09:35 UTC with one worker per episode. AGENTS.md and the plan still say Ollama for Gemma 4; the study's arm
+and this replay use vLLM.
 
 ## How it ran: folders, chains, the crash, the resume rule
 

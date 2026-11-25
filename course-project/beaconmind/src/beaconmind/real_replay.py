@@ -634,7 +634,10 @@ def result_markdown(title, index, errors, summary, order, stats=None, truths=Non
              "Batch `%s` (config %s, real car: %s); %d episodes, %d steps; world `%s` (sha12 %s); %s." % (
                  index["batch"], index.get("batch_config"), index.get("real_car"), len(index["episodes"]),
                  index["steps"], index["world_file"], index["world_sha12"], index.get("dv_file")), "",
-             "## Final-position error against the end circle (the primary truth)", "",
+             "**Exploratory, not pre-registered.** The pre-registration reports the real logs descriptively, as the "
+             "sim-to-real gap (evidence/M4/M4.T1/prereg.md section 6), and the end-circle value below was chosen after "
+             "the data; these are descriptive tables, with no test and no verdict.", "",
+             "## Final-position error against the end circle (the truth used first; exploratory)", "",
              "The end circle is the full circle the batch turns where the episode ended: 8 to 14 tags solved on their "
              "own geometry, not through the tracker. When the episode ended by DONE no move followed the agent's last "
              "report, so the circle measured that very pose (the manifest's `end_fix.pose`, in the map frame of the "
@@ -695,7 +698,7 @@ def result_markdown(title, index, errors, summary, order, stats=None, truths=Non
             trackers.setdefault((lt["slip_sigma_per_m"], lt["slip_north_per_m"]), []).append(errors["B0"][seed].get("batch"))
     tracker_note = "; ".join("%s: slip sigma %.2f + %.2f x north per metre" % (
         ", ".join(sorted(set(b for b in batches if b))), a, n) for (a, n), batches in sorted(trackers.items()))
-    lines += ["", "## Against the last step's truth (secondary, tracker-dependent)", "",
+    lines += ["", "## Against the last step's truth (tracker-dependent; exploratory)", "",
               "The batch's own truth at the last step: the pose it tracks, odometry between tag fixes blended by "
               "inverse variance (PoseTracker: 5 %% odometry sigma, plus the slip sigma the batch ran with), with its "
               "stated sigma. Without a slip sigma it is overconfident northward on this carpet. The batches' trackers: "

@@ -18,3 +18,9 @@ ready: nvidia/Qwen3.8-Flash-Next-NVFP4 on 127.0.0.1:8000
 18:31:56 replay_chain: qwen38-flash-xhigh+b2-real-06: seeds 5001,5002 to do (first run)
 18:31:56 replay_chain: qwen38-flash-xhigh+b2-real-05: seeds 4001,4002,4003 to do (resume)
 18:44:14 replay_chain: claude-opus-5-5+b2-real-06: complete
+21:20:15 replay_chain: qwen38-flash-xhigh+b2-real-06: exit 0; 21:20:15 done: total spent $0.00; failed seeds: none; stopped at the cap: none; still to do: none
+23:06:51 replay_chain: qwen38-flash-xhigh+b2-real-05: exit 0; 23:06:51 done: total spent $0.00; failed seeds: none; stopped at the cap: none; still to do: none
+23:06:53 replay_chain: stopping the Qwen3.8 server: stopped bm-qwen38
+23:06:54 replay_chain: Gemma 4 server: started bm-gemma4-vllm (snapshot 4d7ae4984b7db7de8f8457170b3f1a419ee76d52); run: course-project/tools/serve_gemma4_vllm.sh wait
+ready: google/gemma-4-26B-A4B-it on 127.0.0.1:8001
+23:09:35 replay_chain: gemma4-26b: seeds 1001,2001,2002,3001,3002,4001,4002,4003,5001,5002 to do (first run)

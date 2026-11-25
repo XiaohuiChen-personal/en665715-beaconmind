@@ -611,19 +611,21 @@ def build_numbers(src):
     put("real.opus.p95-s", "%.1f" % o["p95_s"], rnote + " run_stats p95_s")
     put("real.opus.valid", o["valid"], rnote + " run_stats valid")
     put("real.opus.fallbacks", o["fallbacks"], rnote + " run_stats fallbacks")
-    # the largest Opus - B2 difference against the end circle, over the eight episodes with a circle
-    rep_rows = re.findall(r"^\| b2-real-\d+ ep\d+-a1 \| S\d \| \d+ \| [^|]+ \| [^|]+ \| ([\d.]+) \| ([\d.]+) \| ([\d.]+) \| ([\d.]+) \|$",
-                          (REAL / "result.md").read_text().split("Listed apart")[0], re.M)
-    if len(rep_rows) != len(circles) - 1:
-        raise SystemExit("report_assets: result.md's per-episode end-circle rows changed; check the parser")
-    put("real.opus-b2.maxdiff", num(max(abs(float(r[3]) - float(r[1])) for r in rep_rows), 1),
+    # the largest Opus - B2 difference against the end circle, over the eight episodes with a circle, and the flagged
+    # episode's values: from result.json (its columns grow with each arm), each rounded to 0.1 cm as result.md shows it
+    def cm1(arm, seed):
+        return round(R["errors"][arm][seed]["vs_end_circle_m"] * 100, 1)
+    main_c = [s for s, t in R["truths"].items() if t.get("end_circle") and not t.get("flag")]
+    if len(main_c) != len(circles) - 1:
+        raise SystemExit("report_assets: result.json's end-circle episodes changed; check the report text")
+    put("real.opus-b2.maxdiff", num(max(abs(cm1("claude-opus-5-5", s) - cm1("B2", s)) for s in main_c), 1),
         "evidence/M3/M3.T19/real-2026-11-25/result.md per-episode end-circle table: max |Opus - B2|")
-    apart = re.findall(r"^\| b2-real-\d+ ep\d+-a1 \| S\d \| \d+ \| [^|]+ \| [^|]+ \| ([\d.]+) \| ([\d.]+) \| ([\d.]+) \| ([\d.]+) \|$",
-                       (REAL / "result.md").read_text().split("Listed apart")[1].split("##")[0], re.M)
+    apart = [s for s, t in R["truths"].items() if t.get("flag")]
     if len(apart) != 1:
-        raise SystemExit("report_assets: result.md does not list exactly one episode apart; check the report text")
-    for i, k in ((0, "b0"), (1, "b2"), (3, "opus")):
-        put("real.flagged.%s" % k, apart[0][i], "evidence/M3/M3.T19/real-2026-11-25/result.md, the episode listed apart (cm)")
+        raise SystemExit("report_assets: result.json does not flag exactly one episode; check the report text")
+    for arm, k in (("B0", "b0"), ("B2", "b2"), ("claude-opus-5-5", "opus")):
+        put("real.flagged.%s" % k, "%.1f" % cm1(arm, apart[0]),
+            "evidence/M3/M3.T19/real-2026-11-25/result.md, the episode listed apart (cm)")
 
     # ---- exploratory paired differences on the real logs (not pre-registered; evidence/M3/M3.T19/.../stats.json)
     RS = src["real_stats"]

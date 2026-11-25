@@ -20,7 +20,7 @@
     "world_sha12": "35572d7656f3",
     "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
     "max_range_m": 3.0,
-    "converted": "2026-11-25T11:49:34-0600"
+    "converted": "2026-11-25T13:12:38-0600"
    },
    {
     "batch": "b2-real-02",
@@ -38,7 +38,7 @@
     "world_sha12": "35572d7656f3",
     "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
     "max_range_m": 3.0,
-    "converted": "2026-11-25T11:49:34-0600"
+    "converted": "2026-11-25T13:12:38-0600"
    },
    {
     "batch": "b2-real-03",
@@ -56,7 +56,7 @@
     "world_sha12": "35572d7656f3",
     "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
     "max_range_m": 3.0,
-    "converted": "2026-11-25T11:49:34-0600"
+    "converted": "2026-11-25T13:12:38-0600"
    },
    {
     "batch": "b2-real-05",
@@ -74,7 +74,7 @@
     "world_sha12": "35572d7656f3",
     "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
     "max_range_m": 3.0,
-    "converted": "2026-11-25T11:49:34-0600"
+    "converted": "2026-11-25T13:12:38-0600"
    },
    {
     "batch": "b2-real-06",
@@ -92,7 +92,7 @@
     "world_sha12": "35572d7656f3",
     "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
     "max_range_m": 3.0,
-    "converted": "2026-11-25T11:49:34-0600"
+    "converted": "2026-11-25T13:12:38-0600"
    }
   ],
   "batch_config": "611d90a41329, 1b3ab20f9758, af676fc3b9e6, 41867c0ec8b2, 2ba442d815b9",
@@ -100,7 +100,7 @@
   "world_file": "configs/arenas/real-room.json",
   "world_sha12": "35572d7656f3",
   "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
-  "created": "2026-11-25T11:49:34-0600",
+  "created": "2026-11-25T13:12:38-0600",
   "episodes": [
    {
     "seed": 1001,
@@ -265,6 +265,11 @@
    "data/real-replay/real-2026-11-25/runs-trim/claude-opus-5-5",
    "data/real-replay/real-2026-11-25/runs-trim/claude-opus-5-5+b2-real-05",
    "data/real-replay/real-2026-11-25/runs-trim/claude-opus-5-5+b2-real-06"
+  ],
+  "qwen38-flash-xhigh": [
+   "data/real-replay/real-2026-11-25/runs-trim/qwen38-flash-xhigh",
+   "data/real-replay/real-2026-11-25/runs-trim/qwen38-flash-xhigh+b2-real-05",
+   "data/real-replay/real-2026-11-25/runs-trim/qwen38-flash-xhigh+b2-real-06"
   ]
  },
  "run_parts": {
@@ -340,6 +345,45 @@
     "runner_sha12": "c2ea1ba4d685",
     "real_replay_sha12": "316a22bef78d",
     "folder": "data/real-replay/real-2026-11-25/runs-trim/claude-opus-5-5+b2-real-06",
+    "seeds": [
+     5001,
+     5002
+    ]
+   }
+  ],
+  "qwen38-flash-xhigh": [
+   {
+    "config": "8969d38de361",
+    "git_commit": "9f580fe4e816",
+    "runner_sha12": "beeceeae167d",
+    "real_replay_sha12": "475beb5debcb",
+    "folder": "data/real-replay/real-2026-11-25/runs-trim/qwen38-flash-xhigh",
+    "seeds": [
+     1001,
+     2001,
+     2002,
+     3001,
+     3002
+    ]
+   },
+   {
+    "config": "a433012d5409",
+    "git_commit": "19f71e63c498",
+    "runner_sha12": "c2ea1ba4d685",
+    "real_replay_sha12": "316a22bef78d",
+    "folder": "data/real-replay/real-2026-11-25/runs-trim/qwen38-flash-xhigh+b2-real-05",
+    "seeds": [
+     4001,
+     4002,
+     4003
+    ]
+   },
+   {
+    "config": "a433012d5409",
+    "git_commit": "19f71e63c498",
+    "runner_sha12": "c2ea1ba4d685",
+    "real_replay_sha12": "316a22bef78d",
+    "folder": "data/real-replay/real-2026-11-25/runs-trim/qwen38-flash-xhigh+b2-real-06",
     "seeds": [
      5001,
      5002
@@ -795,6 +839,43 @@
     "median_deg": null
    },
    "median_vs_sim_truth_m": null
+  },
+  "qwen38-flash-xhigh": {
+   "n": 9,
+   "n_incomplete": 0,
+   "n_flagged": 1,
+   "end_circle": {
+    "n": 8,
+    "median_m": 0.07450866245554258,
+    "q1_m": 0.039640228772659505,
+    "q3_m": 0.13436513016236207,
+    "min_m": 0.012193910514743837,
+    "max_m": 0.5616054979845081,
+    "mean_m": 0.1358388351365832,
+    "median_deg": 7.829871435293256
+   },
+   "last_step": {
+    "n": 9,
+    "median_m": 0.09029794349986468,
+    "q1_m": 0.0681703414554782,
+    "q3_m": 0.17681407598801122,
+    "min_m": 0.027423213995969347,
+    "max_m": 0.6112406567784897,
+    "mean_m": 0.1565538033811981,
+    "median_deg": 3.7087556905005954,
+    "median_truth_sigma_m": 0.05
+   },
+   "recomputed": {
+    "n": 9,
+    "median_m": 0.0779895351941801,
+    "q1_m": 0.05140355834782451,
+    "q3_m": 0.13037153438167012,
+    "min_m": 0.023688730424712978,
+    "max_m": 0.6112406293243109,
+    "mean_m": 0.13815035703146186,
+    "median_deg": null
+   },
+   "median_vs_sim_truth_m": null
   }
  },
  "run_stats": {
@@ -821,6 +902,18 @@
    "cost_usd": 63.02071,
    "mean_s": 17.993294117647057,
    "p95_s": 24.5
+  },
+  "qwen38-flash-xhigh": {
+   "steps": 850,
+   "expected_steps": 850,
+   "valid": 848,
+   "fallbacks": 2,
+   "repaired": 61,
+   "errors": 0,
+   "move_calls": 6,
+   "cost_usd": 0.0,
+   "mean_s": 128.71564705882352,
+   "p95_s": 230.4
   }
  },
  "errors": {
@@ -1587,7 +1680,198 @@
     "vs_end_circle_deg": 1.7905402552852934,
     "vs_recomputed_m": 0.19268459455140455
    }
+  },
+  "qwen38-flash-xhigh": {
+   "1001": {
+    "episode": "ep01-a1",
+    "batch": "b2-real-01",
+    "scenario": "S1",
+    "steps": 83,
+    "complete": true,
+    "final_m": 0.027423213995969347,
+    "final_deg": 3.7087556905005954,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.8,
+     "y_m": -0.33,
+     "theta_deg": -103.3
+    },
+    "vs_end_circle_m": 0.04836014326731925,
+    "vs_end_circle_deg": 8.785869937159873,
+    "vs_recomputed_m": 0.026145946998155256
+   },
+   "2001": {
+    "episode": "ep01-a1",
+    "batch": "b2-real-02",
+    "scenario": "S1",
+    "steps": 56,
+    "complete": true,
+    "final_m": 0.028140944014338656,
+    "final_deg": 2.3654065036024576,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.77,
+     "y_m": -0.12,
+     "theta_deg": 133.5
+    },
+    "vs_end_circle_m": 0.013480485288680278,
+    "vs_end_circle_deg": 7.450029277627891,
+    "vs_recomputed_m": 0.023688730424712978
+   },
+   "2002": {
+    "episode": "ep02-a1",
+    "batch": "b2-real-02",
+    "scenario": "S2",
+    "steps": 62,
+    "complete": true,
+    "final_m": 0.18656633622570828,
+    "final_deg": 4.250166204294629,
+    "truth_sigma_xy_m": 0.0582,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 0.84,
+     "y_m": -0.076,
+     "theta_deg": 171.6
+    },
+    "vs_end_circle_m": 0.11770360076155956,
+    "vs_end_circle_deg": 7.370381038251509,
+    "vs_recomputed_m": 0.0779895351941801
+   },
+   "3001": {
+    "episode": "ep01-a1",
+    "batch": "b2-real-03",
+    "scenario": "S1",
+    "steps": 56,
+    "complete": true,
+    "final_m": 0.08996235598679066,
+    "final_deg": 0.405445140046794,
+    "truth_sigma_xy_m": 0.0501,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": 0.66,
+     "y_m": -0.55,
+     "theta_deg": 13.6
+    },
+    "vs_end_circle_m": 0.07654529430001072,
+    "vs_end_circle_deg": 6.4582980354956305,
+    "vs_recomputed_m": 0.05648102345098969
+   },
+   "3002": {
+    "episode": "ep02-a1",
+    "batch": "b2-real-03",
+    "scenario": "S2",
+    "steps": 81,
+    "complete": true,
+    "final_m": 0.0681703414554782,
+    "final_deg": 3.842837113198101,
+    "truth_sigma_xy_m": 0.0563,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 0.57,
+     "y_m": 0.29,
+     "theta_deg": -147.7
+    },
+    "vs_recomputed_m": 0.05140355834782451
+   },
+   "4001": {
+    "episode": "ep01-a1",
+    "batch": "b2-real-05",
+    "scenario": "S5",
+    "steps": 114,
+    "complete": true,
+    "final_m": 0.09029794349986468,
+    "final_deg": 1.9909941151525459,
+    "truth_sigma_xy_m": 0.0501,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": -0.61,
+     "y_m": 0.52,
+     "theta_deg": -91.8
+    },
+    "vs_end_circle_m": 0.012193910514743837,
+    "vs_end_circle_deg": 8.209713592958622,
+    "vs_recomputed_m": 0.08921817965034817
+   },
+   "4002": {
+    "episode": "ep02-a1",
+    "batch": "b2-real-05",
+    "scenario": "S4",
+    "steps": 132,
+    "complete": true,
+    "final_m": 0.6112406567784897,
+    "final_deg": 7.03076518609268,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -1.93,
+     "y_m": -1.65,
+     "theta_deg": -173.1
+    },
+    "vs_end_circle_m": 0.5616054979845081,
+    "vs_end_circle_deg": 14.151122273262985,
+    "vs_recomputed_m": 0.6112406293243109
+   },
+   "4003": {
+    "episode": "ep03-a1",
+    "batch": "b2-real-05",
+    "scenario": "S3",
+    "steps": 141,
+    "complete": true,
+    "final_m": 0.17681407598801122,
+    "final_deg": 5.313878262334413,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 2.03,
+     "y_m": 0.39,
+     "theta_deg": 14.0
+    },
+    "vs_end_circle_m": 0.18434971836476954,
+    "vs_end_circle_deg": 10.038998402793084,
+    "vs_recomputed_m": 0.1768140755109652
+   },
+   "5001": {
+    "episode": "ep01-a1",
+    "batch": "b2-real-06",
+    "scenario": "S4",
+    "steps": 80,
+    "complete": true,
+    "final_m": 0.1303683624861321,
+    "final_deg": 0.5309321700619307,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.23,
+     "y_m": -1.46,
+     "theta_deg": 18.7
+    },
+    "vs_end_circle_m": 0.07247203061107442,
+    "vs_end_circle_deg": 4.6176903792040775,
+    "vs_recomputed_m": 0.13037153438167012
+   },
+   "5002": {
+    "episode": "ep02-a1",
+    "batch": "b2-real-06",
+    "scenario": "S3",
+    "steps": 45,
+    "complete": true,
+    "final_m": 0.18528139436101865,
+    "final_deg": 4.801340503980157,
+    "truth_sigma_xy_m": 0.0557,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 0.32,
+     "y_m": 0.64,
+     "theta_deg": 35.1
+    },
+    "flag": "procedure_stopped",
+    "vs_end_circle_m": 0.17316446770747773,
+    "vs_end_circle_deg": 2.0905402552853047,
+    "vs_recomputed_m": 0.18512155564423335
+   }
   }
  },
- "created": "2026-11-25T13:11:21-0600"
+ "created": "2026-11-25T17:38:09-0600"
 }

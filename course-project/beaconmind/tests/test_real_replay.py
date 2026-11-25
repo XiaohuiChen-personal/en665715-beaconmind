@@ -411,7 +411,8 @@ def test_the_analysis_recomputes_the_truth_with_the_batchs_own_tool(tmp_path, mo
     assert all(res["truths"][str(e["seed"])]["logged_tracker"] == {"slip_sigma_per_m": 0.0, "slip_north_per_m": 0.0}
                for e in idx["episodes"])                              # the dry batch ran the tracker without a slip sigma
     md = (tmp_path / "r.md").read_text()
-    assert "tools/recompute_truth.py" in md and "slip sigma 0.00" in md and "the primary truth" in md
+    assert "tools/recompute_truth.py" in md and "slip sigma 0.00" in md and "the truth used first" in md
+    assert "Exploratory, not pre-registered" in md and "confirmatory" not in md
     assert "The batches' trackers: batch: slip sigma 0.00 + 0.00 x north per metre." in md
     assert tool.cmd_analyze(tool.parser().parse_args(argv + ["--slip-sigma", "0.3"])) == 0
     assert "slip sigma 0.30" in (tmp_path / "r.md").read_text()
