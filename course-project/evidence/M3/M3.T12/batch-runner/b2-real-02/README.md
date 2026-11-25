@@ -134,6 +134,32 @@ mildly, because its "north" spans 30° to 150°.
   no contact.
 - **Wrong scales that still halt:** an odometer reading 25 % short halts in every run, as before.
 
+**Rehearsed on a simulated carpet:** `../rehearse_slip.py` (log `rehearse_slip-7a8b599-log.txt`).
+- **The slip model:** the simulated car's true travel is scaled by 0.91 − 0.13 sin(direction of travel): 0.78
+  northward, 1.04 southward, 0.91 east and west. Its wheels count the full distance.
+- **The run:** the exact real arguments at `7a8b599`. It completed, 10 of 10 episodes done, 1,602 moves.
+- **The slip by heading recorded in the manifest** recovers the pattern. The range check's medians over the 45°
+  sectors:
+
+  | Sector | Median | Moves |
+  | --- | --- | --- |
+  | north (90°) | 0.80 | 15 |
+  | 45° | 0.84 | 14 |
+  | east (0°) | 0.94 | 19 |
+  | south (270°) | 1.08 | 4 |
+
+  The south figure is the batch removing a range bias that the simulator does not have, about +1.6 %.
+- **The drift measurements:**
+
+  | Measurement | Value | Limit |
+  | --- | --- | --- |
+  | per-step drift | −16 % ± 4 % | −35 % |
+  | dead-reckoning ratios, transits | 0.78 to 1.04 | 0.5 |
+  | dead-reckoning ratios, episodes | 0.86 to 1.08 | 0.5 |
+
+- **The tracked pose** ended within 0.003 to 0.027 m of every end circle, and B2's final errors were 0.003 to
+  0.071 m.
+
 **An option for Xiaohui, not implemented:** correct the odometry by heading, for example forward distance ×
 (0.78 + 0.26 × sin² of the angle from north) fitted to the slip test and the ranges. That would remove most of the
 northward drift that misled B2 in episode 2, but it changes the odometry every agent sees. That is a design change for

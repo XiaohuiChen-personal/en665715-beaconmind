@@ -1,0 +1,34 @@
+07:14:26 batch cbf72453e0e8: 10 episodes of b2 on the simulated car (dry run), world real-room-plus8-160mm, out <scratchpad>/dry-7a8b599-slip
+07:14:26 fix sigma 0.0062 + 0.0378 x range m: configs/detector_noise.json sha256:68ff4796a4c4: tag pilot 20261125-020811-tag-pilot frames.csv (2026-11-25, 420 frames, 14 placements): range bias +0.0049 -0.0166 r, range sigma 0.0013 + 0.0004 r m, bearing bias -0.08 deg, bearing sigma 1.860 + 0.000 r deg, reliable to 3.135 m -> 0.0062 + 0.0378 x range m up to 3.00 m
+07:14:26 range check: tags 0.79 to 3.00 m, range bias +0.0049 -0.0166 x range m removed
+07:14:26 design values: configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)
+07:14:27 seed 1: episode ended by DONE (decision) after 56 steps
+07:14:29 seed 2: episode ended by DONE (decision) after 69 steps
+07:14:32 seed 3: episode ended by DONE (decision) after 50 steps
+07:14:35 seed 4: episode ended by DONE (decision) after 60 steps
+07:14:37 seed 5: episode ended by DONE (decision) after 49 steps
+07:14:38 seed 6: episode ended by DONE (decision) after 53 steps
+07:14:40 seed 7: episode ended by DONE (decision) after 69 steps
+07:14:46 seed 8: episode ended by DONE (decision) after 93 steps
+07:14:52 seed 9: episode ended by DONE (decision) after 64 steps
+07:14:56 seed 10: episode ended by DONE (decision) after 48 steps
+Car batch cbf72453e0e8 (simulated car, dry run)
+status: complete   updated: 2026-11-25T13:14:57Z   resumes: 0
+world: real-room-plus8-160mm   policy: b2   episodes asked: 10   moves sent: 1602   spent: US$0.00
+tags checked against each other in this run: 20, trusted to steer a step's fix: 20
+fix sigma: configs/detector_noise.json sha256:68ff4796a4c4: tag pilot 20261125-020811-tag-pilot frames.csv (2026-11-25, 420 frames, 14 placements): range bias +0.0049 -0.0166 r, range sigma 0.0013 + 0.0004 r m, bearing bias -0.08 deg, bearing sigma 1.860 + 0.000 r deg, reliable to 3.135 m -> 0.0062 + 0.0378 x range m up to 3.00 m
+design values: configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)
+sigma sources: agree: the agent's sigmas (--dv) and the batch's fix sigma come from the same detector-noise file (sha256 68ff4796a4c49425e994b6170e9308e298e55b7ee2d2184781fd78949f7f6f50)
+
+ep01-a1  done    scenario S1  start miss 0.17 m / 0 deg  ended_by DONE (decision) after 56 steps  final pose error 0.00 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+ep02-a1  done    scenario S2  start miss 0.03 m / 7 deg  ended_by DONE (decision) after 69 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep03-a1  done    scenario S3  start miss 0.05 m / 0 deg  ended_by DONE (decision) after 50 steps  final pose error 0.03 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+ep04-a1  done    scenario S4  start miss 0.12 m / 12 deg  ended_by DONE (decision) after 60 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep05-a1  done    scenario S5  start miss 0.04 m / 1 deg  ended_by DONE (decision) after 49 steps  final pose error 0.02 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep06-a1  done    scenario S1  start miss 0.15 m / 2 deg  ended_by DONE (decision) after 53 steps  final pose error 0.02 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+ep07-a1  done    scenario S2  start miss 0.02 m / 9 deg  ended_by DONE (decision) after 69 steps  final pose error 0.05 m / 2 deg (truth sigma 0.05 m, tag fix at that step)
+ep08-a1  done    scenario S3  start miss 0.11 m / 2 deg  ended_by DONE (decision) after 93 steps  final pose error 0.07 m / 4 deg (truth sigma 0.05 m, tracked since the last fix)
+ep09-a1  done    scenario S4  start miss 0.02 m / 5 deg  ended_by DONE (decision) after 64 steps  final pose error 0.04 m / 2 deg (truth sigma 0.05 m, tag fix at that step)
+ep10-a1  done    scenario S5  start miss 0.05 m / 5 deg  ended_by DONE (decision) after 48 steps  final pose error 0.01 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+
+carpet slip added: 38.33 m counted, 34.57 m on the floor (0.902)
