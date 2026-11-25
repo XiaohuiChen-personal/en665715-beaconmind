@@ -5,6 +5,7 @@ camera model, lens distortion and mount angles included (beaconmind.perception.s
 skips without OpenCV or numpy.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote these tests.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: added the tests of the third pass (ARUCO_PASSES[2]).
 """
 import importlib.util
 import math
@@ -540,3 +541,79 @@ def test_degrade_keeps_size_and_type():
     assert out.shape == picture.shape and out.dtype == np.uint8
     assert not np.array_equal(out, picture)
     assert np.array_equal(synth.degrade(picture), picture)
+
+
+# ------------------------------------------------------------------ the third pass (2026-11-25)
+
+def _with_passes(passes, fn, *args, **kwargs):
+    """Run fn with tags.ARUCO_PASSES set to `passes` (and the module's own value back afterwards)."""
+    saved = tags.ARUCO_PASSES
+    tags.ARUCO_PASSES = tuple(passes)
+    try:
+        return fn(*args, **kwargs)
+    finally:
+        tags.ARUCO_PASSES = saved
+
+
+def test_the_passes_are_three_with_growing_windows():
+    assert len(tags.ARUCO_PASSES) == 3 and tags.ARUCO_PASSES[0] == {}
+    assert tags.ARUCO_PASSES[2] == {"adaptiveThreshWinSizeMin": 63, "adaptiveThreshWinSizeMax": 103,
+                                    "adaptiveThreshWinSizeStep": 20}
+    windows = [list(range(p.get("adaptiveThreshWinSizeMin", 3), p.get("adaptiveThreshWinSizeMax", 23) + 1,
+                          p.get("adaptiveThreshWinSizeStep", 10))) for p in tags.ARUCO_PASSES]
+    assert windows == [[3, 13, 23], [33, 53], [63, 83, 103]]           # odd sizes, each pass beyond the one before
+    for p in tags.ARUCO_PASSES:
+        tags._detector(p)                                                # every field exists in this OpenCV
+
+
+def test_a_close_low_contrast_blurred_tag_needs_the_largest_windows():
+    """The failure the tag pilot's real frames showed (placement A01, 2026-11-25: T03 about 0.8 m from the lens and
+    240 px wide, found by passes 1 and 2 in 3 of 30 frames, by all three in 30 of 30), made in the simulator: the same
+    tag at 0.937 m, black 131 / white 149 on a wall of 150 (18 grey levels), blurred 2 px (out of focus that close),
+    the real frames' noise and JPEG. Passes 1 and 2 outline it in a few frames; with pass 3 in every frame, and the
+    range and bearing are right. (Not the real frames' grey values: the simulator reaches this failure at a lower
+    contrast than the room did; what it shares with them is that only windows wider than 53 px outline the tag.)
+    OpenCV 4.13: 3 of 20 before, 20 of 20 after; OpenCV 4.5.5 (the container's 4.5 API): 0 and 19."""
+    tag = tag_at(23, 0.937, 0.0)
+    picture = frame([tag], black=131.0, white=149.0, wall=150.0)
+    before = after = 0
+    for seed in range(20):
+        gray = synth.real_like(picture, rng=np.random.default_rng(100 + seed), noise_sigma=2.0, blur_sigma_px=2.0)
+        before += len(_with_passes(tags.ARUCO_PASSES[:2], tags.detect_tags, gray, CAM))
+        dets = tags.detect_tags(gray, CAM)
+        assert len(dets) <= 1
+        for det in dets:
+            assert det["id"] == 23 and det["side_px"] > 200.0
+            assert det["range_m"] == pytest.approx(0.937, rel=0.01)
+            assert det["bearing_deg"] == pytest.approx(0.0, abs=0.5)
+            after += 1
+    assert before <= 6 and after >= 19, (before, after)
+
+
+def test_a_later_pass_never_loses_or_moves_an_earlier_find():
+    """find_quads keeps every quad of the earlier passes as it was and adds only a quad no earlier pass found (same
+    id, centre within half a side), so the two-pass result is the start of the three-pass result. Checked on the
+    synthetic frames of the range grid (0.4 to 3.0 m, the real-frame look, blur, noise, JPEG) and on far tags at
+    lower contrast: not one quad lost or moved, not one detection lost, and every detection's numbers unchanged."""
+    rng = np.random.default_rng(1125)
+    frames = []
+    for range_m, bearing in GRID:
+        tag = tag_at(11, range_m, bearing, height_for(range_m), incidence_deg=25.0 if range_m >= 0.6 else 0.0)
+        frames.append(synth.real_like(frame([tag]), rng=rng))
+    for range_m in (2.0, 2.5, 3.0, 3.5):
+        for look in (dict(LOOK), dict(wall=135.0, black=120.0, white=148.0)):
+            tags_here = [tag_at(3, range_m, -8.0), tag_at(29, range_m + 0.2, 9.0)]
+            frames.append(synth.real_like(frame(tags_here, **look), rng=rng, blur_sigma_px=1.2))
+    far = 0
+    for gray in frames:
+        two = _with_passes(tags.ARUCO_PASSES[:2], tags.find_quads, gray)
+        three = tags.find_quads(gray)
+        assert len(three) >= len(two)
+        for (q2, i2), (q3, i3) in zip(two, three):
+            assert i2 == i3 and np.array_equal(q2, q3)
+        d2 = _with_passes(tags.ARUCO_PASSES[:2], tags.detect_tags, gray, CAM)
+        d3 = tags.detect_tags(gray, CAM)
+        keys3 = {(d["id"], round(d["range_m"], 6), round(d["bearing_deg"], 6)) for d in d3}
+        assert {(d["id"], round(d["range_m"], 6), round(d["bearing_deg"], 6)) for d in d2} <= keys3
+        far += sum(1 for d in d2 if d["range_m"] >= 2.0)
+    assert len(frames) >= 50 and far >= 15

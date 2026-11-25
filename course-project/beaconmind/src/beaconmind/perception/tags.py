@@ -33,7 +33,7 @@ What one detection holds (all angles in degrees, all lengths in metres):
   corners were used.
 
 Pipeline. (1) cv2.aruco finds and decodes candidate quads (DICT_APRILTAG_36h11; both the OpenCV 4.5 function API and
-the 4.7+ ArucoDetector class are supported), in two passes with small and large threshold windows (ARUCO_PASSES). (2) Corners are refitted here, the same way on every OpenCV version: sub-
+the 4.7+ ArucoDetector class are supported), in three passes with small, large and larger threshold windows (ARUCO_PASSES). (2) Corners are refitted here, the same way on every OpenCV version: sub-
 pixel edge points along each side of the black square, lens distortion removed, a straight line fitted to each side,
 corners = line intersections. (3) cv2.solvePnPGeneric with SOLVEPNP_IPPE_SQUARE on the undistorted corners gives up
 to two poses; the one with the smaller reprojection error is kept unless the two errors are close, in which case the
@@ -56,6 +56,8 @@ AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this module. Th
 corner refit, planar pose with two solutions) follows the published descriptions of AprilTag 2 (Wang and Olson, IROS
 2016) and of IPPE (Collins and Bartoli, IJCV 2014) as OpenCV implements them; the code here calls OpenCV and is not
 copied from either.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: added the third pass of ARUCO_PASSES (63 to 103 px windows),
+from the tag pilot's real frames of 2026-11-25.
 """
 import math
 
@@ -123,7 +125,15 @@ def marker_cells(tag_id):
 # both). The passes are separate because OpenCV keeps one quad per group of nearby quads over all windows before it
 # decodes: with every window in one pass, a tag near the top of the picture was lost in 3 of 40 simulated frames at
 # normal contrast that pass 1 alone finds.
-ARUCO_PASSES = ({}, {"adaptiveThreshWinSizeMin": 33, "adaptiveThreshWinSizeMax": 53, "adaptiveThreshWinSizeStep": 20})
+# Pass 3 (63, 83, 103 px; 2026-11-25) is for a close tag wider than pass 2's windows. Real frames of the tag pilot,
+# placement A01: tag T03 (id 23) about 0.8 m from the lens, about 240 px wide, grey 41 to 189 in its region; passes 1
+# and 2 found it in 3 of 30 frames (nothing rejected: the quad search never outlined it), with pass 3 in 30 of 30,
+# median range 0.937 m and bearing +0.19 degrees as in the 3, about 8 ms per frame more on the Spark. Simulated
+# (test_a_close_low_contrast_blurred_tag_needs_the_largest_windows): the same tag at 0.937 m, 18 grey levels of
+# contrast, blur 2 px: passes 1 and 2 accept 3 of 20 frames, all three passes 20 of 20. A later pass only ADDS
+# quads that no earlier pass found (find_quads), so a pass can never cost a detection the earlier ones make.
+ARUCO_PASSES = ({}, {"adaptiveThreshWinSizeMin": 33, "adaptiveThreshWinSizeMax": 53, "adaptiveThreshWinSizeStep": 20},
+                {"adaptiveThreshWinSizeMin": 63, "adaptiveThreshWinSizeMax": 103, "adaptiveThreshWinSizeStep": 20})
 
 _DETECTORS = {}
 
