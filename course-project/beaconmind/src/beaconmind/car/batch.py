@@ -32,7 +32,8 @@ margin.
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote the batch runner.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: added TagCheck, the `tag_survey` halt and the trusted-tag
 rule for a step's fix (conflicts still judged on every tag), and the fix sigma from the tag pilot's detector-noise file
-(fix_sigma_from_detector_noise, fix_sigma_source).
+(fix_sigma_from_detector_noise, fix_sigma_source). 2026-11-25: the odometry-bias halt weighs each fix by its noise
+and asks for significance (a false halt of the first real practice batch).
 """
 import hashlib
 import json
@@ -168,6 +169,8 @@ class PoseTracker:
         self.bias_sum = 0.0             # sum over fixes of (fix - tracked) along the leg driven
         self.bias_travel = 0.0          # sum of the legs' lengths
         self.bias_fixes = 0
+        self.bias_sxy = 0.0             # weighted least squares of (innovation along the leg) = scale x leg, weights
+        self.bias_sxx = 0.0             # 1 / (fix sigma^2 + tracked sigma^2): see odometry_bias()
         self.dead_reckoned = None       # the pose by odometry alone since mark_dead_reckoning()
         self.travel_since_fix_m = 0.0   # distance driven by odometry since the last fix that was taken
         self.last_tags = None           # the tags of the last fix taken
@@ -204,9 +207,13 @@ class PoseTracker:
         leg = math.hypot(self._leg[0], self._leg[1])
         if leg >= 0.05:
             ux, uy = self._leg[0] / leg, self._leg[1] / leg
-            self.bias_sum += (fix["pose"]["x_m"] - self.pose["x_m"]) * ux + (fix["pose"]["y_m"] - self.pose["y_m"]) * uy
+            innovation = (fix["pose"]["x_m"] - self.pose["x_m"]) * ux + (fix["pose"]["y_m"] - self.pose["y_m"]) * uy
+            self.bias_sum += innovation
             self.bias_travel += leg
             self.bias_fixes += 1
+            var = max(float(fix.get("sigma_xy_m") or 0.05), 0.01) ** 2 + self.sigma_xy_m ** 2
+            self.bias_sxy += leg * innovation / var
+            self.bias_sxx += leg * leg / var
         self._leg = [0.0, 0.0]
         self.travel_since_fix_m = 0.0
 
@@ -216,14 +223,21 @@ class PoseTracker:
         return dict(self.pose)
 
     def odometry_bias(self):
-        """(share of the driven distance by which fixes land ahead of the odometry, metres driven, fixes), or None
-        while there is too little to judge (under 1 m or 5 fixes)."""
-        if self.bias_travel < 1.0 or self.bias_fixes < 5:
+        """(scale error: the share of the driven distance by which fixes land ahead of the odometry, metres driven,
+        fixes, its standard error), or None while there is too little to judge (under 1 m or 5 fixes).
+
+        Each fix's innovation along the leg driven since the fix before is modelled as scale x leg + noise of variance
+        (fix sigma^2 + tracked sigma^2), and the scale is the weighted least-squares estimate. (Until 2026-11-25 it was
+        the sum of the innovations over the sum of the legs, which treats a fix 3 m away after a 5 cm leg like one
+        after 25 cm: on the real car one single-tag fix 0.21 m off, after five turns had moved the axle 5 cm, took that
+        number from +5 % to -24 % and halted the practice batch, while the transit check between two full circles
+        read the scale as 1.008.)"""
+        if self.bias_travel < 1.0 or self.bias_fixes < 5 or self.bias_sxx <= 0:
             return None
-        return self.bias_sum / self.bias_travel, self.bias_travel, self.bias_fixes
+        return self.bias_sxy / self.bias_sxx, self.bias_travel, self.bias_fixes, 1.0 / math.sqrt(self.bias_sxx)
 
     def set(self, pose, sigma_xy_m, sigma_theta_deg):
-        self._note_innovation({"pose": pose})
+        self._note_innovation({"pose": pose, "sigma_xy_m": sigma_xy_m})
         self.last_tags = None
         self.pose = {k: float(pose[k]) for k in ("x_m", "y_m", "theta_deg")}
         self.sigma_xy_m, self.sigma_theta_deg = max(float(sigma_xy_m), self.floor_m), float(sigma_theta_deg)
@@ -771,10 +785,12 @@ class BatchEnv:
         if self.tracker.conflicts >= p.fix_conflicts:
             self.monitor.halt("fix_conflict", "%d tag fixes in a row far from the tracked pose" % self.tracker.conflicts)
         bias = self.tracker.odometry_bias()
-        if bias is not None and abs(bias[0]) > p.odometry_bias_max:
-            self.monitor.halt("odometry_scale", "tag fixes land %+.0f %% of the distance from where the odometry puts "
-                              "the car (%.1f m driven, %d fixes; limit %.0f %%): the encoder scale is wrong, or the "
-                              "tags are" % (100 * bias[0], bias[1], bias[2], 100 * p.odometry_bias_max))
+        # the scale is off by more than the limit AND the fixes say so beyond their own noise (three standard errors)
+        if bias is not None and abs(bias[0]) > p.odometry_bias_max and abs(bias[0]) > 3.0 * bias[3]:
+            self.monitor.halt("odometry_scale", "tag fixes land %+.0f %% (+-%.0f %%) of the distance from where the "
+                              "odometry puts the car (%.1f m driven, %d fixes; limit %.0f %%): the encoder scale is "
+                              "wrong, or the tags are" % (100 * bias[0], 100 * bias[3], bias[1], bias[2],
+                                                          100 * p.odometry_bias_max))
         if self.tracker.sigma_xy_m > p.sigma_block_m:
             self.monitor.halt("pose_uncertain", "position uncertainty %.2f m above %.2f m" % (self.tracker.sigma_xy_m, p.sigma_block_m))
         if self.guard.axle_depth(self.tracker.pose) < 0:
@@ -1305,9 +1321,11 @@ class BatchRunner:
                           "%.2f m, %.0f degrees)" % (what, miss, turn, attempt + 1, p.start_tol_m, p.start_tol_deg))
         raise BatchStop(what)
 
-    def _scale_check(self, origin):
+    def _scale_check(self, origin, fix_sigmas=None, what="transit"):
         """The transit from one full-circle fix to the next, measured twice: by odometry alone and by the tags. A
-        wrong encoder scale (a wrong car.json) shows here, in the first minute, before any episode."""
+        wrong encoder scale (a wrong car.json) shows here, in the first minute, before any episode. fix_sigmas: the
+        two circles' own position sigmas (the episode check); without them the tracked sigma and the floor are taken,
+        as the transit always has."""
         t, p = self.tracker, self.params
         dr = t.dead_reckoned
         t.dead_reckoned = None
@@ -1319,12 +1337,15 @@ class BatchRunner:
         if by_odometry < p.transit_scale_min_m or by_tags < p.transit_scale_min_m:
             return dict(out, why="transit shorter than %.2f m" % p.transit_scale_min_m)
         ratio = by_tags / by_odometry
-        slack = 2.0 * (t.sigma_xy_m + p.fix_floor_m) / by_tags      # what the two fixes' own uncertainty allows
-        out.update(checked=True, tags_over_odometry=round(ratio, 3))
+        if fix_sigmas:
+            slack = 2.0 * math.hypot(*fix_sigmas) / by_tags            # the two circles' own uncertainty
+        else:
+            slack = 2.0 * (t.sigma_xy_m + p.fix_floor_m) / by_tags      # what the two fixes' own uncertainty allows
+        out.update(checked=True, tags_over_odometry=round(ratio, 3), limit=round(p.transit_scale_tol + slack, 3))
         if abs(ratio - 1.0) > p.transit_scale_tol + slack:
-            self.monitor.halt("odometry_scale", "the transit measures %.2f m by odometry and %.2f m by the tags (ratio "
+            self.monitor.halt("odometry_scale", "the %s measures %.2f m by odometry and %.2f m by the tags (ratio "
                               "%.2f, limit 1 +- %.2f): the encoder scale in configs/car.json is wrong, or the tags are"
-                              % (by_odometry, by_tags, ratio, p.transit_scale_tol + slack))
+                              % (what, by_odometry, by_tags, ratio, p.transit_scale_tol + slack))
         return out
 
     # ------------------------------------------------------------ the batch
@@ -1428,6 +1449,9 @@ class BatchRunner:
                 raise BatchStop("odometry scale")
             start = dict(self.tracker.pose)
             entry["start_pose_world"] = start
+            # the episode itself is checked like the transit: odometry alone from this circle to the end circle
+            # against the two circles' fixes (2026-11-25; the per-step statistic alone was too noisy on the car)
+            episode_origin = self.tracker.mark_dead_reckoning()
             scene = self.kr.room_scene(self.world, start_pose=start)
             inner = self.rig.make_env(ep_id, scene=scene, log_dir=os.path.join(ep_dir, "backend"))
             env = BatchEnv(inner, self.tracker, self.guard, self.monitor, self.tags, p, start,
@@ -1462,6 +1486,16 @@ class BatchRunner:
             post = self._service_env(ep_id + "-post", os.path.join(ep_dir, "post"))
             post.reset(entry["seed"])
             entry["end_fix"] = self.localise(post, "%s: end pose" % ep_id, required=False)
+            if entry["end_fix"].get("ok") and not entry["end_fix"].get("tracked_only"):
+                sigmas = (float(entry["start_fix"].get("circle_sigma_xy_m") or entry["start_fix"]["sigma_xy_m"]),
+                          float(entry["end_fix"].get("circle_sigma_xy_m") or entry["end_fix"]["sigma_xy_m"]))
+                entry["odometry_scale_check_episode"] = self._scale_check(episode_origin, fix_sigmas=sigmas,
+                                                                          what="episode (start circle to end circle)")
+                if self.monitor.halted is not None:
+                    raise BatchStop("odometry scale over the episode")
+            else:
+                self.tracker.dead_reckoned = None
+                entry["odometry_scale_check_episode"] = {"checked": False, "why": "no full-circle fix at the end"}
             entry["end_pose_world"] = dict(self.tracker.pose)
             entry["end_pose_map"] = to_map_pose(start, self.tracker.pose)
             # how far the pose tracked through the episode was from what the end circle then measured

@@ -107,6 +107,22 @@ def recorder_silent(session, max_age_s=120.0, now=None):
 INTERRUPTS = ("SIGINT", "SIGTERM", "SIGHUP")
 
 
+def make_recorder_check(session, data_dir=None):
+    """The batch's recorder check: None while `session` is the active recorder session and writing, else why not.
+    A function of its own, so nothing in cmd_run can rebind what it compares: the first real batch (2026-11-25) halted
+    before any move with "the recorder session SIGHUP is no longer active" because the closure read a variable that
+    the signal loop reused (fixed in 07dd34f; AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25)."""
+    name = os.path.basename(os.path.normpath(session))
+    data = str(data_dir or ROOT / "data")
+
+    def check():
+        now = active_session_dir(data)
+        if not now or os.path.basename(os.path.normpath(now)) != name:
+            return "the recorder session %s is no longer active" % name
+        return recorder_silent(session)
+    return check
+
+
 def _later_signal(_signum, _frame):
     """A stop signal after the first: nothing to do, the stop is under way. (A Python handler rather than SIG_IGN: a
     signal already pending when the handler changes would otherwise be reported as "ignored due to race condition".)"""
@@ -345,16 +361,7 @@ def cmd_run(args):
         detect = camera.perception_detector(tag_size_m=args.tag_size, tag_center_height_m=args.tag_height,
                                             max_range_m=args.max_range)
         rig = B.Rig(link, cam, detect, latch=latch, real=True, notes={"session": os.path.basename(session)})
-        session_name = os.path.basename(session)
-
-        # The name is bound as a default argument: the closure must not read a variable of cmd_run that a later
-        # loop rebinds (the signal loop below once turned it into "SIGHUP" and halted the first real batch,
-        # 2026-11-25). AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: this fix.
-        def recorder_check(session_name=session_name):
-            now = active_session_dir(str(ROOT / "data"))
-            if not now or os.path.basename(now) != session_name:
-                return "the recorder session %s is no longer active" % session_name
-            return recorder_silent(session)
+        recorder_check = make_recorder_check(session)
         marker_path = os.path.join(session, "batch_markers.jsonl")
 
     out.mkdir(parents=True, exist_ok=True)

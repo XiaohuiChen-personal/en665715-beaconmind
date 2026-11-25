@@ -965,19 +965,26 @@ def test_a_stale_camera_frame_is_an_error():
 
 
 def test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall(tmp_path):
-    """The review's probe: the odometer reads 25 % short (a wrong car.json). The tracked pose then lags the car, and
-    before this check the car drove into the wall with a confident pose. Tag fixes that keep landing ahead of the
-    odometry along the way driven now halt the batch."""
+    """The review's probe: the odometer reads 25 % short (a wrong car.json). Before review finding 8 the car drove into
+    the wall with a confident pose. Since 2026-11-25 (the false halt of the first real practice batch) the scale is
+    judged where the evidence is good: the transit and the episode itself between two full circles, and the per-step
+    fixes only when their own noise allows it (three standard errors). Here the start is too close for the transit
+    check (the 20-tag room at 3.0 m), so the episode's end circle has to catch it: in two of these three seeds it does;
+    in the third the end circle is weak and the per-step evidence is 1.9 standard errors, and the batch completes.
+    Every seed: the simulated car never comes near a wall."""
     from beaconmind.car import config as C
     cfg = C.load_config()
     wrong = cfg.replace(ticks_per_m_left=cfg.ticks_per_m_left / 0.75, ticks_per_m_right=cfg.ticks_per_m_right / 0.75)
+    start = {"id": "S1", "x_m": 2.5, "y_m": 1.5, "theta_deg": 90.0}
+    place = {"x_m": 2.4, "y_m": 1.6, "theta_deg": 70.0}
+    halted = 0
     for seed in (1, 2, 3):
         out = tmp_path / ("s%d" % seed)
         latch = Latch(out / "LATCH")
-        params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(TAPED), episodes=1, max_steps=80,
-                               max_range_m=2.5)
-        rig = B.dry_rig(WORLD, PLACE, latch=latch, seed=seed, max_range_m=2.5, cfg=wrong)
-        runner = B.BatchRunner(params, rig, WORLD, out / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
+        params = B.BatchParams(world_path="x", start_poses=[start], initial_pose=dict(place), episodes=1, max_steps=80,
+                               max_range_m=3.0)
+        rig = B.dry_rig(WORLD20, place, latch=latch, seed=seed, max_range_m=3.0, cfg=wrong)
+        runner = B.BatchRunner(params, rig, WORLD20, out / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
                                log=lambda *a: None, run_episode=cl.run_episode)
         depth = {"min": 9.0}
         walls = rig.link.on_step
@@ -987,9 +994,40 @@ def test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall(tmp_path):
             depth["min"] = min(depth["min"], runner.guard.footprint_depth(rig.sim_truth_fn()))
         rig.link.on_step = watch
         result = runner.run()
-        assert result["status"] == "halted", (seed, result)
         assert depth["min"] > 0.03 and not rig.link.sim.p.blocked_left, (seed, depth, result)
-        assert result["halt"]["code"] in ("odometry_scale", "fix_conflict", "start_pose", "no_fix", "guard_blocked"), result
+        if result["status"] == "halted":
+            halted += 1
+            assert result["halt"]["code"] in ("odometry_scale", "fix_conflict", "start_pose", "no_fix", "guard_blocked"), result
+            if result["halt"]["code"] == "odometry_scale":
+                assert "start circle to end circle" in result["halt"]["detail"]
+    assert halted >= 2, halted
+
+
+def test_noisy_fixes_after_short_legs_do_not_call_a_correct_odometer_biased():
+    """The first real practice batch (2026-11-25) halted `odometry_scale` (-23 %) with a correct odometer: one
+    single-tag fix 0.21 m off (sigma 0.12 m), after five turns had moved the axle 5 cm, dominated the sum of
+    innovations over the sum of legs. Replayed here with its numbers (legs, innovations along them, fix sigmas): the
+    old ratio says -18 %, the weighted estimate says -10 % +- 22 %: not significant, no halt."""
+    t = B.PoseTracker(S1, 0.05, 2.0)
+    legs = [(0.247, 0.041, 0.178), (0.245, -0.001, 0.204), (0.100, 0.0, 0.182), (0.093, -0.009, 0.276),
+            (0.051, -0.209, 0.123), (0.246, -0.017, 0.076), (0.245, -0.032, 0.062)]
+    for leg, innovation, sigma in legs:
+        t._leg = [0.0, leg]
+        t.pose = {"x_m": 0.0, "y_m": 0.0, "theta_deg": 90.0}
+        t.sigma_xy_m = 0.05
+        t._note_innovation({"pose": {"x_m": 0.0, "y_m": innovation, "theta_deg": 90.0}, "sigma_xy_m": sigma})
+    assert t.bias_sum / t.bias_travel == pytest.approx(-0.184, abs=0.01)          # what halted the practice batch
+    scale, travel, fixes, se = t.odometry_bias()
+    assert scale == pytest.approx(-0.10, abs=0.02) and se == pytest.approx(0.22, abs=0.02)
+    assert not (abs(scale) > 0.12 and abs(scale) > 3 * se)                       # no halt
+    big = B.PoseTracker(S1, 0.05, 2.0)                                             # a real 25 % error, precise fixes
+    for _ in range(8):
+        big._leg = [0.0, 0.25]
+        big.pose = {"x_m": 0.0, "y_m": 0.0, "theta_deg": 90.0}
+        big.sigma_xy_m = 0.05
+        big._note_innovation({"pose": {"x_m": 0.0, "y_m": 0.0625, "theta_deg": 90.0}, "sigma_xy_m": 0.03})
+    scale, travel, fixes, se = big.odometry_bias()
+    assert scale == pytest.approx(0.25, abs=0.01) and scale > 3 * se            # halts
 
 
 def test_a_correct_odometer_is_not_called_biased(tmp_path):
@@ -1900,3 +1938,25 @@ def test_a_circle_of_tags_not_yet_trusted_does_not_count_toward_no_fix(tmp_path)
             break
         env.step("TURN_LEFT_30")
     assert r.monitor.halted["code"] == "no_fix"
+
+
+def test_the_recorder_check_compares_the_session_it_was_made_for(tmp_path):
+    """The first real batch (2026-11-25) halted before any move with "the recorder session SIGHUP is no longer
+    active": the check was a closure over a variable of cmd_run that the signal loop reused. It is a function of its
+    own now (make_recorder_check): None while its session is the active one and writing; a reason otherwise. And the
+    tool's real path builds it through that function, with nothing in between that could rebind it."""
+    tool = load_batch_tool()
+    data = tmp_path / "data"
+    session = data / "real" / "20261125-034000-batch-b2-real-01"
+    (session / "logs").mkdir(parents=True)
+    (session / "logs" / "ping_car.txt").write_text("x")
+    (data / "real" / ".active").write_text(session.name + "\n")
+    check = tool.make_recorder_check(str(session), data_dir=str(data))
+    assert check() is None
+    (data / "real" / ".active").write_text("20261125-040000-other\n")
+    (data / "real" / "20261125-040000-other").mkdir()
+    assert check() == "the recorder session 20261125-034000-batch-b2-real-01 is no longer active"
+    (data / "real" / ".active").unlink()
+    assert "no longer active" in check()
+    source = (ROOT / "tools" / "car_batch.py").read_text()
+    assert "recorder_check = make_recorder_check(session)" in source
