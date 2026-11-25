@@ -16,7 +16,15 @@ doing any course-project work and update it at the end of every course-project s
 minutes; demo 3–5 minutes as a pre-recorded video; 15 minutes in all per project (20 for a group of two, which does
 not apply). This settles the open question "presentation requirements (assumed 15 minutes)" of 2026-11-18: the talk
 itself gets at most 10 minutes, not 15. **The deck must be cut:** it has 15 slides written for a 15-minute talk
-(`slides/outline.template.md`, private `presentation/`). The report's page limit is still unknown (assumed 12 pages).
+(`slides/outline.template.md`, private `presentation/`).
+
+**Decisions (Xiaohui, 2026-11-24).** (1) **No page limit for the report:** "Doesn't look like there is a page limit";
+the 12-page budget of 2026-11-18 is lifted (`report/PENDING.md` updated). (2) **Real-run DV file approved:** "I am OK
+with a separate design-values file". Plan: `configs/dv-real.json` = the frozen `dv.json` with only the three noise
+fields (`sigma_range_a_m`, `sigma_range_b_per_m`, `sigma_bearing_deg`) from the tag pilot's `configs/detector_noise.json`
+and `reject_range_above_m` set to the range limit Xiaohui confirms after the pilot (3.0 m provisional); written only
+after the pilot; a `--dv` argument in `closed_loop_run.py`, `car_batch.py` and `room_rehearsal.py`; the frozen file
+and the pre-registered files untouched. Given to the batch agent as an extension of its task 6.
 
 **State checked at the start (about 23:20 CST on the Spark).** Spark clone at `65173fe` (same as the Mac), stale
 untracked `report/generated/tab-kinds.tex` only; no container running; GPU free; access point up; `bm-cam-relay` up;
@@ -40,8 +48,7 @@ disjoint files, no API spend, nothing that commands the car, no edits to this fi
   `configs/detector_noise.json` sigmas; paste-ready first-batch commands. Must not start the micro-ROS agent, publish to
   `/pico/*`, or write `ATTENDED_PASS.json`.
 
-**Still open for Xiaohui:** a real-run DV file with the tag pilot's sigmas (recommended: yes); the report's page
-limit; confirm the harness-based demo video. **Needs Xiaohui next (unchanged):** measure one printed square
+**Still open for Xiaohui:** confirm the harness-based demo video; after the pilot, the range limit (3.0 or 2.5 m). **Needs Xiaohui next (unchanged):** measure one printed square
 (160 ± 1 mm); mount the 20 tags from the new sheet and record the centres; tag pilot; stand test and floor check.
 
 ## 2026-11-18 (later) — delegation, unattended batches, spend approvals; parallel agents, room rehearsal, tag layout C20 decided

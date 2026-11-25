@@ -3,7 +3,7 @@
 Every `\pending{...}` in `Chen-Project-Report.tex` prints in red as **[PENDING: ...]**. List them with
 `python3 course-project/tools/report_assets.py --pending` (6 today). To fill one: add the numbers to
 `tools/report_assets.py` from the evidence file (so they stay generated), replace the `\pending{}` with prose that
-uses `\bmnum{...}`, rebuild, and delete the row here. The report is 12 full pages with no slack: each filled placeholder should take about the space its red text takes now (about 18 column lines in all), or something else must be cut.
+uses `\bmnum{...}`, rebuild, and delete the row here. The report is 12 full pages. The 12-page budget was an assumption; Xiaohui found no page limit on Canvas (2026-11-24), so the real-car results may take the room they need and material cut in the 2026-11-18 review rounds may return. Keep it tight anyway: every page is read by a grader.
 
 | # | Where | What goes there | Evidence that will supply it | Work-list item |
 | --- | --- | --- | --- | --- |
