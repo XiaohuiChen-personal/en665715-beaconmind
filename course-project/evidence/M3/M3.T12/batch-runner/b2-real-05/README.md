@@ -202,7 +202,8 @@ This note was written before b2-real-07. That batch ended on a third right-wheel
 the stop (the move's highest 0.590), the left wheel at 0.067 m/s, tracked pose (3.16, 2.16, 72°). That is 0.8 m east of
 the old tape line, on fresh AA cells (CONTEXT.md; its records are not analysed here). The tape does not explain this
 one. **The order in §6 changes:** the right wheel, tyre and gearbox come first. All three stalls are on the right
-wheel at the slow end of a move (duty 0.36–0.42), and in b2-real-06 the right wheel needed 8 of the 9 assist kicks.
+wheel at the slow end of a move (duty 0.295 in the b2-real-03 turn, 0.375 and 0.418 in the two straights), and in
+b2-real-06 the right wheel needed 8 of the 9 assist kicks.
 The tape spot comes second: two stalls and most wheel-against-gyro flags sit there. §1 still holds: the right wheel's
 speed per duty did not fall over the day, so the fault comes and goes (drag, a fibre on the axle, a tyre, the
 gearbox), and the motor itself is not weakening.
