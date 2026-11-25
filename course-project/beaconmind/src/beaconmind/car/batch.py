@@ -23,7 +23,16 @@ start, its last end and one spot check.
 
 Nothing here imports ROS. The same code runs on the simulated car (dry_rig): that is the --dry-run and the tests.
 
+A tag whose surveyed centre is wrong (a number misread on the mounting sheet) would pull the tracked pose with it.
+TagCheck compares every tag with the others in each fit of four tags or more (resection.check_tags), adds the
+comparisons up over the batch, halts on a tag that keeps disagreeing (`tag_survey`), and lets a tag steer a step's
+fix only once it has been compared closely enough that an error which could still hide in it stays inside the guard's
+margin.
+
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote the batch runner.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: added TagCheck, the `tag_survey` halt and the trusted-tag
+rule for a step's fix (conflicts still judged on every tag), and the fix sigma from the tag pilot's detector-noise file
+(fix_sigma_from_detector_noise, fix_sigma_source).
 """
 import hashlib
 import json
@@ -37,6 +46,8 @@ from .moves import ACTIONS
 from .odometry import wrap_deg
 from .resection import position_fix, resect, usable_detection
 
+ASSUMED_FIX_SIGMA = "assumed: 0.03 m + 0.04 x range (plan 3.6; the tag pilot's figures are to replace it)"
+
 FORWARD_STEPS = (("FORWARD_25", 0.25), ("FORWARD_10", 0.10))
 TURN_DEG = 30.0
 MANIFEST_SCHEMA = "bm.car_batch/1"
@@ -45,7 +56,7 @@ SAFETY_HALTS = ("telemetry_stale", "command_timeout", "link_lost", "car_restart"
                 "supply_low", "stall", "move_timeout", "slow", "no_fix", "fix_conflict", "outside_drive_area",
                 "executor_refused", "guard_blocked", "start_pose", "drive_map", "harness_latch", "error", "pose_uncertain",
                 "odometry_scale",
-                "episode_wall_clock", "detector", "recorder")
+                "episode_wall_clock", "detector", "recorder", "tag_survey")
 
 
 @dataclass
@@ -87,6 +98,17 @@ class BatchParams:
     # set every stated uncertainty and through it the guard's margin; the tag pilot (work list 2.4) should replace them
     fix_sigma_a_m: float = 0.03
     fix_sigma_b: float = 0.04
+    fix_sigma_source: str = ASSUMED_FIX_SIGMA   # where the two numbers above came from (recorded in the manifest)
+    # the check of the surveyed tags against each other (TagCheck): a tag is halted on when the other tags put it,
+    # over all the batch's fits so far, farther from its surveyed centre than max(tag_check_min_m, tag_check_k sigma);
+    # it may steer a step's fix by itself only while that distance is at most max(tag_check_min_m, tag_trust_k sigma)
+    # and that bound is at most tag_trust_max_m: a tag more than 0.30 m wrong is never trusted. 0.30 m: a tag 0.3 m
+    # wrong gave the review's probe 4 cm of wall clearance, no contact.
+    tag_check_k: float = 4.0
+    tag_trust_k: float = 3.0
+    tag_check_min_m: float = 0.15
+    tag_trust_max_m: float = 0.30
+    tag_trust: bool = True              # False: every tag steers fixes as before 2026-11-24 (tests and comparison only)
     # health
     telemetry_max_age_s: float = 1.0
     min_vsys_mv: int = 4300
@@ -246,6 +268,111 @@ class PoseTracker:
     def snapshot(self):
         return {"pose": dict(self.pose), "sigma_xy_m": round(self.sigma_xy_m, 4),
                 "sigma_theta_deg": round(self.sigma_theta_deg, 2), "steps_since_fix": self.steps_since_fix}
+
+
+class TagCheck:
+    """Per surveyed tag, the evidence that it is where the world file says: every comparison with the other tags of
+    a fit (resection.check_tags) is added as a vector with weight 1/sigma^2. The weighted mean m is where the other
+    tags put this tag, relative to its survey, sigma_m its uncertainty.
+
+    flagged: |m| > max(min_m, k sigma_m): the tag is not where the world file says (or not flat, or covered) -> the
+    batch halts (`tag_survey`). trusted: compared at least once and |m| <= t = max(min_m, trust_k sigma_m) <=
+    trust_max_m. So a tag whose mean says it is more than trust_max_m off is never trusted, and one that has not been
+    compared closely enough (t above trust_max_m) is not trusted yet. The halt asks for more (k > trust_k): a tag
+    between the two is set aside without stopping the batch. Only trusted tags steer a step's fix (two tags, or one tag
+    and the tracked heading); full circles use every tag, and that is how tags are checked. The evidence lives in this
+    process: a resumed batch checks again from its first circle."""
+
+    def __init__(self, k=4.0, min_m=0.15, trust_max_m=0.30, trust_k=3.0):
+        self.k, self.min_m, self.trust_max_m, self.trust_k = k, min_m, trust_max_m, trust_k
+        self.stats = {}                 # uid -> {"id", "sw", "swx", "swy", "n", "worst"}
+
+    def add(self, check, where=""):
+        """Add one fit's comparisons. Returns the tags flagged now (uids). An unresolved check (four or fewer tags
+        that disagree, no clean reference) adds nothing."""
+        if not check or not check.get("resolved", False):
+            return []
+        for row in check["tags"]:
+            if not (row["sigma_m"] > 0 and math.isfinite(row["sigma_m"])):
+                continue
+            st = self.stats.setdefault(str(row["tag"]), {"id": row["id"], "sw": 0.0, "swx": 0.0, "swy": 0.0, "n": 0,
+                                                         "worst": None})
+            w = 1.0 / row["sigma_m"] ** 2
+            st["sw"] += w
+            st["swx"] += w * row["dx_m"]
+            st["swy"] += w * row["dy_m"]
+            st["n"] += 1
+            if st["worst"] is None or row["residual_m"] > st["worst"]["residual_m"]:
+                st["worst"] = dict(row, where=where)
+        return self.flagged()
+
+    def verdict(self, uid):
+        st = self.stats.get(str(uid))
+        if not st or st["sw"] <= 0:
+            return None
+        sigma = 1.0 / math.sqrt(st["sw"])
+        mx, my = st["swx"] / st["sw"], st["swy"] / st["sw"]
+        limit = max(self.min_m, self.k * sigma)
+        trust = max(self.min_m, self.trust_k * sigma)
+        offset = math.hypot(mx, my)
+        return {"tag": str(uid), "id": st["id"], "n": st["n"], "dx_m": round(mx, 4), "dy_m": round(my, 4),
+                "offset_m": round(offset, 4), "sigma_m": round(sigma, 4), "limit_m": round(limit, 4),
+                "trust_limit_m": round(trust, 4), "flagged": offset > limit,
+                "trusted": offset <= trust <= self.trust_max_m}
+
+    def flagged(self):
+        return [uid for uid in self.stats if self.verdict(uid)["flagged"]]
+
+    def trusted(self):
+        return {uid for uid in self.stats if self.verdict(uid)["trusted"]}
+
+    def snapshot(self):
+        return {uid: dict(self.verdict(uid), worst=self.stats[uid]["worst"]) for uid in sorted(self.stats)}
+
+
+def tag_survey_detail(tagcheck, uid, tags):
+    """The halt's text for a tag that disagrees with the others."""
+    v = tagcheck.verdict(uid)
+    survey = next((t for t in tags if str(t.get("uid", t["id"])) == str(uid)), None)
+    where = ""
+    if survey is not None:
+        where = " (%.2f, %.2f); the other tags put it at (%.2f, %.2f)" % (
+            survey["x_m"], survey["y_m"], survey["x_m"] + v["dx_m"], survey["y_m"] + v["dy_m"])
+    return ("tag %s (id %s) is %.2f m from its surveyed centre%s, over %d comparisons (limit %.2f m). Look at the "
+            "tag (flat, uncovered, not moved), measure its centre again, correct the world file and record-pass "
+            "--world with it; then run the batch under a new label" % (uid, v["id"], v["offset_m"], where, v["n"],
+                                                                       v["limit_m"]))
+
+
+def fix_sigma_from_detector_noise(model, max_range_m):
+    """(fix_sigma_a_m, fix_sigma_b, description) from the tag pilot's bm.detector_noise/1 model (tools/tag_pilot.py
+    analyze writes configs/detector_noise.json). The batch's per-tag sigma is one isotropic number, a + b x range,
+    and must cover both of the pilot's error directions up to max_range_m:
+      along the line of sight: |range bias| + range sigma = (|ba| + sa) + (|bb| + sb) r  (the bias is not corrected
+        by the detector, so it is counted as error);
+      across it: r x (|bearing bias| + bearing sigma at max_range_m) in radians = c r.
+    The length of the two-vector (a1 + b1 r, c r) is at most a1 + hypot(b1, c) r, which is what is returned.
+    ValueError when the model is not a usable bm.detector_noise/1 document."""
+    if not isinstance(model, dict) or model.get("schema") != "bm.detector_noise/1":
+        raise ValueError("not a bm.detector_noise/1 document")
+    try:
+        rb, rs, bs = model["range_bias_m"], model["range_sigma_m"], model["bearing_sigma_deg"]
+        nums = [float(rb["a"]), float(rb["b"]), float(rs["a"]), float(rs["b"]), float(model["bearing_bias_deg"]),
+                float(bs["a"]), float(bs["b"]), float(max_range_m)]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("the detector-noise model lacks a number: %s" % exc)
+    if not all(math.isfinite(v) for v in nums) or nums[2] < 0 or nums[3] < 0 or nums[5] < 0 or nums[6] < 0:
+        raise ValueError("the detector-noise model has a sigma that is negative or not a number")
+    rba, rbb, rsa, rsb, bb, bsa, bsb, r_max = nums
+    across = math.radians(abs(bb) + bsa + bsb * r_max)
+    a = max(abs(rba) + rsa, 0.005)
+    b = math.hypot(abs(rbb) + rsb, across)
+    source = model.get("source") or {}
+    text = ("tag pilot %s (%s, %s frames, %s placements): range bias %+.4f %+.4f r, range sigma %.4f + %.4f r m, "
+            "bearing bias %+.2f deg, bearing sigma %.3f + %.3f r deg, reliable to %s m -> %.4f + %.4f x range m up to "
+            "%.2f m" % (source.get("log"), source.get("date"), source.get("n_frames"), source.get("n_placements"),
+                        rba, rbb, rsa, rsb, bb, bsa, bsb, model.get("max_range_m"), a, b, r_max))
+    return a, b, text
 
 
 # ---------------------------------------------------------------- the move guard
@@ -500,8 +627,10 @@ class BatchEnv:
     """RealCarEnv with the tracker, the guard and the monitor on every step. Implements the closed-loop harness's
     environment protocol. `start` is the arena-frame pose that is the origin of the map frame the harness sees."""
 
-    def __init__(self, inner, tracker, guard, monitor, tags, params, start, truth_path=None, sim_truth_fn=None):
+    def __init__(self, inner, tracker, guard, monitor, tags, params, start, truth_path=None, sim_truth_fn=None,
+                 tagcheck=None):
         self.inner, self.tracker, self.guard, self.monitor = inner, tracker, guard, monitor
+        self.tagcheck = tagcheck        # TagCheck, or None: then every surveyed tag steers fixes
         self.tags, self.params, self.start = tags, params, dict(start)
         self.truth_path, self.sim_truth_fn = truth_path, sim_truth_fn
         self.source = inner.source
@@ -599,15 +728,20 @@ class BatchEnv:
             self.tracker.steps_since_fix = 0        # (the circle in progress is the fix; these steps are not "no fix")
         elif usable:
             noise = {"sigma_a_m": self.params.fix_sigma_a_m, "sigma_b": self.params.fix_sigma_b}
+            trusted = self.tagcheck.trusted() if (self.tagcheck is not None and self.params.tag_trust) else None
+            # judged with every surveyed tag, exactly as before the trust rule: a view that disagrees with the
+            # tracked pose is a conflict whether or not its tags are trusted yet (the fix_conflict halt is unchanged)
             fix = resect([{"pose": None, "detections": usable}], self.tags, prior=self.tracker.pose,
-                         max_range_m=self.params.max_range_m, **noise)
+                         max_range_m=self.params.max_range_m,
+                         tag_check={"k": self.params.tag_check_k, "min_m": self.params.tag_check_min_m}, **noise)
+            self._check_tags(fix.get("check"), "a step's view")
             if fix["ok"] and self.tracker.disagrees(fix):
                 fix = dict(fix, ok=False, why="far_from_prior", rejected="disagrees with the tracked pose")
                 self.tracker.conflicts += 1
                 self.tracker.rejected += 1
             elif fix["ok"]:
-                fix["kind"] = "pose"
-                self.tracker.correct(fix)
+                # it agrees: only the trusted tags of it move the pose (two of them; else one and the heading)
+                fix = self._trusted_fix(usable, fix, trusted, noise)
             else:
                 # fewer than two tags, or an unusable pair: one tag and the tracked heading still give a position
                 one = position_fix(usable, self.tags, self.tracker.pose, self.tracker.sigma_theta_deg,
@@ -617,8 +751,7 @@ class BatchEnv:
                     self.tracker.rejected += 1
                     fix = dict(one, ok=False, why="far_from_prior", rejected="disagrees with the tracked pose")
                 elif one["ok"]:
-                    self.tracker.correct_position(one)
-                    fix = one
+                    fix = self._trusted_fix(usable, None, trusted, noise, one=one)
                 elif "far_from_prior" in (fix.get("why"), one.get("why")):
                     self.tracker.conflicts += 1
                     fix = dict(fix, position_fix=one.get("why"))
@@ -652,6 +785,37 @@ class BatchEnv:
                            "scan_allowed": bool(turn and inner_safety.get("scan_allowed", True))}
         self._write_truth(sense, fix, action)
         return sense
+
+    def _trusted_fix(self, usable, pose_fix, trusted, noise, one=None):
+        """Blend in the part of an agreeing view that rests on trusted tags (TagCheck), and return what was used.
+        pose_fix: the view's two-tag fix over all tags, or None; one: its one-tag position fix over all tags. With
+        trusted None (no TagCheck, or tag_trust off) the fix is used as it is, as before 2026-11-24."""
+        if pose_fix is not None:
+            use = pose_fix if trusted is None else resect(
+                [{"pose": None, "detections": usable}], self.tags, prior=self.tracker.pose,
+                max_range_m=self.params.max_range_m, trusted=trusted, **noise)
+            if use["ok"] and not self.tracker.disagrees(use):
+                use["kind"] = "pose"
+                self.tracker.correct(use)
+                return use
+            one = None
+        if one is None or trusted is not None:
+            one = position_fix(usable, self.tags, self.tracker.pose, self.tracker.sigma_theta_deg,
+                               max_range_m=self.params.max_range_m, trusted=trusted, **noise)
+        if one["ok"] and not self.tracker.disagrees(one):
+            self.tracker.correct_position(one)
+            return one
+        # the tags that agree are not checked yet: no fix this step (and no conflict: the view agreed)
+        return dict(one, ok=False, why=one.get("why") if not one["ok"] else "disagrees with the tracked pose",
+                    untrusted=sorted({str(u) for u in (one.get("untrusted") or []) + ((pose_fix or {}).get("untrusted") or [])}))
+
+    def _check_tags(self, check, where):
+        """Add a fit's tag comparisons; a tag that keeps disagreeing with the others halts the batch."""
+        if self.tagcheck is None or not check:
+            return
+        flagged = self.tagcheck.add(check, where)
+        if flagged:
+            self.monitor.halt("tag_survey", tag_survey_detail(self.tagcheck, flagged[0], self.tags))
 
     def truth(self):
         """The best pose the batch has, in the map frame, with what it rests on. Not tape: see the module text."""
@@ -914,6 +1078,7 @@ class BatchRunner:
         self.guard = MoveGuard(world, self.footprint, self.sweep, params.wall_margin_m, params.sigma_block_m)
         self.tracker = PoseTracker(params.initial_pose, params.initial_sigma_m, params.initial_sigma_deg,
                                    params.fix_floor_m)
+        self.tagcheck = TagCheck(params.tag_check_k, params.tag_check_min_m, params.tag_trust_max_m, params.tag_trust_k)
         self.config = hashlib.sha256(json.dumps([params.digest(), config_extra], sort_keys=True, default=str).encode()).hexdigest()[:12]
         self.manifest = None
         self.localised = False          # no full-circle fix yet in this process: the taped pose is all there is
@@ -955,6 +1120,8 @@ class BatchRunner:
         m["elapsed_s"] = round(m.get("elapsed_base", 0.0) + self.monitor.clock() - self.monitor.t_batch, 1)
         m["last_tracked_pose_world"] = dict(self.tracker.snapshot(), confirmed_by_a_circle=self.localised)
         m["latch_error"] = self.monitor.latch_error
+        m["tag_check"] = {"this_run": self.tagcheck.snapshot(), "flagged": self.tagcheck.flagged(),
+                          "trusted": sorted(self.tagcheck.trusted())}
         if self.budget is not None:
             m["spent_usd"] = round(self.budget.spent, 5)
         try:
@@ -982,7 +1149,8 @@ class BatchRunner:
     def _service_env(self, label, log_dir):
         inner = self.rig.make_env(label, scene=None, log_dir=log_dir)
         env = BatchEnv(inner, self.tracker, self.guard, self.monitor, self.tags, self.params, self.tracker.pose,
-                       truth_path=os.path.join(log_dir, "truth.jsonl"), sim_truth_fn=self.rig.sim_truth_fn)
+                       truth_path=os.path.join(log_dir, "truth.jsonl"), sim_truth_fn=self.rig.sim_truth_fn,
+                       tagcheck=self.tagcheck)
         env.use_views = self.localised
         return env
 
@@ -1017,7 +1185,7 @@ class BatchRunner:
                 views.append({"pose": dict(rel), "detections": sense["detections"]})
         p = self.params
         noise = {"max_range_m": p.max_range_m, "sigma_a_m": p.fix_sigma_a_m, "sigma_b": p.fix_sigma_b,
-                 "rms_max_m": p.scan_rms_max_m}
+                 "rms_max_m": p.scan_rms_max_m, "tag_check": {"k": p.tag_check_k, "min_m": p.tag_check_min_m}}
         if self.localised:
             fix = resect(views, self.tags, prior=self.tracker.pose, prior_gate_m=1.0, prior_gate_deg=45.0, **noise)
         else:
@@ -1032,7 +1200,13 @@ class BatchRunner:
                 if off_m > p.initial_gate_m or off_deg > p.initial_gate_deg:
                     fix = {"ok": False, "why": "the tags put the car %.2f m and %.0f degrees from the taped pose "
                            "(limits %.2f m, %.0f degrees)" % (off_m, off_deg, p.initial_gate_m, p.initial_gate_deg),
-                           "n_tags": fix["n_tags"], "pose": fix["pose"], "disagrees_with_tape": True}
+                           "n_tags": fix["n_tags"], "pose": fix["pose"], "disagrees_with_tape": True,
+                           "check": fix.get("check")}
+        # every tag of the circle against the others: one that keeps disagreeing halts the batch (tag_survey). (The
+        # comparison is among the tags themselves, so it counts whether or not the circle became a fix.)
+        env._check_tags(fix.get("check"), what)
+        if self.monitor.halted is not None:
+            raise BatchStop(what)
         blended = False
         if fix["ok"] and fix["sigma_xy_m"] > self.params.scan_sigma_max_m:
             # few tags, or far ones: not good enough to replace the pose. When a circle has confirmed the pose
@@ -1241,7 +1415,8 @@ class BatchRunner:
             scene = self.kr.room_scene(self.world, start_pose=start)
             inner = self.rig.make_env(ep_id, scene=scene, log_dir=os.path.join(ep_dir, "backend"))
             env = BatchEnv(inner, self.tracker, self.guard, self.monitor, self.tags, p, start,
-                           truth_path=os.path.join(ep_dir, "truth.jsonl"), sim_truth_fn=self.rig.sim_truth_fn)
+                           truth_path=os.path.join(ep_dir, "truth.jsonl"), sim_truth_fn=self.rig.sim_truth_fn,
+                           tagcheck=self.tagcheck)
             path = os.path.join(ep_dir, "seed_%d.jsonl" % entry["seed"])
             watch = [self.halt_path] + ([self.rig.latch.path] if self.rig.latch is not None else [])
             agent = HaltAwareDriver(self.driver, self.monitor, self.rig.link)
@@ -1339,6 +1514,12 @@ def summary_text(m):
                                                "; the project latch was set" if halt.get("safety") else ""))
         lines.append("Nothing is retried. Look at the car, then: car_batch.py clear-halt --out <this folder> "
                      "--operator <name> (and car_move.py clear-latch if the project latch is set), then run again.")
+    tc = m.get("tag_check") or {}
+    if tc.get("this_run"):
+        lines.append("tags checked against each other in this run: %d, trusted to steer a step's fix: %d%s" % (
+            len(tc["this_run"]), len(tc.get("trusted") or []),
+            "; DISAGREEING: %s" % ", ".join(tc["flagged"]) if tc.get("flagged") else ""))
+    lines.append("fix sigma: %s" % m["params"].get("fix_sigma_source", ASSUMED_FIX_SIGMA))
     lines.append("")
     for e in m.get("episodes", []):
         res = e.get("result") or {}

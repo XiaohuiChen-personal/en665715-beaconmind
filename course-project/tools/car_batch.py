@@ -22,10 +22,16 @@ clears the halt (and the latch) by name, and runs the same command again, which 
 --dry-run does all of it on the simulated car in the simulated room (no ROS, no camera, no marker, no recorder).
 --policy: b2 (the coded procedure, free) or a model key of configs/providers*.json (needs --cap-usd > 0).
 The world file, the start poses and the range limit are parameters: the tag configuration decides them.
+--detector-noise configs/detector_noise.json (bm.detector_noise/1, written by tools/tag_pilot.py analyze): the
+per-tag fix sigma from the tag pilot's measured range and bearing errors (batch.fix_sigma_from_detector_noise).
+Without it the assumed 0.03 m + 0.04 x range. The manifest's params.fix_sigma_source says which (configs/dv.json,
+the frozen study's design values, is not read for this and not changed).
 
 Exit status: 0 the batch is complete; 3 it halted; 2 it refused to start.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this tool.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: --detector-noise; only the first of several stop signals
+counts.
 """
 import argparse
 import hashlib
@@ -92,8 +98,17 @@ def recorder_silent(session, max_age_s=120.0, now=None):
     return None if age <= max_age_s else "the recorder has written nothing for %.0f s" % age
 
 
+INTERRUPTS = ("SIGINT", "SIGTERM", "SIGHUP")
+
+
 def _as_interrupt(_signum, _frame):
-    raise KeyboardInterrupt     # docker stop, a closed terminal, kill: end as Ctrl+C does, with a halt record
+    """docker stop, a closed terminal, kill, Ctrl+C: end as Ctrl+C does, with a halt record. Only the first signal
+    counts: the later ones are ignored, so a second Ctrl+C (or docker's proxy repeating one) cannot break off the
+    move's stop or the halt record half written. (docker stop's SIGKILL after its grace period still ends a hang.)"""
+    import signal
+    for name in INTERRUPTS:
+        signal.signal(getattr(signal, name), signal.SIG_IGN)
+    raise KeyboardInterrupt
 
 
 def load_runner_tool():
@@ -142,6 +157,9 @@ def build_parser():
     run.add_argument("--tag-height", type=float, default=0.23, help="tag centre height for the detector's height rule, m")
     run.add_argument("--dry-run", action="store_true", help="simulated car in the simulated room; no ROS")
     run.add_argument("--dry-seed", type=int, default=1)
+    run.add_argument("--detector-noise", help="bm.detector_noise/1 file of the tag pilot (configs/detector_noise.json): "
+                                              "the fix sigma from its measured errors; default: the assumed "
+                                              "0.03 m + 0.04 x range")
     run.add_argument("--marker", default=str(MARKER))
 
     rp_ = sub.add_parser("record-pass")
@@ -160,8 +178,39 @@ def build_parser():
     return ap
 
 
+def fix_sigma(args):
+    """(fix_sigma_a_m, fix_sigma_b, source text) from --detector-noise, or the assumed values."""
+    defaults = B.BatchParams(world_path="", start_poses=[], initial_pose={})
+    if not args.detector_noise:
+        return defaults.fix_sigma_a_m, defaults.fix_sigma_b, defaults.fix_sigma_source
+    path = pathlib.Path(args.detector_noise)
+    try:
+        raw = path.read_bytes()
+        model = json.loads(raw.decode("utf-8"))
+    except (OSError, ValueError) as exc:
+        sys.exit("--detector-noise %s cannot be read: %s" % (path, exc))
+    try:
+        from beaconmind.schemas import validate
+        errors = validate("detector_noise", model)
+    except ImportError:
+        errors = []             # (no jsonschema here: the checks of fix_sigma_from_detector_noise still apply)
+    if errors:
+        sys.exit("--detector-noise %s is not a valid bm.detector_noise/1 document: %s" % (path, "; ".join(errors[:3])))
+    try:
+        a, b, text = B.fix_sigma_from_detector_noise(model, args.max_range)
+    except ValueError as exc:
+        sys.exit("--detector-noise %s: %s" % (path, exc))
+    if model.get("max_range_m") is not None and args.max_range > float(model["max_range_m"]) + 1e-9:
+        log("WARNING: --max-range %.2f m is beyond the %.2f m the tag pilot found reliable (%s)"
+            % (args.max_range, float(model["max_range_m"]), path))
+        text += "; WARNING: --max-range above the pilot's reliable range"
+    rel = os.path.relpath(path.resolve(), ROOT)
+    return a, b, "%s sha256:%s: %s" % (rel, hashlib.sha256(raw).hexdigest()[:12], text)
+
+
 def params_from(args, world_path):
     duty, speed = (float(v) for v in args.drive_map.split(","))
+    sigma_a, sigma_b, source = fix_sigma(args)
     return B.BatchParams(
         world_path=os.path.relpath(world_path, ROOT), start_poses=start_poses(args), initial_pose=args.initial_pose,
         episodes=args.episodes, policy=args.policy, max_steps=args.max_steps, max_range_m=args.max_range,
@@ -169,7 +218,8 @@ def params_from(args, world_path):
         start_attempts=args.start_attempts, wall_margin_m=args.wall_margin, no_fix_steps=args.no_fix_steps,
         min_vsys_mv=args.min_vsys_mv, min_forward_speed_mps=args.min_forward_speed,
         episode_wall_s=args.episode_minutes * 60.0, batch_wall_s=args.batch_hours * 3600.0,
-        batch_steps=args.batch_steps, cap_usd=args.cap_usd, drive_map=(duty, speed))
+        batch_steps=args.batch_steps, cap_usd=args.cap_usd, drive_map=(duty, speed), fix_sigma_a_m=sigma_a,
+        fix_sigma_b=sigma_b, fix_sigma_source=source)
 
 
 def cmd_run(args):
@@ -251,11 +301,13 @@ def cmd_run(args):
                            run_episode=cl.run_episode, autolatch_contacts=int(dv["autolatch_contacts"]),
                            config_extra=extra, recorder_check=recorder_check, marker_path=marker_path)
     import signal
-    for sig in (signal.SIGTERM, signal.SIGHUP):
-        signal.signal(sig, _as_interrupt)
+    before = {name: signal.getsignal(getattr(signal, name)) for name in INTERRUPTS}
+    for name in INTERRUPTS:
+        signal.signal(getattr(signal, name), _as_interrupt)
     log("batch %s: %d episodes of %s on %s, world %s, out %s" % (
         runner.config, params.episodes, params.policy, "the simulated car (dry run)" if args.dry_run else "THE REAL CAR",
         world.get("world_id"), out))
+    log("fix sigma %.4f + %.4f x range m: %s" % (params.fix_sigma_a_m, params.fix_sigma_b, params.fix_sigma_source))
     try:
         result = runner.run()
     finally:
@@ -263,6 +315,9 @@ def cmd_run(args):
             rig.link.close()
         except Exception as exc:    # noqa: BLE001
             log("closing the car link: %s" % exc)
+        for name, handler in before.items():        # no signal came: give a caller in this process its handlers back
+            if handler is not None and signal.getsignal(getattr(signal, name)) is _as_interrupt:
+                signal.signal(getattr(signal, name), handler)
     print(open(out / "summary.txt", encoding="utf-8").read() if (out / "summary.txt").exists() else result)
     return {"complete": 0, "halted": 3}.get(result["status"], 2)
 

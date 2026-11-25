@@ -4,7 +4,11 @@ halt, the manifest and its resume (plan/README.md section 3.6 "Unattended batche
 Nothing here touches ROS or the real car: the rig is batch.dry_rig (SimCar + the room simulator's detections).
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote these tests.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: added the tests at the end (usd_cap between episodes, two
+faults in one scan, the tag check, the detector-noise file, quick signals); in older tests: tag_trust off in two that
+use the 12-tag layout, `tag_survey` accepted where a wrong tag halts, the signal test after the first-signal change.
 """
+import hashlib
 import importlib.util
 import json
 import math
@@ -634,7 +638,10 @@ def test_a_guarded_move_is_refused_not_driven(tmp_path):
 
 
 def test_resume_skips_finished_episodes_and_never_replays_an_unfinished_one(tmp_path):
-    b = Batch(tmp_path, episodes=2, max_steps=20, starts=(S1, S5))
+    # (tag_trust off, 2026-11-24: in the 12-tag layout at 2.0 m a circle seldom has four tags in reach, so few tags
+    # can be checked and the resumed run, which checks again from scratch, would have none to steer a fix. This test
+    # is about the resume bookkeeping; the trust rule has its own tests in the 20-tag room at the end of this file.)
+    b = Batch(tmp_path, episodes=2, max_steps=20, starts=(S1, S5), tag_trust=False)
     seen = {"n": 0}
 
     def stop_in_second(b):
@@ -859,7 +866,8 @@ def test_a_tag_surveyed_wrongly_halts_before_the_car_reaches_a_wall(tmp_path):
         result = runner.run()
         assert depth["min"] > 0.05, (seed, depth, result)       # never at the wall
         assert result["status"] == "halted" and result["halt"]["code"] in ("no_fix", "fix_conflict", "start_pose",
-                                                                             "guard_blocked", "pose_uncertain"), result
+                                                                             "guard_blocked", "pose_uncertain",
+                                                                             "tag_survey"), result
         assert not rig.link.sim.p.blocked_left                  # and the simulated wall was never touched
 
 
@@ -985,7 +993,8 @@ def test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall(tmp_path):
 
 
 def test_a_correct_odometer_is_not_called_biased(tmp_path):
-    b = Batch(tmp_path, max_steps=60, max_range_m=2.5)
+    # (tag_trust off, 2026-11-24: the 12-tag layout, see test_resume_...; this test is about the bias statistic)
+    b = Batch(tmp_path, max_steps=60, max_range_m=2.5, tag_trust=False)
     assert b.run()["status"] == "complete"
     bias = b.runner.tracker.odometry_bias()
     assert bias is not None and abs(bias[0]) < 0.06 and bias[1] > 1.0
@@ -1077,13 +1086,50 @@ def test_the_wall_clock_cap_counts_the_whole_batch(tmp_path):
 
 
 def test_terminate_and_hangup_end_like_an_interrupt():
-    """Review finding 6: docker stop, kill and a closed terminal must leave a halt record, as Ctrl+C does."""
+    """Review finding 6: docker stop, kill and a closed terminal must leave a halt record, as Ctrl+C does. Since
+    2026-11-24 only the first of them counts: the later ones are ignored, so a second Ctrl+C cannot break off the
+    move's stop or the halt record half written."""
+    import signal
     tool = load_batch_tool()
-    with pytest.raises(KeyboardInterrupt):
-        tool._as_interrupt(15, None)
+    saved = {name: signal.getsignal(getattr(signal, name)) for name in tool.INTERRUPTS}
+    try:
+        with pytest.raises(KeyboardInterrupt):
+            tool._as_interrupt(15, None)
+        assert all(signal.getsignal(getattr(signal, name)) == signal.SIG_IGN for name in tool.INTERRUPTS)
+    finally:
+        for name, handler in saved.items():
+            signal.signal(getattr(signal, name), handler)
+    assert set(tool.INTERRUPTS) == {"SIGINT", "SIGTERM", "SIGHUP"}
     source = (ROOT / "tools" / "car_batch.py").read_text()
-    assert "for sig in (signal.SIGTERM, signal.SIGHUP):" in source and "signal.signal(sig, _as_interrupt)" in source
+    assert "for name in INTERRUPTS:" in source and "signal.signal(getattr(signal, name), _as_interrupt)" in source
     assert "&& exec python3 /workspace/course-project/tools/car_batch.py" in (ROOT / "tools" / "car_batch.sh").read_text()
+
+
+def test_signals_in_quick_succession_still_leave_one_halt_record(tmp_path):
+    """A real dry-run process gets SIGTERM, SIGINT and SIGHUP back to back (docker stop while someone presses
+    Ctrl+C): it ends with status 3 and the halt record of the first, the running episode halted, nothing left
+    `running`. (The Spark run of 2026-11-24 did the same through docker: README, "First execution".)"""
+    import os
+    import signal
+    import subprocess
+    import sys
+    import time
+    out = tmp_path / "batch"
+    cmd = [sys.executable, str(ROOT / "tools" / "car_batch.py"), "run", "--world", str(WORLD_PATH), "--start",
+           "S1:2.5,1.5,90", "--initial-pose", "2.4,1.6,70", "--episodes", "20", "--max-range", "2.5",
+           "--batch-steps", "100000", "--dry-run", "--out", str(out)]
+    env = dict(os.environ, PYTHONPATH=str(ROOT / "beaconmind" / "src"))
+    proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    end = time.time() + 60
+    while time.time() < end and not (out / "episodes" / "ep01-a1" / "seed_1.jsonl").exists():
+        time.sleep(0.05)
+    for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGINT):
+        proc.send_signal(sig)
+    text = proc.communicate(timeout=60)[0].decode(errors="replace")
+    assert proc.returncode == 3 and "Traceback" not in text, text[-800:]
+    m = json.loads((out / "manifest.json").read_text())
+    assert m["status"] == "halted" and m["halt"]["code"] == "interrupted"
+    assert all(e["status"] != "running" for e in m["episodes"])
 
 
 def test_a_recorder_that_stopped_writing_is_noticed(tmp_path):
@@ -1458,3 +1504,378 @@ def test_a_car_restart_inside_a_scan_halts(tmp_path):
     b.assert_halted(b.result["halt"]["code"], safety=True)
     assert b.runner.monitor.steps <= 8 and "first_fix" not in b.manifest["episodes"][0]
 
+
+
+# ================================================================ 2026-11-24: the paths CONTEXT.md named untested, the
+# check of the surveyed tags against each other (review finding 3, the one left open), the tag pilot's noise file.
+# AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: wrote the tests below.
+
+WORLD20_PATH = ROOT / "configs" / "arenas" / "real-room-plus8-160mm-nominal.json"
+WORLD20 = json.loads(WORLD20_PATH.read_text())
+TAGS20 = [{"id": t["id"], "uid": t["uid"], "x_m": t["x_m"], "y_m": t["y_m"]} for t in WORLD20["tags"]]
+PLACE20 = {"x_m": 2.4, "y_m": 1.6, "theta_deg": 70.0}
+CHECK = {"k": 4.0, "min_m": 0.15}
+
+
+def test_usd_cap_between_two_episodes_is_the_check_before_the_next_episode(tmp_path):
+    """The cap is reached exactly as episode 1 ends (five paid steps of US$0.20, cap US$1.00). The halt is the check
+    between episodes (its own words, not the in-episode "stopped the episode"), episode 2 never begins (no folder, no
+    circle, no transit: not one move after episode 1's end circle), and a new process on the same batch, the halt
+    cleared, sends no move either: the spend already in spend.jsonl reaches the cap."""
+    spend = tmp_path / "spend.jsonl"
+    budget = rp.Budget(1.0, 0.0, path=spend)
+    b = Batch(tmp_path, episodes=3, max_steps=5, driver=PaidB2(), budget=budget)
+    real_episode, after_first = b.runner._episode, {}
+
+    def episode(index):
+        real_episode(index)
+        after_first.setdefault("moves", b.runner.monitor.steps)
+        after_first.setdefault("sent", len(b.rig.link.published))
+    b.runner._episode = episode
+    b.run()
+    b.assert_halted("usd_cap", safety=False)
+    assert b.result["halt"]["detail"] == "spent $1.00 of $1.00"
+    assert [(e["id"], e["status"]) for e in b.manifest["episodes"]] == [("ep01-a1", "done")]
+    assert not (b.out / "episodes" / "ep02-a1").exists()
+    assert b.runner.monitor.steps == after_first["moves"]
+    assert all((v, w) == (0.0, 0.0) for _t, v, w in b.rig.link.published[after_first["sent"]:])
+    # a rerun: cleared by an operator, a new process, the spend counted again from the file
+    assert vd.clear_latch_file(b.out / "HALT.LATCH", "xiaohui")
+    sent = len(b.rig.link.published)
+    again = B.BatchRunner(b.params, b.rig, WORLD, b.out, driver=PaidB2(), budget=rp.Budget(1.0, rp.spent_in(spend), path=spend),
+                          log=lambda *a: None, run_episode=cl.run_episode)
+    result = again.run()
+    assert result["status"] == "halted" and result["halt"]["code"] == "usd_cap" and again.monitor.steps == 0
+    assert all((v, w) == (0.0, 0.0) for _t, v, w in b.rig.link.published[sent:])
+    assert rp.spent_in(spend) == pytest.approx(1.0)                     # and nothing more was spent
+
+
+def test_two_faults_inside_one_scan_keep_the_first_cause(tmp_path):
+    """Two halts raised inside one scan: at the fifth turn of the first circle the Pico's supply drops and the camera
+    dies at once, so one sensing sees both. The first cause found (the car's state is read before the camera) is the
+    batch's halt everywhere: result, manifest, summary, HALT.LATCH and the project latch. The second does not write
+    over it, the circle is not finished, no move follows, and a rerun refuses."""
+    b = Batch(tmp_path, max_steps=4)
+
+    def both(b):
+        b.rig.link.sim.p.vsys_mv = 4100
+        _camera_dead(b)
+    b.at_moves(5, both)
+    b.run()
+    b.assert_halted("supply_low", safety=True)
+    assert vd.read_latch_file(b.out / "HALT.LATCH")["code"] == "supply_low"
+    assert b.latch.read()["reason"].startswith("batch halt: supply_low")
+    assert "first_fix" not in b.manifest["episodes"][0] and b.runner.monitor.steps <= 6
+    assert "camera" not in b.manifest["halt"]["detail"]
+    # and the other order: the camera's halt first (a stale frame twice), the supply after it, in the same circle
+    c = Batch(tmp_path / "c", max_steps=4)
+    c.at_moves(5, _camera_dead)
+    real = c.rig.link.car_state
+    c.rig.link.car_state = lambda: dict(real(), vsys_min_mv=4100) if c.runner.monitor.halted else real()
+    c.run()
+    c.assert_halted("camera", safety=True)
+    assert vd.read_latch_file(c.out / "HALT.LATCH")["code"] == "camera"
+
+
+def circle_views(pose, tags, max_range=3.0, hfov=46.9, noise=None):
+    """Twelve views 30 degrees apart from an arena pose, each with the exact (or noisy) detections of `tags` (where the
+    tags REALLY are), as BatchRunner.scan gives them to resect."""
+    views = []
+    for k in range(12):
+        heading = pose["theta_deg"] + 30.0 * k
+        dets = []
+        for t in tags:
+            dx, dy = t["x_m"] - pose["x_m"], t["y_m"] - pose["y_m"]
+            rng = math.hypot(dx, dy)
+            bearing = R.wrap_deg(math.degrees(math.atan2(dy, dx)) - heading)
+            if rng <= max_range and abs(bearing) <= hfov / 2:
+                if noise:
+                    rng, bearing = rng * (1 + noise.gauss(0, 0.01)), bearing + noise.gauss(0, 0.5)
+                dets.append({"id": t["id"], "range_m": rng, "bearing_deg": bearing})
+        views.append({"pose": {"x_m": 0.0, "y_m": 0.0, "theta_deg": 30.0 * k}, "detections": dets})
+    return views
+
+
+def moved(tags, uid, dx, dy):
+    return [dict(t, x_m=t["x_m"] + dx, y_m=t["y_m"] + dy) if t["uid"] == uid else dict(t) for t in tags]
+
+
+PILOT_LIKE = {"sigma_a_m": 0.01, "sigma_b": 0.0148}      # the simulated camera's noise as the tag pilot would give it
+ASSUMED = {"sigma_a_m": 0.03, "sigma_b": 0.04}
+
+
+@pytest.mark.parametrize("uid, d, noise", [("T06", 0.5, ASSUMED), ("T05", 0.5, ASSUMED), ("T06", 0.3, PILOT_LIKE),
+                                           ("T05", 0.3, PILOT_LIKE), ("T02", 0.3, PILOT_LIKE), ("T17", 0.3, PILOT_LIKE)],
+                         ids=["T06-0.5-assumed", "T05-0.5-assumed", "T06-0.3-pilot", "T05-0.3-pilot", "T02-0.3-pilot",
+                              "T17-0.3-pilot"])
+def test_the_circle_names_the_tag_surveyed_wrongly(uid, d, noise):
+    """A full circle at S1 sees about fifteen tags. One of them is d metres from where the world file says (along x):
+    leaving each tag out in turn names it, by its own tag, not its id (T05 and T02 both carry id 3), and puts the
+    others within a centimetre of their survey. With the assumed noise (0.03 + 0.04 r) one circle's limit for a tag
+    1.3 to 1.8 m away is 0.32 to 0.40 m, so 0.5 m is named at once and 0.3 m only by adding circles up (TagCheck);
+    with noise like the simulated camera's a 0.3 m error is named by one circle."""
+    pose = {"x_m": 2.5, "y_m": 1.5, "theta_deg": 90.0}
+    fix = R.resect(circle_views(pose, TAGS20), moved(TAGS20, uid, -d, 0.0), max_range_m=3.0, rms_max_m=0.08,
+                   tag_check=CHECK, **noise)
+    check = fix["check"]
+    assert check["resolved"] and check["outliers"] == [uid], check
+    rows = {r["tag"]: r for r in check["tags"]}
+    assert rows[uid]["residual_m"] == pytest.approx(d, abs=0.02)
+    assert max(r["residual_m"] for r in check["tags"] if r["tag"] != uid) < 0.01
+    assert rows[uid]["dx_m"] == pytest.approx(d, abs=0.02)             # the others see it d further along +x
+
+
+def test_a_tag_off_by_less_than_the_floor_is_not_named_and_a_clean_circle_names_none():
+    pose = {"x_m": 2.5, "y_m": 1.5, "theta_deg": 90.0}
+    for noise in (ASSUMED, PILOT_LIKE):                         # 0.1 m is under the 0.15 m floor of the limit
+        small = R.resect(circle_views(pose, TAGS20), moved(TAGS20, "T06", -0.1, 0.0), max_range_m=3.0, rms_max_m=0.08,
+                         tag_check=CHECK, **noise)
+        assert small["ok"] and small["check"]["outliers"] == [] and small["check"]["resolved"]
+        assert {r["tag"]: r for r in small["check"]["tags"]}["T06"]["residual_m"] == pytest.approx(0.1, abs=0.01)
+    unseen = R.resect(circle_views(pose, TAGS20), moved(TAGS20, "T06", -0.3, 0.0), max_range_m=3.0, rms_max_m=0.08,
+                      tag_check=CHECK, **ASSUMED)
+    assert unseen["check"]["outliers"] == []                    # 0.3 m at 1.7 m, assumed noise: one circle cannot tell
+    t06 = {r["tag"]: r for r in unseen["check"]["tags"]}["T06"]
+    assert t06["residual_m"] > 0.25 and t06["limit_m"] > t06["residual_m"]
+    rng = random.Random(3)
+    for _ in range(20):                                             # the simulated camera's noise: never a tag named
+        noisy = R.resect(circle_views(pose, TAGS20, noise=rng), TAGS20, max_range_m=3.0, sigma_a_m=0.03, sigma_b=0.04,
+                         rms_max_m=0.08, tag_check=CHECK)
+        assert noisy["ok"] and noisy["check"]["outliers"] == []
+    three = [t for t in TAGS20 if t["uid"] in ("T03", "T04", "T05")]   # a room where only three tags are in reach
+    few = R.resect(circle_views(pose, three), TAGS20, sigma_a_m=0.03, sigma_b=0.04, tag_check=CHECK)
+    assert few["ok"] and few["n_tags"] == 3 and few["check"] is None    # nothing to compare a tag with
+
+
+def test_tagcheck_adds_up_halts_on_a_disagreeing_tag_and_trusts_only_close_checks():
+    tc = B.TagCheck(k=4.0, min_m=0.15, trust_max_m=0.30, trust_k=3.0)
+    row = lambda tag, dx, sigma: {"tag": tag, "id": 1, "dx_m": dx, "dy_m": 0.0, "residual_m": abs(dx), "sigma_m": sigma,
+                                  "limit_m": 0.0, "range_m": 1.0, "outlier": False}
+    assert tc.trusted() == set() and tc.add(None) == []                  # nothing compared: nothing trusted
+    assert tc.add({"resolved": False, "tags": [row("A", 0.9, 0.05)]}) == []         # no clean reference: not counted
+    tc.add({"resolved": True, "tags": [row("A", 0.01, 0.05), row("B", 0.02, 0.12), row("C", 0.25, 0.05)]})
+    v = {t: tc.verdict(t) for t in "ABC"}
+    assert v["A"]["trusted"] and not v["A"]["flagged"]                  # close and quiet: 3 sigma 0.15 m
+    assert not v["B"]["trusted"] and not v["B"]["flagged"]              # compared from too far: 3 sigma 0.36 m
+    assert not v["C"]["trusted"] and v["C"]["flagged"]                  # 0.25 m off, limit 0.20 m: halt
+    assert tc.flagged() == ["C"] and tc.trusted() == {"A"}
+    for _ in range(2):                                                   # B compared twice more: now close enough
+        tc.add({"resolved": True, "tags": [row("B", 0.0, 0.12)]})
+    assert tc.verdict("B")["trusted"] and tc.verdict("B")["n"] == 3
+    d = B.TagCheck(k=4.0, min_m=0.15, trust_max_m=0.30, trust_k=3.0)
+    d.add({"resolved": True, "tags": [row("D", 0.17, 0.05)]})            # between the trust and the halt limits
+    assert not d.verdict("D")["trusted"] and not d.verdict("D")["flagged"]
+    assert "tag D (id 1) is 0.17 m from its surveyed centre" in B.tag_survey_detail(d, "D", [])
+
+
+def test_an_untrusted_tag_steers_no_fix_and_its_copy_is_never_taken_for_it():
+    """Ids 3, 0 and 2 are each on two tags. T05 (id 3, window wall) is seen alone; only T02 (id 3, the 295 cm wall)
+    is trusted. The detection is still assigned to T05 (the copy near the tracked pose), which is untrusted: no fix,
+    and not "far from the prior" (which would count as a conflict), as it would be if it were forced onto T02."""
+    pose = {"x_m": 3.0, "y_m": 1.6, "theta_deg": 0.0}
+    seen = [d for d in circle_views(pose, TAGS20, hfov=360.0)[0]["detections"] if d["id"] == 3 and d["range_m"] < 1.0]
+    assert len(seen) == 1                                               # T05 at 0.82 m
+    one = R.position_fix(seen, TAGS20, pose, 2.0, trusted={"T02"})
+    assert one == {"ok": False, "why": "no checked tag in view", "n_tags": 0, "untrusted": ["T05"]}
+    assert R.position_fix(seen, TAGS20, pose, 2.0, trusted={"T05"})["ok"]
+    two = [d for d in circle_views(pose, TAGS20, hfov=360.0)[0]["detections"] if d["range_m"] < 1.6]
+    fix = R.resect([{"pose": None, "detections": two}], TAGS20, prior=pose, trusted={"T06", "T14"})
+    assert fix["ok"] and sorted(fix["tags"]) == ["T06", "T14"] and set(fix["untrusted"]) >= {"T05"}
+    assert (fix["pose"]["x_m"], fix["pose"]["y_m"]) == pytest.approx((3.0, 1.6), abs=1e-6)
+    assert R.resect([{"pose": None, "detections": two}], TAGS20, prior=pose, trusted=set())["why"] == \
+        "fewer than 2 checked tags in view"
+
+
+def tag_batch(tmp_path, wrong_world, seed=1, episodes=2, max_steps=60, starts=("S1", "S3"), **params):
+    """A dry-run batch in the 20-tag room at 3.0 m whose world file (the runner's) may differ from the room (where
+    the simulated camera sees the tags). Returns (runner, rig, result, stats)."""
+    scen = {s["id"]: dict(s["start_pose"], id=s["id"])
+            for s in json.loads((ROOT / "configs" / "arenas" / "real-room-scenarios.json").read_text())["scenarios"]}
+    latch = Latch(tmp_path / "LATCH")
+    p = B.BatchParams(world_path="x", start_poses=[scen[s] for s in starts], initial_pose=dict(PLACE20),
+                      episodes=episodes, max_steps=max_steps, max_range_m=3.0, seed0=seed, **params)
+    rig = B.dry_rig(WORLD20, PLACE20, latch=latch, seed=seed, max_range_m=3.0)
+    runner = B.BatchRunner(p, rig, wrong_world, tmp_path / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
+                           log=lambda *a: None, run_episode=cl.run_episode)
+    stats = {"depth": 9.0, "err": 0.0}
+    walls = rig.link.on_step
+
+    def watch(link):
+        walls(link)
+        stats["depth"] = min(stats["depth"], runner.guard.footprint_depth(rig.sim_truth_fn()))
+    rig.link.on_step = watch
+    result = runner.run()
+    stats["contact"] = bool(rig.link.sim.p.blocked_left or rig.link.sim.p.blocked_right)
+    # the tracked pose against the simulator's truth at every sensing (truth.jsonl; not during a move, when the
+    # tracker still holds the pose from before it) until the batch halted
+    for path in (tmp_path / "batch" / "episodes").glob("**/truth.jsonl"):
+        for line in open(path):
+            row = json.loads(line)
+            w, t = row["tracked_world"]["pose"], row["sim_truth_world"]
+            if row["halted"] is None and t:
+                stats["err"] = max(stats["err"], math.hypot(w["x_m"] - t["x_m"], w["y_m"] - t["y_m"]))
+    return runner, rig, result, stats
+
+
+def world_with(uid, dx, dy):
+    w = json.loads(json.dumps(WORLD20))
+    for t in w["tags"]:
+        if t["uid"] == uid:
+            t["x_m"] += dx
+            t["y_m"] += dy
+    return w
+
+
+def test_a_clean_room_raises_no_tag_survey_halt_and_every_tag_ends_trusted(tmp_path):
+    runner, rig, result, stats = tag_batch(tmp_path, WORLD20, episodes=2)
+    assert result == {"status": "complete", "halt": None}
+    m = json.loads((tmp_path / "batch" / "manifest.json").read_text())
+    assert m["tag_check"]["flagged"] == [] and len(m["tag_check"]["trusted"]) >= 15
+    assert max(v["offset_m"] / v["limit_m"] for v in m["tag_check"]["this_run"].values()) < 0.5
+    assert stats["err"] < 0.08 and not stats["contact"]
+    assert "tags checked against each other in this run" in (tmp_path / "batch" / "summary.txt").read_text()
+
+
+def pilot_model(**over):
+    """A bm.detector_noise/1 document as tools/tag_pilot.py analyze writes it (numbers like the simulated camera's)."""
+    model = {"schema": "bm.detector_noise/1", "range_bias_m": {"a": 0.004, "b": -0.006}, "range_sigma_m": {"a": 0.01, "b": 0.012},
+             "bearing_bias_deg": 0.2, "bearing_sigma_deg": {"a": 0.3, "b": 0.1}, "min_range_m": 0.75, "max_range_m": 3.2,
+             "max_incidence_deg": 60.0, "p_detect": [{"range_m": 1.0, "incidence_deg": 0.0, "p": 1.0}], "obs_frames": 5,
+             "obs_min_frames": 3, "tag_black_size_m": 0.16,
+             "source": {"log": "20261125-100000-tag-pilot frames.csv", "date": "2026-11-25", "n_frames": 900, "n_placements": 30}}
+    model.update(over)
+    return model
+
+
+def test_fix_sigma_from_the_tag_pilots_detector_noise():
+    """Along the line of sight |bias| + sigma = 0.014 + 0.018 r; across it r x (0.2 + 0.3 + 0.1 x 3.0) degrees =
+    0.01396 r; together at most 0.014 + hypot(0.018, 0.01396) r = 0.014 + 0.02278 r."""
+    a, b, text = B.fix_sigma_from_detector_noise(pilot_model(), 3.0)
+    assert a == pytest.approx(0.014) and b == pytest.approx(math.hypot(0.018, math.radians(0.8)))
+    assert "tag pilot 20261125-100000-tag-pilot frames.csv (2026-11-25, 900 frames, 30 placements)" in text
+    for r in (0.5, 1.0, 2.0, 3.0):          # the bound covers both error directions at every range up to the limit
+        along = 0.004 + 0.006 * r + 0.01 + 0.012 * r
+        across = r * math.radians(0.2 + 0.3 + 0.1 * 3.0)
+        assert a + b * r >= max(along, across) and a + b * r >= math.hypot(along, across) - 1e-12
+    for bad in (pilot_model(schema="bm.detector_noise/2"), pilot_model(range_sigma_m={"a": -0.01, "b": 0.01}),
+                pilot_model(bearing_sigma_deg={"a": float("nan"), "b": 0.0}), {"schema": "bm.detector_noise/1"}):
+        with pytest.raises(ValueError):
+            B.fix_sigma_from_detector_noise(bad, 3.0)
+    tiny = B.fix_sigma_from_detector_noise(pilot_model(range_bias_m={"a": 0.0, "b": 0.0}, range_sigma_m={"a": 0.0, "b": 0.01}), 3.0)
+    assert tiny[0] == 0.005                 # never a zero sigma
+
+
+def test_the_tool_takes_the_pilots_file_and_the_manifest_says_which_sigma_was_used(tmp_path, capsys):
+    """--detector-noise: the fix sigma comes from the pilot's file, the manifest records the file, its hash and the
+    numbers; without it the assumed 0.03 + 0.04 r, said so. configs/dv.json is not read for this and not changed."""
+    tool = load_batch_tool()
+    dv_before = (ROOT / "configs" / "dv.json").read_bytes()
+    noise = tmp_path / "detector_noise.json"
+    noise.write_text(json.dumps(pilot_model()))
+    base = ["run", "--world", str(WORLD20_PATH), "--start", "S1:2.5,1.5,90", "--initial-pose", "2.4,1.6,70",
+            "--max-steps", "3", "--max-range", "3.0", "--dry-run"]
+    assert tool.main(base + ["--out", str(tmp_path / "a"), "--detector-noise", str(noise)]) == 0
+    m = json.loads((tmp_path / "a" / "manifest.json").read_text())
+    a, b, _ = B.fix_sigma_from_detector_noise(pilot_model(), 3.0)
+    assert m["params"]["fix_sigma_a_m"] == pytest.approx(a) and m["params"]["fix_sigma_b"] == pytest.approx(b)
+    source = m["params"]["fix_sigma_source"]
+    digest = hashlib.sha256(noise.read_bytes()).hexdigest()[:12]
+    assert "sha256:%s" % digest in source and "tag pilot" in source and "WARNING" not in source
+    assert "fix sigma: " in (tmp_path / "a" / "summary.txt").read_text()
+    assert tool.main(base + ["--out", str(tmp_path / "b")]) == 0
+    m = json.loads((tmp_path / "b" / "manifest.json").read_text())
+    assert (m["params"]["fix_sigma_a_m"], m["params"]["fix_sigma_b"]) == (0.03, 0.04)
+    assert m["params"]["fix_sigma_source"].startswith("assumed: 0.03 m + 0.04 x range")
+    assert m["config"] != json.loads((tmp_path / "a" / "manifest.json").read_text())["config"]   # another batch
+    short = tmp_path / "short.json"
+    short.write_text(json.dumps(pilot_model(max_range_m=2.6)))          # the pilot trusts detections to 2.6 m only
+    assert tool.main(base + ["--out", str(tmp_path / "c"), "--detector-noise", str(short)]) == 0
+    assert "WARNING: --max-range 3.00 m is beyond the 2.60 m" in capsys.readouterr().out
+    assert "WARNING" in json.loads((tmp_path / "c" / "manifest.json").read_text())["params"]["fix_sigma_source"]
+    broken = tmp_path / "broken.json"
+    broken.write_text(json.dumps(pilot_model(range_sigma_m={"a": 0.01})))
+    with pytest.raises(SystemExit, match="detector_noise|bm.detector_noise|lacks"):
+        tool.main(base + ["--out", str(tmp_path / "d"), "--detector-noise", str(broken)])
+    assert not (tmp_path / "d").exists()                                # refused before anything was written
+    assert (ROOT / "configs" / "dv.json").read_bytes() == dv_before
+
+
+def walk_at_one_tag(tmp_path, d, circle=True, **params):
+    """The review's hole, made direct: the world file has T06 (window wall, id 12) d metres into the room. After an
+    optional full circle at (2.6, 2.58) the camera sees T06 alone, and the car drives FORWARD_10 at the window wall for
+    as long as the guard allows. Returns the halt, the smallest true footprint depth, and tracked against true x."""
+    place = {"x_m": 2.6, "y_m": 2.58, "theta_deg": 0.0}
+    p = B.BatchParams(world_path="x", start_poses=[dict(place, id="P")], initial_pose=dict(place), max_range_m=3.0,
+                      **params)
+    rig = B.dry_rig(WORLD20, place, latch=Latch(tmp_path / "LATCH"), seed=1, max_range_m=3.0)
+    r = B.BatchRunner(p, rig, world_with("T06", -d, 0.0), tmp_path / "b", driver=cl.B2Driver(),
+                      budget=rp.Budget(float("inf")), log=lambda *a: None, run_episode=cl.run_episode)
+    r.preflight()
+    env = r._service_env("t", str(tmp_path / "t"))
+    env.reset(1)
+    depth = {"min": 9.0}
+    walls = rig.link.on_step
+
+    def watch(link):
+        walls(link)
+        depth["min"] = min(depth["min"], r.guard.footprint_depth(rig.sim_truth_fn()))
+    rig.link.on_step = watch
+    if circle:
+        try:
+            r.localise(env, "a circle", required=False)
+        except B.BatchStop:
+            return {"halt": r.monitor.halted, "depth": depth["min"], "forward": 0}
+    r.localised = env.use_views = True
+    real = env.inner.detector
+    env.inner.detector = lambda jpegs, n=None: dict(real(jpegs, n), detections=[
+        x for x in real(jpegs, n)["detections"] if x.get("id") == 12])
+    while abs(R.wrap_deg(r.tracker.pose["theta_deg"])) > 15:
+        env.step("TURN_RIGHT_30" if r.tracker.pose["theta_deg"] > 0 else "TURN_LEFT_30")
+    forward = 0
+    for _ in range(25):
+        if r.monitor.halted or env.step("FORWARD_10")["move"]["result"] != "done":
+            break
+        forward += 1
+    truth = rig.sim_truth_fn()
+    return {"halt": r.monitor.halted, "depth": depth["min"], "forward": forward,
+            "lag_m": truth["x_m"] - r.tracker.pose["x_m"], "contact": rig.link.sim.p.blocked_left}
+
+
+@pytest.mark.parametrize("d", [0.1, 0.3, 0.5])
+def test_a_tag_surveyed_wrongly_by_d_cannot_pull_the_car_toward_its_wall(tmp_path, d):
+    """Review finding 3 (open since 2026-11-18), with the faults the lead asked for: T06 surveyed 0.1, 0.3, 0.5 m into
+    the room. Before 2026-11-24 (no tag check, every tag steers, reproduced here by its parameters) T06 seen alone
+    pulls the tracked pose away from the wall, so the guard, keeping its 0.25 m from the pose it believes, lets the
+    car closer than that: 0.3 m wrong left 0.18 m, 0.5 m left 0.08 m. Now: the circle names T06 and halts the batch
+    (0.3 and 0.5 m) before any forward move; without a circle T06 is not checked, so it steers nothing and the guard
+    works on the true pose; 0.1 m (under the 0.15 m floor) is neither named nor dangerous."""
+    old = walk_at_one_tag(tmp_path / "old", d, circle=False, tag_check_k=float("inf"), tag_trust=False)
+    assert old["halt"] is None and not old["contact"]
+    assert old["lag_m"] == pytest.approx(0.67 * d, abs=0.06)            # the pull (most of the survey error)
+    if d >= 0.3:
+        assert old["depth"] < 0.20                                   # inside the 0.25 m the guard believes it keeps
+    new = walk_at_one_tag(tmp_path / "new", d)
+    if d >= 0.3:
+        assert new["halt"]["code"] == "tag_survey" and "tag T06 (id 12) is" in new["halt"]["detail"]
+        assert new["forward"] == 0 and new["depth"] > 0.9
+    else:
+        assert new["halt"] is None and new["depth"] > 0.25 and new["lag_m"] < 0.10
+    unchecked = walk_at_one_tag(tmp_path / "unchecked", d, circle=False)
+    assert unchecked["halt"] is None and abs(unchecked["lag_m"]) < 0.03 and unchecked["depth"] > 0.30
+
+
+@pytest.mark.parametrize("d", [0.1, 0.3, 0.5])
+def test_a_batch_with_one_tag_surveyed_wrongly_by_d(tmp_path, d):
+    """The whole batch (B2, S1 then S3, 3.0 m, the assumed noise) with T06 surveyed d metres into the room. 0.3 and
+    0.5 m: halted `tag_survey` naming T06 (and setting the project latch) with the simulated car well clear of every
+    wall; 0.1 m: no tag named, the batch completes, the tracked pose stays within 0.12 m of the truth."""
+    runner, rig, result, stats = tag_batch(tmp_path, world_with("T06", -d, 0.0))
+    assert not stats["contact"]
+    if d >= 0.3:
+        assert result["status"] == "halted" and result["halt"]["code"] == "tag_survey", result
+        assert "tag T06 (id 12)" in result["halt"]["detail"] and rig.latch.is_set()
+        assert stats["depth"] > 0.25 and stats["err"] < 0.10
+        assert "DISAGREEING: T06" in (tmp_path / "batch" / "summary.txt").read_text()
+    else:
+        assert result == {"status": "complete", "halt": None}
+        assert stats["depth"] > 0.15 and stats["err"] < 0.12

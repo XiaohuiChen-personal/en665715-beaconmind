@@ -27,6 +27,8 @@
 #
 # AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-18: wrote this recorder. The pattern (one folder per session, a
 # clock for the phone, tmux) follows the Module 9 real-robot tools in the private course repo; no code was copied.
+# AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: status (and so start) no longer exits 1 when no car was
+# found; tools/car_batch.sh had taken that for a failed start and left the session running.
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 CP="$REPO/course-project"
@@ -210,7 +212,9 @@ status() {
   done
   running "$BAG_C" && echo "  bag container: running" || echo "  bag container: NOT RUNNING"
   echo "  bag: $(du -sh "$dir/bag" 2>/dev/null | cut -f1)  frames: $(grep -c '"file"' "$dir/frames/index.jsonl" 2>/dev/null || echo 0)"
-  tail -n 1 "$dir/logs/ping_car.txt" 2>/dev/null | sed 's/^/  car ping: /'
+  # (no ping log when the start checks found no car: under pipefail that must not make status, and start, fail)
+  if [ -f "$dir/logs/ping_car.txt" ]; then tail -n 1 "$dir/logs/ping_car.txt" | sed 's/^/  car ping: /'; else echo "  car ping: none (no car found at the start)"; fi
+  return 0
 }
 
 stop() {
