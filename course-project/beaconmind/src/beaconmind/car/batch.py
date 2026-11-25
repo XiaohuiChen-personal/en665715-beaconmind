@@ -84,6 +84,8 @@ class BatchParams:
     fix_floor_m: float = 0.05           # no fix makes the position more certain than this: fixes of one tag repeat
                                         # its survey and range-scale error, they do not average it away
     camera_probe_after_s: float = 3.0   # a move after this long without a frame asks the camera for one first
+    odometry_slip_sigma_per_m: float = 0.0      # extra position sigma per metre of a forward move, for floor slip
+    odometry_slip_north_per_m: float = 0.0      # ... and more by the move's northward component (PoseTracker)
     range_gate_min_moves: int = 3       # the per-step fix statistic halts only while the range check has fewer
                                         # measured forward moves than this, or is out of its own tolerance
                                         # (per_step_scale_halt; b2-real-02)
@@ -187,10 +189,15 @@ class PoseTracker:
     """The car's pose in the arena frame with a one-number uncertainty for position and one for heading.
     Odometry moves the pose and grows the uncertainty; a fix is blended in by inverse variance."""
 
-    def __init__(self, pose, sigma_xy_m, sigma_theta_deg, floor_m=0.05):
+    def __init__(self, pose, sigma_xy_m, sigma_theta_deg, floor_m=0.05, slip_sigma_per_m=0.0, slip_north_per_m=0.0):
+        """slip_sigma_per_m, slip_north_per_m: extra position uncertainty per metre of a forward move, for a floor
+        whose slip the encoders cannot see (the carpet: the car covers 0.67 to 0.78 of its count northward, 1.04
+        southward); the second part grows with the move's northward component (sin of its world heading, from 0).
+        Both 0: the tracker as before 2026-11-25 (5 % of the distance)."""
         self.pose = {k: float(pose[k]) for k in ("x_m", "y_m", "theta_deg")}
         self.sigma_xy_m, self.sigma_theta_deg = float(sigma_xy_m), float(sigma_theta_deg)
         self.floor_m = floor_m
+        self.slip_sigma_per_m, self.slip_north_per_m = float(slip_sigma_per_m), float(slip_north_per_m)
         self.rejected = 0               # fixes not taken because they disagreed with the tracked pose
         self._leg = [0.0, 0.0]          # displacement by odometry since the last fix, arena frame
         self.bias_sum = 0.0             # sum over fixes of (fix - tracked) along the leg driven
@@ -220,8 +227,12 @@ class PoseTracker:
         self.travel_since_fix_m += dist
         # errors of separate moves add in quadrature: 5 % of the distance plus 2 mm, the heading uncertainty swung
         # over the distance; for the heading 2 % of the turn plus 0.05 degrees (the gyro)
+        slip = 0.0
+        if odo["forward_m"] > 0.05 and (self.slip_sigma_per_m or self.slip_north_per_m):
+            north = max(0.0, math.sin(math.radians(before["theta_deg"])))
+            slip = (self.slip_sigma_per_m + self.slip_north_per_m * north) * odo["forward_m"]
         self.sigma_xy_m = math.sqrt(self.sigma_xy_m ** 2 + (0.002 + 0.05 * dist) ** 2
-                                    + (math.radians(self.sigma_theta_deg) * dist) ** 2)
+                                    + (math.radians(self.sigma_theta_deg) * dist) ** 2 + slip ** 2)
         self.sigma_theta_deg = math.hypot(self.sigma_theta_deg, 0.05 + 0.02 * abs(odo["dtheta_deg"]))
         self.steps_since_fix += 1
 
@@ -1360,7 +1371,7 @@ class BatchRunner:
         self.guard = MoveGuard(world, self.footprint, self.sweep, params.wall_margin_m, params.sigma_block_m,
                                start_turn_margin_m=params.start_turn_margin_m)
         self.tracker = PoseTracker(params.initial_pose, params.initial_sigma_m, params.initial_sigma_deg,
-                                   params.fix_floor_m)
+                                   params.fix_floor_m, params.odometry_slip_sigma_per_m, params.odometry_slip_north_per_m)
         self.tagcheck = TagCheck(params.tag_check_k, params.tag_check_min_m, params.tag_trust_max_m, params.tag_trust_k)
         self.config = hashlib.sha256(json.dumps([params.digest(), config_extra], sort_keys=True, default=str).encode()).hexdigest()[:12]
         self.manifest = None
