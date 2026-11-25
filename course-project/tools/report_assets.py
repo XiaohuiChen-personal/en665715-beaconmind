@@ -18,6 +18,7 @@ Sources (all under course-project/):
                                                              field of view (layout/coverage.txt: the study arena)
   evidence/M2/M2.T7/closed-loop/runs-final/*/seed_3000.summary.json, run.json   the simulated closed-loop episodes
   evidence/M3/M3.T19/real-2026-11-25/result.json            the real-log replay (end circle, tracked truth, runs)
+  evidence/M3/M3.T19/real-2026-11-25/stats.json             its exploratory paired differences (not pre-registered)
   evidence/M3/M3.T12/rehearsal-b2-tables.md                  the room rehearsal in simulation (B2, B0)
   evidence/M3/M3.T12/batch-runner/tape/split-output.txt      the range ratios by direction, on and off the tape line
   evidence/M3/M3.T13/smoke.md, evidence/M3/M3.T6/floor-check.md   the STOP on the car
@@ -136,6 +137,7 @@ def load():
         "closed_runs": {arm: json.loads((CLOSED / "runs-final" / arm / "run.json").read_text())
                         for arm in CLOSED_ARMS},
         "real": json.loads((REAL / "result.json").read_text()),
+        "real_stats": json.loads((REAL / "stats.json").read_text()),
         "rehearsal": (ROOT / "evidence" / "M3" / "M3.T12" / "rehearsal-b2-tables.md").read_text(),
         "tape": (ROOT / "evidence" / "M3" / "M3.T12" / "batch-runner" / "tape" / "split-output.txt").read_text(),
         "stop": (ROOT / "evidence" / "M3" / "M3.T13" / "smoke.md").read_text(),
@@ -622,6 +624,26 @@ def build_numbers(src):
         raise SystemExit("report_assets: result.md does not list exactly one episode apart; check the report text")
     for i, k in ((0, "b0"), (1, "b2"), (3, "opus")):
         put("real.flagged.%s" % k, apart[0][i], "evidence/M3/M3.T19/real-2026-11-25/result.md, the episode listed apart (cm)")
+
+    # ---- exploratory paired differences on the real logs (not pre-registered; evidence/M3/M3.T19/.../stats.json)
+    RS = src["real_stats"]
+    snote = "evidence/M3/M3.T19/real-2026-11-25/stats.json"
+    if not RS.get("exploratory"):
+        raise SystemExit("report_assets: the real-log statistics are not marked exploratory; check the report text")
+    t0 = [t for t in RS["tests"] if t["label"] == "Final-position error against the end circle"]
+    if len(t0) != 1:
+        raise SystemExit("report_assets: stats.json has no single end-circle comparison")
+    t0 = t0[0]
+    for (grp, arm), k in ((("vs_B0", "B2"), "b2-b0"), (("vs_B0", "claude-opus-5-5"), "opus-b0"),
+                          (("vs_B2", "claude-opus-5-5"), "opus-b2")):
+        d = t0[grp][arm]
+        if d["estimand"] != "Hodges-Lehmann":
+            raise SystemExit("report_assets: %s %s is not a Hodges-Lehmann estimate; check the report text" % (grp, arm))
+        put("rstat.%s.est" % k, num(d["estimate"] * 100, 1), snote + " end circle %s %s estimate (m to cm)" % (grp, arm))
+        put("rstat.%s.lo" % k, num(d["ci95"][0] * 100, 1), snote + " end circle %s %s ci95 low" % (grp, arm))
+        put("rstat.%s.hi" % k, num(d["ci95"][1] * 100, 1), snote + " end circle %s %s ci95 high" % (grp, arm))
+        put("rstat.%s.below" % k, d["n_below"], snote + " end circle %s %s episodes below zero" % (grp, arm))
+    put("rstat.n", t0["n"], snote + " end circle n")
 
     # ---- the room rehearsal in simulation (B2 and B0 only; table 1c, the real layout and range, carpet odometry)
     row = grab(src["rehearsal"], r"\*\*Table 1c\.[^\n]*\n.*?\n\| C20, 3\.0 m \|([^\n]*)", "rehearsal table 1c C20 3.0 m row")

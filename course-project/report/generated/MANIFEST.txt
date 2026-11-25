@@ -514,6 +514,19 @@ room.tags | 20 | layout.json tags
 room.tags-per-m | 1.15 | layout-2/layout.json: tags / length of the walls
 room.tags.added | 8 | layout-2/layout.json (added)
 room.tags.printed | 12 | layout-2/layout.json (tags not marked added)
+rstat.b2-b0.below | 8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 episodes below zero
+rstat.b2-b0.est | \ensuremath{-}40.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 estimate (m to cm)
+rstat.b2-b0.hi | \ensuremath{-}16.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 ci95 high
+rstat.b2-b0.lo | \ensuremath{-}68.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 ci95 low
+rstat.n | 8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle n
+rstat.opus-b0.below | 8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 claude-opus-5-5 episodes below zero
+rstat.opus-b0.est | \ensuremath{-}40.7 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 claude-opus-5-5 estimate (m to cm)
+rstat.opus-b0.hi | \ensuremath{-}15.5 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 claude-opus-5-5 ci95 high
+rstat.opus-b0.lo | \ensuremath{-}68.7 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 claude-opus-5-5 ci95 low
+rstat.opus-b2.below | 4 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 episodes below zero
+rstat.opus-b2.est | \ensuremath{-}0.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 estimate (m to cm)
+rstat.opus-b2.hi | 1.0 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 ci95 high
+rstat.opus-b2.lo | \ensuremath{-}0.8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 ci95 low
 rubric.gemma | 0.407 | judge_summary.txt
 rubric.gemma.concise | 1.89 | judge_summary.txt mean_levels
 rubric.gemma.coverage | 1.61 | judge_summary.txt mean_levels
