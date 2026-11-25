@@ -52,8 +52,11 @@ disjoint files, no API spend, nothing that commands the car, no edits to this fi
 the video could be shown the robot running in simulator. For the real run, I will record one run." So: no ROSA
 runtime (M6.T2, T7, T8 not built); the simulation part animates the car's motion between steps, to scale, labelled as
 the kinematic simulator; the car part is built around one filmed real run (expected: the closed-loop Opus demo take).
-Passed to the video agent. Claude reads "one run" as the run filmed for the video, as on 2026-11-13 (the other real
-episodes kept); asked Xiaohui to confirm.
+Passed to the video agent. **Confirmed (Xiaohui):** "We could have other runs perform automatically, as I mentioned
+before. But I will only record one run." So the real-car scope is unchanged (≥ 10 B2 episodes and 2–3 closed-loop
+Opus episodes, run automatically in batches); **only one run gets a phone video**. Rule R2 is changed to match in
+`AGENTS.md` and plan §3.6; every episode still has the recorder's bag, frames, traces and terminal capture. The
+report's IV-D R2 sentence still says every folder has a phone video (listed in `report/PENDING.md`).
 
 **Still open for Xiaohui:** after the pilot, the range limit (3.0 or 2.5 m). **Needs Xiaohui next (unchanged):** measure one printed square
 (160 ± 1 mm); mount the 20 tags from the new sheet and record the centres; tag pilot; stand test and floor check.

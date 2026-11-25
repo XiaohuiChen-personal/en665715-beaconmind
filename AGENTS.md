@@ -33,10 +33,11 @@ Two standing rules (Xiaohui, 2026-11-09; plan §3.6):
 - **R1 — always sim-to-real.** The real car is in scope. Every real-car session is first
   rehearsed in simulation (the kinematic simulator, with the same arena layout, start,
   agent, prompt and tools) and compared with that rehearsal.
-- **R2 — record every real run.** One evidence folder per session holds the phone video,
-  a rosbag of the car's topics, the camera frames, the agent's traces and tool calls, a
-  terminal capture, the tape readings and a README. Never drive the car without the
-  recorder (`M3.T27`).
+- **R2 — record every real run.** One evidence folder per session holds a rosbag of the
+  car's topics, the camera frames, the agent's traces and tool calls, a terminal capture,
+  the tape readings and a README. Never drive the car without the recorder (`M3.T27`).
+  **Phone video: only the one run Xiaohui films for the demo** (Xiaohui, 2026-11-24); the
+  other real episodes run automatically in batches, recorded by the recorder alone.
 
 The LLM arms are Claude Opus 5.5, Qwen3.8-Flash-Next (vLLM) and Gemma 4 26B-A4B (Ollama),
 set in `course-project/configs/providers.json` (Xiaohui, 2026-11-09).

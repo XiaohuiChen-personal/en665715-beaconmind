@@ -17,7 +17,7 @@ uses `\bmnum{...}`, rebuild, and delete the row here. The report is 12 full page
 Filled on 2026-11-18 and removed from the table (the numbers are kept, so 3 is unused): item 3, the room's coverage at the measured 46.9° field of view and the 3.0 m range limit, from `evidence/M3/M3.T10/layout-2/coverage.txt` with the 20-tag layout; and the simulator part of item 6.
 
 Also to update when the real work lands (not marked in the PDF): the real-car procedure in IV-D and the ground-truth paragraph in IV-C are written as *planned* (batches of episodes with the motor battery left on, software halts, resection ground truth; Xiaohui's approval of 2026-11-18) and must be changed to what was done; Table II's footnote and Fig. 1's dotted validator once the closed loop has run; Fig. 1's dashed nodes (camera relay and detector,
-bounded moves, room simulator, ROSA demo, tape ground truth) become solid as each is built; the sentence "No real
+bounded moves, room simulator, ROSA demo, tape ground truth) become solid as each is built; IV-D's R2 sentence, which lists "a phone video" in every session's folder (since 2026-11-24 only the one demo run is filmed; the batch episodes are recorded by the recorder alone); the sentence "No real
 episode has been run" in V-G; limitation (1) in V-H; the IV-F confounder "Real car"; Fig. 3's caption if the measured
 tag centres replace the nominal ones.
 

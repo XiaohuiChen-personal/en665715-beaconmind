@@ -674,9 +674,11 @@ were done, so the scope below replaces it.
   with the same arena layout, start pose, agent, prompt and tools, and the real run is compared with that
   rehearsal. "Simulation" means the kinematic simulator (kinsim, `envs/kinsim_lite.py`); the Isaac Sim twin is
   dropped (an Isaac re-render of the demo take, M6.T13, is a stretch).
-- **R2 — Record every real run.** Whenever the real robot runs, one evidence folder per session holds the phone
-  video, a rosbag of the car's topics, the camera frames, the agent's traces and tool calls, a terminal capture,
-  the tape readings and a short README. The car is never driven without the recorder.
+- **R2 — Record every real run.** Whenever the real robot runs, one evidence folder per session holds a rosbag of
+  the car's topics, the camera frames, the agent's traces and tool calls, a terminal capture, the tape readings and a
+  short README. The car is never driven without the recorder. **The phone video is taken for one run only**, the one
+  Xiaohui films for the demo video (Xiaohui, 2026-11-24: "We could have other runs perform automatically … But I will
+  only record one run"); the batch episodes have no phone video.
 
 **Roster (Xiaohui, 2026-11-09).** Three LLM arms: **Claude Opus 5.5** (Anthropic API, the pilot's settings),
 **Qwen3.8-Flash-Next** NVFP4 on vLLM (`tools/serve_qwen38.sh`), **Gemma 4 26B-A4B** on Ollama's OpenAI-compatible
