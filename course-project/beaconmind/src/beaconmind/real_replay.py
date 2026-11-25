@@ -25,7 +25,7 @@ arena}. So:
                        batch's truth at the last step (with its sigma), B0 (dead reckoning on the same odometry) and B2
                        (the live driver) as reference rows, median and spread.
 
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this module.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this module; made the end circle the primary truth.
 """
 import contextlib
 import copy
@@ -135,7 +135,6 @@ def episode_to_obslog(batch_dir, entry, world_doc, world_file=None):
 
 END_NORMALLY = ("DONE", "budget")
 LAST_STEP_TRUTH = "last step's truth (no end circle)"
-END_CIRCLE_SOURCES = ("manifest end_pose_map", "end_fix.pose_now")
 
 
 def finished(entry):
@@ -415,9 +414,83 @@ def _arm_rows(folders, seed):
     return rows
 
 
-def final_errors(docs, runs):
-    """{arm: {seed: row}} with the final-position and heading error of each episode against the batch's truth at the
-    last step (and the end-of-episode circle's position, and the simulator's truth when the log has it).
+# ---------------------------------------------------------------- the truths of the final pose
+#
+# On the slipping carpet the batch's step truth (the pose it tracks: odometry between tag fixes, PoseTracker) is
+# overconfident: northward the car covers 0.67 to 0.78 of its counted distance, and in simulation the tracked truth's
+# error reached a p95 of 0.10 to 0.13 m against a stated 5 to 6 cm (evidence/M3/M3.T12/batch-runner/truth-under-slip).
+# The primary truth of an episode's final pose is therefore its end circle: a full circle of 8 to 14 tags, solved on its
+# own geometry, at the very pose of the agent's last report when the episode ended by DONE (no move follows). The last
+# step's tracked truth stays as a secondary, tracker-dependent truth, and so does the same truth recomputed offline with
+# a slip-aware tracker (tools/recompute_truth.py).
+
+RECOMPUTE_TOOL = "tools/recompute_truth.py"
+
+
+def end_circle_truth(entry):
+    """(truth, None) with the end circle's own pose (end_fix.pose, the pose where the circle began) in the episode's
+    map frame, its rms, tag count and sigmas; or (None, why) when the episode has no end circle at its final report."""
+    ef = entry.get("end_fix") or {}
+    res = entry.get("result") or {}
+    halt = entry.get("halt")
+    code = halt.get("code") if isinstance(halt, dict) else halt
+    if not ef:
+        return None, ("no end circle: the batch halted in it (%s)" % code) if entry.get("status") == "halted" \
+            else "no end circle"
+    if not ef.get("ok") or not ef.get("pose") or ef.get("tracked_only"):
+        return None, "the end circle gave no fix (%s)" % (ef.get("why") or "tracked pose only")
+    if ef.get("blended_with_tracked_pose"):
+        return None, "the end circle's fix was blended with the tracked pose (not independent of the tracker)"
+    if res.get("ended_by") != "DONE":
+        return None, "ended by %s: the last move ran after the agent's last report" % res.get("ended_by")
+    return {"pose": to_map_pose(entry["start_pose_world"], ef["pose"]), "rms_m": ef.get("rms_m"),
+            "n_tags": ef.get("n_tags"), "sigma_xy_m": ef.get("sigma_xy_m"),
+            "sigma_theta_deg": ef.get("sigma_theta_deg")}, None
+
+
+def independent_truths(docs, batches_root, recompute=None):
+    """{seed: {end_circle, end_circle_why, recomputed, recomputed_why}} from the batches' manifests under
+    batches_root (the obslogs, which are the agent's input, stay as they are). recompute(batch_dir, entry, n_rows) ->
+    {pose, sigma_xy_m, logged_pose, replay_halts}: the recomputed and the logged truth at row n_rows - 1 (the last
+    record's row), map frame; the logged one must be the record's truth, or the rows did not line up."""
+    manifests, out = {}, {}
+    for seed, d in sorted(docs.items()):
+        real = d.get("real") or {}
+        name, ep = real.get("batch"), real.get("episode")
+        t = {"end_circle": None, "end_circle_why": None, "recomputed": None, "recomputed_why": None}
+        bdir = os.path.join(batches_root, name) if name else None
+        if name and name not in manifests:
+            path = os.path.join(bdir, "manifest.json")
+            manifests[name] = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else None
+        entry = next((e for e in (manifests.get(name) or {}).get("episodes", []) if e.get("id") == ep), None)
+        if entry is None:
+            t["end_circle_why"] = t["recomputed_why"] = "no manifest entry for %s %s under %s" % (name, ep, batches_root)
+        else:
+            t["end_circle"], t["end_circle_why"] = end_circle_truth(entry)
+            if t["end_circle"]:
+                # how far the batch's logged (tracked) truth at the last step sits from the circle
+                last, ec = d["records"][-1]["truth"], t["end_circle"]["pose"]
+                t["end_circle"]["logged_truth_off_m"] = math.hypot(last["x_m"] - ec["x_m"], last["y_m"] - ec["y_m"])
+                t["end_circle"]["logged_truth_off_deg"] = wrap_deg(last["theta_deg"] - ec["theta_deg"])
+            if recompute is None:
+                t["recomputed_why"] = "not recomputed"
+            else:
+                rec = recompute(bdir, entry, len(d["records"]))
+                last = d["records"][-1]["truth"]
+                off = math.hypot(rec["logged_pose"]["x_m"] - last["x_m"], rec["logged_pose"]["y_m"] - last["y_m"])
+                if off > 0.001:
+                    raise ValueError("seed %s: the recomputation's row %d is not the record's (logged truths %.3f m "
+                                     "apart)" % (seed, len(d["records"]) - 1, off))
+                t["recomputed"] = {k: rec[k] for k in ("pose", "sigma_xy_m", "replay_halts")}
+        out[seed] = t
+    return out
+
+
+def final_errors(docs, runs, truths=None):
+    """{arm: {seed: row}} with the final-position and heading error of each episode against the batch's tracked truth
+    at the last step (final_m, final_deg), and with `truths` (independent_truths) against the end circle
+    (vs_end_circle_m, vs_end_circle_deg) and the recomputed last-step truth (vs_recomputed_m); against the simulator's
+    truth when the log has it (a dry run).
     `runs` = {arm label: run folder, or a list of an arm's run folders}. B0 and B2 come from the logs themselves. An arm's episode counts only when every
     step of it was replayed."""
     out = {"B0": {}, "B2": {}}
@@ -443,9 +516,12 @@ def final_errors(docs, runs):
                    "complete": True, "final_m": e["m"], "final_deg": e["deg"],
                    "truth_sigma_xy_m": truth.get("sigma_xy_m"), "truth_is_a_fix": truth.get("fix"),
                    "estimate": est}
-            end = d["real"].get("end_pose_map")
-            if end and d["real"].get("end_pose_source", "manifest end_pose_map") in END_CIRCLE_SOURCES:
-                row["vs_end_circle_m"] = math.hypot(est["x_m"] - end["x_m"], est["y_m"] - end["y_m"])
+            t = (truths or {}).get(seed) or {}
+            if t.get("end_circle"):
+                ec = _err(est, t["end_circle"]["pose"])
+                row["vs_end_circle_m"], row["vs_end_circle_deg"] = ec["m"], ec["deg"]
+            if t.get("recomputed"):
+                row["vs_recomputed_m"] = _err(est, t["recomputed"]["pose"])["m"]
             if last.get("truth_sim"):
                 row["vs_sim_truth_m"] = _err(est, last["truth_sim"])["m"]
             out[arm][seed] = row
@@ -482,22 +558,29 @@ def _q(values, q):
     return s[lo] + (s[hi] - s[lo]) * (pos - lo)
 
 
+def _dist(m, deg=None):
+    return {"n": len(m), "median_m": _q(m, 0.5), "q1_m": _q(m, 0.25), "q3_m": _q(m, 0.75),
+            "min_m": min(m) if m else None, "max_m": max(m) if m else None,
+            "mean_m": statistics.fmean(m) if m else None, "median_deg": _q(deg or [], 0.5)}
+
+
 def summarize(errors):
-    """{arm: {n, n_incomplete, median_m, q1_m, q3_m, min_m, max_m, mean_m, median_deg, median_truth_sigma_m,
-    median_vs_end_circle_m, median_vs_sim_truth_m}}."""
+    """{arm: {n, n_incomplete, end_circle, last_step, recomputed, median_vs_sim_truth_m}}; each truth's entry is
+    {n, median_m, q1_m, q3_m, min_m, max_m, mean_m, median_deg} over the complete episodes that have that truth.
+    end_circle is the primary truth; last_step (with median_truth_sigma_m, the tracker's stated sigma) and recomputed
+    depend on the tracker."""
     out = {}
     for arm, by_seed in errors.items():
         if arm.startswith("_"):
             continue
         rows = [r for r in by_seed.values() if r.get("complete")]
-        m = [r["final_m"] for r in rows]
+        ec = [r for r in rows if "vs_end_circle_m" in r]
+        last = _dist([r["final_m"] for r in rows], [r["final_deg"] for r in rows])
+        last["median_truth_sigma_m"] = _q([r["truth_sigma_xy_m"] for r in rows if r.get("truth_sigma_xy_m") is not None], 0.5)
         out[arm] = {"n": len(rows), "n_incomplete": sum(1 for r in by_seed.values() if not r.get("complete")),
-                    "median_m": _q(m, 0.5), "q1_m": _q(m, 0.25), "q3_m": _q(m, 0.75),
-                    "min_m": min(m) if m else None, "max_m": max(m) if m else None,
-                    "mean_m": statistics.fmean(m) if m else None,
-                    "median_deg": _q([r["final_deg"] for r in rows], 0.5),
-                    "median_truth_sigma_m": _q([r["truth_sigma_xy_m"] for r in rows if r.get("truth_sigma_xy_m") is not None], 0.5),
-                    "median_vs_end_circle_m": _q([r["vs_end_circle_m"] for r in rows if "vs_end_circle_m" in r], 0.5),
+                    "end_circle": _dist([r["vs_end_circle_m"] for r in ec], [r["vs_end_circle_deg"] for r in ec]),
+                    "last_step": last,
+                    "recomputed": _dist([r["vs_recomputed_m"] for r in rows if "vs_recomputed_m" in r]),
                     "median_vs_sim_truth_m": _q([r["vs_sim_truth_m"] for r in rows if "vs_sim_truth_m" in r], 0.5)}
     return out
 
@@ -506,45 +589,107 @@ def _cm(v):
     return "" if v is None else "%.1f" % (100 * v)
 
 
-def result_markdown(title, index, errors, summary, order, stats=None):
+def _deg(v):
+    return "" if v is None else "%.1f" % v
+
+
+def _dist_row(cells, d):
+    return "| %s | %d | %s | %s to %s | %s | %s | %s |" % (" | ".join(cells), d["n"], _cm(d["median_m"]), _cm(d["q1_m"]),
+                                                        _cm(d["q3_m"]), _cm(d["min_m"]), _cm(d["max_m"]),
+                                                        _deg(d["median_deg"]))
+
+
+def result_markdown(title, index, errors, summary, order, stats=None, truths=None, truth_settings=None):
+    truths, ts = truths or {}, truth_settings or {}
+    seeds = sorted(errors["B0"])
     lines = ["# %s" % title, "",
              "Batch `%s` (config %s, real car: %s); %d episodes, %d steps; world `%s` (sha12 %s); %s." % (
                  index["batch"], index.get("batch_config"), index.get("real_car"), len(index["episodes"]),
-                 index["steps"], index["world_file"], index["world_sha12"], index.get("dv_file")),
-             "", "Final-position error at the last step against the batch's truth (tag resection against the surveyed "
-             "tags, in the map frame of the episode's start), in cm. `vs end circle`: against the position of the "
-             "full circle the batch turns after the episode; `vs simulator truth`: only a dry run has it.", "",
-             "| Arm | n | median | IQR | min | max | median heading error (deg) | median truth sigma | vs end circle (median) | vs simulator truth (median) |",
-             "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+                 index["steps"], index["world_file"], index["world_sha12"], index.get("dv_file")), "",
+             "## Final-position error against the end circle (the primary truth)", "",
+             "The end circle is the full circle the batch turns where the episode ended: 8 to 14 tags solved on their "
+             "own geometry, not through the tracker. When the episode ended by DONE no move followed the agent's last "
+             "report, so the circle measured that very pose (the manifest's `end_fix.pose`, in the map frame of the "
+             "episode's start). n counts the episodes that have one; cm, heading in degrees. The heading column is "
+             "not a result: the circle solves its starting heading from views placed by the odometry's own turns, "
+             "which slip too; `logged truth off` below shows how far the batch's tracked truth sits from the circle, "
+             "in position and heading.", "",
+             "| Arm | n | median | IQR | min | max | median heading error (deg) |",
+             "| --- | --- | --- | --- | --- | --- | --- |"]
     for arm in order:
-        s = summary.get(arm)
-        if not s:
-            continue
-        lines.append("| %s | %d%s | %s | %s to %s | %s | %s | %s | %s | %s | %s |" % (
-            arm, s["n"], (" (+%d incomplete)" % s["n_incomplete"]) if s["n_incomplete"] else "", _cm(s["median_m"]),
-            _cm(s["q1_m"]), _cm(s["q3_m"]), _cm(s["min_m"]), _cm(s["max_m"]),
-            "" if s["median_deg"] is None else "%.1f" % s["median_deg"], _cm(s["median_truth_sigma_m"]),
-            _cm(s["median_vs_end_circle_m"]), _cm(s["median_vs_sim_truth_m"]) or "none"))
+        if arm in summary:
+            lines.append(_dist_row([arm], summary[arm]["end_circle"]))
+    with_ec = [s for s in seeds if (truths.get(s) or {}).get("end_circle")]
+    lines += ["", "Per episode (cm). `end circle`: tags, rms of its tag residuals, its stated sigma; `logged truth off`: "
+              "the batch's tracked truth at the last step minus the circle (cm, degrees):", "",
+              "| Episode | Scenario | Steps | end circle | logged truth off | " + " | ".join(order) + " |",
+              "| --- | --- | --- | --- | --- | " + " | ".join("---" for _ in order) + " |"]
+    for seed in with_ec:
+        b0, ec = errors["B0"][seed], truths[seed]["end_circle"]
+        cells = []
+        for arm in order:
+            r = errors.get(arm, {}).get(seed)
+            cells.append(_cm(r.get("vs_end_circle_m")) if r and r.get("complete") else "incomplete")
+        off = "%s, %+.1f deg" % (_cm(ec["logged_truth_off_m"]), ec["logged_truth_off_deg"]) \
+            if ec.get("logged_truth_off_m") is not None else ""
+        lines.append("| %s %s | %s | %s | %s tags, rms %s, sigma %s | %s | %s |" % (
+            b0.get("batch") or "", b0["episode"], b0.get("scenario"), b0.get("steps"), ec.get("n_tags"),
+            _cm(ec.get("rms_m")), _cm(ec.get("sigma_xy_m")), off, " | ".join(cells)))
+    without = [s for s in seeds if s not in with_ec]
+    if without:
+        lines += ["", "Without an end circle at the final report (only the tracker-dependent truths below):"]
+        for seed in without:
+            b0 = errors["B0"][seed]
+            lines.append("- %s %s: %s." % (b0.get("batch") or "", b0["episode"],
+                                           (truths.get(seed) or {}).get("end_circle_why") or "no end circle"))
+    rec_label = "recomputed with `%s` (slip sigma %.2f + %.2f x north per metre of forward move)" % (
+        ts.get("recompute_tool", RECOMPUTE_TOOL), ts.get("slip_sigma") or 0.0, ts.get("slip_north") or 0.0) \
+        if ts.get("recomputed") else None
+    lines += ["", "## Against the last step's truth (secondary, tracker-dependent)", "",
+              "The batch's own truth at the last step: the pose it tracks, odometry between tag fixes blended by "
+              "inverse variance (PoseTracker, 5 %% odometry sigma), with its stated sigma. On this carpet it is "
+              "overconfident northward. %s" % (
+                  "The second table recomputes it offline from the logged rows, %s." % rec_label if rec_label else
+                  "Not recomputed here."), "",
+              "| Truth | Arm | n | median | IQR | min | max | median heading error (deg) |",
+              "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+    for arm in order:
+        if arm in summary:
+            lines.append(_dist_row(["logged", arm], summary[arm]["last_step"]))
+    if rec_label:
+        for arm in order:
+            if arm in summary:
+                lines.append(_dist_row(["recomputed", arm], summary[arm]["recomputed"]))
+    lines += ["", "Per episode (cm; each cell: against the logged truth%s):" % (
+        " / against the recomputed truth" if rec_label else ""), "",
+              "| Episode | logged sigma%s | " % (" / recomputed sigma" if rec_label else "") + " | ".join(order) + " |",
+              "| --- | --- | " + " | ".join("---" for _ in order) + " |"]
+    for seed in seeds:
+        b0 = errors["B0"][seed]
+        rec = (truths.get(seed) or {}).get("recomputed")
+        cells = []
+        for arm in order:
+            r = errors.get(arm, {}).get(seed)
+            if not (r and r.get("complete")):
+                cells.append("incomplete")
+            else:
+                cells.append(_cm(r["final_m"]) + ((" / " + _cm(r.get("vs_recomputed_m"))) if rec_label else ""))
+        lines.append("| %s %s | %s%s | %s |" % (b0.get("batch") or "", b0["episode"], _cm(b0.get("truth_sigma_xy_m")),
+                                              (" / " + _cm(rec["sigma_xy_m"]) if rec else " / ") if rec_label else "",
+                                              " | ".join(cells)))
+    sims = [summary[a]["median_vs_sim_truth_m"] for a in order if a in summary and summary[a]["median_vs_sim_truth_m"] is not None]
+    if sims:
+        lines += ["", "Against the simulator's own pose (dry run only), median: " + "; ".join(
+            "%s %s" % (a, _cm(summary[a]["median_vs_sim_truth_m"])) for a in order
+            if a in summary and summary[a]["median_vs_sim_truth_m"] is not None) + " cm."]
     gaps = [math.hypot(d_t["x_m"] - d_s["x_m"], d_t["y_m"] - d_s["y_m"]) for d_t, d_s in
             ((r["truth_last"], r["truth_sim_last"]) for r in errors.get("_truth_check", {}).values())]
     if gaps:
         lines += ["", "The batch's truth itself against the simulator's (dry run only, last step): median %.1f cm, max "
                   "%.1f cm over %d episodes." % (100 * _q(gaps, 0.5), 100 * max(gaps), len(gaps))]
-    lines += ["", "Per episode (final-position error, cm; `truth sigma`: the batch's own uncertainty of its truth):", "",
-              "| Episode | Scenario | Steps | truth sigma | " + " | ".join(order) + " |",
-              "| --- | --- | --- | --- | " + " | ".join("---" for _ in order) + " |"]
-    for seed in sorted(errors["B0"]):
-        b0 = errors["B0"][seed]
-        cells = []
-        for arm in order:
-            r = errors.get(arm, {}).get(seed)
-            cells.append(_cm(r["final_m"]) if r and r.get("complete") else "incomplete")
-        lines.append("| %s %s | %s | %s | %s | %s |" % (b0.get("batch") or "", b0["episode"], b0.get("scenario"),
-                                                       b0.get("steps"),
-                                                    _cm(b0.get("truth_sigma_xy_m")), " | ".join(cells)))
     if stats:
-        lines += ["", "Runs: replayed steps (of the logs' steps), valid reports, harness fallbacks, repaired reports, "
-                  "step errors, `move` calls (the replay rule wants 0), cost, seconds per step.", "",
+        lines += ["", "## Runs", "", "Replayed steps (of the logs' steps), valid reports, harness fallbacks, repaired "
+                  "reports, step errors, `move` calls (the replay rule wants 0), cost, seconds per step.", "",
                   "| Arm | steps | valid | fallbacks | repaired | errors | move calls | cost (US$) | mean s/step | p95 s/step |",
                   "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
         for arm, st in stats.items():

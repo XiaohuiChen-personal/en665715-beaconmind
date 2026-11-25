@@ -8,6 +8,7 @@ AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote these tests.
 """
 import importlib.util
 import json
+import math
 import os
 import pathlib
 
@@ -116,8 +117,26 @@ def test_an_episode_halted_only_after_its_end_is_converted(batch, tmp_path):
     rows = [json.loads(line) for line in open(out / "seed_1.jsonl")]
     assert [r["estimate_pose"] for r in rows] == [rec["b2_estimate"] for rec in doc["records"]]
     assert rows[2]["observation"]["odometry"]["quality"] == "slip_suspected" and rows[2]["observation"]["source"] == "real"
-    err = rr.final_errors({1: doc}, {})
-    assert "vs_end_circle_m" in err["B2"][1]
+    # the end circle is the manifest's end_fix.pose (where the circle began), not the pose after it (pose_now)
+    truths = rr.independent_truths({1: doc}, str(batch.parent))
+    circle = rr.to_map_pose(START, {"x_m": 2.3, "y_m": 1.6, "theta_deg": 129.0})
+    assert truths[1]["end_circle"]["pose"] == pytest.approx(circle) and truths[1]["end_circle"]["sigma_xy_m"] == 0.024
+    err = rr.final_errors({1: doc}, {}, truths)
+    b2 = doc["records"][-1]["b2_estimate"]
+    assert err["B2"][1]["vs_end_circle_m"] == pytest.approx(math.hypot(b2["x_m"] - circle["x_m"], b2["y_m"] - circle["y_m"]))
+
+
+def test_the_end_circle_is_a_truth_only_for_the_pose_it_measured():
+    entry = {"start_pose_world": START, "status": "done", "result": {"complete": True, "ended_by": "DONE"},
+             "end_fix": {"ok": True, "pose": dict(START), "rms_m": 0.02, "n_tags": 9, "sigma_xy_m": 0.024}}
+    t, why = rr.end_circle_truth(entry)
+    assert why is None and t["pose"] == pytest.approx({"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}) and t["n_tags"] == 9
+    assert rr.end_circle_truth(dict(entry, result={"complete": True, "ended_by": "budget"}))[1].startswith("ended by budget")
+    assert rr.end_circle_truth(dict(entry, end_fix=dict(entry["end_fix"], blended_with_tracked_pose=True)))[0] is None
+    assert rr.end_circle_truth(dict(entry, end_fix={"ok": False, "why": "poorly conditioned"}))[0] is None
+    assert rr.end_circle_truth(dict(entry, end_fix={"ok": True, "pose_now": dict(START), "tracked_only": True}))[0] is None
+    assert "halted in it (stall)" in rr.end_circle_truth(dict(entry, end_fix=None, status="halted",
+                                                              halt={"code": "stall"}))[1]
 
 
 def test_an_episode_halted_before_its_end_is_not_converted(batch, tmp_path):
@@ -241,19 +260,26 @@ def test_final_errors_and_summary_by_hand(tmp_path):
     recs = [{"step": 0, "raw": {"odometry": None}, "truth": dict(truth, x_m=0.0), "b2_estimate": {"x_m": 0, "y_m": 0, "theta_deg": 0}},
             {"step": 1, "raw": {"odometry": {"forward_m": 0.97, "left_m": 0.0, "dtheta_deg": 0.0}}, "truth": truth,
              "b2_estimate": {"x_m": 1.03, "y_m": 0.04, "theta_deg": 2.0}}]
-    docs = {1: {"records": recs, "real": {"episode": "ep01-a1", "scenario": "S1", "end_pose_map": {"x_m": 1.0, "y_m": 0.01}}}}
+    docs = {1: {"records": recs, "real": {"episode": "ep01-a1", "scenario": "S1"}}}
+    truths = {1: {"end_circle": {"pose": {"x_m": 1.0, "y_m": 0.01, "theta_deg": 1.0}},
+                  "recomputed": {"pose": {"x_m": 0.98, "y_m": 0.0, "theta_deg": 0.0}, "sigma_xy_m": 0.1}}}
     run = tmp_path / "arm"
     run.mkdir()
     (run / "seed_1.jsonl").write_text("".join(json.dumps({"estimate_pose": p}) + "\n" for p in (
         {"x_m": 0, "y_m": 0, "theta_deg": 0}, {"x_m": 0.94, "y_m": 0.08, "theta_deg": -3.0})))
-    err = rr.final_errors(docs, {"arm": str(run)})
+    err = rr.final_errors(docs, {"arm": str(run)}, truths)
     assert err["B0"][1]["final_m"] == pytest.approx(0.03)
     assert err["B2"][1]["final_m"] == pytest.approx(0.05) and err["B2"][1]["final_deg"] == pytest.approx(2.0)
-    assert err["arm"][1]["final_m"] == pytest.approx(0.1) and err["arm"][1]["vs_end_circle_m"] == pytest.approx(0.0921954, abs=1e-6)
+    assert err["arm"][1]["final_m"] == pytest.approx(0.1)
+    assert err["arm"][1]["vs_end_circle_m"] == pytest.approx(0.0921954, abs=1e-6) and err["arm"][1]["vs_end_circle_deg"] == pytest.approx(4.0)
+    assert err["B2"][1]["vs_recomputed_m"] == pytest.approx(math.hypot(0.05, 0.04))
     s = rr.summarize(err)
-    assert s["arm"]["n"] == 1 and s["arm"]["median_m"] == pytest.approx(0.1) and s["B0"]["median_truth_sigma_m"] == 0.05
+    assert s["arm"]["n"] == 1 and s["arm"]["end_circle"]["median_m"] == pytest.approx(0.0921954, abs=1e-6)
+    assert s["arm"]["last_step"]["median_m"] == pytest.approx(0.1) and s["B0"]["last_step"]["median_truth_sigma_m"] == 0.05
+    assert s["arm"]["recomputed"]["n"] == 1
+    assert rr.summarize(rr.final_errors(docs, {"arm": str(run)}))["arm"]["end_circle"]["n"] == 0   # no truths: no circle
     (run / "seed_1.jsonl").write_text(json.dumps({"estimate_pose": {"x_m": 0, "y_m": 0, "theta_deg": 0}}) + "\n")
-    err = rr.final_errors(docs, {"arm": str(run)})                    # one step short: not counted
+    err = rr.final_errors(docs, {"arm": str(run)}, truths)            # one step short: not counted
     assert err["arm"][1]["complete"] is False and rr.summarize(err)["arm"]["n_incomplete"] == 1
 
 
@@ -315,9 +341,12 @@ def test_an_episode_whose_end_circle_was_interrupted_is_converted(batch, tmp_pat
     doc = json.loads((tmp_path / "o" / "seed_1.json").read_text())
     last = doc["records"][-1]["truth"]
     assert doc["real"]["end_pose_map"] == {k: last[k] for k in ("x_m", "y_m", "theta_deg")}
-    err = rr.final_errors({1: doc}, {})
+    truths = rr.independent_truths({1: doc}, str(batch.parent))
+    assert truths[1]["end_circle"] is None and "halted in it (stall)" in truths[1]["end_circle_why"]
+    err = rr.final_errors({1: doc}, {}, truths)
     assert "vs_end_circle_m" not in err["B2"][1] and err["B2"][1]["complete"]       # no end circle: no such column
-    assert rr.summarize(err)["B2"]["median_vs_end_circle_m"] is None
+    s = rr.summarize(err)["B2"]
+    assert s["end_circle"]["n"] == 0 and s["end_circle"]["median_m"] is None and s["last_step"]["n"] == 1
 
 
 def test_an_arm_in_sibling_run_folders_is_analysed_as_one(batch, tmp_path):
@@ -353,3 +382,33 @@ def test_an_arm_in_sibling_run_folders_is_analysed_as_one(batch, tmp_path):
         analyze("procedure", "procedure+later")
     (runs / "procedure+later" / "run.json").write_text(json.dumps(dict(head, real_replay_sha12="0" * 12)))
     assert analyze("procedure", "procedure+later") == 0                 # the code hashes may differ
+
+
+def test_the_analysis_recomputes_the_truth_with_the_batchs_own_tool(tmp_path, monkeypatch):
+    """A dry batch on the simulated car, converted and analysed with tools/recompute_truth.py: with the tracker the
+    batch ran (slip sigma 0) the recomputed truth is the logged one, the end circle comes from the manifest for the
+    episodes that ended by DONE, and the result names the tool and its parameters."""
+    from test_recompute_truth import dry_batch
+    b = dry_batch(tmp_path, monkeypatch)
+    o = tmp_path / "o"
+    idx = rr.convert_batch(str(b), str(o))
+    assert idx["episodes"]
+    argv = ["analyze", "--obslogs", str(o), "--batches", str(b.parent), "--out", str(tmp_path / "r")]
+    assert tool.cmd_analyze(tool.parser().parse_args(argv + ["--slip-sigma", "0"])) == 0
+    res = json.loads((tmp_path / "r.json").read_text())
+    assert res["truth_settings"]["recompute_tool"] == "tools/recompute_truth.py" and res["truth_settings"]["slip_sigma"] == 0
+    man = json.loads((b / "manifest.json").read_text())
+    circles = 0
+    for e in idx["episodes"]:
+        row, t = res["errors"]["B2"][str(e["seed"])], res["truths"][str(e["seed"])]
+        assert row["vs_recomputed_m"] == pytest.approx(row["final_m"], abs=0.005)
+        entry = [x for x in man["episodes"] if x["id"] == e["episode"]][0]
+        if entry["result"]["ended_by"] == "DONE" and (entry.get("end_fix") or {}).get("ok"):
+            assert t["end_circle"]["pose"] == pytest.approx(rr.to_map_pose(entry["start_pose_world"], entry["end_fix"]["pose"]))
+            assert row["vs_end_circle_m"] >= 0
+            circles += 1
+    assert circles >= 1 and res["summary"]["B2"]["end_circle"]["n"] == circles
+    md = (tmp_path / "r.md").read_text()
+    assert "tools/recompute_truth.py" in md and "slip sigma 0.00" in md and "the primary truth" in md
+    assert tool.cmd_analyze(tool.parser().parse_args(argv + ["--slip-sigma", "0.3"])) == 0
+    assert "slip sigma 0.30" in (tmp_path / "r.md").read_text()

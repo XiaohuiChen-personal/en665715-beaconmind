@@ -21,11 +21,14 @@ run       the frozen replay loop (harness/replay.py replay_seed) with what the r
           it: provider construction and checks, the configuration tag, resume rules, the spend cap and its ledger,
           workers, exit codes. run.json records the dv file and its sha12, the overlay and the config tag (which
           therefore differs from the study's).
-analyze   final-position error per episode and arm against the batch's truth at the last step (with its sigma), B0 and
-          B2 as reference rows, median and spread; --compare gives the gap to another set (the simulated rehearsal).
+analyze   final-position error per episode and arm, B0 and B2 as reference rows, median and spread. The primary truth
+          is the end circle (the batch manifest's end_fix.pose, for episodes that ended by DONE; --batches); the
+          batch's tracked truth at the last step and the same recomputed by tools/recompute_truth.py with a slip-aware
+          tracker (--slip-sigma, default 0.3; --no-recompute) are secondary, tracker-dependent columns. --compare
+          gives the gap to another set (the simulated rehearsal), against the end circle.
 estimate  cost and time of each study arm on a converted set, from the study's measured rates.
 
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this tool. Derived from: tools/replay_run.py main()
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this tool; made the end circle the primary truth. Derived from: tools/replay_run.py main()
 (the same steps, reused by import where it could be; the loop body is the frozen one).
 """
 import argparse
@@ -220,19 +223,31 @@ def cmd_analyze(a):
     except (ValueError, OSError) as exc:
         sys.exit("run folders: %s" % exc)
     runs = {label: folders[0] if len(folders) == 1 else folders for label, folders in runs.items()}
-    errors = rr.final_errors(docs, runs)
+    settings = {"primary": "end circle (manifest end_fix.pose, episodes that ended by DONE)",
+                "batches_root": a.batches, "recomputed": a.slip_sigma is not None}
+    if a.slip_sigma is not None:
+        settings.update(recompute_tool=rr.RECOMPUTE_TOOL, slip_sigma=a.slip_sigma, slip_north=a.slip_north,
+                        recompute_command="python3 course-project/%s BATCH_DIR --slip-sigma %g --slip-north %g" % (
+                            rr.RECOMPUTE_TOOL, a.slip_sigma, a.slip_north))
+    recompute = recompute_with_tool(a.slip_sigma, a.slip_north) if a.slip_sigma is not None else None
+    truths = rr.independent_truths(docs, a.batches, recompute)
+    errors = rr.final_errors(docs, runs, truths)
     summary = rr.summarize(errors)
     order = ["B0", "B2"] + list(runs)
     stats = rr.run_stats(docs, runs)
     md = rr.result_markdown(a.title or "Real-log replay: final-position error per arm", index, errors, summary, order,
-                            stats)
+                            stats, truths, settings)
     if a.compare:
         other = json.loads(pathlib.Path(a.compare).read_text(encoding="utf-8"))
         md += "\nGap to `%s` (%s): median final-position error here minus there, cm.\n\n" % (
             other["index"]["batch"], a.compare)
         md += "| Arm | here | there | gap |\n| --- | --- | --- | --- |\n"
+        if any("end_circle" not in v for v in other["summary"].values()):
+            sys.exit("%s was analysed before the end circle became the primary truth: analyse it again" % a.compare)
+        md = md.replace("Gap to `", "Gap (against the end circle) to `", 1)
         for arm in order:
-            h, t = summary.get(arm, {}).get("median_m"), other["summary"].get(arm, {}).get("median_m")
+            h = summary.get(arm, {}).get("end_circle", {}).get("median_m")
+            t = other["summary"].get(arm, {}).get("end_circle", {}).get("median_m")
             md += "| %s | %s | %s | %s |\n" % (arm, rr._cm(h), rr._cm(t), rr._cm(h - t) if h is not None and t is not None else "")
     several = {label: p for label, p in parts.items() if len(p) > 1}
     if several:
@@ -241,7 +256,8 @@ def cmd_analyze(a):
         for label, p in several.items():
             md += "- %s: %s\n" % (label, "; ".join("`%s` seeds %s, config %s" % (
                 x["folder"], ", ".join(map(str, x["seeds"])), x["config"]) for x in p))
-    doc = {"schema": "bm.real_replay_result/1", "index": index, "runs": runs, "run_parts": parts, "summary": summary,
+    doc = {"schema": "bm.real_replay_result/2", "index": index, "runs": runs, "run_parts": parts,
+           "truth_settings": settings, "truths": {str(k): v for k, v in truths.items()}, "summary": summary,
            "run_stats": stats,
            "errors": {arm: {str(k): v for k, v in by.items()} for arm, by in errors.items()},
            "created": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
@@ -249,6 +265,33 @@ def cmd_analyze(a):
     pathlib.Path(a.out + ".md").write_text(md)
     sys.stdout.write(md)
     return 0
+
+
+def recompute_with_tool(slip_sigma, slip_north):
+    """recompute(batch_dir, entry, n_rows) for rr.independent_truths: tools/recompute_truth.py's own replay_episode
+    (the batch's per-step code over the logged rows, with a slip-aware tracker), set up as its main() does; the
+    recomputed and the logged truth at row n_rows - 1, in the episode's map frame."""
+    spec = importlib.util.spec_from_file_location("recompute_truth", ROOT / rr.RECOMPUTE_TOOL)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    from beaconmind.car import batch as B
+    setup = {}
+
+    def one(batch_dir, entry, n_rows):
+        if batch_dir not in setup:
+            man = json.loads((pathlib.Path(batch_dir) / "manifest.json").read_text(encoding="utf-8"))
+            fields = set(B.BatchParams.__dataclass_fields__)
+            params = B.BatchParams(**{k: v for k, v in man["params"].items() if k in fields})
+            wp = man["params"]["world_path"]
+            world = json.loads((pathlib.Path(wp) if os.path.isabs(wp) else ROOT / wp).read_text(encoding="utf-8"))
+            setup[batch_dir] = params, world
+        params, world = setup[batch_dir]
+        rows, halts = mod.replay_episode(batch_dir, entry, params, world, slip_sigma, slip_north)
+        start = entry["start_pose_world"]
+        _, _, new, logged = rows[n_rows - 1]
+        return {"pose": rr.to_map_pose(start, new["pose"]), "sigma_xy_m": new["sigma_xy_m"],
+                "logged_pose": logged["truth_map"], "replay_halts": [h[0] for h in halts]}
+    return one
 
 
 def cmd_estimate(a):
@@ -287,6 +330,13 @@ def parser():
     r.add_argument("--dv", default=str(DEFAULT_DV), help="design values (default configs/dv-real.json; 'frozen' for "
                                                          "the frozen configs/dv.json)")
     n = sub.add_parser("analyze")
+    n.add_argument("--batches", default=str(ROOT / "data" / "batches"),
+                   help="folder of the batch folders (their manifests give the end circles)")
+    n.add_argument("--slip-sigma", type=float, default=0.3,
+                   help="recompute the last-step truth with %s at this slip sigma (per metre of forward move)"
+                        % "tools/recompute_truth.py")
+    n.add_argument("--slip-north", type=float, default=0.0)
+    n.add_argument("--no-recompute", dest="slip_sigma", action="store_const", const=None)
     n.add_argument("--obslogs", required=True)
     n.add_argument("--run", action="append", help="<arm label>=<run folder>, repeatable")
     n.add_argument("--out", required=True, help="output stem: writes <stem>.json and <stem>.md")
