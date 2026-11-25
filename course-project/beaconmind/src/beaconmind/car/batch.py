@@ -89,7 +89,7 @@ class BatchParams:
                                         # (per_step_scale_halt; b2-real-02)
     odometry_bias_max: float = 0.12     # fixes that keep landing AHEAD of the odometry by more than this share of
                                         # the distance driven halt the batch (the car goes farther than it thinks)
-    odometry_bias_min: float = -0.35    # fixes BEHIND it (under-travel, the safe direction) never halt on their own;
+    odometry_bias_min: float = -0.45    # fixes BEHIND it (under-travel, the safe direction) never halt on their own;
                                         # beyond this they are recorded (tracker.bias_under; b2-real-04)
     max_blind_travel_m: float = 0.75    # no straight move may take the distance driven since the last tag fix past
                                         # this: whatever the odometer's error, it then stays inside the wall margin
@@ -102,8 +102,10 @@ class BatchParams:
     range_scale_tol: float = 0.12       # the ranges to the tags seen before and after each forward move may say the
                                         # car went farther than its odometry by at most this share (median over the
                                         # moves so far): the dangerous direction
-    range_scale_floor: float = 0.65     # ... and less far down to this ratio: under-travel, the safe direction; the
-                                        # carpet's northward slip is 0.78 (taped, slip test) and 0.82 to 0.94 (ranges)
+    range_scale_floor: float = 0.55     # ... and less far down to this ratio: under-travel, the safe direction; the
+                                        # carpet's northward slip is 0.78 (taped, slip test), 0.67 to 0.70 at the start
+                                        # of the northward path (b2-real-02, b2-real-04); a factor-two error (0.50)
+                                        # still halts (0.65 until 2026-11-25 evening)
     range_scale_move_sigma: float = 0.05    # one move's scatter (the real car: 0.94 to 1.05 over six moves, range bias
                                         # removed): with n moves the limit is at least 3 x this / sqrt(n), so one
                                         # move alone needs 15 % (N = 1: see range_scale_halt)
@@ -756,8 +758,9 @@ def range_scale_halt(tracker, params):
       one forward move of the episode has a tag in view before and after, and the injected error (an odometer reading
       25 % short) shows there as 1.29; one move of the real car scattered 0.94 to 1.05 about its mean (practice-01b,
       range bias removed), so 15 % is three of its sigmas from a correct odometer;
-    - the car covering LESS than its odometry is the safe direction: allowed down to range_scale_floor (0.65), below
-      the carpet's measured slip (0.78 taped northward, 0.82 to 0.94 by ranges). An odometer reading 25 % long (0.80)
+    - the car covering LESS than its odometry is the safe direction: allowed down to range_scale_floor (0.55), below
+      the carpet's measured slip (0.78 taped northward, 0.82 to 0.94 by ranges, about 0.67 to 0.70 at the start of the
+      northward path, b2-real-02 and b2-real-04). An odometer reading 25 % long (0.80)
       therefore passes as slip; a factor-two error (0.50) halts.
     The same rule is applied to the last range_scale_window moves alone (10), so a change in the middle of a batch is
     not hidden by the moves before it (the review, its finding 4). Only forward moves are measured (_range_check)."""
@@ -812,7 +815,7 @@ def per_step_scale_halt(tracker, params):
     tracked heading's error along it: b2-real-02 read -27 % +- 8 % while the ranges said -12 %; b2-real-04 read
     -56 % +- 18 % from four single-tag fixes of T00 and T01 after northward legs, while the forward moves, the gyro
     corrected, came to about 0.70. Gross under-travel is still halted elsewhere: the range check below its floor
-    (0.65) and the dead-reckoning drift below its gross bound (0.5) at the next circle. Beyond odometry_bias_min the
+    (0.55) and the dead-reckoning drift below its gross bound (0.5) at the next circle. Beyond odometry_bias_min the
     reading is recorded (tracker.bias_under; the manifest's per_step_drift). Held back by the range check, an
     over-travel reading is recorded too (tracker.bias_gated)."""
     bias = tracker.odometry_bias()
@@ -1544,7 +1547,7 @@ class BatchRunner:
         """Drive to the target pose with C2 moves: face it, go, look again. Bounded; halts when not reached.
 
         Attempts: start_attempts, plus one for every stretch the car may drive between two looks around, counted on
-        the floor at the under-travel floor (max_blind_travel_m x range_scale_floor: 0.49 m), at least as many as
+        the floor at the under-travel floor (max_blind_travel_m x range_scale_floor: 0.41 m), at least as many as
         before (5). On this carpet the car covers 0.78 of its counted distance northward (the slip test), and a
         2.4 m northward transit ran out of 5 attempts 0.30 m short in simulation (2026-11-25)."""
         p = self.params

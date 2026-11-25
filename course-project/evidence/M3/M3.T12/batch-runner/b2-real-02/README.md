@@ -106,24 +106,50 @@ mildly, because its "north" spans 30° to 150°.
 - **Farther than counted (dangerous):** the car going farther than its odometry says is the dangerous direction,
   toward a wall ahead. It keeps its tight limit: the range check at +12 % (15 % on the first move); the per-step fix
   statistic at +12 % beyond three standard errors.
-- **Less far than counted (safe):** allowed down to a floor: the range check's median to **0.65**, the per-step
-  statistic to **−35 %**. The measured slip is 0.78 taped northward and 0.82 to 0.94 by ranges, so 0.65 leaves 0.13
-  below the worst real value. A factor-two error (0.50) still halts.
+- **Less far than counted (safe):** allowed down to a floor: the range check's median to **0.55** (0.65 until the
+  evening of 2026-11-25), and the per-step statistic never halts on under-travel since b2-real-04 (recorded beyond
+  **−45 %**). The measured slip is 0.78 taped northward, 0.82 to 0.94 by ranges, and 0.67 to 0.70 at the start of the
+  northward path (b2-real-02, b2-real-04), so 0.55 leaves 0.12 below the worst. A factor-two error (0.50) still
+  halts.
 - **Dead-reckoning drift:** its gross bound is now 1.6 above and 0.5 below. The real car reached 0.73 over episode 2
   and 0.66 between the S3 transit's circles.
 
-**What a 35 % under-travel does between fixes:**
-- **The tracked pose runs ahead.** The blind cap stops a straight run at 0.75 m by odometry, which at 0.65 is 0.49 m on
-  the floor. So the tracked pose can run up to 0.26 m ahead of the car, along its heading.
-- **Walls ahead and turns stay safe.** Toward a wall ahead that errs on the safe side: the guard sees the car nearer
-  the wall than it is. For a turn, the car's true position lies between the last fix and the tracked pose. The guard
-  allowed a turn at the end of every straight. The area where a turn fits is convex (the driving area is convex, and
-  the desk lies outside it), so the sweep circle also fits at every point between.
+**What a 45 % under-travel does between fixes** (the floor, 0.55):
+- **The tracked pose runs ahead.** The blind cap stops a straight run at 0.75 m by odometry, which at 0.55 is 0.41 m on
+  the floor. So the tracked pose can run up to **0.34 m** ahead of the car, along its heading.
+- **Walls ahead: safe.** Toward a wall ahead that errs on the safe side: the guard sees the car nearer the wall than it
+  is.
+- **Turns: covered by the start turn margin.** The car's true position lies on the stretch between its start and the
+  tracked end, however far behind it is.
+  - The guard requires the turn margin plus 0.05 m at the tracked end of every forward move, and since `dfc1226` at its
+    start as well (`start_turn_margin_m`).
+  - Turn room is concave along a straight line, because the driving area is convex and the desk lies outside it. So
+    every point between those two ends, the true position among them, has at least that room.
+  - Without the start margin, the true position could have only as much room as the turn that preceded the stretch
+    (0.03 m plus one sigma).
 - **A backward move stays inside the margin.** A BACKWARD_10, offered only right after a FORWARD_10, takes the car
-  about 2.6 cm behind its start at 0.78 forward and 1.04 back: inside the 0.15 m wall margin.
-- **The next fix still lands.** A 0.26 m gap stays inside what a fix may differ by (three combined sigmas plus 5 cm:
-  about 0.28 m for a 5 cm fix, more for a single far tag). No real batch has had a fix refused as far from the
-  tracked pose.
+  about 4.9 cm behind its start at 0.55 forward and 1.04 back: inside the 0.15 m wall margin.
+- **The next fix is where it shows, and this is not covered.** A precise fix (two or more tags, sigma 0.05 to 0.06 m)
+  0.34 m away is beyond what a fix may differ by (three combined sigmas plus 5 cm: 0.28 to 0.30 m), so it is refused.
+  Three in a row halt `fix_conflict`. A single far tag (sigma about 0.15 m) is accepted but weighted little, so the
+  tracked pose keeps running ahead. This is a false halt, on the safe side, but a halt.
+  - **The rehearsal at north 0.60 hit it:** 7 episodes done, then `fix_conflict` in episode 8's transit to S3, with the
+    tracked pose 0.49 m ahead of the simulated car.
+  - **At north 0.67** the same rehearsal completed 10 of 10.
+  - No real batch has had a fix refused as far from the tracked pose; the real northward travel of 0.67 to 0.70 gives
+    0.23 to 0.25 m at the blind cap.
+- **The tracked pose is the ground truth, and on this carpet it is overconfident.** Its odometry noise of 5 % of the
+  distance driven understates a 30 % slip. Against the simulated car's true pose:
+
+  | Rehearsal | All rows: p95 | All rows: max | Episode rows: p95 | Episode rows: max | Stated sigma | Rows beyond 2 sigma |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | no slip | 0.005 m | 0.008 m | | | | |
+  | north 0.67 | 0.17 m | 0.35 m | 0.12 m | 0.21 m | about 0.06 m | 11.6 % |
+  | north 0.60 | 0.24 m | 0.50 m | | | | 16.7 % |
+
+  The cure is in the tracker, not in a scale check: odometry noise along the motion sized to the floor's slip. It
+  would weight the fixes more, keep the tracked pose nearer the car and widen the fix acceptance, at the cost of wider
+  guard margins (2 sigma, at most 0.15 m). It is proposed, not done.
 - **The turn margin at the true position** (a review note, 2026-11-25). The turn room, meaning the depth of the axle
   inside the driving area less the sweep radius, is concave along a straight line, because the area is convex. So the
   room at the true position, which lies between the stretch's start and its tracked end, is at least the smaller of
@@ -136,11 +162,9 @@ mildly, because its "north" spans 30° to 150°.
   - **Closed since:** a forward move now has to start with the end's 0.05 m to spare as well
     (`start_turn_margin_m`). It costs nothing in completions: with and without it, 3 seeds × 10 episodes of the exact
     real arguments, plain and on the slipping carpet, all completed 10 of 10 with no guard refusal.
-- **The tracker's sigma understates the error.** The odometry noise of 5 % of the distance driven understates a
-  22 % slip. That error lies along the motion and in the safe direction, but the stated sigma is too small northward.
 
 **The cost:**
-- **Wrong scales that now pass:** an odometer reading up to 35 % long (the car covering 0.65 to 0.88 of what it counts)
+- **Wrong scales that now pass:** an odometer reading up to 45 % long (the car covering 0.55 to 0.88 of what it counts)
   no longer halts as a wrong scale. In fault injection, four-episode batches with odometers 25 % and 35 % long
   completed in both rooms, 3 of 3 seeds each. The simulated car stayed at least 0.39 m inside the driving area, with
   no contact.
@@ -176,7 +200,7 @@ mildly, because its "north" spans 30° to 150°.
 - **The problem:** `go_to` gave 5 attempts, each driving at most 0.75 m by odometry between two looks around. That is
   0.58 m on the floor northward. On the simulated carpet the 2.4 m northward transit to S3 ran out 0.30 m short in 2 of
   4 ten-episode batches (start_pose halts, no contact).
-- **The change:** `go_to` now allows `start_attempts` plus one attempt per 0.49 m of floor (0.75 m at the 0.65 floor),
+- **The change:** `go_to` now allows `start_attempts` plus one attempt per 0.41 m of floor (0.75 m at the 0.55 floor),
   and never fewer than the old 5.
 - **The result:** 6 of 6 ten-episode batches complete, the S3 transit using 5 or 6 attempts, the smallest true
   footprint depth 0.27 m.

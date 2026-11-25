@@ -2260,7 +2260,7 @@ def _per_step(scale, se, travel=10.5, fixes=37, ranges=()):
 def test_the_per_step_statistic_halts_only_while_the_range_check_cannot_vouch_for_the_scale():
     """b2-real-02 halted on the per-step fixes, -27 % +- 8 % over 10.5 m and 37 fixes, from real slip on northward
     moves, while the range check over 25 forward moves read 0.94 (0.90 over the last 10). Now: under-travel (fixes
-    behind the odometry) is the safe direction and allowed down to -35 % (the slip test), so it is no halt at all; and
+    behind the odometry) is the safe direction and never halts on its own (b2-real-04), recorded beyond -45 %; and
     an over-travel reading the range check contradicts is held back by the gate and recorded. With fewer than 3
     measured forward moves the statistic halts beyond its limits, as with the range check out of tolerance."""
     params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
@@ -2276,10 +2276,11 @@ def test_the_per_step_statistic_halts_only_while_the_range_check_cannot_vouch_fo
         why = B.per_step_scale_halt(_per_step(0.273, 0.081, ranges=few), params)   # ahead: the car goes farther
         assert why is not None and "tag fixes land +27 %" in why and "%d measured forward moves, fewer than 3" % len(few) in why
         # behind (under-travel, the safe direction) never halts on its own since b2-real-04 (2026-11-25); beyond
-        # -35 % it is recorded
-        assert B.per_step_scale_halt(_per_step(-0.273, 0.081, ranges=few), params) is None
-        deep = _per_step(-0.45, 0.081, ranges=few)
-        assert B.per_step_scale_halt(deep, params) is None and deep.bias_under["per_step_scale"] == pytest.approx(-0.45)
+        # -45 % it is recorded
+        shallow = _per_step(-0.273, 0.081, ranges=few)
+        assert B.per_step_scale_halt(shallow, params) is None and shallow.bias_under is None
+        deep = _per_step(-0.50, 0.081, ranges=few)
+        assert B.per_step_scale_halt(deep, params) is None and deep.bias_under["per_step_scale"] == pytest.approx(-0.50)
     out = _per_step(0.273, 0.081, ranges=[(1.20, 2)] * 3)                     # the range check itself out of tolerance
     assert B.range_scale_halt(out, params) is not None and B.per_step_scale_halt(out, params) is not None
     assert B.per_step_scale_halt(_per_step(-0.10, 0.22, ranges=[]), params) is None      # not significant: as before
@@ -2348,8 +2349,10 @@ def test_the_measured_carpet_slip_does_not_halt_and_is_recorded_by_heading(tmp_p
     assert B.range_scale_halt(t, params) is None
     t.range_moves = [(1.17, 1)] * 3                                           # 17 % farther: halts
     assert "farther than it thinks" in B.range_scale_halt(t, params)
-    t.range_moves = [(0.60, 1)] * 3                                           # below the floor: halts
-    assert "floor 0.65" in B.range_scale_halt(t, params)
+    t.range_moves = [(0.60, 1)] * 3                                           # 0.60: under-travel, allowed since
+    assert B.range_scale_halt(t, params) is None                              # the floor went to 0.55
+    t.range_moves = [(0.50, 1)] * 3                                           # a factor-two error: below the floor
+    assert "floor 0.55" in B.range_scale_halt(t, params)
     b = Batch(tmp_path, episodes=2, max_steps=30, starts=(S1, S5))
     assert b.run()["status"] == "complete"
     moves = [m for e in b.manifest["episodes"] for m in e["range_moves"]]
@@ -2361,8 +2364,8 @@ def test_the_measured_carpet_slip_does_not_halt_and_is_recorded_by_heading(tmp_p
 def test_a_long_northward_transit_on_the_slipping_carpet_reaches_its_start(tmp_path, monkeypatch):
     """The transit to S3 runs about 2.4 m north, where the car covers 0.78 of its counted distance (the slip test).
     With 5 attempts it ran out 0.30 m short in 2 of 4 simulated batches (2026-11-25); go_to now gives one attempt per
-    0.49 m of floor (0.75 m blind at the 0.65 floor) besides start_attempts. Here, on a simulated carpet with the
-    measured slip, from (2.6, 1.0) facing north to S3 (2.9 m): reached, using all of the old 5 attempts, with 9 now
+    0.41 m of floor (0.75 m blind at the 0.55 floor) besides start_attempts. Here, on a simulated carpet with the
+    measured slip, from (2.6, 1.0) facing north to S3 (2.9 m): reached, using all of the old 5 attempts, with 11 now
     allowed. (In ten-episode batches on the same carpet the S3 transit needed 6 in 2 of 6 seeds.)"""
     from beaconmind.car import simcar as S
     world = json.loads((ROOT / "configs" / "arenas" / "real-room.json").read_text())
@@ -2391,7 +2394,7 @@ def test_a_long_northward_transit_on_the_slipping_carpet_reaches_its_start(tmp_p
     pose = {"x_m": place["x_m"], "y_m": place["y_m"]}
     allowed = params.start_attempts + math.ceil(math.hypot(s3["x_m"] - pose["x_m"], s3["y_m"] - pose["y_m"])
                                                 / (params.max_blind_travel_m * params.range_scale_floor))
-    assert allowed == 9 and 5 <= e["start_fix"]["attempts"] <= allowed, (allowed, e["start_fix"]["attempts"])
+    assert allowed == 11 and 5 <= e["start_fix"]["attempts"] <= allowed, (allowed, e["start_fix"]["attempts"])
 
 
 def test_a_forward_move_starts_where_a_turn_fits_with_the_end_margin_to_spare():

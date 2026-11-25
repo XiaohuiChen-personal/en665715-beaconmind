@@ -60,7 +60,8 @@ The transit north to S5, from the first circle to the start circle:
 
 ## What changed (after this batch, not used by it)
 
-**The per-step statistic's under-travel side never halts on its own.** It is recorded beyond −35 %
+**The per-step statistic's under-travel side never halts on its own.** It is recorded beyond −45 % (−35 % in the
+first version of this change)
 (`per_step_drift.under_travel_beyond_the_floor`).
 
 **The over-travel side is exactly as before:** +12 % and three standard errors, also while fewer than 3 forward moves
@@ -71,7 +72,8 @@ are ranged. Tests: b2-real-04's reading is now recorded rather than a halt; the 
 - **The risk:** under-travel is the safe direction (the car is behind where it thinks).
 - **The reliability:** on the real car the statistic's under-travel readings are the least reliable reading of the
   scale: −27 % in b2-real-02 against −12 % by ranges, −56 % here against about −30 % on the forward moves.
-- **Gross errors are still covered:** the range check halts below 0.65, and the dead-reckoning drift halts below 0.5
+- **Gross errors are still covered:** the range check halts below 0.55 (lowered from 0.65 the same evening, since the
+  car covers 0.67 to 0.70 here), and the dead-reckoning drift halts below 0.5
   at the next circle.
 - **The other two options were weaker.** A minimum number of fixes or distance would only postpone the same
   heading-driven reading. Feeding the transit drift forward would build the slip into the statistic's expectation,
