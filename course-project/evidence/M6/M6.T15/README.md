@@ -19,8 +19,9 @@ phone clip and the harness trace.
   prints 0.1 s); a rate further than 0.2 % from 1, or readings 0.3 s apart in offset, is refused as a misreading.
 - The surveyed world file and the episode's start pose, so the room is drawn in the episode's map frame.
 
-Everything is placed on the Spark's epoch clock. Motion plays at the first of `move_speeds` (1, 2, 3, 4) that lets the
-part fit its target (real time when it can); the waits between moves take the smallest whole factor that fits the
+Everything is placed on the Spark's epoch clock. Motion plays at the first of `move_speeds` (1, 2: real time, at
+most ×2, the lead's rule of 2026-11-25) that lets the part fit its target, and every move covers at least 7 output
+frames (a shorter one, a stall for example, plays slower and the badge says so); the waits between moves take the smallest whole factor that fits the
 rest (`timeline.fit_mixed`). The header shows both speeds ("waiting ×N", "driving ×M"), the playing one filled. Layout:
 phone video (1130 × 636), the car's camera (while a step is being decided: the frame its detector used, with the
 fused detections outlined; while moving: the newest frame), the room from above with the detections drawn as rays
@@ -42,6 +43,8 @@ frame should show.
 | 24 s | ×1 | real time | yes | 57 | 0.05 s | 0.028 s |
 | 14 s | ×3 | real time | yes | 35 | 0.04 s | 0.026 s |
 | 10 s | ×5 | ×2 (real time did not fit) | yes | 19 | 0.05 s | 0.029 s |
+
+Each 1.2 s stand-in move gets 30 frames in real time and 15 at ×2.
 
 The fitted offset is 1794988525.6 against the true 1794988525.626 (the 0.1 s reading); the rest is the phone clip's
 frame spacing (1/30 s). Full outputs: `car-test-24s.txt`, `car-test-14s.txt`, `car-test-10s.txt` (the stand-in run is

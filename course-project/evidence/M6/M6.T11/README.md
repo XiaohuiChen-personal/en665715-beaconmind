@@ -19,16 +19,16 @@ parameters), and the names changed with the content.
 | `beaconmind/src/beaconmind/demo/numbers.py` | Every number on screen and in the narration with its source: `tools/report_assets.py` (the report's and slides' strings), the run folder, the rule constants read from the code that applies them. |
 | `beaconmind/src/beaconmind/demo/video_cli.py`, `tools/demo_video.py` | The one command (`all`) and its parts; `plan` writes `data/video/edl.json` and `cues.csv` without rendering. |
 | `configs/demo_video.json` | Durations and targets (parameters), run folders, the car's inputs (null until real footage exists). |
-| `beaconmind/tests/test_demo_timeline.py` (17), `test_demo_episode.py` (11) | Hand-computed fixtures. |
+| `beaconmind/tests/test_demo_timeline.py` (18), `test_demo_episode.py` (11) | Hand-computed fixtures. |
 
 ## Tests (Mac, `cd course-project/beaconmind && PYTHONPATH=src python3 -m pytest -q tests/test_demo_*.py`)
 
 ```
-...........................................                              [100%]
-43 passed in 1.36s
+...............................................                          [100%]
+47 passed in 1.18s
 ```
 
-(43 = these 28 and the 15 of M6.T12/M6.T15 in `test_demo_render.py` and `test_demo_car.py`.) The full Mac suite is in
+(47 = these 29 and the 18 of M6.T12/M6.T15 in `test_demo_render.py` and `test_demo_car.py`.) The full Mac suite is in
 the commit record below. Not run on the Spark (no render runs there; Pillow and ffmpeg tests skip cleanly where they
 are absent).
 
@@ -59,6 +59,20 @@ to join the parts when the planned length is outside it, and after joining decod
 130 s with it (then at most 42 s of cards + 128.9 s + 85 s of car = 4:16), 180 s without it, so the video stays inside
 the bound even if the filmed run does not happen.
 
+## Motion rule (the lead, 2026-11-25)
+
+Moves play in real time or at most ×2 (`max_move_speed`); only the waits are sped up; every move covers at least 7
+output frames (`min_move_frames`: a move that would get fewer plays slower and the badge says "slowed"). The
+simulation part refuses to build if a move breaks either rule. In this render every turn gets 8 frames and every
+straight 21 (`test_every_simulated_move_covers_at_least_seven_frames_and_plays_at_most_x2`,
+`test_every_move_gets_at_least_the_minimum_frames`).
+
+**Fallback.** `sim.motion: glide` re-renders in the style of commit `6a9c848` (one time-lapse factor, each move a
+0.3 s glide, about 7 frames); its plan is also inside the length bound (`test_glide_fallback_still_plans_inside_the_length_bound`).
+Every part and the final video are written under a temporary name and replace the previous file only once complete
+and checked, so a failed `all` leaves the last good video in place (`test_a_failed_assembly_keeps_the_previous_video`;
+the post-join check itself is untested).
+
 ## Edit decision list now (`python3 course-project/tools/demo_video.py plan`, no car part yet)
 
 ```
@@ -67,7 +81,7 @@ the bound even if the filmed run does not happen.
   20.00 s  sim         part  175.64 s
  195.64 s  closing     card   12.00 s
  207.64 s  disclosure  card   10.00 s
-total 217.64 s (5441 frames); simulation: thinking x14, drawn motion x2, over 1172.5 s of logged time and drawn motion
+total 217.64 s (5441 frames); simulation (motion commanded): thinking x14, moves x2, over 1172.5 s of logged time and drawn motion; shortest move 8 frames
 length check: inside 180-300 s
 ```
 

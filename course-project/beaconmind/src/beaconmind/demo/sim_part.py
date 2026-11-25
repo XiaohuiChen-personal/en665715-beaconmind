@@ -106,13 +106,34 @@ class SimPart:
             holds.append((st.t_report, float(cfg["detail_hold_s"])))
         if float(cfg.get("end_hold_s", 0)) > 0:
             holds.append((ep.total_s, float(cfg["end_hold_s"])))
-        self.move_speed = float(cfg.get("move_speed", 1.0))
-        self.factor, self.pieces, fits = TL.fit_mixed(0.0, ep.total_s, ep.move_windows, self.target_s - self.fixed_s, fps,
-                                                     self.move_speed, self.detail, float(cfg.get("detail_speed", 2.0)),
-                                                     holds)
-        if not fits:
-            raise ValueError("the simulation part does not fit %.0f s: the drawn motion at x%g, the slowed step and the "
-                             "pauses alone are longer; raise move_speed or the target" % (self.target_s, self.move_speed))
+        self.motion = cfg.get("motion", "commanded")
+        self.min_move_frames = int(cfg.get("min_move_frames", 7))
+        if self.motion == "glide":
+            # the render of commit 6a9c848, kept as the fallback: one time-lapse factor, each move drawn as a glide of
+            # glide_out_s output seconds (the simulator's move takes no time)
+            if ep.move_windows:
+                raise ValueError("motion 'glide' needs the episode loaded without draw_motion")
+            self.detail = (st.t0, st.t1) if st else None
+            end_hold = float(cfg.get("end_hold_s", 0.0))
+            self.factor, pieces = TL.fit_sim_factor(ep.total_s, self.target_s - self.fixed_s - end_hold, fps, self.detail,
+                                                    float(cfg.get("detail_speed", 2.0)),
+                                                    hold_s=float(cfg.get("detail_hold_s", 0.0)))
+            self.pieces = pieces + ([TL.hold(ep.total_s, end_hold)] if end_hold > 0 else [])
+            self.move_speed = None
+        else:
+            self.move_speed = float(cfg.get("move_speed", 1.0))
+            if self.move_speed > float(cfg.get("max_move_speed", 2.0)):
+                raise ValueError("moves play in real time or at most x%g (move_speed is x%g)"
+                                 % (float(cfg.get("max_move_speed", 2.0)), self.move_speed))
+            self.factor, self.pieces, fits = TL.fit_mixed(
+                0.0, ep.total_s, ep.move_windows, self.target_s - self.fixed_s, fps, self.move_speed, self.detail,
+                float(cfg.get("detail_speed", 2.0)), holds, min_move_frames=self.min_move_frames)
+            if not fits:
+                raise ValueError("the simulation part does not fit %.0f s: the drawn motion at x%g, the slowed step and "
+                                 "the pauses alone are longer; raise the target" % (self.target_s, self.move_speed))
+            short = [n for n in TL.move_frames(self.pieces, ep.move_windows, fps) if n < self.min_move_frames]
+            if short:
+                raise ValueError("%d moves would get fewer than %d frames" % (len(short), self.min_move_frames))
         self.cues = {}
         self.n_frames = 0
 
@@ -120,16 +141,22 @@ class SimPart:
         """The header's speed badge: thinking and driving speeds, the playing one filled."""
         if piece.hold_s is not None:
             return [("paused", True, D.BELIEF)]
+        if self.motion == "glide":
+            if piece.label == "detail":
+                return [("%s slow motion" % TL.speed_badge(piece.speed), True, D.BELIEF)]
+            return [("%s time-lapse" % TL.speed_badge(piece.speed), True, D.WARN)]
         if piece.label == "detail":
             return [("thinking %s" % TL.speed_badge(piece.speed), True, D.BELIEF),
                     ("driving %s" % TL.speed_badge(self.move_speed), False, D.OK)]
+        drive = piece.speed if piece.label == "move" else self.move_speed
         return [("thinking %s" % TL.speed_badge(self.factor), piece.label == "think", D.WARN),
-                ("driving %s" % TL.speed_badge(self.move_speed), piece.label == "move", D.OK)]
+                ("driving %s" % TL.speed_badge(drive), piece.label == "move", D.OK)]
 
     # -------------------------------------------------------------- one frame of the episode
     def frame(self, t, piece):
         ep = self.ep
-        v = E.view_at(ep, t)
+        anim = float(self.cfg.get("glide_out_s", 0.3)) * piece.speed if self.motion == "glide" else 0.0
+        v = E.view_at(ep, t, anim_s=anim)
         step = ep.steps[v.k]
         img = Image.new("RGB", SIZE, D.BG)
         detected = v.detected if not (v.moving and t > step.move_t0) else ()
@@ -203,7 +230,8 @@ class SimPart:
     def _prov(self):
         if not hasattr(self, "_prov_img"):
             img, dr = D.canvas(PROV[2:], (228, 232, 237))
-            text = self.nums.fill(self.cfg["provenance"])
+            key = "provenance_glide" if self.motion == "glide" and self.cfg.get("provenance_glide") else "provenance"
+            text = self.nums.fill(self.cfg[key])
             f = D.sans(19)
             dr.text((22, 9), D.ellipsize(dr, text, f, PROV[2] - 44), font=f, fill=D.MUTED)
             self._prov_img = img

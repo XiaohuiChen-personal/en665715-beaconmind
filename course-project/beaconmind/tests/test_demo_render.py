@@ -171,3 +171,33 @@ def test_the_plan_fits_the_simulation_target():
     assert cues["title"] == 0.0 and cues["sim.part"] == sim["start_s"]
     assert cues["sim.episode"] < cues["sim.detail"] < cues["sim.detail.end"] < cues["sim.result"]
     assert p["total_frames"] == sum(s["frames"] for s in p["sequence"])
+
+
+def test_every_simulated_move_covers_at_least_seven_frames_and_plays_at_most_x2():
+    b = _sim_numbers()
+    from beaconmind.demo import timeline as TL
+    frames = TL.move_frames(b.sim.pieces, b.sim_episode.move_windows, b.fps)
+    assert len(frames) == 55 and min(frames) >= 7
+    assert all(p.speed <= 2.0 for p in b.sim.pieces if p.label == "move")
+
+
+def test_glide_fallback_still_plans_inside_the_length_bound(tmp_path):
+    b = _sim_numbers()
+    cfg = dict(b.cfg, sim=dict(b.cfg["sim"], motion="glide"), out_dir=str(tmp_path))
+    path = tmp_path / "glide.json"
+    path.write_text(json.dumps(cfg))
+    from beaconmind.demo.video_cli import Build
+    g = Build(root=ROOT, config=str(path), car_inputs={})
+    p = g.plan()
+    assert g.sim.motion == "glide" and g.sim_episode.move_windows == [] and p["length_problem"] is None
+
+
+def test_a_failed_assembly_keeps_the_previous_video(tmp_path, monkeypatch):
+    b = _sim_numbers()
+    b.out = str(tmp_path)
+    final = tmp_path / "BeaconMind-demo-silent.mp4"
+    final.write_bytes(b"the previous good video")
+    monkeypatch.setattr(b, "length_bounds", lambda: (1.0, 2.0))           # any real plan is now too long
+    with pytest.raises(SystemExit):
+        b.assemble()
+    assert final.read_bytes() == b"the previous good video"

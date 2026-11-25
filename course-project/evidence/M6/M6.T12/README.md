@@ -29,12 +29,14 @@ right, as Xiaohui's survey sketch draws the room "seen from above" (`evidence/M3
 never a mirror, so a left turn turns counter-clockwise. The report's Fig. 3 (`fig-room`) is the mirror image of that
 sketch; the lead has listed it in `report/PENDING.md`.
 
-## Motion is continuous (consecutive frames of the rendered video)
+## Motion is continuous (frames of the rendered video)
 
-`motion-continuity.jpg`: six consecutive frames (25 fps) of `data/video/BeaconMind-demo-silent.mp4` from inside two
-moves: top two rows, step 17's FORWARD_25 (close-up and room view): the car advances a little in every frame, the
-start mark recedes; bottom two rows, step 5's TURN_LEFT_30: the heading turns a little in every frame. No jump from
-pose to pose. In the log the frames' source times are 1/25 s × 2 apart (driving at ×2).
+`motion-continuity.jpg` (from `data/video/BeaconMind-demo-silent.mp4`, render of 2026-11-25 01:00): top row, all 8
+frames of step 39's TURN_LEFT_30 (close-up): the heading turns a little in every frame; middle and bottom rows, every
+third of the 21 frames of step 41's FORWARD_25 (close-up and room view): the car advances evenly, the start mark
+recedes; the header badge reads "driving ×2" while it plays. No jump from pose to pose. Every one of the 55 moves gets
+8 (turn) or 21 (straight) frames. An earlier check of six consecutive frames inside step 17's FORWARD_25 and step 5's
+TURN_LEFT_30 showed the same.
 
 ## Stills looked at (Read, full size)
 

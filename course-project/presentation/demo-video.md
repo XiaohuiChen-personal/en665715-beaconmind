@@ -38,8 +38,12 @@ its timings and exports stills. The parts on their own: `plan`, `numbers`, `chec
   between the logged poses, in the room view, in a close-up that follows it, and in a simulated camera view.
 - **Speed is always on screen.** The header shows two speeds, thinking and driving, the playing one filled, or
   "paused". The simulated part fits the smallest whole thinking factor into its target; driving plays at ×2, one step
-  at ×2 with a pause on its report. The car part plays motion in real time when it fits (else ×2, ×3, ×4) and speeds
-  up the waits. The clock is the harness's own: it stands still while a drawn move plays.
+  at ×2 with a pause on its report. The car part plays motion in real time when it fits (else ×2, never faster) and
+  speeds up the waits. Every move covers at least 7 output frames. The clock is the harness's own: it stands still
+  while a drawn move plays.
+- **Never worse than the last good render.** Parts and the final video are written under temporary names and replace
+  the previous files only when complete and checked. `sim.motion: glide` re-renders the earlier style (commit
+  `6a9c848`: one time-lapse factor, each move a 0.3 s glide) if the drawn motion has to be dropped.
 - **Labels are honest.** "SIMULATION · Kinematic simulator (kinsim) · Claude Opus 5.5 drives"; the provenance line
   says kinsim, nominal tag positions, one episode, the noise seed, and that the moves are drawn at their commanded
   speed because the simulator moves instantly. The validator clip is labelled "SCRIPTED TEST: a scripted test model, not a real model".

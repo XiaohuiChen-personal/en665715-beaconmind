@@ -1,5 +1,5 @@
 {
- "$comment": "AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24/25: settings of the demo video (plan M6.T11-T16 as re-scoped in plan/README.md section 3.6: rendered from the experiment harness's logs, no ROSA). LENGTH: course requirement (Canvas, Presentation Timing), as reported by Xiaohui on 2026-11-24: a pre-recorded demo of 3 to 5 minutes; length_s is a hard check on the assembled video (the assembly refuses anything outside it), aiming at about 4 minutes. With the car part: simulation about 2:00, car about 1:30, cards the rest; without it the simulation part takes target_s_without_car so the video stays inside the bound. Durations are parameters. Paths are relative to course-project/; outputs go to out_dir (git-ignored).",
+ "$comment": "AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24/25: settings of the demo video (plan M6.T11-T16 as re-scoped in plan/README.md section 3.6: rendered from the experiment harness's logs, no ROSA). LENGTH: course requirement (Canvas, Presentation Timing), as reported by Xiaohui on 2026-11-24: a pre-recorded demo of 3 to 5 minutes; length_s is a hard check on the assembled video (the assembly refuses anything outside it), aiming at about 4 minutes. With the car part: simulation about 2:00, car about 1:30, cards the rest; without it the simulation part takes target_s_without_car so the video stays inside the bound. Durations are parameters. Paths are relative to course-project/; outputs go to out_dir (git-ignored). MOTION: moves play in real time or at most x2 and each covers at least min_move_frames output frames (the lead's rule, 2026-11-25); only the waits are sped up. sim.motion 'glide' re-renders the commit-6a9c848 style (one time-lapse factor, each move a 0.3 s glide) as the fallback.",
  "schema": "bm.demo_video/1",
  "fps": 25,
  "width": 1920,
@@ -72,7 +72,12 @@
   },
   "target_s_without_car": 180,
   "move_speed": 2,
-  "close_up_px_per_m": 380
+  "close_up_px_per_m": 380,
+  "motion": "commanded",
+  "max_move_speed": 2,
+  "min_move_frames": 7,
+  "glide_out_s": 0.3,
+  "provenance_glide": "kinsim (kinematic simulator) · {{sim.tags}} nominal tag positions · one episode, noise seed {{sim.noise-seed}}, {{sim.date}} · the simulator moves instantly: each move is drawn as a short glide between the logged poses · replayed from the logs"
  },
  "car": {
   "target_s": 85,
@@ -93,10 +98,9 @@
   "card_s": 6,
   "move_speeds": [
    1,
-   2,
-   3,
-   4
-  ]
+   2
+  ],
+  "min_move_frames": 7
  },
  "length_s": {
   "min": 180,

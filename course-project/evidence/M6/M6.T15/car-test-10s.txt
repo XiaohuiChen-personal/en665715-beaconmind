@@ -12,5 +12,5 @@ fitted_rate      1.0
 checked_frames   19
 max_error_s      0.05
 mean_error_s     0.028947368421052635
-max_error_by_piece_s {'move': 0.05, 'think': 0.04}
+max_error_by_piece_s {'think': 0.04, 'move': 0.05}
 pieces           [(1.62, 'think', 5.0), (1.2, 'move', 2.0), (1.62, 'think', 5.0), (1.2, 'move', 2.0), (1.62, 'think', 5.0), (1.2, 'move', 2.0), (1.62, 'think', 5.0), (1.2, 'move', 2.0)]

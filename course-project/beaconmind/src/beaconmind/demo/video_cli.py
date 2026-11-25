@@ -67,7 +67,8 @@ class Build:
     @property
     def sim_episode(self):
         if not hasattr(self, "_ep"):
-            self._ep = E.load_episode(_rel(self.root, self.cfg["sim"]["run_dir"]), draw_motion=True)
+            self._ep = E.load_episode(_rel(self.root, self.cfg["sim"]["run_dir"]),
+                                      draw_motion=self.cfg["sim"].get("motion", "commanded") != "glide")
         return self._ep
 
     def _base_nums(self):
@@ -93,7 +94,8 @@ class Build:
             sim = self.sim
             n.put("sim.factor", str(sim.factor), "fitted: the smallest whole thinking factor that fits the simulation "
                   "part's target")
-            n.put("sim.move-speed", "%g" % sim.move_speed, "configs/demo_video.json sim.move_speed")
+            if sim.move_speed is not None:
+                n.put("sim.move-speed", "%g" % sim.move_speed, "configs/demo_video.json sim.move_speed")
             d = self.cfg["sim"].get("detail_step")
             if d is not None:
                 n.put("sim.detail-step", str(d), "configs/demo_video.json sim.detail_step")
@@ -155,7 +157,9 @@ class Build:
         bounds = self.length_bounds()
         return {"sequence": seq, "cues": cues, "total_s": t / float(self.fps), "total_frames": t,
                 "length_bounds_s": bounds, "length_problem": TL.check_length(t / float(self.fps), bounds),
-                "sim": {"factor": self.sim.factor, "move_speed": self.sim.move_speed,
+                "sim": {"factor": self.sim.factor, "move_speed": self.sim.move_speed, "motion": self.sim.motion,
+                        "min_move_frames": min(TL.move_frames(self.sim.pieces, self.sim_episode.move_windows, self.fps)
+                                               or [None]) if self.sim.motion != "glide" else None,
                         "detail": self.cfg["sim"].get("detail_step"), "target_s": self.sim.target_s,
                         "pieces": [{"w0": p.w0, "w1": p.w1, "speed": p.speed, "label": p.label, "hold_s": p.hold_s}
                                    for p in self.sim.pieces],
@@ -182,11 +186,13 @@ class Build:
     # -------------------------------------------------------------- rendering
     def render_sim(self):
         out = self.path("parts", "sim.mp4")
+        new = out[:-4] + ".new.mp4"          # the previous part stays until this one is complete
         t = time.time()
-        with F.Encoder(self.ffmpeg, self.size, self.fps, out) as enc:
+        with F.Encoder(self.ffmpeg, self.size, self.fps, new) as enc:
             self.sim.render(enc)
-        print("sim part: %s, %d frames, %.1f s of video, rendered in %.0f s" % (
-            os.path.relpath(out, self.root), enc.n, enc.n / float(self.fps), time.time() - t))
+        os.replace(new, out)
+        print("sim part: %s, %d frames, %.1f s of video, rendered in %.0f s (motion: %s)" % (
+            os.path.relpath(out, self.root), enc.n, enc.n / float(self.fps), time.time() - t, self.sim.motion))
         return out
 
     def render_car(self):
@@ -194,9 +200,11 @@ class Build:
             print("car part: no inputs configured (configs/demo_video.json car.inputs is null): left out")
             return None
         out = self.path("parts", "car.mp4")
+        new = out[:-4] + ".new.mp4"
         t = time.time()
-        with F.Encoder(self.ffmpeg, self.size, self.fps, out) as enc:
+        with F.Encoder(self.ffmpeg, self.size, self.fps, new) as enc:
             self.car.render(enc, self.ffmpeg)
+        os.replace(new, out)
         print("car part: %s, %d frames, %.1f s, rendered in %.0f s" % (os.path.relpath(out, self.root), enc.n,
                                                                        enc.n / float(self.fps), time.time() - t))
         return out
@@ -235,18 +243,22 @@ class Build:
         lst = self.path("concat.txt")
         with open(lst, "w", encoding="utf-8") as fh:
             fh.write(F.concat_list_text(files))
-        silent = self.path("BeaconMind-demo-silent.mp4")
+        final = self.path("BeaconMind-demo-silent.mp4")
+        silent = final[:-4] + ".new.mp4"     # the previous video stays in place until this one has passed its checks
         F.run(F.concat_cmd(self.ffmpeg, lst, silent))
         info = F.probe(self.ffmpeg, silent)
-        print("assembled: %s, %.2f s, %s frames (planned %d)" % (os.path.relpath(silent, self.root),
+        print("assembled: %s, %.2f s, %s frames (planned %d)" % (os.path.relpath(final, self.root),
                                                                 info.get("duration_s", -1), info.get("frames"),
                                                                 p["total_frames"]))
         problem = TL.check_length(info.get("duration_s", -1), self.length_bounds())
         if problem or info.get("frames") != p["total_frames"]:
-            bad = silent.replace(".mp4", "-REJECTED.mp4")
+            bad = final[:-4] + "-REJECTED.mp4"
             os.replace(silent, bad)
-            raise SystemExit("demo_video: the assembled file failed its check (%s; %s frames, planned %d); moved to %s"
-                             % (problem or "length ok", info.get("frames"), p["total_frames"], bad))
+            raise SystemExit("demo_video: the assembled file failed its check (%s; %s frames, planned %d); moved to %s; "
+                             "the previous video, if any, is unchanged" % (problem or "length ok", info.get("frames"),
+                                                                          p["total_frames"], bad))
+        os.replace(silent, final)
+        silent = final
         print("length check: %.2f s is inside %.0f-%.0f s" % ((info["duration_s"],) + self.length_bounds()))
         audio = self.cfg.get("narration_audio")
         if audio:
@@ -339,9 +351,11 @@ def main(argv=None):
         p = b.write_plan()
         for s in p["sequence"]:
             print("%7.2f s  %-11s %-5s %6.2f s" % (s["start_s"], s["id"], s["kind"], s["dur_s"]))
-        print("total %.2f s (%d frames); simulation: thinking x%d, drawn motion x%g, over %.1f s of logged time "
-              "and drawn motion" % (p["total_s"], p["total_frames"], p["sim"]["factor"], p["sim"]["move_speed"],
-                                    p["sim"]["source_total_s"]))
+        print("total %.2f s (%d frames); simulation (motion %s): thinking x%d, moves %s, over %.1f s of logged time "
+              "and drawn motion; shortest move %s frames" % (
+                  p["total_s"], p["total_frames"], p["sim"]["motion"], p["sim"]["factor"],
+                  "x%g" % p["sim"]["move_speed"] if p["sim"]["move_speed"] else "glide",
+                  p["sim"]["source_total_s"], p["sim"]["min_move_frames"]))
         print("length check: %s" % (p["length_problem"] or "inside %.0f-%.0f s" % tuple(p["length_bounds_s"])))
         if p["length_problem"]:
             return 1

@@ -161,3 +161,13 @@ def test_length_check_is_the_course_bound():
     assert TL.check_length(180.0, (180.0, 300.0)) is None and TL.check_length(300.0, (180.0, 300.0)) is None
     assert "shorter" in TL.check_length(161.8, (180.0, 300.0))
     assert "longer" in TL.check_length(300.2, (180.0, 300.0))
+
+
+def test_every_move_gets_at_least_the_minimum_frames():
+    wins = [(2.0, 2.2), (5.0, 6.0), (8.0, 8.667)]               # 0.2 s, 1.0 s and a 30 deg turn at 45 deg/s
+    pieces = TL.mixed_pieces(0.0, 10.0, wins, 5, 2.0, min_move_frames=7, fps=25)
+    frames = TL.move_frames(pieces, wins, 25)
+    assert min(frames) >= 7 and frames == [7, 13, 8]
+    slowed = [p for p in pieces if p.label == "move" and p.w0 == 2.0][0]
+    assert slowed.speed < 1 and TL.speed_badge(slowed.speed) == "slowed \u00d70.7"
+    assert all(p.speed == 2.0 for p in pieces if p.label == "move" and p.w0 != 2.0)    # long enough: untouched

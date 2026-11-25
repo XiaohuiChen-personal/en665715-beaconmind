@@ -3,5 +3,5 @@
   20.00 s  sim         part  175.64 s
  195.64 s  closing     card   12.00 s
  207.64 s  disclosure  card   10.00 s
-total 217.64 s (5441 frames); simulation: thinking x14, drawn motion x2, over 1172.5 s of logged time and drawn motion
+total 217.64 s (5441 frames); simulation (motion commanded): thinking x14, moves x2, over 1172.5 s of logged time and drawn motion; shortest move 8 frames
 length check: inside 180-300 s

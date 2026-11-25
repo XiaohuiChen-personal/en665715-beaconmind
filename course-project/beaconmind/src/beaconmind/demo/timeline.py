@@ -79,6 +79,8 @@ def frame_times(pieces, fps):
 
 
 def speed_badge(speed):
+    if speed < 0.95:
+        return "slowed \u00d7%.1f" % speed
     return "real time" if speed < 1.5 else "\u00d7%d" % int(speed + 0.5)
 
 
@@ -192,10 +194,13 @@ def fit_think_speed(t0, t1, move_windows, target_out_s, fps, move_speed=1.0, max
 
 # ---------------------------------------------------------------- waits, motion, a slowed step and pauses
 
-def mixed_pieces(t0, t1, move_windows, think_speed, move_speed=1.0, slow=None, slow_speed=2.0, holds=()):
+def mixed_pieces(t0, t1, move_windows, think_speed, move_speed=1.0, slow=None, slow_speed=2.0, holds=(),
+                 min_move_frames=0, fps=25):
     """Pieces over [t0, t1]: the move windows at move_speed ("move"), the `slow` interval (s0, s1) outside the moves
     at slow_speed ("detail"), everything else at think_speed ("think"); `holds` = [(instant, seconds)] pauses
-    inserted at those instants (labelled "hold"). Adjacent pieces of the same kind and speed are merged."""
+    inserted at those instants (labelled "hold"). Adjacent pieces of the same kind and speed are merged. A move window
+    that would get fewer than min_move_frames output frames at move_speed is played slower, so that it gets them
+    (its speed is then below 1 and the badge says "slowed")."""
     cuts = {t0, t1}
     wins = [(max(t0, a), min(t1, b)) for a, b in move_windows if b > a and b > t0 and a < t1]
     for a, b in wins:
@@ -221,8 +226,12 @@ def mixed_pieces(t0, t1, move_windows, think_speed, move_speed=1.0, slow=None, s
         if a in hold_at and (not out or out[-1].hold_s is None or out[-1].w0 != a):
             add(hold(a, hold_at.pop(a)))
         mid = (a + b) / 2.0
-        if any(x <= mid <= y for x, y in wins):
-            add(Piece(a, b, float(move_speed), "move"))
+        win = next(((x, y) for x, y in wins if x <= mid <= y), None)
+        if win:
+            sp = float(move_speed)
+            if min_move_frames and (win[1] - win[0]) / sp * fps < min_move_frames - 0.5:
+                sp = (win[1] - win[0]) * fps / float(min_move_frames)
+            add(Piece(a, b, sp, "move"))
         elif slow and slow[0] <= mid <= slow[1]:
             add(Piece(a, b, float(slow_speed), "detail"))
         else:
@@ -233,21 +242,28 @@ def mixed_pieces(t0, t1, move_windows, think_speed, move_speed=1.0, slow=None, s
 
 
 def fit_mixed(t0, t1, move_windows, target_out_s, fps, move_speed=1.0, slow=None, slow_speed=2.0, holds=(),
-              max_speed=5000):
+              max_speed=5000, min_move_frames=0):
     """(think speed, pieces, fits): the smallest whole think speed whose pieces fit target_out_s; the motion, the slowed
     interval and the pauses keep their speeds. fits is False when they alone are longer than the target."""
-    fixed = mixed_pieces(t0, t1, move_windows, 1.0, move_speed, slow, slow_speed, holds)
+    kw = dict(min_move_frames=min_move_frames, fps=fps)
+    fixed = mixed_pieces(t0, t1, move_windows, 1.0, move_speed, slow, slow_speed, holds, **kw)
     fixed_out = sum(p.out_s for p in fixed if p.label != "think")
     waiting = sum(p.w1 - p.w0 for p in fixed if p.label == "think")
     if target_out_s <= fixed_out:
-        return max_speed, mixed_pieces(t0, t1, move_windows, max_speed, move_speed, slow, slow_speed, holds), False
+        return max_speed, mixed_pieces(t0, t1, move_windows, max_speed, move_speed, slow, slow_speed, holds, **kw), False
     speed = max(1, int(math.ceil(waiting / (target_out_s - fixed_out)))) if waiting else 1
     while speed <= max_speed:
-        pieces = mixed_pieces(t0, t1, move_windows, speed, move_speed, slow, slow_speed, holds)
+        pieces = mixed_pieces(t0, t1, move_windows, speed, move_speed, slow, slow_speed, holds, **kw)
         if output_duration(pieces, fps) <= target_out_s + 1e-9:
             return speed, pieces, True
         speed += 1
-    return max_speed, mixed_pieces(t0, t1, move_windows, max_speed, move_speed, slow, slow_speed, holds), False
+    return max_speed, mixed_pieces(t0, t1, move_windows, max_speed, move_speed, slow, slow_speed, holds, **kw), False
+
+
+def move_frames(pieces, move_windows, fps):
+    """Output frames that show each move window (in order), from the pieces' frame times."""
+    times = frame_times(pieces, fps)
+    return [sum(1 for _i, w, j in times if pieces[j].label == "move" and a <= w <= b) for a, b in move_windows]
 
 
 def check_length(total_s, bounds):

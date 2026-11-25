@@ -66,6 +66,8 @@
  "sim": {
   "factor": 14,
   "move_speed": 2.0,
+  "motion": "commanded",
+  "min_move_frames": 8,
   "detail": 23,
   "target_s": 180.0,
   "pieces": [

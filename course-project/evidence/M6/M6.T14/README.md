@@ -15,7 +15,7 @@ show the robot running in the simulator").
 **Motion.** kinsim moves the car instantly. Each of the 55 executed moves is drawn at the speed limits its logged
 command carries (`bm.move/1`: 0.15 m/s, 45°/s): 42.7 s of motion in all, played at ×2, the car turning and driving
 smoothly (consecutive-frame check in `evidence/M6/M6.T12/README.md`). The model's 1129.8 s of thinking play at ×14
-(the smallest whole factor that fits); step 23, the first position fix, plays at ×2 with each tool call appearing
+(the smallest whole factor that fits); every move covers 8 (turn) or 21 (straight) output frames; step 23, the first position fix, plays at ×2 with each tool call appearing
 when the model made it, followed by a 5 s pause on its report; a 3 s pause holds the last report (DONE). The header
 always shows both speeds, the playing one filled. The clock is the harness's own (it stands still while a drawn
 move plays) and ends at 18:49 (1129.8 s, the summary's total).
@@ -34,7 +34,7 @@ part the simulation part shrinks to 128.9 s (thinking ×34) and the whole video 
 ## One command, and its output (`python3 course-project/tools/demo_video.py all`, Mac, 2026-11-25)
 
 ```
-sim part: data/video/parts/sim.mp4, 4391 frames, 175.6 s of video, rendered in 314 s
+sim part: data/video/parts/sim.mp4, 4391 frames, 175.6 s of video, rendered in 352 s (motion: commanded)
 car part: no inputs configured (configs/demo_video.json car.inputs is null): left out
 cards: closing, disclosure, idea, title
 assembled: data/video/BeaconMind-demo-silent.mp4, 217.64 s, 5441 frames (planned 5441)
@@ -42,8 +42,11 @@ length check: 217.64 s is inside 180-300 s
 no narration audio configured (narration_audio is null): the silent video is the output
 narration: presentation/demo-voiceover.md, 15 blocks, over budget: none
 stills: 24 in data/video/stills
-python3 tools/demo_video.py all  408.03s user 22.29s system 133% cpu 5:22.91 total
+python3 tools/demo_video.py all  456.89s user 26.91s system 133% cpu 6:02.26 total
 ```
+
+The render with the motion guards and the safe replacement is byte for byte the same video as the one before them
+(same SHA-256 below).
 
 ffmpeg is the static 7.1 build inside the `imageio-ffmpeg` wheel already in the Mac's Python 3.13 (nothing installed
 system-wide; a git-ignored venv `data/video/venv` was created first and turned out to be unnecessary).

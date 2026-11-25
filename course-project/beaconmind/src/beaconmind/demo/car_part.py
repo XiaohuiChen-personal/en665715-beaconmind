@@ -134,7 +134,8 @@ class CarPart:
         for ms in cfg.get("move_speeds") or [cfg.get("move_speed", 1.0)]:
             self.move_speed = float(ms)
             self.think_speed, self.pieces, self.fits = TL.fit_mixed(
-                self.t0, self.t1, self.ep.move_windows, float(cfg["target_s"]) - self.card_s, fps, self.move_speed)
+                self.t0, self.t1, self.ep.move_windows, float(cfg["target_s"]) - self.card_s, fps, self.move_speed,
+                min_move_frames=int(cfg.get("min_move_frames", 7)))
             if self.fits:
                 break
         self.test = bool(inputs.get("test"))
@@ -252,7 +253,8 @@ class CarPart:
         stats = [("real time", "%02d:%02d" % divmod(int(t - self.t0), 60)), ("model cost", "US$%.2f" % v.cost),
                  ("tags mapped", "%d of %d" % (len(v.mapped), len(ep.tags)))]
         badge = [("waiting %s" % TL.speed_badge(self.think_speed), piece.label == "think", D.WARN),
-                 ("driving %s" % TL.speed_badge(self.move_speed), piece.label == "move", D.OK)]
+                 ("driving %s" % TL.speed_badge(piece.speed if piece.label == "move" else self.move_speed),
+                  piece.label == "move", D.OK)]
         hdr = P.header(HEADER[2:], ("PIPELINE TEST" if self.test else "REAL CAR", self.inp.get("label", "")), stats,
                        badge, chip_gap=26)
         img.paste(hdr, HEADER[:2])
