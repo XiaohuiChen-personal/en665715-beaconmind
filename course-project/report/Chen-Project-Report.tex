@@ -3,8 +3,9 @@
 %
 % Class Project Report -- EN.665.715 Embodied Agentic AI for Robotic Control
 % Built from the instructor's "Class Project Template" (conference_101719.tex, IEEEtran).
-% DRAFT STATUS (2026-11-18): the main simulated study is reported in full; real-car and closed-loop
-% results are marked with \pending{...} and listed in PENDING.md.
+% STATUS (2026-11-25): the main simulated study and the real-log replay of B0, B2 and Opus 5.5 are reported;
+% Qwen3.8 and Gemma 4 on the real logs and the closed-loop episodes on the car are marked with \pending{...} and
+% listed in PENDING.md.
 % Study numbers are \bmnum{<key>} from generated/numbers.tex, and the study tables and the room figure are
 % generated/*.tex; course-project/tools/report_assets.py writes them from the evidence files. Pilot numbers
 % come from pilot_macros.tex and tab_judge.tex (tools/pilot_analyze.py). Do not type a result by hand.
@@ -56,26 +57,21 @@ EN.665.715 Embodied Agentic AI for Robotic Control (individual project)}
 \maketitle
 
 \begin{abstract}
-Language-model agents now plan for robots, but pose and map still come from classical estimators. BeaconMind asks whether a large language model (LLM) can keep the pose and the
-landmark map of simultaneous localization and mapping (SLAM) itself. A small differential-drive car explores
-a walled arena whose only landmarks are AprilTags with repeated IDs. At every stop a stateless ReAct
-agent receives the odometry increment and the tag detections as text, calls deterministic geometry tools, and decides which detections to trust, which beacon each belongs to, and which pose and map
-to report; in closed loop a validator checks every move. In a pre-registered study, three models replayed identical
-simulated logs of \bmnum{n.seeds} held-out seeds with a 2\,\% odometry over-read, against dead reckoning, a
-factor-graph reference and the same procedure written as code. Claude Opus~5.5 and Qwen3.8-Flash-Next
-tracked the car better than dead reckoning (trajectory error lower by \bmnum{h1.opus.gain} and
-\bmnum{h1.qwen.gain}\,cm; Holm-adjusted $p=\bmnum{h1.opus.p-holm}$ and $\bmnum{h1.qwen.p-holm}$), but
-neither interval lay wholly below $-$\bmnum{sesoi.cm}\,cm, the smallest difference that matters. Both largely reproduced the
-coded procedure (within 1\,cm on \bmnum{fid.opus.within} and \bmnum{fid.qwen.within} of \bmnum{n.seeds}
-seeds), and stayed far from the factor graph, a comparison the pre-registered gate left untested. Gemma~4 26B was worse than dead reckoning
-on \bmnum{h1.gemma.worse} seeds; a post hoc check traces most of its error to steps answered without calling a tool.
-In this replay no move chosen by the agent was executed. On the real car the coded procedure drove
-\bmnum{real.n} recorded episodes in a carpeted room; replayed on their logs and scored against a full-turn tag
-resection at each episode's end ($n=\bmnum{real.n-circle}$), the median final-position error was
-\bmnum{real.b0.median}\,cm for dead reckoning, \bmnum{real.b2.median}\,cm for the coded procedure and
-\bmnum{real.opus.median}\,cm for Opus~5.5 \pending{Qwen3.8 and Gemma~4 on the real logs (replays running)}. The
-car's odometry drifted far more than the simulator's, in part through a slip that depended on the direction of
-travel.
+BeaconMind asks whether a large language model (LLM), rather than a classical estimator, can keep a robot's pose
+and landmark map, the state of simultaneous localization and mapping (SLAM). A small differential-drive car explores an arena whose only landmarks are AprilTags with repeated IDs.
+At every stop a stateless ReAct agent reads the odometry and tag detections as text, calls deterministic geometry
+tools, and decides which detections to trust and match and which pose and map to report. In a
+pre-registered study, three models replayed identical simulated logs of \bmnum{n.seeds} held-out seeds with a
+2\,\% odometry over-read, against dead reckoning, a factor-graph reference and the same procedure written as code.
+Claude Opus~5.5 and Qwen3.8-Flash-Next tracked the car better than dead reckoning (trajectory error lower by
+\bmnum{h1.opus.gain} and \bmnum{h1.qwen.gain}\,cm; Holm-adjusted $p=\bmnum{h1.opus.p-holm}$ and
+$\bmnum{h1.qwen.p-holm}$), but neither interval lay wholly below $-$\bmnum{sesoi.cm}\,cm, the smallest difference that
+matters, and both largely reproduced the coded procedure. Gemma~4 26B was worse than dead reckoning on
+\bmnum{h1.gemma.worse} seeds, mostly on steps answered without a tool (post hoc). On a real car the coded procedure
+drove \bmnum{real.n} episodes in a carpeted room; replayed on their logs and scored against a tag resection at the end
+of \bmnum{real.n-circle} of them, the median final-position error was \bmnum{real.b0.median}\,cm for dead reckoning,
+\bmnum{real.b2.median}\,cm for the coded procedure and \bmnum{real.opus.median}\,cm for Opus~5.5 \pending{Qwen3.8
+and Gemma~4 on the real logs (replays running)}. The car's odometry drifted far more than the simulator's.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -102,7 +98,7 @@ validator keeps every move bounded and safe. Tag IDs may repeat, so the tag code
 
 \textbf{Contributions.} (1)~A tool-grounded, stateless ReAct agent design in which the LLM owns every SLAM
 decision, single-timestep tools compute every geometric quantity, and a validator below the model enforces
-safety (Section~\ref{sec:system}); the code is public. (2)~A pre-registered evaluation protocol that replays
+safety (Section~\ref{sec:system}); the code is public, except the car's firmware (Section~\ref{sec:system}). (2)~A pre-registered evaluation protocol that replays
 identical logs through every arm, compares the agent with dead reckoning, a factor-graph reference and the
 procedure written as code, measures tool-call F1 against that code, and scores the agent's notes with a rubric whose LLM judge is
 calibrated without hand labels
@@ -110,8 +106,8 @@ calibrated without hand labels
 models beat dead reckoning by a statistically supported but practically small margin and add little beyond the
 coded procedure, and one fails for a reason a post hoc check identifies (Section~\ref{sec:results}). (4)~A replay of dead
 reckoning, the coded procedure and Opus~5.5 (the other two models still running) on \bmnum{real.n} episodes recorded
-on the real car in a surveyed room, scored against a tag resection, and what the car showed that the simulator did
-not (Sections~\ref{sec:real} and~\ref{sec:sim2real}).
+on the real car in a surveyed room, scored against a tag resection at the end of \bmnum{real.n-circle} of them, and
+what the car showed that the simulator did not (Sections~\ref{sec:real} and~\ref{sec:sim2real}).
 
 \textbf{Research questions.} RQ1 (primary): replayed on held-out logs, is the agent's pose estimate more
 accurate than dead reckoning, and is it within twice the error of a factor-graph reference? RQ2: how
@@ -231,7 +227,9 @@ Fig.~\ref{fig:arch} shows the architecture. The car is a small differential-driv
 TB6612FNG driver, and reads a BNO055 inertial measurement unit; an ESP32-CAM (OV3660) serves JPEG frames over HTTP.
 The host is an NVIDIA DGX Spark (GB10, 128\,GB unified memory) running the \texttt{beaconmind-ros} container
 (ROS~2 Humble) and a kinematic simulator, in which the study of this report ran. The code, the evidence files
-and the review logs are at
+and the review logs are public, except the car's firmware: the author's build of the course's lab firmware, kept in
+the private course repository, and one networking patch of 2026-11-25 still on the DGX Spark
+(\path{~/fw_builds_m8/static-ip/static-ip.patch}), to be archived there. The public repository is
 \url{https://github.com/XiaohuiChen-personal/en665715-beaconmind}.
 
 \input{fig_architecture}
@@ -265,16 +263,18 @@ agent's own guardrails (never move on an error, refuse requests outside the miss
 ambiguous). The car runs the author's build of the course's lab firmware, which has a watchdog, a deadman and
 a stall cut-off (the project firmware was dropped); the bounded moves are executed and stopped from the host. That
 firmware boots armed, and after a Pico reset the motor driver's inputs float for about 1.5\,s, so operator
-procedures (Section~\ref{sec:procedure}) replace the design's disarmed boot. Checked on the car on 2026-11-25
-(\path{evidence/M3/M3.T13/smoke.md}, \texttt{evidence/M3/M3.T6/}): the STOP key during a forward move set the
-latch and zeroed the motor duty within \bmnum{stop.duty-s}\,s, and the wheels stood still within
-\bmnum{stop.still-s}\,s on the stand and \bmnum{stop.floor-s}\,s on the floor (limit \bmnum{stop.max-s}\,s); no
-move ran while the latch was set, and one ran again after the operator cleared it; killing the host process
-mid-move stopped the wheels by the car's own command timeout. For unattended runs a batch runner on the host adds
+procedures (Section~\ref{sec:procedure}) replace the design's disarmed boot. Checked on the car on 2026-11-25 in
+single trials (\path{evidence/M3/M3.T13/smoke.md}, \texttt{evidence/M3/M3.T6/}; the STOP key and the Ctrl+C were
+sent through the terminal multiplexer by the agent running the session, not typed at a keyboard): the STOP key
+during a forward move set the latch and zeroed the motor duty within \bmnum{stop.duty-s}\,s, and the wheels stood
+still within \bmnum{stop.still-s}\,s on the stand and \bmnum{stop.floor-s}\,s on the floor (limit
+\bmnum{stop.max-s}\,s); as far as the logs show, no move ran while the latch was set, and one ran again after the
+operator cleared it; killing the host process mid-move stopped the wheels by the car's own command timeout. For unattended runs a batch runner on the host adds
 a footprint check against the room's driving area before every move and software halts (Section~\ref{sec:procedure}).
 
 \textbf{Runtimes.} The benchmark uses a minimal harness with only the nine tools, because ROSA adds 47
-tools and nine fixed prompts to every call; ROSA (1.0.10) is planned as the demonstration runtime.
+tools and nine fixed prompts to every call. ROSA (1.0.10) was planned as the demonstration runtime and dropped:
+the demonstration video is built from the harness's own logs.
 
 Fig.~\ref{fig:trace} shows the ReAct trace of one pilot step.
 
@@ -345,7 +345,7 @@ bounded by the two distance checks; and the roll exceeds the plan's 3$^\circ$ mo
 \textbf{Software.} Host Ubuntu 24.04; container \texttt{beaconmind-ros} (Ubuntu 22.04, ROS~2 Humble, Python
 3.10.12, \texttt{anthropic} \bmnum{ver.anthropic}, \texttt{openai} \bmnum{ver.openai}); baselines and analysis
 in Python \bmnum{ver.python} with NumPy \bmnum{ver.numpy}, SciPy \bmnum{ver.scipy} and GTSAM \bmnum{ver.gtsam};
-the vLLM inference server 0.30.0 for both local models; ROSA 1.0.10 (demonstration only); Gazebo is not used. Every LLM arm
+the vLLM inference server 0.30.0 for both local models; ROSA 1.0.10 installed but not used; Gazebo is not used. Every LLM arm
 (Table~\ref{tab:config}) receives the byte-identical system prompt (v3.3), step message and nine tools, and
 makes one stateless call per observation with at most 30 turns. Judge: \texttt{gpt-6.1-sol} (reasoning effort
 medium, strict JSON schema, no temperature set). The runs used a clean checkout of commit \texttt{61ca2c7}.
@@ -400,13 +400,17 @@ limit, the same rule gives \bmnum{cov2.30.rule.one}\,\%; a camera model that nee
 gives \bmnum{cov2.30.camera.one}\,\%, with two different tags in a full turn from
 \bmnum{cov2.30.camera.turn2}\,\% of positions.
 \textbf{The detector on real frames.} A tag pilot on 2026-11-25 (\texttt{evidence/M1/M1.T8/}) placed the car at
-measured distances on the line straight out from one tag (\bmnum{pilot.frames} frames analyzed). Every frame was
-detected from \bmnum{pilot.range-min} to \bmnum{pilot.range-max}\,m, and none at the one placement closer than that. Ranges read short by
-\bmnum{pilot.bias-b-pct}\,\% of the range less \bmnum{pilot.bias-a-mm}\,mm, with a scatter of
-(\bmnum{pilot.rsd-a-mm}$\,+\,$\bmnum{pilot.rsd-b-mm}$\,r$)\,mm with $r$ in meters; the batch runner's
-encoder-scale check removes this bias. The median
-bearing errors ran from \bmnum{pilot.berr-min}$^\circ$ to $+$\bmnum{pilot.berr-max}$^\circ$ with a trend over range
-that the camera model does not explain. The author confirmed the \bmnum{cl.range-m}\,m range limit from it. The
+measured distances on the line straight out from one tag: \bmnum{pilot.frames} frames at \bmnum{pilot.places}
+placements, \bmnum{pilot.frames-undetected} of them at the closest placement, where no tag was found; the noise model
+rests on the \bmnum{pilot.model-frames} frames of the \bmnum{pilot.model-places} placements on the measured line, the
+other frames being repeats. Every frame was detected from \bmnum{pilot.range-min} to \bmnum{pilot.range-max}\,m.
+Ranges read short by \bmnum{pilot.bias-b-pct}\,\% of the range less \bmnum{pilot.bias-a-mm}\,mm; the frame-to-frame
+scatter at one placement is (\bmnum{pilot.rsd-a-mm}$\,+\,$\bmnum{pilot.rsd-b-mm}$\,r$)\,mm with $r$ in meters, but
+the placements' medians lie up to \bmnum{pilot.resid-max-cm}\,cm from that bias line, which includes how each
+placement was set out. The batch runner's encoder-scale check removes the bias; the agents' tools and the resection
+do not. The median bearing errors ran from \bmnum{pilot.berr-min}$^\circ$ to $+$\bmnum{pilot.berr-max}$^\circ$ with a
+trend over range that the camera model does not explain, and placement error is confounded with it: two placements
+at the same distance differ by \bmnum{pilot.berr-pair}$^\circ$. Angled views were not measured. The author confirmed the \bmnum{cl.range-m}\,m range limit from it. The
 real runs' noise model is the pilot's with two changes and the detector has one added pass
 (Section~\ref{sec:realdev}).
 The car and the camera join a Wi-Fi access point run by the DGX Spark (2.4\,GHz), and the link is logged with
@@ -451,11 +455,15 @@ US dollars.
 step, so labels carry no noise beyond report rounding (0.005\,m, 0.05$^\circ$); gold tool calls come from code;
 all are fixed by the frozen logs before any arm is scored. \textbf{On the car} the planned overhead camera was
 dropped, so pose error is a \emph{final-position} error. Its primary truth is the \emph{end circle}: when an episode
-ends, the car turns a full circle where it stands, and its pose is solved from the surveyed wall tags it sees
-(\bmnum{real.circle.tags.min}--\bmnum{real.circle.tags.max} per circle; residual RMS at most
-\bmnum{real.circle.rms.max}\,cm), on their own geometry and not through any estimator. When the episode ended by
-DONE no move followed the last report, so the circle measures that pose. Its heading is not used as a reference:
-the circle's views are placed by the odometry's own turns, which slip too. A secondary, tracker-dependent truth is
+ends, the car turns a full circle of twelve views where it stands, and a least-squares resection fits the tags it
+sees (\bmnum{real.circle.tags.min}--\bmnum{real.circle.tags.max} per circle) to their surveyed positions, with the views
+placed by the odometry's and gyro's turns. It does not go through the batch's tracker, but it is not independent of
+the arms: it uses the same camera, detector, tags and world file as the coded procedure and the models (dead
+reckoning shares none of them), its ranges carry the detector's short bias (the resection has no bias term), and
+the error is taken in a map frame anchored on the episode's start circle, whose own error enters. Its accuracy is
+estimated only from its residuals (RMS \bmnum{real.circle.rms.min}--\bmnum{real.circle.rms.max}\,cm); no tape reading
+checks it. When the episode ended by DONE no move followed the last report, so the circle measures that pose. Its
+heading is not used as a reference, because the views are placed by turns that slip. A secondary, tracker-dependent truth is
 the batch's own tracked pose at the last step (odometry between tag fixes, blended by inverse variance); it sat
 \bmnum{real.circle.off.min}--\bmnum{real.circle.off.max}\,cm from the end circles
 (\path{evidence/M3/M3.T19/real-2026-11-25/README.md}). Neither truth resolves the \bmnum{sesoi.cm}\,cm
@@ -499,7 +507,8 @@ procedure as run on 2026-11-25, with the author's approval for unattended batche
 \begin{enumerate}
 \item Rehearse in simulation: the coded procedure in a simulator of the room (\bmnum{reh.n} episodes per
 configuration, \path{evidence/M3/M3.T12/rehearsal-b2.md}), and before every batch a dry run of the batch runner
-with the exact real arguments on a simulated car.
+with the exact real arguments on a simulated car. The comparison with simulation is the aggregate one of
+Section~\ref{sec:real}, not one per batch.
 \item Check the car: a wheels-up stand test with the STOP check and a floor check of the encoder scale against the
 wall tags, recorded in a pass marker that the batch runner requires. Power the Pico first and the motor battery
 last; the motor driver's standby pull-down resistor was waived by the author.
@@ -515,8 +524,8 @@ scored against the end circle.
 
 \subsection{Deviations on the Real Car}\label{sec:realdev}
 The pre-registration left the real car out of its tests: the real logs were to be replayed through the same arms
-and reported descriptively as the sim-to-real gap, with tape as ground truth (\texttt{prereg.md}, Section~6). What
-was done differs in eight ways, each recorded with its reason:
+and reported descriptively as the sim-to-real gap, with tape as ground truth (\texttt{prereg.md}, Section~6); the
+plan (\S3.6) set the rest. What was done differs in twelve ways, each recorded with its reason:
 \begin{enumerate}
 \item \emph{Ground truth by tag resection, not tape.} Unattended batches left nobody to tape the car's pose, so
 the author approved a full-turn resection against the surveyed tags at each episode's start and end. The tape
@@ -529,8 +538,10 @@ on this carpet it was overconfident: in one direction of travel the car covered 
 (\path{evidence/M3/M3.T12/batch-runner/truth-under-slip/}). It is reported as a secondary truth.
 \item \emph{A slip term in the batch's tracker.} From the fifth batch on, the tracker added 0.3\,m of position
 sigma per meter of forward travel, so the guard's margin and the tracked truth widen with distance driven; the
-first batches ran without it. It reaches the agents' input only through the safety flags the guard sets (same
-folder).
+first batches ran without it. It reaches the agents' input only through the safety flags the guard sets: no
+forward move was allowed on \bmnum{flags.without.none}\,\% of steps without it and \bmnum{flags.with.none}\,\% with
+it, but the later batches also had larger guard margins and other start poses, so the slip term's share is not
+separated (\path{evidence/M3/M3.T12/batch-runner/safety-flags/}).
 \item \emph{A third detector pass.} OpenCV's default threshold windows found a close, low-contrast tag in 3 of 30
 pilot frames; a third quad-search pass with larger windows found it in all 30 with the same range, and the
 detector has had that pass since (\path{evidence/M1/M1.T8/third-pass-2026-11-25.md}).
@@ -546,11 +557,25 @@ other logged step the two procedures decide alike (\path{evidence/M3/M3.T12/batc
 tool now builds the room procedure.
 \item \emph{A firmware change.} On 2026-11-25, after the real B2 episodes, the Pico was reflashed with a build that
 sets a static network address instead of asking the access point for one, to stop the dropouts of
-Section~\ref{sec:sim2real}; nothing else in the firmware changed (\path{course-project/CONTEXT.md}, 2026-11-25).
-The closed-loop car episodes will run on that build.
-\item \emph{\bmnum{real.n} episodes instead of at least 10.} The right motor began to stall and then failed on the
-stand the same day; it is being replaced, and the author closed the set at \bmnum{real.n} episodes that ended
-normally, plus the one listed apart (same entry; \path{evidence/M3/M3.T12/batch-runner/b2-real-05/stalls.md}).
+Section~\ref{sec:sim2real}; nothing else in the firmware changed (\path{course-project/CONTEXT.md}, entry
+``2026-11-24 and 2026-11-25''). It was written by an AI agent and checked by a build and by reading the code, then
+ran on the car for 13 minutes before the motor failed; the closed-loop car episodes will run on it.
+\item \emph{\bmnum{real.n} episodes instead of the plan's at least 10} (plan \S3.6, work-list item 3.4). The right
+motor began to stall and then failed on the stand the same day; it is being replaced, and the author closed the set
+at \bmnum{real.n} episodes that ended normally, plus the one listed apart (same entry;
+\path{evidence/M3/M3.T12/batch-runner/b2-real-05/stalls.md}).
+\item \emph{The room prompt.} The replay gave every arm the room variant of the prompt, whose detection range
+limit is \bmnum{cl.range-m}\,m instead of the study prompt's 2.0\,m, to match the real runs' design values
+(\path{evidence/M3/M3.T19/README.md}).
+\item \emph{The model arms' sim-to-real gap was not measured.} The pre-registration names it as the purpose of the
+real-log replay; no model arm was replayed on simulated room episodes (Section~\ref{sec:real}).
+\item \emph{Four versions of the batch code.} The batches ran on commits \texttt{e3c8d0e}, \texttt{490fedb},
+\texttt{7a8b599} and \texttt{19f71e6}, which differ in their halts and guard margins, each change made after a
+halt was diagnosed (\path{evidence/M3/M3.T12/batch-runner/}); the agents' input differs between them only through
+the safety flags (item~3).
+\item \emph{Unattended first episodes.} The plan kept the stand test and the first one or two episodes of a batch
+attended; the stand test was, but the batches ran unattended from their first episode (plan \S3.6, ``Unattended
+batches''; \path{course-project/CONTEXT.md}, entry ``2026-11-24 and 2026-11-25'').
 \end{enumerate}
 
 \subsection{Statistical Analysis Plan}\label{sec:stats}
@@ -759,9 +784,10 @@ prompt (a \bmnum{cl.range-m}\,m range limit, as in the simulated closed loop) an
 replayed procedure reproduces the car's live estimate at every step, which checks the conversion
 (\path{evidence/M3/M3.T19/real-2026-11-25/}). Table~\ref{tab:real} gives the final-position error against the end
 circle for the \bmnum{real.n-circle} episodes that have one (in the ninth, a stall halted the batch inside the end
-circle). Opus stayed within \bmnum{real.opus-b2.maxdiff}\,cm of the procedure on every one of them, so the two
-cannot be told apart here; both ended far closer to the truth than dead reckoning, whose error grew to
-\bmnum{real.b0.max}\,cm on the longest episodes, where theirs also grew. Against the tracker-dependent truth at the
+circle). On each of them the final errors of Opus and the procedure differed by at most
+\bmnum{real.opus-b2.maxdiff}\,cm, so the two cannot be told apart here (their paths were not compared); both ended
+far closer to the truth than dead reckoning, whose error grew to \bmnum{real.b0.max}\,cm on the longest episodes,
+where theirs also grew. Against the tracker-dependent truth at the
 last step ($n=\bmnum{real.n-last}$) the medians were \bmnum{real.b0.last}, \bmnum{real.b2.last} and
 \bmnum{real.opus.last}\,cm (B0, procedure, Opus), and \bmnum{real.b0.recomputed}, \bmnum{real.b2.recomputed} and
 \bmnum{real.opus.recomputed}\,cm with that truth recomputed with the slip term. On the episode listed apart, Opus and
@@ -786,9 +812,10 @@ Opus~5.5 & \bmnum{real.opus.median} & \bmnum{real.opus.q1}--\bmnum{real.opus.q3}
 Qwen3.8, Gemma~4 & \multicolumn{3}{c}{\pending{both replays running}} \\
 \hline
 \multicolumn{4}{@{}p{0.95\columnwidth}@{}}{\scriptsize $n=\bmnum{real.n-circle}$ episodes driven by the coded
-procedure on the car, the same logs for every arm. The end circle: a full-turn resection against
-\bmnum{real.circle.tags.min}--\bmnum{real.circle.tags.max} surveyed tags, residual RMS at most
-\bmnum{real.circle.rms.max}\,cm.}
+procedure on the car (8 of the 9 have an end circle), the same logs for every arm. The end circle: a full-turn
+resection against \bmnum{real.circle.tags.min}--\bmnum{real.circle.tags.max} surveyed tags, residual RMS
+\bmnum{real.circle.rms.min}--\bmnum{real.circle.rms.max}\,cm; it shares the camera, tags and world file with B2 and
+the models, and no tape reading checks it.}
 \end{tabular}
 \end{table}
 
@@ -797,8 +824,11 @@ the room with its layout and range limit and a carpet odometry preset from earli
 forward move veers, turns fall short), but no direction-dependent slip: over \bmnum{reh.n} episodes their median
 final-position errors were \bmnum{reh.b2.final} and \bmnum{reh.b0.final}\,cm against the simulator's truth
 (\path{evidence/M3/M3.T12/rehearsal-b2-tables.md}, Table~1c). On the car they were \bmnum{real.b2.median} and
-\bmnum{real.b0.median}\,cm against the end circle. The order of the two reversed: in the simulated room there was
-little odometry error for the procedure's tag fixes to correct, and on the car they corrected most of a large one.
+\bmnum{real.b0.median}\,cm against the end circle. These are \bmnum{reh.n} simulated against
+\bmnum{real.n-circle} real episodes of different length (median \bmnum{reh.steps.median} against
+\bmnum{real.steps.median} steps), noise model, tag positions and truth, so they show the order of magnitude only.
+The order of the two reversed: in the simulated room there was little odometry error for the procedure's tag fixes
+to correct, and on the car they corrected most of a large one.
 \textbf{The comparison for the model arms was not run:} no model arm was replayed on simulated room episodes, so
 their sim-to-real gap is not measured. It would need a simulated room set, such as the rehearsal's logs or new ones
 with the pilot's noise model and a direction-dependent slip, converted like the real logs and replayed through every
@@ -831,13 +861,14 @@ against the end circle, step latency and cost}
 \subsection{Sim-to-Real: What the Car Showed}\label{sec:sim2real}
 These findings come from the batches' records (\path{evidence/M3/M3.T12/batch-runner/}); none was a hypothesis.
 
-\textbf{Slip that depends on the direction of travel (established for this room).} The batch runner measured
-each forward move by the ranges to tags straight ahead before and after it. Moving toward the doors' wall (left in
+\textbf{Slip that depends on the direction of travel (measured on one day, in this room).} The batch runner
+measured each forward move by the ranges to tags straight ahead before and after it; nothing else measured it off
+the tape line. Moving toward the doors' wall (left in
 Fig.~\ref{fig:room}) the car covered a median \bmnum{slip.north.down} of its counted distance
 (\bmnum{slip.north.down.n} moves); moving the other way, \bmnum{slip.south.down} (\bmnum{slip.south.down.n} moves).
 Both figures leave out moves on the tag pilot's tape line, and after that tape was removed the first direction
-read \bmnum{slip.north.removed} (\bmnum{slip.north.removed.n} moves). The deficit shows on the tags of two
-different walls and not on the same tags seen from the other direction, so a wrongly sized tag does not explain it
+read \bmnum{slip.north.removed} (\bmnum{slip.north.removed.n} moves). Moves across the room read below 1 too
+(\bmnum{slip.ew.min}--\bmnum{slip.ew.max}). The deficit shows on the tags of two different walls and not on the same tags seen from the other direction, so a wrongly sized tag does not explain it
 (\texttt{tape/README.md}). \emph{Not established:} its cause (the carpet's pile, a slope or the car), and whether it
 holds anywhere else. An earlier taped test that gave a stronger figure was run on the tape line and is superseded.
 
@@ -849,19 +880,28 @@ the directional slip, slip on single moves and heading.
 \textbf{Right-wheel stalls and a failing motor (a hardware fault; its mechanism not established).} Three moves
 ended on a right-wheel stall, each at the slow end of a move, and each time the stall halt stopped the batch with
 the car well inside the driving area. In free running the right wheel needed less duty than the left for the same
-speed all day, but late in the day it was held back now and then; afterwards, on the stand and without load, it
-often failed to start, and the motor is being replaced (\texttt{b2-real-05/stalls.md};
-\path{course-project/CONTEXT.md}, 2026-11-25). Two of the stalls lay on the tape line and one away from it.
+speed all day, but late in the day it was held back now and then. On the stand and without load it then often
+failed to start; this was seen only after the firmware change of deviation~7. On the evidence the firmware is not
+the cause (the three stalls and the rising stall-assist kicks came before it, and it changed only the networking
+file), but that was not tested: rolling the firmware back and swapping the motor plugs were declined. The author
+reports the same failure on earlier motors, and the motor is being replaced (\texttt{b2-real-05/stalls.md};
+\path{course-project/CONTEXT.md}, entry ``2026-11-24 and 2026-11-25''). Two of the stalls lay on the tape line and one
+away from it.
 
-\textbf{Pico dropouts (cause identified, fix not yet confirmed).} The Pico left the network three times, each
-when its address lease from the host's access point ran out, 60 minutes after the last renewal it had accepted; it
-accepted few renewals and did not come back until power-cycled. One batch ended on such a dropout. The static
-address of deviation~7 removes the lease; it has not yet run long enough to confirm the fix (same entry).
+\textbf{Pico dropouts (a trigger identified for three; the fault not explained).} Three times the Pico left the
+network when its address lease from the host's access point ran out, 60 minutes after the last renewal it had
+accepted (at 04:31, 08:05 and 11:43 local time); it did not come back until power-cycled. One batch ended on such a
+dropout. Not explained: why it ignored most lease renewals, why it did not return after its own soft reboot, and two
+other losses (one before about 03:26 and one between 10:39 and 10:43). A longer lease set on the access point made
+the Pico fail to join and was removed; the static address of deviation~7 avoids the lease but has run only 13 minutes
+on the car (same entry).
 
-\textbf{What carries over.} On real frames the detector was accurate (Section~\ref{sec:setup}); the simulator's
-largest error was the odometry. The study's conclusion that the stronger models reproduce the procedure held on
-the real logs for Opus; whether a model adds anything when the odometry is this poor is not answered by nine
-episodes in which it did not.
+\textbf{What carries over.} On real frames straight ahead the detector's ranges were within
+\bmnum{pilot.rel-max-pct}\,\% of the distance; its bearings were off by up to \bmnum{pilot.berr-max}$^\circ$, and
+angled views were not measured (Section~\ref{sec:setup}). The simulator's largest error was the odometry. The study's
+finding that the stronger models reproduce the procedure held on the real logs for Opus, over the
+\bmnum{real.n-circle} of \bmnum{real.n} episodes with an end circle; whether a model adds anything when the odometry
+is this poor is not answered by episodes in which it did not.
 
 \subsection{Discussion and Limitations}\label{sec:limits}
 In this simulated setting an LLM agent kept a landmark-SLAM estimate that beats dead reckoning, but the
@@ -871,7 +911,9 @@ seeds, and a short program computes the procedure at negligible cost. Beyond the
 Section~\ref{sec:confounders}, three limits matter most.
 (1)~\emph{Mostly simulation:} every confirmatory result comes from a kinematic simulator with placeholder noise,
 no wheel slip and no image formation. The real-car part replays \bmnum{real.n} episodes on the coded procedure's
-paths in one room, against a final-position truth good to a few centimeters and with no truth for the path between;
+paths in one room, against a final-position truth estimated only from its residuals (\bmnum{real.circle.rms.min}--\bmnum{real.circle.rms.max}\,cm),
+not checked independently and sharing its sensors with the coded procedure and the models, with no truth for the
+path between;
 two of the three model arms are still being replayed, and no model has yet chosen a move on the car.
 
 (2)~\emph{One prompt, thirty seeds, one run each, one drift level:} enough to detect the advantage over dead
@@ -893,9 +935,10 @@ accurate but expensive interpreters of that procedure in replay; in one simulate
 two Claude models also made the procedure's decisions. What they added beyond the code was small. The model that skipped its tools failed (a post hoc finding). What a language
 model could add when the procedure's rules do not fit was not measured; close duplicates, hidden IDs and
 operator requests are the next test.
-On \bmnum{real.n} episodes recorded on the real car the ordering measured so far held: Opus~5.5 stayed within
-\bmnum{real.opus-b2.maxdiff}\,cm of the coded procedure, and both ended far closer to the truth than dead reckoning
-(medians \bmnum{real.opus.median}, \bmnum{real.b2.median} and \bmnum{real.b0.median}\,cm). The largest gap from the
+On the \bmnum{real.n-circle} of \bmnum{real.n} real episodes that have an end circle the ordering measured so far
+held: the final errors of Opus~5.5 and the coded procedure differed by at most \bmnum{real.opus-b2.maxdiff}\,cm, and
+both ended far closer to the truth than dead reckoning (medians \bmnum{real.opus.median}, \bmnum{real.b2.median} and
+\bmnum{real.b0.median}\,cm). The largest gap from the
 simulator was in the odometry: dead reckoning ended far farther off than in simulation, and on this carpet the car
 covered less than it counted in one direction of travel, which no simulator here modeled. \pending{Qwen3.8 and Gemma~4 on the real logs, and what the three closed-loop Opus episodes
 on the car showed}
@@ -920,8 +963,11 @@ logs are in the repository. Claude Opus~5.5, Qwen3.8-Flash-Next and Gemma~4 26B 
 test, as is Claude Fable~5.2 in the closed-loop episode, and GPT-6.1 Sol was the judge. For the real car, Claude
 Opus~5.5 and Claude Fable~5.2 (through Claude Code) wrote the batch runner and its safety checks, ran the batches,
 the tag pilot's analysis and the real-log replay, diagnosed the halts, and wrote the real-car parts of this report;
-Xiaohui Chen tended the car, removed the tape and decided where to stop. The author chose the question, the models, the scope and the arena, took
-every physical measurement, accepted the recorded deviations, reviews the AI-assisted content against the
+Claude Fable~5.2 wrote the car firmware's static-address change of 2026-11-25, checked by a build and by reading
+the code and then on the car for 13 minutes. The STOP timings and the encoder scale were computed by agents from
+the logs and the tags. Xiaohui Chen tended the car, removed the tape and decided where to stop. The author chose the
+question, the models, the scope and the arena, took the tape and scale readings (the room, the tags, the tag pilot's
+placements, the car's dimensions), accepted the recorded deviations, reviews the AI-assisted content against the
 code, logs and sources, and is responsible for this report.
 
 \bibliographystyle{IEEEtran}

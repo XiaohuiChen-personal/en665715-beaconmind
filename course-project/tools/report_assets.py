@@ -23,6 +23,7 @@ Sources (all under course-project/):
   evidence/M3/M3.T13/smoke.md, evidence/M3/M3.T6/floor-check.md   the STOP on the car
   evidence/M1/M1.T8/fit-output.txt, configs/detector_noise.json   the tag pilot and the real-run noise model
   configs/arenas/real-room.json                              the mounted tags (the world file)
+  evidence/M3/M3.T12/batch-runner/safety-flags/safety-flags-output.txt   the safety flags the agents saw on the car
 
 Usage (repository root, any Python >= 3.10, standard library only):
   python3 course-project/tools/report_assets.py            write report/generated/
@@ -142,6 +143,7 @@ def load():
         "pilot": (ROOT / "evidence" / "M1" / "M1.T8" / "fit-output.txt").read_text(),
         "noise": json.loads((ROOT / "configs" / "detector_noise.json").read_text()),
         "world": json.loads((ROOT / "configs" / "arenas" / "real-room.json").read_text()),
+        "flags": (ROOT / "evidence" / "M3" / "M3.T12" / "batch-runner" / "safety-flags" / "safety-flags-output.txt").read_text(),
     }
 
 
@@ -595,6 +597,7 @@ def build_numbers(src):
     put("real.circle.tags.min", min(c["n_tags"] for c in circles), rnote + " truths end_circle n_tags")
     put("real.circle.tags.max", max(c["n_tags"] for c in circles), rnote + " truths end_circle n_tags")
     put("real.circle.rms.max", num(max(c["rms_m"] for c in circles) * 100, 1), rnote + " truths end_circle rms_m")
+    put("real.circle.rms.min", num(min(c["rms_m"] for c in circles) * 100, 1), rnote + " truths end_circle rms_m")
     put("real.circle.off.min", num(min(c["logged_truth_off_m"] for c in circles) * 100, 1),
         rnote + " truths end_circle logged_truth_off_m (the batch's tracked truth minus the circle)")
     put("real.circle.off.max", num(max(c["logged_truth_off_m"] for c in circles) * 100, 1),
@@ -626,6 +629,9 @@ def build_numbers(src):
     put("reh.b2.final", fpe[0].strip(), "evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c, C20 3.0 m: final position error B2")
     put("reh.b0.final", fpe[1].strip(), "evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c, C20 3.0 m: final position error B0")
     put("reh.n", 150, "evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c: [150] episodes per row")
+    put("reh.steps.median", cells[1].split("(")[0].strip(),
+        "evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c, C20 3.0 m: steps, median")
+    put("real.steps.median", "%.0f" % statistics.median(e["steps"] for e in done), rnote + " median steps of the DONE episodes")
 
     # ---- the carpet: range ratios by direction, off the tape line (lead's criterion; batch source)
     tnote = "evidence/M3/M3.T12/batch-runner/tape/split-output.txt"
@@ -637,6 +643,21 @@ def build_numbers(src):
             raise SystemExit("report_assets: cannot find %s %s in the tape split" % (label, name))
         put("slip.%s.%s.n" % (name, k), m.group(3), tnote + " %s %s, off the line (n)" % (label, name))
         put("slip.%s.%s" % (name, k), m.group(4), tnote + " %s %s, off the line (median ratio)" % (label, name))
+    ew = []
+    for name in ("east", "west"):
+        m = re.search(r"^pooled, tape down\s+%s\s+\|\s+\d+ x\s+[\d.-]+\s+\|\s+(\d+) x ([\d.]+)" % name, src["tape"], re.M)
+        if not m:
+            raise SystemExit("report_assets: cannot find %s in the tape split" % name)
+        ew.append(m.group(2))
+    put("slip.ew.min", min(ew), tnote + " pooled, tape down, east and west, off the line: the lower median")
+    put("slip.ew.max", max(ew), tnote + " pooled, tape down, east and west, off the line: the higher median")
+    fnote = "evidence/M3/M3.T12/batch-runner/safety-flags/safety-flags-output.txt"
+    for label, k in (("without the slip term", "without"), ("with the slip term", "with")):
+        m = re.search(r"^%s \(b2-real[^)]*\): (\d+) steps; both ([\d.]+) %%, only FORWARD_10 ([\d.]+) %%, no forward move ([\d.]+) %%"
+                      % label, src["flags"], re.M)
+        if not m:
+            raise SystemExit("report_assets: cannot find the safety-flag line %r" % label)
+        put("flags.%s.none" % k, m.group(4), fnote + " " + label + ": no forward move allowed, % of steps")
 
     # ---- the STOP on the car
     st = grab(src["stop"], r"the car's duty 0 after \*\*([\d.]+) s\*\*, wheels still after \*\*([\d.]+) s\*\*",
@@ -659,6 +680,27 @@ def build_numbers(src):
     put("pilot.bsd", "%.2f" % N["bearing_sigma_deg"]["a"], "configs/detector_noise.json bearing_sigma_deg.a (as used)")
     put("pilot.bsd-fit", "%.2f" % float(grab(P, r"bearing sigma = ([\d.]+)", "pilot bearing sigma")), pnote + " bearing sigma")
     put("pilot.inc", "%.0f" % N["max_incidence_deg"], "configs/detector_noise.json max_incidence_deg (as used)")
+    rows = [(m.group(1), float(m.group(2)), float(m.group(3)), float(m.group(4)), float(m.group(5))) for m in
+            re.finditer(r"^([ADER]\d\d)\s+[ADER]\s+([\d.]+)\s+\+0\.00\s+0\.0\s+([\d.]+)\s+([+-][\d.]+)\s+\S+\s+([+-][\d.]+)",
+                        P, re.M)]
+    seen = [r for r in rows if r[2] > 0]
+    n_place = int(grab(P, r"placements analysed: (\d+) \(", "placements analysed"))
+    frames = int(grab(P, r"placements analysed: \d+ \((\d+) frames\)", "pilot frames"))
+    per = frames // n_place
+    put("pilot.frames-undetected", per * (n_place - len(seen)), pnote + " frames at the placements where no tag was found")
+    put("pilot.rel-max-pct", "%.1f" % max(abs(r[3]) / r[1] * 100 for r in seen),
+        pnote + " largest placement median range error as a share of the range")
+    put("pilot.places", n_place, pnote + " placements analysed")
+    put("pilot.model-frames", N["source"]["n_frames"], "configs/detector_noise.json source n_frames (the model's frames)")
+    put("pilot.model-places", N["source"]["n_placements"], "configs/detector_noise.json source n_placements")
+    a, b = N["range_bias_m"]["a"], N["range_bias_m"]["b"]
+    put("pilot.resid-max-cm", "%.1f" % (max(abs(r[3] - (a + b * r[1])) for r in seen) * 100),
+        pnote + " largest placement median range error about the bias line (detector_noise.json a + b r)")
+    same = {}
+    for r in seen:
+        same.setdefault(r[1], []).append(r[4])
+    pairs = [max(v) - min(v) for v in same.values() if len(v) > 1]
+    put("pilot.berr-pair", "%.2f" % max(pairs), pnote + " bearing error difference between two placements at the same range")
     put("pilot.height-cm", "%.1f" % (float(grab(P, r"tag centre height seen: median ([\d.]+) m", "tag height")) * 100),
         pnote + " tag centre height seen")
     berr = [float(m.group(1)) for m in re.finditer(r"^[ADER]\d\d\s+[ADER]\s+[\d.]+\s+\+0\.00\s+0\.0\s+1\.00\s+\S+\s+\S+\s+([+-][\d.]+)", P, re.M)]

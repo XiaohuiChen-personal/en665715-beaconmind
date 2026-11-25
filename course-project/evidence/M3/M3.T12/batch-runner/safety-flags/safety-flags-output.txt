@@ -1,0 +1,18 @@
+safety_flags.py output, 2026-11-25 (python3 evidence/M3/M3.T12/batch-runner/safety-flags/safety_flags.py data/real-replay/real-2026-11-25/obslogs).
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the count and collected its output here.
+
+episode            steps  both forward moves  only FORWARD_10  no forward move
+seed 1001               83     65 (78.3 %)     12 (14.5 %)      6 ( 7.2 %)
+seed 2001               56     52 (92.9 %)      4 ( 7.1 %)      0 ( 0.0 %)
+seed 2002               62     57 (91.9 %)      5 ( 8.1 %)      0 ( 0.0 %)
+seed 3001               56     52 (92.9 %)      0 ( 0.0 %)      4 ( 7.1 %)
+seed 3002               81     78 (96.3 %)      2 ( 2.5 %)      1 ( 1.2 %)
+seed 4001              114     92 (80.7 %)      9 ( 7.9 %)     13 (11.4 %)
+seed 4002              132    119 (90.2 %)      8 ( 6.1 %)      5 ( 3.8 %)
+seed 4003              141    129 (91.5 %)      7 ( 5.0 %)      5 ( 3.5 %)
+seed 5001               80     65 (81.2 %)      5 ( 6.2 %)     10 (12.5 %)
+seed 5002 (flagged)     45     34 (75.6 %)      3 ( 6.7 %)      8 (17.8 %)
+
+Without the flagged episode:
+without the slip term (b2-real-01 to -03): 338 steps; both 89.9 %, only FORWARD_10 6.8 %, no forward move 3.3 %
+with the slip term (b2-real-05, -06): 467 steps; both 86.7 %, only FORWARD_10 6.2 %, no forward move 7.1 %

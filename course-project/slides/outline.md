@@ -14,10 +14,9 @@ each key is in `course-project/report/generated/MANIFEST.txt`. Design values (th
 `evidence/M4/M4.T1/prereg.md`.
 
 **Placeholders.** Text in square brackets that starts with PENDING marks a result that is not measured yet. The
-numbers are those of `course-project/report/PENDING.md`: 2 (bounded-move executor and STOP on the car), 4 (measured
-tag positions, detector error), 5 (real-log replay and the sim-to-real gap), 6 (closed-loop episodes on the car
-and the demo video), 7 (the real-car conclusion). Nothing on a pending
-line is a result.
+numbers are those of `course-project/report/PENDING.md`: 1 and 5 (Qwen3.8 and Gemma 4 on the real logs), 6
+(closed-loop episodes on the car, a later session after the motor is replaced), 7 (the conclusion's sentences on
+those). Nothing on a pending line is a result.
 
 Block syntax: `> ` an introductory line; `**…**` a column header; `- ` a bullet (two spaces of indent per
 level); `~ ` a small unbulleted line; a line starting with `Figure:` names the picture and `Alt:` its
@@ -176,25 +175,25 @@ episode; the local models cost no API fee but were much slower.
 ## Slide 9 — The Real Room
 Layout: Two Column_50/50
 Figure: slides/figures/fig-room.png
-Alt: Plan of the room arena with the twenty nominal AprilTag positions and their IDs on the walls, the desk, and the dashed driving area.
+Alt: Plan of the room arena seen from above with the twenty mounted AprilTags and their IDs on the walls, the desk, and the dashed driving area.
 ### Body
-- A 3.8 × 5.1 m room; 20 tags (12 printed), three IDs twice
+- A 3.8 × 5.1 m room; 20 tags mounted, three IDs twice
 - Camera field of view 46.9°, not the design's 60°
 - One heading sees a tag center from 67.1 % of poses, a whole tag from 54.9 % (study: 78.5 %)
-- 3.0 m range limit, provisional
+- Tag pilot: detected from 0.79 to 3.13 m; ranges 1.66 % short; bearings off by up to 3.4°
+- 3.0 m range limit, confirmed after the pilot
 - Rehearse in simulation first; record every real run
-- [PENDING 4: measured tag positions; detector error; confirmed range limit]
 ### Notes
 (60 s) The real arena is a room, not a small square. The layout has 20 tags on its walls, and three
-IDs are used twice; 12 are printed and none is mounted yet. The camera is calibrated; its field of view is 46.9 degrees,
+IDs are used twice; all were mounted on the twenty-fifth, one of them moved 14 centimeters for an outlet. The camera is calibrated; its field of view is 46.9 degrees,
 not the sixty degrees the design and the simulator assumed. That matters. In the study arena as simulated, one
 heading saw a tag from 78.5 percent of poses. In the room, with the measured field of view and a
 3.0 meter range limit, the same rule gives 67.1 percent, and a camera model that
 needs the whole tag in the picture gives 54.9 percent, although a full turn finds two
-different tags from 98.3 percent of positions. The 3.0 meter limit is the value
-used in the rehearsals; it is provisional until a tag-accuracy pilot on real frames confirms it. Two rules govern the real car: every session is rehearsed in simulation first, and every
-real run is recorded in full. [PENDING 4: say the measured tag positions, the detector's error and the confirmed range limit once
-they exist.]
+different tags from 98.3 percent of positions. A tag pilot on real frames found every tag from
+0.79 to 3.13 meters straight ahead, with ranges about 1.66 percent short and
+bearings off by up to 3.4 degrees, so the 3.0 meter limit was confirmed. Two rules govern the
+real car: every session is rehearsed in simulation first, and every real run is recorded in full.
 
 ## Slide 10 — Demo: The Agent in Closed Loop
 Layout: One Column
@@ -204,7 +203,8 @@ Layout: One Column
 - All mapped 14 of 20 tags; no move refused; no full pose fix
 - Error 2.3 cm for each arm; dead reckoning 1.5 cm: no drift and 1.5 m of travel, little to correct
 - Prompt variant: range threshold 2.0 → 3.0 m; cost US$4.60 and US$8.33
-- [PENDING 6, 2: demo video and episodes on the car; executor and STOP as tested on the car]
+- STOP on the car: duty zero in 0.037 s, wheels still in 0.129 s (one trial on the stand)
+- [PENDING 6: closed-loop episodes on the car, a later session after the motor is replaced]
 ### Notes
 (150 s, with the video) In the study the agent chose no move: it only estimated. In closed loop the arm chooses
 each move and the validator checks it. I ran one exploration episode per arm in a simulator of the real room,
@@ -221,33 +221,40 @@ was little to correct, and dead reckoning was at least as accurate: 1.5 centimet
 2.3. One deviation: the
 prompt differs from the study prompt in one number, the range beyond which a detection is rejected, so these
 numbers are not comparable with the replay results. The episodes cost 4.60 and 8.33
-dollars. [PENDING 6: play the demo recording and say what the episodes on the car showed. PENDING 2: say how
-the car is stopped.] This is a demonstration, not a benchmark.
+dollars. On the car, a STOP key zeroes the motors in 0.037 seconds and the wheels stand still within
+0.129 seconds, in one trial on the stand. [PENDING 6: the closed-loop episodes on the car, in a later
+session after the right motor is replaced.] This is a demonstration, not a benchmark.
 
 ## Slide 11 — Real-Car Results
 Layout: One Column
 ### Body
-- Ground truth on the car: tape, and a full-turn resection against the surveyed tags (planned)
-- Real logs test no hypothesis: this ground truth cannot resolve 3 cm
-- [PENDING 5: number of recorded episodes; each arm's final-position error on the real logs; the same in the simulated rehearsal; the sim-to-real gap]
+- 9 episodes driven by the coded procedure, 805 steps, all five start poses
+- Truth: a full-turn tag resection at each episode's end (8 of 9); residuals 2.2–4.9 cm, not checked by tape
+- Median final-position error: dead reckoning 38.2 cm, coded procedure 7.9 cm, Opus 5.5 7.7 cm
+- [PENDING 5: Qwen3.8 and Gemma 4 on the real logs]
+- Sim-to-real: odometry slipped by direction (0.827 one way, 1.018 the other); descriptive, no hypothesis
 ### Notes
-(60 s) [PENDING 5: report the recorded real episodes, each arm's final-position error on the real logs, and how
-that compares with the rehearsal of the same episode in simulation.] On the car the ground truth is a tape
-measure and a resection against the surveyed tags, so the error is a final-pose error, not a trajectory error,
-and it cannot resolve three centimeters. The real logs therefore describe the sim-to-real gap; they test no
-hypothesis.
+(60 s) On the car the coded procedure drove 9 episodes in the room, from all five start poses. Each log was
+replayed through the arms. The truth is a full turn at each episode's end, fitted to the surveyed tags: its
+residuals are 2.2 to 4.9 centimeters, and no tape reading checks it. Against
+it, dead reckoning ended a median 38.2 centimeters off, the coded procedure 7.9 and Opus
+7.7; Opus and the procedure differed by at most 2.1 centimeters on every episode.
+[PENDING 5: Qwen3.8 and Gemma 4.] The biggest surprise was the floor: going one way the car covered only
+0.827 of the distance it counted, going the other way about all of it. These numbers describe the gap;
+they test no hypothesis.
 
 ## Slide 12 — Limitations
 Layout: One Column
 ### Body
-- Simulation only so far: kinematic, placeholder noise, a 60° field of view
+- Mostly simulation: the confirmatory study is kinematic, with placeholder noise and a 60° field of view; the car part is 9 replayed episodes
 - Replay is open loop: the coded procedure drove every log, so the agent's moves were not evaluated
 - The factor graph was given the true association
 - One prompt, 30 seeds, one run each, one drift level
 - Duplicated IDs were easy: copies at least 1.5 m apart
 - Fidelity is measured against the agent's own specification
 ### Notes
-(60 s) The limits. Everything measured so far is in a kinematic simulator with placeholder noise. Replay is
+(60 s) The limits. The confirmatory study is in a kinematic simulator with placeholder noise; the car part is a
+replay of 9 episodes against a truth that shares the car's camera and tags. Replay is
 open loop: the coded procedure drove every log, so the agent's own moves were never evaluated and its errors
 could not change what it saw next. The factor graph was given the true association, which flatters it. There
 is one prompt, thirty seeds, one run per seed and one drift level. The duplicated IDs were easy to tell apart.
@@ -261,14 +268,16 @@ Layout: One Column
 - They did it by executing the procedure, which a short program also does at negligible cost
 - The model that skipped its tools failed (post hoc)
 - Not measured: what an LLM adds when the rules do not fit, such as close duplicates or operator requests
-- [PENDING 7: what the real car showed]
+- On the car: Opus and the coded procedure tied; both far ahead of dead reckoning
+- [PENDING 7: Qwen3.8, Gemma 4 and the closed loop on the car]
 ### Notes
 (60 s) To conclude. In this study two capable models kept a pose estimate that beats dead reckoning by
 2.83 and 4.00 centimeters, which is statistically supported and not practically supported. They did it by
 executing the prescribed procedure, and a short program does the same at negligible cost. The model that
 skipped its tools failed. What the study did not measure is what a language model adds when the procedure's
-rules do not fit: close duplicates, hidden IDs, operator requests. That is the next test. [PENDING 7: one
-sentence on the real car and the closed loop.]
+rules do not fit: close duplicates, hidden IDs, operator requests. That is the next test. On the real car, Opus
+and the coded procedure tied, and both ended far closer to the truth than dead reckoning. [PENDING 7: Qwen3.8,
+Gemma 4 and the closed loop on the car.]
 
 ## Slide 14 — References
 Layout: One Column
@@ -304,3 +313,5 @@ models and the scope, took every physical measurement, and I am responsible for 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: drafted this outline and its speaker notes from the
 report (`course-project/report/Chen-Project-Report.tex`) and the evidence files, and built the deck from it.
 Xiaohui Chen reviews the content, presents it, and is accountable for it.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: updated slides 9 to 13 and the placeholder list to the
+real-car results.

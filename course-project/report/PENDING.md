@@ -1,7 +1,7 @@
 # Placeholders in the report (2026-11-18; updated 2026-11-25)
 
 Every `\pending{...}` in `Chen-Project-Report.tex` prints in red as **[PENDING: ...]**. List them with
-`python3 course-project/tools/report_assets.py --pending` (5 today, in the four rows below). To fill one: add the numbers to
+`python3 course-project/tools/report_assets.py --pending` (4 today, one per row below). To fill one: add the numbers to
 `tools/report_assets.py` from the evidence file (so they stay generated), replace the `\pending{}` with prose that
 uses `\bmnum{...}`, rebuild, and delete the row here. Xiaohui found no page limit on Canvas (2026-11-24); the report
 is 15 pages. Keep it tight anyway: every page is read by a grader.
@@ -10,7 +10,7 @@ is 15 pages. Keep it tight anyway: every page is read by a grader.
 | --- | --- | --- | --- | --- |
 | 1 | Abstract, last sentence but one | Qwen3.8's and Gemma 4's median final-position error on the real logs against the end circle | `evidence/M3/M3.T19/real-2026-11-25/result.json` when their replays finish (add their keys to `REAL_ARMS` in `tools/report_assets.py`) | 3.6 |
 | 5 | V-G, Table VI | The Qwen3.8 and Gemma 4 rows (median, IQR, range; n = 8) and a sentence in "Real-log replay" | the same `result.json` | 3.6 |
-| 6 | V-G, "Closed loop on the car" | The three closed-loop Opus 5.5 episodes on the car after the right motor is replaced (one filmed): missions completed, steps, moves refused, emergency stops, final-position error against the end circle, step latency, cost | the recorded car sessions and their batch folders | 3.5 |
+| 6 | V-G, "Closed loop on the car" | The three closed-loop Opus 5.5 episodes on the car, in a later session after the right motor is replaced (one filmed): missions completed, steps, moves refused, emergency stops, final-position error against the end circle, step latency, cost | the recorded car sessions and their batch folders | 3.5 |
 | 7 | VI, end | Whether Qwen3.8 and Gemma 4 keep the simulated ordering on the real logs, and what the closed-loop car episodes showed | rows 1, 5 and 6 | — |
 
 Filled on 2026-11-25 and removed from the table: item 2 (III, Safety: the STOP and the host-side moves as checked on
@@ -39,4 +39,4 @@ built nodes (camera relay and detector, bounded moves, STOP, room simulator, tag
 built.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this list with the report rewrite.
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: updated it after filling the real-car parts.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: updated it after filling the real-car parts and the first review.

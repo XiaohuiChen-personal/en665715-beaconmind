@@ -250,6 +250,8 @@ final.b2 | 12.7 | study_summary.json descriptive final_pos_m median
 final.gemma | 110.0 | study_summary.json descriptive final_pos_m median
 final.opus | 12.4 | study_summary.json descriptive final_pos_m median
 final.qwen | 10.9 | study_summary.json descriptive final_pos_m median
+flags.with.none | 7.1 | evidence/M3/M3.T12/batch-runner/safety-flags/safety-flags-output.txt with the slip term: no forward move allowed, % of steps
+flags.without.none | 3.3 | evidence/M3/M3.T12/batch-runner/safety-flags/safety-flags-output.txt without the slip term: no forward move allowed, % of steps
 frozen.commit | 0f2f88eab99b | prereg.json git_commit_short
 frozen.files | 29 | prereg.json files
 gemma.cap-minutes | 76 | results_summary.md notes at analysis time
@@ -399,15 +401,22 @@ phantoms.opus | 39 | study_summary.json per_seed phantoms, summed
 phantoms.qwen | 36 | study_summary.json per_seed phantoms, summed
 pilot.berr-max | 3.4 | evidence/M1/M1.T8/fit-output.txt largest median bearing error over the detected placements
 pilot.berr-min | \ensuremath{-}1.6 | evidence/M1/M1.T8/fit-output.txt smallest median bearing error over the detected placements
+pilot.berr-pair | 1.65 | evidence/M1/M1.T8/fit-output.txt bearing error difference between two placements at the same range
 pilot.bias-a-mm | 4.9 | configs/detector_noise.json range_bias_m.a
 pilot.bias-b-pct | 1.66 | configs/detector_noise.json range_bias_m.b (short)
 pilot.bsd | 1.86 | configs/detector_noise.json bearing_sigma_deg.a (as used)
 pilot.bsd-fit | 0.88 | evidence/M1/M1.T8/fit-output.txt bearing sigma
 pilot.frames | 480 | evidence/M1/M1.T8/fit-output.txt
+pilot.frames-undetected | 30 | evidence/M1/M1.T8/fit-output.txt frames at the placements where no tag was found
 pilot.height-cm | 21.5 | evidence/M1/M1.T8/fit-output.txt tag centre height seen
 pilot.inc | 60 | configs/detector_noise.json max_incidence_deg (as used)
+pilot.model-frames | 420 | configs/detector_noise.json source n_frames (the model's frames)
+pilot.model-places | 14 | configs/detector_noise.json source n_placements
+pilot.places | 16 | evidence/M1/M1.T8/fit-output.txt placements analysed
 pilot.range-max | 3.13 | configs/detector_noise.json max_range_m
 pilot.range-min | 0.79 | configs/detector_noise.json min_range_m
+pilot.rel-max-pct | 2.9 | evidence/M1/M1.T8/fit-output.txt largest placement median range error as a share of the range
+pilot.resid-max-cm | 2.6 | evidence/M1/M1.T8/fit-output.txt largest placement median range error about the bias line (detector_noise.json a + b r)
 pilot.rsd-a-mm | 1.3 | configs/detector_noise.json range_sigma_m.a
 pilot.rsd-b-mm | 0.4 | configs/detector_noise.json range_sigma_m.b (per m)
 power.pilot.a | 0.999 | power.txt
@@ -444,6 +453,7 @@ real.b2.recomputed | 9.5 | evidence/M3/M3.T19/real-2026-11-25/result.json summar
 real.circle.off.max | 14.6 | evidence/M3/M3.T19/real-2026-11-25/result.json truths end_circle logged_truth_off_m
 real.circle.off.min | 4.2 | evidence/M3/M3.T19/real-2026-11-25/result.json truths end_circle logged_truth_off_m (the batch's tracked truth minus the circle)
 real.circle.rms.max | 4.9 | evidence/M3/M3.T19/real-2026-11-25/result.json truths end_circle rms_m
+real.circle.rms.min | 2.2 | evidence/M3/M3.T19/real-2026-11-25/result.json truths end_circle rms_m
 real.circle.tags.max | 15 | evidence/M3/M3.T19/real-2026-11-25/result.json truths end_circle n_tags
 real.circle.tags.min | 5 | evidence/M3/M3.T19/real-2026-11-25/result.json truths end_circle n_tags
 real.flagged.b0 | 12.2 | evidence/M3/M3.T19/real-2026-11-25/result.md, the episode listed apart (cm)
@@ -476,6 +486,7 @@ real.start.s5 | 1 | evidence/M3/M3.T19/real-2026-11-25/result.json DONE episodes
 real.steps | 805 | evidence/M3/M3.T19/real-2026-11-25/result.json steps of the DONE episodes
 real.steps-all | 850 | evidence/M3/M3.T19/real-2026-11-25/result.json steps of all ten episodes
 real.steps.max | 141 | evidence/M3/M3.T19/real-2026-11-25/result.json steps
+real.steps.median | 81 | evidence/M3/M3.T19/real-2026-11-25/result.json median steps of the DONE episodes
 real.steps.min | 56 | evidence/M3/M3.T19/real-2026-11-25/result.json steps
 rec.gemma | 0.42 | study_summary.json descriptive recall median
 rec.opus | 1.00 | study_summary.json descriptive recall median
@@ -483,6 +494,7 @@ rec.qwen | 0.99 | study_summary.json descriptive recall median
 reh.b0.final | 2.6 | evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c, C20 3.0 m: final position error B0
 reh.b2.final | 3.7 | evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c, C20 3.0 m: final position error B2
 reh.n | 150 | evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c: [150] episodes per row
+reh.steps.median | 56 | evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c, C20 3.0 m: steps, median
 repaired.gemma | 0 | study_summary.json per_seed repaired_reports, summed
 repaired.opus | 0 | study_summary.json per_seed repaired_reports, summed
 repaired.qwen | 97 | study_summary.json per_seed repaired_reports, summed
@@ -536,6 +548,8 @@ score.qwen | 0.52 | study_summary.json descriptive pose_score median
 seed.first | 2000 | study_summary.json
 seed.last | 2029 | study_summary.json
 sesoi.cm | 3 | study_summary.json sesoi_m
+slip.ew.max | 0.951 | evidence/M3/M3.T12/batch-runner/tape/split-output.txt pooled, tape down, east and west, off the line: the higher median
+slip.ew.min | 0.939 | evidence/M3/M3.T12/batch-runner/tape/split-output.txt pooled, tape down, east and west, off the line: the lower median
 slip.north.down | 0.827 | evidence/M3/M3.T12/batch-runner/tape/split-output.txt pooled, tape down north, off the line (median ratio)
 slip.north.down.n | 19 | evidence/M3/M3.T12/batch-runner/tape/split-output.txt pooled, tape down north, off the line (n)
 slip.north.removed | 0.830 | evidence/M3/M3.T12/batch-runner/tape/split-output.txt pooled, tape removed north, off the line (median ratio)
