@@ -1292,10 +1292,12 @@ def test_the_transit_checks_the_encoder_scale_before_any_episode(tmp_path):
 
 def test_no_straight_move_takes_the_car_far_from_its_last_tag_fix(tmp_path):
     """The limit on distance driven without a tag fix (0.75 m): whatever the odometer's error, it stays inside the
-    wall margin. Turns stay allowed: turning is how a tag comes into view."""
+    wall margin. Turns stay allowed: turning is how a tag comes into view. (Since 2026-11-25 the limit is 0.75 m once
+    the range check has 3 ranged forward moves, as here, and 0.30 m before: the next test.)"""
     b, r, env = service_env(tmp_path)
     env.inner.detector = lambda jpegs, n=None: {"detections": [], "internal": [], "per_frame": []}     # no tag in view
     r.tracker.set({"x_m": 2.2, "y_m": 1.6, "theta_deg": 90.0}, 0.06, 2.0)      # centre of the room, facing up it
+    r.tracker.range_moves = [(1.0, 2)] * r.params.range_gate_min_moves        # the scale already measured, right
     assert r.tracker.travel_since_fix_m == 0.0
     for i in range(3):
         sense = env.step("FORWARD_25")
@@ -2228,19 +2230,18 @@ def _drift(origin, dead_reckoned, circle, path_m, sigmas=(0.026, 0.024), what="e
     return runner._dead_reckoning(origin, sigmas, what), runner.monitor.calls
 
 
-def test_the_dead_reckoning_drift_is_recorded_and_never_halts():
+def test_the_dead_reckoning_drift_is_recorded_and_halts_only_on_a_gross_error():
     """b2-real-01 (2026-11-25), episode 1: start circle (2.540, 1.466, 105.9), odometry alone ends at (3.099, 1.019,
     -1.5), the end circle at (3.098, 0.747, 11.9), after about 3.5 m of path (2.64 m of straights, 70 turns' axle
-    shifts). Recorded (0.27 m miss, 13.4 deg; the net length ratio 1.27 kept). Since the lead's decision of 2026-11-25
-    the drift is record-only in both directions: with slip that depends on direction the net displacement between two
-    circles is no scale measure (the reviewer's out-and-back case at north 0.60: net 0.79 m by odometry against 1.29 m
-    by the circles, ratio 1.63). would_have_halted records where the old bounds were crossed (the net ratio outside 0.5
-    to 1.6; the miss beyond the circles' 2 sigma over 0.6 of the path): a factor-two error on a straight path is flagged
-    and does not halt; what halts it is test_a_factor_two_scale_error_each_way_halts_in_the_real_room's."""
+    shifts). Recorded (0.27 m miss, 13.4 deg; the net length ratio 1.27 kept), no halt. Since the review of 2026-11-25
+    the gross bound is judged against the path driven (miss beyond the circles' 2 sigma over the path, limit 0.6): the
+    net ratio is no scale test on a carpet that slips by direction. The reviewer's out-and-back case at north 0.60
+    (net 0.79 m by odometry against 1.29 m by the circles, ratio 1.63) passes; a factor-two error on a straight path
+    (odometry reading half of 0.91 m) halts."""
     start = {"x_m": 2.5402, "y_m": 1.4662, "theta_deg": 105.88}
     circle = {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89}
     m, halts = _drift(start, {"x_m": 3.0986, "y_m": 1.0189, "theta_deg": -1.51}, circle, 3.5)
-    assert halts == [] and m["measurement"] == "dead-reckoning drift" and m["checked"] and m["would_have_halted"] is False
+    assert halts == [] and m["measurement"] == "dead-reckoning drift" and m["checked"]
     assert m["tags_over_odometry"] == pytest.approx(1.272, abs=0.002) and m["miss_m"] == pytest.approx(0.272, abs=0.002)
     assert m["heading_miss_deg"] == pytest.approx(13.4, abs=0.1) and m["circle_sigmas_xy_m"] == [0.026, 0.024]
     assert m["miss_world_m"] == pytest.approx([-0.001, -0.272], abs=0.002) and m["gross_share"] == 0.6
@@ -2249,20 +2250,18 @@ def test_the_dead_reckoning_drift_is_recorded_and_never_halts():
     origin = {"x_m": 2.0, "y_m": 2.0, "theta_deg": 0.0}
     m, halts = _drift(origin, {"x_m": 2.79, "y_m": 2.0, "theta_deg": 0.0}, {"x_m": 3.29, "y_m": 2.0, "theta_deg": 0.0}, 3.2)
     assert m["tags_over_odometry"] == pytest.approx(1.633, abs=0.01) and halts == [], m
-    assert len(m["would_have_halted"]) == 1 and "net ratio 1.63" in m["would_have_halted"][0]
-    # a factor-two error on a straight path: odometry says 0.455 m, the circle 0.91 m: both old bounds crossed, no halt
+    # a factor-two error on a straight path: odometry says 0.455 m, the circle 0.91 m
     half = {"x_m": start["x_m"] + 0.5 * (circle["x_m"] - start["x_m"]), "y_m": start["y_m"] + 0.5 * (circle["y_m"] - start["y_m"]),
             "theta_deg": 11.89}
     m, halts = _drift(start, half, circle, 0.455)
-    assert m["miss_over_path"] > 0.6 and halts == [] and len(m["would_have_halted"]) == 2, m
-    # odometry reading 2.2 times (the car covering under half its count): 1.0 m by odometry, 0.455 m on the floor
-    double = {"x_m": start["x_m"] + 2.2 * (half["x_m"] - start["x_m"]), "y_m": start["y_m"] + 2.2 * (half["y_m"] - start["y_m"]),
+    assert m["miss_over_path"] > 0.6 and len(halts) == 1 and halts[0][0] == "odometry_scale" and "grossly off" in halts[0][1]
+    # odometry reading double (the car covering half its count): 0.91 m by odometry, 0.455 m on the floor
+    double = {"x_m": start["x_m"] + 2.0 * (half["x_m"] - start["x_m"]), "y_m": start["y_m"] + 2.0 * (half["y_m"] - start["y_m"]),
               "theta_deg": 11.89}
-    m, halts = _drift(start, double, half, 1.0)
-    assert m["tags_over_odometry"] < 0.5 and m["miss_over_path"] < 0.6 and halts == []
-    assert len(m["would_have_halted"]) == 1 and "net ratio 0.45" in m["would_have_halted"][0], m
-    m, halts = _drift(start, start, start, 0.1)                 # too short a path to measure
-    assert halts == [] and m["checked"] is False and "of path" in m["why"] and m["would_have_halted"] is False
+    m, halts = _drift(start, double, half, 0.91)
+    assert m["miss_over_path"] < 0.6 and halts == []            # under-travel by half: the range floor's (0.55) case
+    m, halts = _drift(start, start, start, 0.1)                 # too short a path to judge
+    assert halts == [] and m["checked"] is False and "of path" in m["why"]
 
 
 def test_a_completed_episode_keeps_its_end_pose_when_a_later_check_halts(tmp_path, monkeypatch):
@@ -2559,22 +2558,27 @@ def test_an_error_inside_the_end_circle_leaves_the_episode_done_and_resume_skips
     assert {x["index"] for x in m["episodes"] if x["status"] == "done"} == {0}     # what resume skips
 
 
-def _factor_two(tmp_path, factor, ranges, monkeypatch, seed=1):
-    """A four-episode batch in the real room (its scenarios, --slip-sigma 0.3) with car.json's scale wrong by `factor`
-    (0.5: the odometer reads half, the car goes twice as far as it thinks; 2.0: it reads double, the car covers half),
-    the range check working or switched off (no ranged move ever). (result, smallest true footprint depth, contact)."""
+def _factor_two(tmp_path, factor, ranges, monkeypatch, seed=1, room="real"):
+    """A four-episode batch with car.json's scale wrong by `factor` (0.5: the odometer reads half, the car goes twice
+    as far as it thinks; 2.0: it reads double, the car covers half), the range check working or switched off (no
+    ranged move ever). room "real": the real room, its scenarios, --slip-sigma 0.3; "20": the 20-tag test room, S1 and
+    S5. (result, smallest true footprint depth, contact)."""
     from beaconmind.car import config as C
     if not ranges:
         monkeypatch.setattr(B.BatchEnv, "_range_check", lambda self, exact, sense, record, first: None)
     cfg = C.load_config()
     wrong = cfg.replace(ticks_per_m_left=cfg.ticks_per_m_left / factor,
                         ticks_per_m_right=cfg.ticks_per_m_right / factor)
-    world = json.loads((ROOT / "configs" / "arenas" / "real-room.json").read_text())
-    starts = [dict(sc["start_pose"], id=sc["id"]) for sc in
-              json.loads((ROOT / "configs" / "arenas" / "real-room-scenarios.json").read_text())["scenarios"]]
-    place = {"x_m": 2.369, "y_m": 2.206, "theta_deg": -90.0}
+    if room == "real":
+        world = json.loads((ROOT / "configs" / "arenas" / "real-room.json").read_text())
+        starts = [dict(sc["start_pose"], id=sc["id"]) for sc in
+                  json.loads((ROOT / "configs" / "arenas" / "real-room-scenarios.json").read_text())["scenarios"]]
+        place, slip = {"x_m": 2.369, "y_m": 2.206, "theta_deg": -90.0}, 0.3
+    else:
+        world, place, slip = WORLD20, dict(PLACE20), 0.0
+        starts = [dict(S1), {"id": "S5", "x_m": 2.25, "y_m": 2.6, "theta_deg": 180.0}]
     params = B.BatchParams(world_path="x", start_poses=starts, initial_pose=dict(place), episodes=4, max_steps=80,
-                           max_range_m=3.0, odometry_slip_sigma_per_m=0.3)
+                           max_range_m=3.0, odometry_slip_sigma_per_m=slip)
     rig = B.dry_rig(world, place, latch=Latch(tmp_path / "LATCH"), seed=seed, max_range_m=3.0, cfg=wrong)
     runner = B.BatchRunner(params, rig, world, tmp_path / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
                            log=lambda *a: None, run_episode=cl.run_episode)
@@ -2590,18 +2594,16 @@ def _factor_two(tmp_path, factor, ranges, monkeypatch, seed=1):
 
 
 def test_a_factor_two_scale_error_each_way_halts_in_the_real_room(tmp_path, monkeypatch):
-    """The lead's question of 2026-11-25, with the drift bound record-only: what halts a factor-two scale error in
-    each direction. In the real room, with the range check working: the range check, at the first ranged forward move,
-    both ways (the car going twice as far: 2.0 above the +12 %; covering half: 0.5 below the 0.55 floor). This needs
-    the range check's same-tag gate of 1.5 moves (half a move until 2026-11-25 dropped the over-travel pair as another
-    tag). With the range check off: fix_conflict for over-travel, in episode 1 (the fixes land far ahead of where
-    odometry puts the car); for under-travel fix_conflict in episode 3 in two seeds of three, while the third (seed 2)
-    completes four episodes undetected: the car covers less than it thinks, the safe side, and stayed 0.55 m inside
-    the driving area. No contact in any run. The 20-tag test room is the weak case: there the car going twice as far
-    drove blind from its first forward moves (no tag in view) and reached a wall in 2 of 3 seeds with the range check
-    working, 3 of 3 without; the same on 19f71e6 (the README's factor-two table)."""
+    """The lead's question of 2026-11-25: what halts a factor-two scale error in each direction. In the real room,
+    with the range check working: the range check, at the first ranged forward move, both ways (the car going twice
+    as far: 2.0 above the +12 %; covering half: 0.5 below the 0.55 floor). This needs the range check's same-tag gate
+    of 1.5 moves (half a move until 2026-11-25 dropped the over-travel pair as another tag). With the range check off:
+    over-travel is halted by the per-step fixes in episode 1 (since the early blind limit, blind_limit_m; fix_conflict
+    before it); under-travel, the safe side, completes four episodes undetected in all three seeds, the car staying
+    0.58 m or more inside the driving area (fix_conflict caught two seeds of three before the early blind limit). No
+    contact in any run."""
     cases = ((0.5, True, ("odometry_scale",), 1.0), (2.0, True, ("odometry_scale",), 1.0),
-             (0.5, False, ("fix_conflict",), 0.3), (2.0, False, ("fix_conflict", None), 0.3))
+             (0.5, False, ("odometry_scale", "fix_conflict"), 0.3), (2.0, False, ("fix_conflict", None), 0.3))
     for factor, ranges, codes, deepest in cases:
         with monkeypatch.context() as mp:
             result, depth, contact = _factor_two(tmp_path / ("f%s-%s" % (factor, ranges)), factor, ranges, mp)
@@ -2610,3 +2612,31 @@ def test_a_factor_two_scale_error_each_way_halts_in_the_real_room(tmp_path, monk
         if ranges:
             assert "ranges to the tags" in result["halt"]["detail"], result
         assert depth > deepest and not contact, (factor, ranges, depth)
+
+
+def test_until_three_moves_are_ranged_the_car_drives_one_forward_move_blind(tmp_path, monkeypatch):
+    """The lead's decision of 2026-11-25. In the 20-tag test room a factor-two over-travel (the odometer reading half)
+    drove blind from its first forward moves, no tag in view, and three FORWARD_25s by odometry (the 0.75 m blind
+    limit) took the car 1.5 m and into a wall (seeds 2 and 3 with the range check working; the same on 19f71e6). Until
+    the range check has range_gate_min_moves (3) ranged forward moves, the blind limit is 0.30 m: one FORWARD_25,
+    then a tag fix before the next. Seed 2 now halts on the dead-reckoning drift of the transit (its path-share
+    bound), the car 0.31 m inside the driving area."""
+    p = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
+    t = B.PoseTracker(S1, 0.05, 1.0)
+    assert B.blind_limit_m(t, p) == pytest.approx(0.30) and p.max_blind_travel_m == 0.75
+    b, r, env = service_env(tmp_path / "walk")              # no tag in view, nothing ranged yet: one FORWARD_25
+    env.inner.detector = lambda jpegs, n=None: {"detections": [], "internal": [], "per_frame": []}
+    r.tracker.set({"x_m": 2.2, "y_m": 1.6, "theta_deg": 90.0}, 0.06, 2.0)
+    assert env.step("TURN_LEFT_30")["move"]["result"] == "done"
+    assert env.step("TURN_RIGHT_30")["move"]["result"] == "done"
+    assert env.step("FORWARD_25")["move"]["result"] == "done"       # after two turns' axle shifts, still allowed
+    refused = env.step("FORWARD_10")
+    assert refused["move"]["result"] == "refused" and "until 3 forward moves are ranged" in refused["move"]["reason"]
+    assert env.step("TURN_LEFT_30")["move"]["result"] == "done" and r.monitor.halted is None
+    t.range_moves = [(1.0, 2)] * 2
+    assert B.blind_limit_m(t, p) == pytest.approx(0.30)
+    t.range_moves = [(1.0, 2)] * 3
+    assert B.blind_limit_m(t, p) == pytest.approx(0.75)
+    result, depth, contact = _factor_two(tmp_path, 0.5, True, monkeypatch, seed=2, room="20")
+    assert result["status"] == "halted" and result["halt"]["code"] == "odometry_scale", result
+    assert depth > 0.25 and not contact, depth

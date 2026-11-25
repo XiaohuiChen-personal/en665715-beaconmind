@@ -8,7 +8,7 @@ For the committed code before a change: the same with PYTHONPATH and the first s
 (git archive <commit> course-project/beaconmind/src) and BM_COURSE_ROOT set.
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this probe."""
-import json, math, sys, tempfile, pathlib
+import json, math, shutil, sys, tempfile, pathlib
 sys.path.insert(0, "src"); sys.path.insert(0, "tests")
 from beaconmind.car import batch as B, config as C
 from beaconmind.car.latch import Latch
@@ -45,6 +45,9 @@ for name, (world, place, starts, slip) in rooms.items():
                 det = h.get("detail", "")
                 if kind == "odometry_scale":
                     kind += ":ranges" if "ranges to the tags" in det else ":fixes" if "tag fixes land" in det else ":other"
+                if kind == "odometry_scale:other" and "dead reckoning" in det:
+                    kind = "odometry_scale:drift"
                 line.append("%s ep%d depth %.2f%s" % (kind, len(m["episodes"]), depth["min"], " CONTACT" if (rig.link.sim.p.blocked_left or rig.link.sim.p.blocked_right) else ""))
+                shutil.rmtree(out, ignore_errors=True)
             print("%-11s | %-55s | ranges %-3s | %s" % (name, label, "on" if ranges else "off", " | ".join(line)), flush=True)
 B.BatchEnv._range_check = ranges_on

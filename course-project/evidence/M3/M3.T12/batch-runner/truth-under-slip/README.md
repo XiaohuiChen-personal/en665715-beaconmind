@@ -10,7 +10,8 @@ This note measures that, tries a slip-aware odometry sigma, and recomputes the f
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the measurements and wrote this note,
 `slip_sigma_exp.py`, `tools/recompute_truth.py` and the slip option in `PoseTracker`. Later the same day: §5 and §6
-(the drift made record-only; the same-tag rule), `same_tag_exp.py`, `wrong_tag_walk.py`, `tag_probe_rule.py`.
+(the factor-two errors, the range gate and the early blind limit; the same-tag rule), `factor_two_probe.py`,
+`blind_cap_cost.py`, `same_tag_exp.py`, `wrong_tag_walk.py`, `tag_probe_rule.py`.
 
 ## 1. A slip-aware odometry sigma, prototyped (not switched on)
 
@@ -105,7 +106,7 @@ refuses to start without it stated (0 states it off); dry runs and tests default
 The reviewer's verdict on 927e44c was yes: 24 ten-episode batches, no wall contact, smallest depth 0.196 m, and every
 over-travel fault halted (12 of 12). It made four further findings; each is answered here.
 
-### Finding 1: the gross drift bound was not a clean scale test (superseded by §5: record-only)
+### Finding 1: the gross drift bound was not a clean scale test
 
 **The problem.** On a carpet that slips by direction, an out-and-back path changes the odometry's net displacement by
 any factor, so the net length ratio is no scale test. Two correct cars false-halted on it:
@@ -190,29 +191,42 @@ one tag, the tracked sigma may move with the fix but never shrink, so it climbs 
 the pose is within a few centimetres. North 0.60 is below anything measured on the real car. (Changed in §6, on
 the lead's decision: this run now completes 10 of 10.)
 
-## 5. The dead-reckoning drift: record-only in both directions (the lead's decision, later on 2026-11-25)
+## 5. The drift's path share kept; the range gate; the early blind limit (later on 2026-11-25)
 
-The path-share bound of Finding 1 is gone as a halt too. With slip that depends on direction, the net displacement
-between two circles is no scale measure in either direction, and the path share was argued, not measured, against a
-real fault. The measurement and all its fields stay. `would_have_halted` lists, for the record, where the net ratio
-left 0.5 to 1.6 or the miss passed 0.6 of the path (beyond the circles' 2 σ); otherwise it is `false`.
+**The drift bound.** For one commit (`9dd80e9`) the dead-reckoning drift was record-only, on a decision of the lead's
+that crossed with their acceptance of the path share (Finding 1). The lead kept the path share: it still halts a
+factor-two error on a straight path. It is back as in `19f71e6`, and it now does halt something: in the 20-tag room's
+factor-two over-travel, seeds 2 and 3, it halted the first transit 0.31 m inside the driving area (below). On the
+real car it has stayed well clear: b2-real-05's largest miss over path was 0.24 (`../b2-real-05/`).
 
-What halts a factor-two scale error now, each way, with and without ranged moves, is the table in `../README.md`
-("What halts a factor-two scale error"). In short: the range check halts both directions at the first ranged forward
-move. Without one, `fix_conflict` halts over-travel; under-travel is halted by `fix_conflict` or not at all, the car
-covering less than it thinks. The old bound fired first in none of those runs, on the committed code or now.
+**What halts a factor-two scale error** (`factor_two_probe.py`, `factor_two_probe-output.txt`, the table in
+`../README.md`). The range check halts both directions at the first ranged forward move. Two changes make that so:
+- **The range check's same-tag gate** dropped a factor-two over-travel as another tag: the range missed its
+  prediction by a whole move, over the gate of half a move plus 0.10 m. The gate is now 1.5 moves plus 0.10 m
+  (approved by the lead). The real room's over-travel now halts on the ranges, 1.27 m inside, where on `19f71e6`
+  only `fix_conflict` caught it, 0.49 m inside.
+- **The early blind limit.** In the 20-tag test room a factor-two over-travel drove blind from its first forward
+  moves (no tag in view) and reached a wall: 2 of 3 seeds with the range check, 3 of 3 without, and the same on
+  `19f71e6`. Until the range check has 3 ranged forward moves, the car now drives at most 0.30 m (one FORWARD_25)
+  without a tag fix (`blind_limit_m`; approved by the lead). With the range check working, no seed reaches a wall
+  (0.31 m or more inside).
+- **What remains:** with the range check switched off (an artificial fault), the 20-tag room's seed 1 still reaches a
+  wall. Single far tags fix the pose after every move, so the blind count restarts, but with too little weight to
+  catch up with the car.
 
-Two things came out of that table:
-- **The range check's same-tag gate dropped a factor-two over-travel** as another tag: the range missed its prediction
-  by a whole move, over the gate of half a move plus 0.10 m. The gate is now 1.5 moves plus 0.10 m (told to the lead
-  before the commit). With it, the real room's over-travel halts on the ranges, 1.27 m inside, where before only
-  `fix_conflict` caught it, 0.49 m inside.
-- **A gap that was there before:** in the 20-tag test room a factor-two over-travel drove blind from its first forward
-  moves (no tag in view) and reached a wall: 2 of 3 seeds with the range check, 3 of 3 without. The same happened on
-  `19f71e6`. A remedy, capping blind travel at one forward move until the range check has its 3 moves, is proposed to
-  the lead and not made.
+**Its cost** (`blind_cap_cost.py`, `blind_cap_cost-output.txt`, a correct odometer, four-episode batches, 3 seeds, on
+against off):
+- **Real room:** the first transit took one more attempt, and so one more circle, in 3 of 3 seeds. Whole batches took
+  between 66 moves fewer and 71 more.
+- **20-tag room:** between 41 moves fewer and 20 more.
+- All 12 batches completed, at least 0.25 m inside (0.26 m without the limit).
+- **The ten-episode dry runs** (exact real arguments, plain and north 0.78, 0.67, 0.60) were move for move the same
+  with it, because their first forward moves are ranged (`same-tag-dry-runs-log.txt`, which also stands for these).
 
 ## 6. The same-tag rule: a repeated fix leaves the sigma no larger than its own (the lead's decision, 2026-11-25)
+
+The measurements of this section ran on `9dd80e9`'s code (the drift record-only, no early blind limit); each compares
+the two rules on the same code.
 
 **The rule.** A fix that rests on exactly the tags of the last fix repeats that fix's survey and range-scale error.
 Until now it moved the pose but left the position sigma as it was, so on a long run of one tag's fixes the slip sigma
@@ -282,9 +296,11 @@ tag's own fix sigma: the long northward runs of the carpet table above, and the 
 
 ### The dry runs of this commit (`--slip-sigma 0.3`, exact real arguments)
 
-Log: `same-tag-dry-runs-log.txt`. The drift is record-only and the same-tag rule is new, against §4's runs.
+Log: `same-tag-dry-runs-log.txt`, the runs of the commit after `9dd80e9` (the same-tag rule, the range gate, the
+early blind limit, the path share kept). The same four runs on `9dd80e9` (the drift record-only, no early limit)
+gave the same numbers, move for move. Against §4's runs:
 
-| Run | Result | Truth p95 / max against the car | Beyond 2 σ | σ max | Miss over path, max | Net ratios | `would_have_halted` |
+| Run | Result | Truth p95 / max against the car | Beyond 2 σ | σ max | Miss over path, max (halts above 0.6) | Net ratios | Drift halts |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | plain | 10 of 10 | 0.008 / 0.020 m | 0 % | 0.177 m | 0.000 | 0.99–1.00 | none |
 | north 0.78 | 10 of 10 | 0.057 / 0.256 m | 0 % | 0.188 m | 0.196 | 0.78–1.05 | none |

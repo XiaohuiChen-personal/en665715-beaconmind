@@ -1,0 +1,18 @@
+blind_cap_cost.py, 2026-11-25 (code: the early blind limit, the pairing gate, the same-tag rule, the path-share drift halt).
+"early 0.75" is the early limit switched off (the 0.75 m limit throughout). "early-limit refusal mentions" and "looks on the way" count
+refusals sent to the agent and the runner's log lines; the agent mostly reads the guard's safety flags and turns instead,
+so the cost shows in the moves and the transit attempts.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the measurement and collected its output here.
+
+20-tag room early 0.30 seed 1 | complete -            done 4 | moves  460 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [1, 3, 1, 2] | depth 0.33
+20-tag room early 0.30 seed 2 | complete -            done 4 | moves  557 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [1, 6, 1, 2] | depth 0.33
+20-tag room early 0.30 seed 3 | complete -            done 4 | moves  494 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [1, 2, 2, 2] | depth 0.34
+20-tag room early 0.75 seed 1 | complete -            done 4 | moves  460 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [1, 3, 1, 2] | depth 0.33
+20-tag room early 0.75 seed 2 | complete -            done 4 | moves  537 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [1, 2, 2, 3] | depth 0.30
+20-tag room early 0.75 seed 3 | complete -            done 4 | moves  535 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [1, 2, 2, 3] | depth 0.32
+real room   early 0.30 seed 1 | complete -            done 4 | moves  683 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [2, 1, 4, 3] | depth 0.28
+real room   early 0.30 seed 2 | complete -            done 4 | moves  620 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [2, 1, 4, 3] | depth 0.25
+real room   early 0.30 seed 3 | complete -            done 4 | moves  577 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [2, 1, 3, 3] | depth 0.26
+real room   early 0.75 seed 1 | complete -            done 4 | moves  612 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [1, 1, 4, 3] | depth 0.35
+real room   early 0.75 seed 2 | complete -            done 4 | moves  620 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [1, 1, 4, 3] | depth 0.27
+real room   early 0.75 seed 3 | complete -            done 4 | moves  643 | early-limit refusal mentions   0 | looks on the way 0 | transit attempts [1, 1, 4, 3] | depth 0.26
