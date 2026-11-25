@@ -1,0 +1,6 @@
+   0.00 s  title       card    6.00 s
+   6.00 s  idea        card   14.00 s
+  20.00 s  sim         part  119.76 s
+ 139.76 s  closing     card   12.00 s
+ 151.76 s  disclosure  card   10.00 s
+total 161.76 s (4044 frames); simulation time-lapse x24 over 1129.8 s of logged time

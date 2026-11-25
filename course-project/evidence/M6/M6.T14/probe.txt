@@ -1,0 +1,7 @@
+ffmpeg: ffmpeg version 7.1 Copyright (c) 2000-2024 the FFmpeg developers
+data/video/parts/sim.mp4  codec h264  1920x1080  25 fps  2994 frames  119.76 s  audio False
+data/video/BeaconMind-demo-silent.mp4  codec h264  1920x1080  25 fps  4044 frames  161.76 s  audio False
+8ff585b9f7f2898aff2c9d310233483ac9a6eebc0997fae4a5b70ab995f05bf4  data/video/parts/sim.mp4
+a127289e1082b60b6d791e16dd625dbac765acee470998ffb92e526a538f9127  data/video/BeaconMind-demo-silent.mp4
+7346585 data/video/BeaconMind-demo-silent.mp4
+6740738 data/video/parts/sim.mp4

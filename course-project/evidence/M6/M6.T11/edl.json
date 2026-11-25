@@ -1,0 +1,102 @@
+{
+ "sequence": [
+  {
+   "id": "title",
+   "kind": "card",
+   "start_s": 0.0,
+   "frames": 150,
+   "dur_s": 6.0
+  },
+  {
+   "id": "idea",
+   "kind": "card",
+   "start_s": 6.0,
+   "frames": 350,
+   "dur_s": 14.0
+  },
+  {
+   "id": "sim",
+   "kind": "part",
+   "start_s": 20.0,
+   "frames": 2994,
+   "dur_s": 119.76
+  },
+  {
+   "id": "closing",
+   "kind": "card",
+   "start_s": 139.76,
+   "frames": 300,
+   "dur_s": 12.0
+  },
+  {
+   "id": "disclosure",
+   "kind": "card",
+   "start_s": 151.76,
+   "frames": 250,
+   "dur_s": 10.0
+  }
+ ],
+ "cues": {
+  "title": 0.0,
+  "idea": 6.0,
+  "sim.part": 20.0,
+  "sim.legend": 28.0,
+  "sim.episode": 40.0,
+  "sim.detail": 57.2,
+  "sim.detail.end": 68.88,
+  "sim.first-fix": 68.88,
+  "sim.mapped-all": 47.28,
+  "sim.done": 102.72,
+  "sim.result": 105.76,
+  "sim.validator": 119.76,
+  "sim.validator.clip": 126.76,
+  "sim.end": 139.76,
+  "closing": 139.76,
+  "disclosure": 151.76
+ },
+ "total_s": 161.76,
+ "total_frames": 4044,
+ "sim": {
+  "factor": 24,
+  "detail": 23,
+  "pieces": [
+   {
+    "w0": 0.0,
+    "w1": 413.9,
+    "speed": 24.0,
+    "label": "timelapse",
+    "hold_s": null
+   },
+   {
+    "w0": 413.9,
+    "w1": 437.29999999999995,
+    "speed": 2.0,
+    "label": "detail",
+    "hold_s": null
+   },
+   {
+    "w0": 437.29999999999995,
+    "w1": 437.29999999999995,
+    "speed": 1.0,
+    "label": "hold",
+    "hold_s": 5.0
+   },
+   {
+    "w0": 437.29999999999995,
+    "w1": 1129.7999999999997,
+    "speed": 24.0,
+    "label": "timelapse",
+    "hold_s": null
+   },
+   {
+    "w0": 1129.7999999999997,
+    "w1": 1129.7999999999997,
+    "speed": 1.0,
+    "label": "hold",
+    "hold_s": 3.0
+   }
+  ],
+  "source_total_s": 1129.7999999999997
+ },
+ "car": null
+}

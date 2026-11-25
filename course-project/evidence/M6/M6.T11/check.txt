@@ -1,0 +1,8 @@
+steps                        logs 56             summary 56             OK
+moves executed               logs 55             summary 55             OK
+refused move calls           logs 0              summary 0              OK
+tags mapped within 0.30 m    logs 14             summary 14             OK
+map entries                  logs 14             summary 14             OK
+ended by                     logs DONE           summary DONE           OK
+time total (s)               logs 1129.8         summary 1129.8         OK
+cost (US$)                   logs 4.60225        summary 4.60225        OK

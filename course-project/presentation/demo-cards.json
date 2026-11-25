@@ -1,0 +1,109 @@
+{
+ "$comment": "AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: drafted the card texts of the demo video. Every {{key}} is filled by beaconmind.demo.numbers from the evidence and log files (tools/demo_video.py numbers lists them with their sources); never type a number here. A line starting with '!' is drawn in the warning colour; one starting with '=' has no bullet; a line given as {\"text\": ..., \"if\": \"car\"} appears only when the car part is in the video.",
+ "title": {
+  "style": "title",
+  "kicker": "EN.665.715 Embodied Agentic AI for Robotic Control · course project demo",
+  "title": "BeaconMind",
+  "subtitle": "A language model keeps its own pose and landmark map on a small robot car",
+  "lines": ["Xiaohui Chen", "Replayed from the experiment's logs (simulation recorded {{sim.date-long}})"],
+  "footer": "Recorded demo: every number on screen is read from the project's log and evidence files by code."
+ },
+ "idea": {
+  "style": "text",
+  "kicker": "The idea",
+  "title": "The model owns the map and the decisions; code does the geometry",
+  "lines": [
+   "The car's camera sees AprilTags on the walls: the beacons. At every step the model gets the tag detections and the wheel odometry as text.",
+   "It calls geometry tools (odometry, association gate, position fix, map update), then writes a report: its pose, its beacon map and the next move.",
+   "A validator checks every move against the safety flags before anything is executed; a refused move executes nothing.",
+   "The mission shown here is EXPLORE: map as many beacons as possible, then stop."
+  ]
+ },
+ "sim_part": {
+  "style": "part",
+  "kicker": "Part 1 · simulation",
+  "title": "One closed-loop episode in a simulated copy of the real room",
+  "lines": [
+   "Kinematic simulator of the room, {{sim.tags}} AprilTags at their planned (nominal) positions, camera field of view {{cam.hfov}}°, range limit {{cl.range-m}} m.",
+   "Claude Opus 5.5 ({{cl.opus.model}}, effort {{cl.opus.effort}}) chose every move, live through the Anthropic API, on {{sim.date-long}}.",
+   "Start pose {{sim.start}} in the room; odometry noise seed {{sim.noise-seed}}.",
+   "!This video replays that run's logs: no model was called to make it. Waiting time is sped up, and the speed is always shown."
+  ]
+ },
+ "sim_legend": {
+  "style": "text",
+  "kicker": "How to read the screen",
+  "title": "What each part of the screen shows",
+  "font": 30,
+  "image_w": 1040,
+  "image_y": 170,
+  "lines": [
+   "=1  Step, real time since the start, model cost so far, tags mapped, the believed pose's error, and the playback speed.",
+   "=2  The room from above. Black car: true pose (simulator). Blue outline: the model's believed pose. Squares: tags (green once the model has mapped them); blue rings: the model's beacon estimates; yellow: tags seen this step.",
+   "=3  The step as the harness logged it: the observation, each tool call with its answer, the model's report and the validator's verdict.",
+   "=4  Legend and the run's provenance."
+  ],
+  "callouts": [["1", [0.43, 0.04]], ["2", [0.30, 0.45]], ["3", [0.88, 0.92]], ["4", [-0.035, 0.925]]]
+ },
+ "sim_result": {
+  "style": "text",
+  "kicker": "Part 1 · result",
+  "title": "What the simulated episode did",
+  "rows": [
+   ["Outcome", "the model ended EXPLORE itself ({{sim.ended-by}}) after {{cl.opus.steps}} steps and {{cl.opus.moves}} moves"],
+   ["Beacons mapped", "{{cl.opus.tags-found}} of {{cl.n-tags}} tags within {{rule.map-radius-m}} m; {{sim.phantoms}} phantom beacons; map error {{sim.map-rmse-cm}} cm"],
+   ["Pose error (ATE)", "{{cl.opus.ate}} cm; dead reckoning alone on the same odometry: {{cl.opus.b0-ate}} cm"],
+   ["Safety", "{{sim.refused}} moves refused by the validator, {{sim.estops}} emergency stops, {{sim.fallbacks}} invalid reports"],
+   ["Tool calls", "{{sim.tool-calls}} in {{sim.turns}} model turns; {{sim.tool-errors}} answered with an error (a position fix asked for without a matched beacon), and the model went on correctly"],
+   ["Followed its procedure", "its decision equals the prompt's procedure run as code (B2) on the same input at {{cl.opus.agree-steps}} of {{cl.opus.steps}} steps"],
+   ["Time and cost", "{{sim.time-min}} min of real time, about {{sim.step-mean-s}} s a step; US${{cl.opus.cost}} of API calls"]
+  ],
+  "lines": [
+   "!One episode, one start pose, one noise seed: this shows the loop working, not that one method is better.",
+   "!Dead reckoning was more accurate here: the path is short and the simulated odometry drifts little."
+  ]
+ },
+ "validator": {
+  "style": "part",
+  "kicker": "Part 1 · the validator",
+  "title": "What a refused move looks like",
+  "lines": [
+   "!This short clip is a scripted test model from the test suite, not a real model. The real episode above never needed a refusal ({{sim.refused}} refused moves).",
+   "The scripted model drives toward a wall in the study's {{rule.square-m}} m square, asks for moves the safety flags do not allow, then presses the emergency stop.",
+   "Same harness, same validator and the same move checks as the real episode ({{val.steps}} steps, {{val.refused}} moves refused, ended by {{val.ended-by}})."
+  ]
+ },
+ "car_part": {
+  "style": "part",
+  "kicker": "Part 2 · the real car",
+  "title": "The same harness on the real car",
+  "lines": [
+   "Phone video, the car's own camera with the tags it detected, the room from above and the model's step trace, aligned on the Spark's clock.",
+   "!Waiting time is sped up; motion plays in real time. The speed is always shown."
+  ]
+ },
+ "closing": {
+  "style": "text",
+  "kicker": "Summary",
+  "title": "What the demo shows, and what it does not",
+  "lines": [
+   "A language model ran the whole loop: it kept its own pose and beacon map, chose every move, and every move passed a validator first.",
+   "In this simulated episode it mapped {{cl.opus.tags-found}} of {{cl.n-tags}} tags with no phantom beacon and stopped by itself.",
+   {"text": "Part 2 shows the same harness driving the real car.", "if": "car"},
+   "!One episode is a demonstration, not a result: the pre-registered study and its statistics are in the report.",
+   "Code, logs and the report: the project's public GitHub repository."
+  ]
+ },
+ "disclosure": {
+  "style": "text",
+  "kicker": "Generative-AI disclosure",
+  "title": "Who did what",
+  "font": 30,
+  "lines": [
+   "The robot's decisions in Part 1: Claude Opus 5.5 ({{cl.opus.model}}) through the Anthropic API, live during the run on {{sim.date-long}}.",
+   "This video's rendering code, cards and narration script: Claude Opus 5.5 via Claude Code (2026-11-24), generated from the logs.",
+   "The project's code and documents were written with AI assistance (Grok 4.7, Claude Opus 5.5, Claude Fable 5.2 and others); each file names its model, and the report's disclosure section lists them.",
+   "Xiaohui Chen directed the project and is accountable for it."
+  ]
+ }
+}

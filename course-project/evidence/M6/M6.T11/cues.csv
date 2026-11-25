@@ -1,0 +1,17 @@
+output_s,cue
+0.00,title
+6.00,idea
+20.00,sim.part
+28.00,sim.legend
+40.00,sim.episode
+47.28,sim.mapped-all
+57.20,sim.detail
+68.88,sim.detail.end
+68.88,sim.first-fix
+102.72,sim.done
+105.76,sim.result
+119.76,sim.validator
+126.76,sim.validator.clip
+139.76,sim.end
+139.76,closing
+151.76,disclosure
