@@ -74,7 +74,7 @@ In this replay no move chosen by the agent was executed. On the real car the cod
 resection at each episode's end ($n=\bmnum{real.n-circle}$), the median final-position error was
 \bmnum{real.b0.median}\,cm for dead reckoning, \bmnum{real.b2.median}\,cm for the coded procedure and
 \bmnum{real.opus.median}\,cm for Opus~5.5 \pending{Qwen3.8 and Gemma~4 on the real logs (replays running)}. The
-car's odometry drifted far more than the simulator's, mostly through a slip that depended on the direction of
+car's odometry drifted far more than the simulator's, in part through a slip that depended on the direction of
 travel.
 \end{abstract}
 
@@ -108,9 +108,10 @@ procedure written as code, measures tool-call F1 against that code, and scores t
 calibrated without hand labels
 (Section~\ref{sec:experiments}). (3)~Results for three models on \bmnum{n.seeds} held-out simulated episodes: two
 models beat dead reckoning by a statistically supported but practically small margin and add little beyond the
-coded procedure, and one fails for a reason a post hoc check identifies (Section~\ref{sec:results}). (4)~A replay of the same arms
-on \bmnum{real.n} episodes recorded on the real car in a surveyed room, scored against a tag resection, and what the
-car showed that the simulator did not (Sections~\ref{sec:real} and~\ref{sec:sim2real}).
+coded procedure, and one fails for a reason a post hoc check identifies (Section~\ref{sec:results}). (4)~A replay of dead
+reckoning, the coded procedure and Opus~5.5 (the other two models still running) on \bmnum{real.n} episodes recorded
+on the real car in a surveyed room, scored against a tag resection, and what the car showed that the simulator did
+not (Sections~\ref{sec:real} and~\ref{sec:sim2real}).
 
 \textbf{Research questions.} RQ1 (primary): replayed on held-out logs, is the agent's pose estimate more
 accurate than dead reckoning, and is it within twice the error of a factor-graph reference? RQ2: how
@@ -894,9 +895,9 @@ model could add when the procedure's rules do not fit was not measured; close du
 operator requests are the next test.
 On \bmnum{real.n} episodes recorded on the real car the ordering measured so far held: Opus~5.5 stayed within
 \bmnum{real.opus-b2.maxdiff}\,cm of the coded procedure, and both ended far closer to the truth than dead reckoning
-(medians \bmnum{real.opus.median}, \bmnum{real.b2.median} and \bmnum{real.b0.median}\,cm). The gap from the simulator
-was mostly odometry: on this carpet the car covered less than it counted in one direction of travel, which no
-simulator here modeled. \pending{Qwen3.8 and Gemma~4 on the real logs, and what the three closed-loop Opus episodes
+(medians \bmnum{real.opus.median}, \bmnum{real.b2.median} and \bmnum{real.b0.median}\,cm). The largest gap from the
+simulator was in the odometry: dead reckoning ended far farther off than in simulation, and on this carpet the car
+covered less than it counted in one direction of travel, which no simulator here modeled. \pending{Qwen3.8 and Gemma~4 on the real logs, and what the three closed-loop Opus episodes
 on the car showed}
 
 \section*{Generative AI Disclosure}
