@@ -345,12 +345,15 @@ def cmd_run(args):
         detect = camera.perception_detector(tag_size_m=args.tag_size, tag_center_height_m=args.tag_height,
                                             max_range_m=args.max_range)
         rig = B.Rig(link, cam, detect, latch=latch, real=True, notes={"session": os.path.basename(session)})
-        name = os.path.basename(session)
+        session_name = os.path.basename(session)
 
-        def recorder_check():
+        # The name is bound as a default argument: the closure must not read a variable of cmd_run that a later
+        # loop rebinds (the signal loop below once turned it into "SIGHUP" and halted the first real batch,
+        # 2026-11-25). AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: this fix.
+        def recorder_check(session_name=session_name):
             now = active_session_dir(str(ROOT / "data"))
-            if not now or os.path.basename(now) != name:
-                return "the recorder session %s is no longer active" % name
+            if not now or os.path.basename(now) != session_name:
+                return "the recorder session %s is no longer active" % session_name
             return recorder_silent(session)
         marker_path = os.path.join(session, "batch_markers.jsonl")
 
