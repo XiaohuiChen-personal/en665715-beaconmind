@@ -1,0 +1,65 @@
+09:58:17 batch 9b9aaa7efdc3: 10 episodes of b2 on the simulated car (dry run), world real-room-plus8-160mm, out /workspace/course-project/data/batches/b2-real-01-dry-r1-20261125
+09:58:17 fix sigma 0.0062 + 0.0378 x range m: configs/detector_noise.json sha256:68ff4796a4c4: tag pilot 20261125-020811-tag-pilot frames.csv (2026-11-25, 420 frames, 14 placements): range bias +0.0049 -0.0166 r, range sigma 0.0013 + 0.0004 r m, bearing bias -0.08 deg, bearing sigma 1.860 + 0.000 r deg, reliable to 3.135 m -> 0.0062 + 0.0378 x range m up to 3.00 m
+09:58:17 design values: configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)
+09:58:19 seed 1: episode ended by DONE (decision) after 56 steps
+09:58:21 seed 2: episode ended by DONE (decision) after 43 steps
+09:58:25 seed 3: episode ended by DONE (decision) after 104 steps
+09:58:27 seed 4: episode ended by DONE (decision) after 64 steps
+09:58:30 seed 5: episode ended by DONE (decision) after 57 steps
+09:58:33 seed 6: episode ended by DONE (decision) after 69 steps
+09:58:35 seed 7: episode ended by DONE (decision) after 70 steps
+09:58:38 seed 8: episode ended by DONE (decision) after 69 steps
+09:58:43 seed 9: episode ended by budget (steps) after 150 steps
+09:58:45 seed 10: episode ended by DONE (decision) after 50 steps
+Car batch 9b9aaa7efdc3 (simulated car, dry run)
+status: complete   updated: 2026-11-25T09:58:45Z   resumes: 0
+world: real-room-plus8-160mm   policy: b2   episodes asked: 10   moves sent: 1564   spent: US$0.00
+tags checked against each other in this run: 20, trusted to steer a step's fix: 20
+fix sigma: configs/detector_noise.json sha256:68ff4796a4c4: tag pilot 20261125-020811-tag-pilot frames.csv (2026-11-25, 420 frames, 14 placements): range bias +0.0049 -0.0166 r, range sigma 0.0013 + 0.0004 r m, bearing bias -0.08 deg, bearing sigma 1.860 + 0.000 r deg, reliable to 3.135 m -> 0.0062 + 0.0378 x range m up to 3.00 m
+design values: configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)
+sigma sources: agree: the agent's sigmas (--dv) and the batch's fix sigma come from the same detector-noise file (sha256 68ff4796a4c49425e994b6170e9308e298e55b7ee2d2184781fd78949f7f6f50)
+
+ep01-a1  done    scenario S1  start miss 0.17 m / 0 deg  ended_by DONE (decision) after 56 steps  final pose error 0.05 m / 2 deg (truth sigma 0.05 m, tag fix at that step)
+ep02-a1  done    scenario S2  start miss 0.09 m / 2 deg  ended_by DONE (decision) after 43 steps  final pose error 0.01 m / 1 deg (truth sigma 0.05 m, tracked since the last fix)
+ep03-a1  done    scenario S3  start miss 0.04 m / 16 deg  ended_by DONE (decision) after 104 steps  final pose error 0.05 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+ep04-a1  done    scenario S4  start miss 0.01 m / 11 deg  ended_by DONE (decision) after 64 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+ep05-a1  done    scenario S5  start miss 0.18 m / 14 deg  ended_by DONE (decision) after 57 steps  final pose error 0.03 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+ep06-a1  done    scenario S1  start miss 0.12 m / 4 deg  ended_by DONE (decision) after 69 steps  final pose error 0.04 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+ep07-a1  done    scenario S2  start miss 0.13 m / 0 deg  ended_by DONE (decision) after 70 steps  final pose error 0.03 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+ep08-a1  done    scenario S3  start miss 0.12 m / 3 deg  ended_by DONE (decision) after 69 steps  final pose error 0.02 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep09-a1  done    scenario S4  start miss 0.05 m / 5 deg  ended_by budget (steps) after 150 steps  final pose error 0.06 m / 1 deg (truth sigma 0.05 m, tracked since the last fix)
+ep10-a1  done    scenario S5  start miss 0.08 m / 3 deg  ended_by DONE (decision) after 50 steps  final pose error 0.03 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+
+03:58:45 batch 9b9aaa7efdc3: 10 episodes of b2 on the simulated car (dry run), world real-room-plus8-160mm, out course-project/data/batches/b2-real-01-dry-r1drift-20261125
+03:58:45 fix sigma 0.0062 + 0.0378 x range m: configs/detector_noise.json sha256:68ff4796a4c4: tag pilot 20261125-020811-tag-pilot frames.csv (2026-11-25, 420 frames, 14 placements): range bias +0.0049 -0.0166 r, range sigma 0.0013 + 0.0004 r m, bearing bias -0.08 deg, bearing sigma 1.860 + 0.000 r deg, reliable to 3.135 m -> 0.0062 + 0.0378 x range m up to 3.00 m
+03:58:45 design values: configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)
+03:58:46 seed 1: episode ended by DONE (decision) after 50 steps
+03:58:48 seed 2: episode ended by DONE (decision) after 69 steps
+03:58:51 seed 3: episode ended by DONE (decision) after 56 steps
+03:58:53 seed 4: episode ended by DONE (decision) after 75 steps
+03:58:55 seed 5: episode ended by DONE (decision) after 56 steps
+03:58:57 seed 6: episode ended by DONE (decision) after 51 steps
+03:58:58 seed 7: episode ended by DONE (decision) after 48 steps
+03:59:01 seed 8: episode ended by DONE (decision) after 57 steps
+03:59:04 seed 9: episode ended by DONE (decision) after 102 steps
+03:59:07 seed 10: episode ended by DONE (decision) after 100 steps
+Car batch 9b9aaa7efdc3 (simulated car, dry run)
+status: complete   updated: 2026-11-25T09:59:07Z   resumes: 0
+world: real-room-plus8-160mm   policy: b2   episodes asked: 10   moves sent: 1457   spent: US$0.00
+tags checked against each other in this run: 20, trusted to steer a step's fix: 20
+fix sigma: configs/detector_noise.json sha256:68ff4796a4c4: tag pilot 20261125-020811-tag-pilot frames.csv (2026-11-25, 420 frames, 14 placements): range bias +0.0049 -0.0166 r, range sigma 0.0013 + 0.0004 r m, bearing bias -0.08 deg, bearing sigma 1.860 + 0.000 r deg, reliable to 3.135 m -> 0.0062 + 0.0378 x range m up to 3.00 m
+design values: configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)
+sigma sources: agree: the agent's sigmas (--dv) and the batch's fix sigma come from the same detector-noise file (sha256 68ff4796a4c49425e994b6170e9308e298e55b7ee2d2184781fd78949f7f6f50)
+
+ep01-a1  done    scenario S1  start miss 0.12 m / 5 deg  ended_by DONE (decision) after 50 steps  final pose error 0.01 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+ep02-a1  done    scenario S2  start miss 0.14 m / 7 deg  ended_by DONE (decision) after 69 steps  final pose error 0.03 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+ep03-a1  done    scenario S3  start miss 0.07 m / 8 deg  ended_by DONE (decision) after 56 steps  final pose error 0.02 m / 1 deg (truth sigma 0.05 m, tracked since the last fix)
+ep04-a1  done    scenario S4  start miss 0.11 m / 17 deg  ended_by DONE (decision) after 75 steps  final pose error 0.01 m / 0 deg (truth sigma 0.06 m, tag fix at that step)
+ep05-a1  done    scenario S5  start miss 0.14 m / 7 deg  ended_by DONE (decision) after 56 steps  final pose error 0.04 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+ep06-a1  done    scenario S1  start miss 0.13 m / 14 deg  ended_by DONE (decision) after 51 steps  final pose error 0.00 m / 1 deg (truth sigma 0.05 m, tag fix at that step)
+ep07-a1  done    scenario S2  start miss 0.19 m / 10 deg  ended_by DONE (decision) after 48 steps  final pose error 0.02 m / 1 deg (truth sigma 0.05 m, tracked since the last fix)
+ep08-a1  done    scenario S3  start miss 0.09 m / 12 deg  ended_by DONE (decision) after 57 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep09-a1  done    scenario S4  start miss 0.09 m / 14 deg  ended_by DONE (decision) after 102 steps  final pose error 0.00 m / 0 deg (truth sigma 0.05 m, tracked since the last fix)
+ep10-a1  done    scenario S5  start miss 0.20 m / 7 deg  ended_by DONE (decision) after 100 steps  final pose error 0.01 m / 0 deg (truth sigma 0.05 m, tag fix at that step)
+
+drift added: 151 straight moves, +513.4 deg in all (3.4 deg each)

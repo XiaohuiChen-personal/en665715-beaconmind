@@ -1,0 +1,27 @@
+MEAS F0 {"t_unix": 1795597707.35, "frames": 10, "tags": {"1": {"n": 10, "range_m": 2.824, "bearing_deg": 15.84}, "3": {"n": 10, "range_m": 3.0143, "bearing_deg": -18.54}, "8": {"n": 10, "range_m": 2.8845, "bearing_deg": -6.72}, "9": {"n": 10, "range_m": 2.8834, "bearing_deg": 6.92}, "23": {"n": 10, "range_m": 2.8582, "bearing_deg": 0.63}}}
+MOVE FORWARD_25 -> done None fwd=+0.2431 dyaw=+3.76 L=4881 R=5098 dur=3.08
+MEAS F1.1 {"t_unix": 1795597715.18, "frames": 10, "tags": {"1": {"n": 10, "range_m": 2.5768, "bearing_deg": 13.35}, "8": {"n": 10, "range_m": 2.6327, "bearing_deg": -11.48}, "9": {"n": 10, "range_m": 2.6279, "bearing_deg": 3.51}, "23": {"n": 10, "range_m": 2.6015, "bearing_deg": -3.4}}}
+MOVE FORWARD_25 -> done None fwd=+0.2444 dyaw=+3.69 L=4883 R=5148 dur=3.08
+MEAS F1.2 {"t_unix": 1795597722.88, "frames": 10, "tags": {"1": {"n": 10, "range_m": 2.3048, "bearing_deg": 10.58}, "8": {"n": 10, "range_m": 2.3725, "bearing_deg": -17.06}, "9": {"n": 10, "range_m": 2.3539, "bearing_deg": -0.38}, "23": {"n": 10, "range_m": 2.3364, "bearing_deg": -8.09}}}
+MOVE FORWARD_25 -> done None fwd=+0.2443 dyaw=+3.11 L=4848 R=5180 dur=3.03
+MEAS F1.3 {"t_unix": 1795597730.45, "frames": 10, "tags": {"1": {"n": 10, "range_m": 2.0537, "bearing_deg": 8.01}, "9": {"n": 10, "range_m": 2.1058, "bearing_deg": -4.28}, "23": {"n": 10, "range_m": 2.0947, "bearing_deg": -12.9}}}
+MOVE FORWARD_25 -> done None fwd=+0.2458 dyaw=+3.41 L=4856 R=5232 dur=2.96
+MEAS F1.4 {"t_unix": 1795597737.91, "frames": 10, "tags": {"1": {"n": 10, "range_m": 1.7928, "bearing_deg": 5.03}, "9": {"n": 10, "range_m": 1.8509, "bearing_deg": -8.97}}}
+MOVE FORWARD_10 -> done None fwd=+0.0942 dyaw=+4.22 L=1836 R=2032 dur=1.61
+MOVE BACKWARD_10 --prev-forward 0.0942 -> done None fwd=-0.0888 dyaw=-3.20 L=-1714 R=-1930 dur=1.58
+MEAS F2.1 {"t_unix": 1795597746.55, "frames": 10, "tags": {"1": {"n": 10, "range_m": 1.7683, "bearing_deg": 4.01}, "9": {"n": 10, "range_m": 1.8322, "bearing_deg": -10.18}}}
+MOVE FORWARD_10 -> done None fwd=+0.0945 dyaw=+4.45 L=1862 R=2018 dur=1.68
+MOVE BACKWARD_10 --prev-forward 0.0945 -> done None fwd=-0.0836 dyaw=-3.64 L=-1606 R=-1826 dur=1.58
+MEAS F2.2 {"t_unix": 1795597755.13, "frames": 10, "tags": {"1": {"n": 10, "range_m": 1.7418, "bearing_deg": 3.38}, "9": {"n": 10, "range_m": 1.8032, "bearing_deg": -11.01}}}
+MOVE FORWARD_10 -> done None fwd=+0.0959 dyaw=+2.98 L=1888 R=2048 dur=1.63
+MOVE BACKWARD_10 --prev-forward 0.0959 -> done None fwd=-0.0902 dyaw=-3.27 L=-1745 R=-1956 dur=1.58
+MEAS F2.3 {"t_unix": 1795597763.57, "frames": 10, "tags": {"1": {"n": 10, "range_m": 1.7187, "bearing_deg": 3.6}, "9": {"n": 10, "range_m": 1.7855, "bearing_deg": -10.97}}}
+MOVE TURN_LEFT_30 -> done None fwd=+0.0115 dyaw=+29.51 L=-508 R=982 dur=0.98
+MOVE TURN_LEFT_30 -> done None fwd=+0.0140 dyaw=+28.65 L=-400 R=976 dur=0.98
+MOVE TURN_LEFT_30 -> done None fwd=+0.0133 dyaw=+29.03 L=-460 R=1006 dur=1.03
+MEAS F3.left90 {"t_unix": 1795597772.65, "frames": 10, "tags": {"5": {"n": 10, "range_m": 1.3396, "bearing_deg": 2.4}, "12": {"n": 10, "range_m": 1.4861, "bearing_deg": 15.91}}}
+MOVE TURN_RIGHT_30 -> done None fwd=-0.0149 dyaw=-30.66 L=506 R=-1118 dur=1.06
+MOVE TURN_RIGHT_30 -> done None fwd=-0.0126 dyaw=-28.47 L=518 R=-1034 dur=1.08
+MOVE TURN_RIGHT_30 -> done None fwd=-0.0120 dyaw=-29.43 L=539 R=-1033 dur=1.03
+MEAS F3.back {"t_unix": 1795597782.02, "frames": 10, "tags": {"1": {"n": 10, "range_m": 1.7091, "bearing_deg": 4.69}, "9": {"n": 10, "range_m": 1.7698, "bearing_deg": -9.98}}}
+FLOOR SEQUENCE DONE (F5 STOP next)

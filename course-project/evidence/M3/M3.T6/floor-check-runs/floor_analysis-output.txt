@@ -1,0 +1,39 @@
+====================================================================================================
+F1-F3 (floor.sh) floor-check-runs/floor-030825.log
+F0         tags [1, 3, 8, 9, 23] axle (2.307, 2.979) heading  -89.14  range rms 0.0072 m, heading spread 1.84 deg | resect (2.269, 2.970)  -88.39
+F1.1       tags [1, 8, 9, 23]    axle (2.281, 2.714) heading  -84.89  range rms 0.0028 m, heading spread 0.46 deg | resect (2.280, 2.712)  -84.86
+           since F0      : moved 0.2668 m by ranges, heading  +4.24 by tags | gyro  +3.76 | odometry printed +0.2431 | counts L 4881 R 5098 -> +0.2546 m at the tape scales (+0.2431 at nominal)
+F1.2       tags [1, 8, 9, 23]    axle (2.339, 2.442) heading  -81.38  range rms 0.0007 m, heading spread 0.48 deg | resect (2.338, 2.440)  -81.35
+           since F1.1    : moved 0.2778 m by ranges, heading  +3.51 by tags | gyro  +3.69 | odometry printed +0.2444 | counts L 4883 R 5148 -> +0.2559 m at the tape scales (+0.2444 at nominal)
+F1.3       tags [1, 9, 23]       axle (2.405, 2.196) heading  -78.38  range rms 0.0007 m, heading spread 0.46 deg | resect (2.402, 2.194)  -78.30
+           since F1.2    : moved 0.2551 m by ranges, heading  +3.00 by tags | gyro  +3.11 | odometry printed +0.2443 | counts L 4848 R 5180 -> +0.2558 m at the tape scales (+0.2443 at nominal)
+F1.4       tags [1, 9]           axle (2.498, 1.947) heading  -75.66  range rms 0.0000 m, heading spread 0.38 deg | resect (2.485, 1.942)  -75.24
+           since F1.3    : moved 0.2658 m by ranges, heading  +2.72 by tags | gyro  +3.41 | odometry printed +0.2458 | counts L 4856 R 5232 -> +0.2573 m at the tape scales (+0.2458 at nominal)
+F2.1       tags [1, 9]           axle (2.528, 1.931) heading  -75.34  range rms 0.0000 m, heading spread 0.41 deg | resect (2.513, 1.926)  -74.84
+           since F1.4    : moved 0.0337 m by ranges, heading  +0.33 by tags | gyro  +1.02 | odometry printed +0.0054 | counts L 122 R 102 -> +0.0057 m at the tape scales (+0.0055 at nominal)
+F2.2       tags [1, 9]           axle (2.523, 1.901) heading  -74.27  range rms 0.0000 m, heading spread 0.40 deg | resect (2.509, 1.896)  -73.80
+           since F2.1    : moved 0.0304 m by ranges, heading  +1.07 by tags | gyro  +0.81 | odometry printed +0.0109 | counts L 256 R 192 -> +0.0115 m at the tape scales (+0.0109 at nominal)
+F2.3       tags [1, 9]           axle (2.550, 1.885) heading  -75.13  range rms 0.0000 m, heading spread 0.42 deg | resect (2.534, 1.880)  -74.61
+           since F2.2    : moved 0.0311 m by ranges, heading  -0.86 by tags | gyro  -0.29 | odometry printed +0.0057 | counts L 143 R 92 -> +0.0060 m at the tape scales (+0.0057 at nominal)
+F3.left90  tags [5, 12]          axle (2.515, 1.830) heading   13.81  range rms 0.0000 m, heading spread 0.27 deg | resect (2.522, 1.810)   14.63
+           since F2.3    : moved 0.0655 m by ranges, heading +88.94 by tags | gyro +87.19 | odometry printed +0.0388 | counts L -1368 R 2964 -> +0.0395 m at the tape scales (+0.0389 at nominal)
+F3.back    tags [1, 9]           axle (2.527, 1.867) heading  -75.34  range rms 0.0000 m, heading spread 0.41 deg | resect (2.514, 1.862)  -74.88
+           since F3.left90: moved 0.0394 m by ranges, heading -89.15 by tags | gyro -88.56 | odometry printed -0.0395 | counts L 1563 R -3185 -> -0.0401 m at the tape scales (-0.0395 at nominal)
+====================================================================================================
+verify (car.json = the first estimate 18555 / 19096) floor-check-runs/verify-031432.log
+V0         tags [1, 9]           axle (2.564, 1.716) heading  -72.26  range rms 0.0000 m, heading spread 0.45 deg | resect (2.552, 1.711)  -71.80
+V1         tags [1]              axle (2.564, 1.716) heading  -68.15  range rms 0.2334 m, heading spread 0.00 deg | resect: fewer than 2 surveyed tags in view
+           since V0      : moved 0.0000 m by ranges, heading  +4.11 by tags | gyro  +4.43 | odometry printed +0.2433 | counts L 4448 R 4716 -> +0.2338 m at the tape scales (+0.2233 at nominal)
+V2         tags [1]              axle (2.564, 1.716) heading  -63.72  range rms 0.4628 m, heading spread 0.00 deg | resect: fewer than 2 surveyed tags in view
+           since V1      : moved 0.0000 m by ranges, heading  +4.43 by tags | gyro  +3.53 | odometry printed +0.2482 | counts L 4627 R 4719 -> +0.2385 m at the tape scales (+0.2277 at nominal)
+====================================================================================================
+tape-measured straight (scale4.sh) floor-check-runs/scale-031706.log
+S0         tags [1, 8, 9, 23]    axle (2.231, 2.960) heading  -84.74  range rms 0.0025 m, heading spread 0.39 deg | resect (2.230, 2.958)  -84.73
+S1         tags [1, 8, 9, 23]    axle (2.300, 2.730) heading  -82.57  range rms 0.0009 m, heading spread 0.42 deg | resect (2.299, 2.728)  -82.54
+           since S0      : moved 0.2402 m by ranges, heading  +2.17 by tags | gyro  +2.88 | odometry printed +0.2442 | counts L 4518 R 4675 -> +0.2346 m at the tape scales (+0.2240 at nominal)
+S2         tags [1, 9, 23]       axle (2.320, 2.492) heading  -79.28  range rms 0.0010 m, heading spread 0.42 deg | resect (2.317, 2.490)  -79.21
+           since S1      : moved 0.2387 m by ranges, heading  +3.29 by tags | gyro  +2.64 | odometry printed +0.2457 | counts L 4506 R 4746 -> +0.2360 m at the tape scales (+0.2254 at nominal)
+S3         tags [1, 9, 23]       axle (2.429, 2.261) heading  -77.34  range rms 0.0009 m, heading spread 0.43 deg | resect (2.425, 2.259)  -77.23
+           since S2      : moved 0.2555 m by ranges, heading  +1.94 by tags | gyro  +2.97 | odometry printed +0.2447 | counts L 4434 R 4781 -> +0.2351 m at the tape scales (+0.2245 at nominal)
+S4         tags [1, 9]           axle (2.510, 2.041) heading  -74.19  range rms 0.0000 m, heading spread 0.38 deg | resect (2.494, 2.036)  -73.69
+           since S3      : moved 0.2343 m by ranges, heading  +3.15 by tags | gyro  +3.64 | odometry printed +0.2429 | counts L 4471 R 4674 -> +0.2333 m at the tape scales (+0.2228 at nominal)

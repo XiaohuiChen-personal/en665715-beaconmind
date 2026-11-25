@@ -1,0 +1,10 @@
+tape straight: counts L 17929 R 18876, gyro 12.13 deg
+  axle start (-0.12, 0.0) end (0.8027, 0.1648) -> chord 0.9373 m, arc 0.9390 m (circular arc with the gyro's turn)
+  wheel travel L 0.9249 m, R 0.9532 m -> L 19385, R 19804 counts per metre
+  each 1 cm of tape error changes the arc by 1.1 %
+  (a straight chord instead of the arc: 0.9373 m -> L 19422, R 19840)
+  lens at the start by tags (2.242, 2.841), by tape (2.287, 2.835): -0.007 m along the line, -0.044 m sideways
+  lens at the end   by tags (2.543, 1.926), by tape (2.504, 1.921): -0.004 m along the line, +0.039 m sideways
+  lens moved by tags 0.924 m along, 0.273 m sideways; by tape 0.920 along, 0.190 sideways
+tag fixes F0 -> F1.4: chord 1.0495 m, arc 1.0520 m -> L 18787, R 19349 counts per metre
+tag fixes S0 -> S4: chord 0.9604 m, arc 0.9618 m -> L 18883, R 19379 counts per metre

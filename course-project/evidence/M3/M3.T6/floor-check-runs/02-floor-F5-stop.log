@@ -1,0 +1,103 @@
+# session: 20261125-030214-floor-check
+# cmd: bash course-project/tools/car.sh move FORWARD_25 --i-am-at-the-car 
+# cwd: ~/Projects/en665715-beaconmind
+# start: 2026-11-25T09:10:19.830Z
+{
+ "ros_domain_id": 0,
+ "command": {
+  "schema": "bm.move/1",
+  "cmd_seq": 1795597820,
+  "obs_id": "cli-20261125T091020",
+  "action": "FORWARD_25",
+  "distance_m": 0.25,
+  "angle_deg": 0.0,
+  "v_max_mps": 0.15,
+  "w_max_dps": 45.0,
+  "timeout_s": 5.0
+ },
+ "car_before": {
+  "telemetry_age_s": 0.005,
+  "armed": true,
+  "imu_ready": true,
+  "clock_ok": true,
+  "drive_map": [
+   0.25,
+   0.33
+  ],
+  "boots": 0,
+  "busy": false,
+  "uptime_ms": 3822629,
+  "boot_report": 1100,
+  "sessions": 1,
+  "cutoffs": 0,
+  "locked": false,
+  "left_ticks": 40250,
+  "right_ticks": 61785,
+  "yaw_deg": 32.69,
+  "lost_samples": 0,
+  "drive_status": 0,
+  "vsys_min_mv": 4683,
+  "agent_rx_age_ms": 991,
+  "imu_fails": 0,
+  "ros_domain_id": 0,
+  "drive_status_topic": null,
+  "layout_error": null,
+  "latched": false,
+  "imu_topic_age_s": 0.019,
+  "cmd_vel_subscribers": 2
+ },
+ "result": {
+  "schema": "bm.move_result/1",
+  "cmd_seq": 1795597820,
+  "result": "link_lost",
+  "reason": "estop",
+  "boot_id": 0,
+  "duration_s": 1.829,
+  "enc_left_ticks": 2835,
+  "enc_right_ticks": 3078,
+  "gyro_dyaw_deg": 2.74,
+  "achieved_forward_m": 0.1441,
+  "stall": false,
+  "bump": false
+ },
+ "diag": {
+  "action": "FORWARD_25",
+  "kind": "straight",
+  "target": 0.25,
+  "odometry": {
+   "forward_m": 0.14383504471717917,
+   "left_m": 0.007606943876591185,
+   "dtheta_deg": 2.739999999999924
+  },
+  "s_left_m": 0.13813190198752623,
+  "s_right_m": 0.14997177930074276,
+  "encoder_yaw_deg": 5.081460674157304,
+  "yaw_disagree_deg": 2.3414606741573802,
+  "coast_m": 0.001193732486311938,
+  "coast_deg": -0.539999999999992,
+  "speed_at_stop_mps": 0.09871860490193918,
+  "rate_at_stop_dps": -1.7391304347860579,
+  "peak_speed_mps": 0.11095513107806815,
+  "peak_rate_dps": 19.478260869602266,
+  "over_speed_limit": false,
+  "over_rate_limit": false,
+  "governor": 1.0,
+  "commands": 31,
+  "settle_s": 0.327324781101197,
+  "lost_samples": 0,
+  "blind_pauses": 0,
+  "imu_substitutions": 0,
+  "scale_source": "nominal",
+  "degraded": false,
+  "coast_time_used_s": 0.03,
+  "coast_time_measured_s": null,
+  "coast_time_next_s": 0.03,
+  "trims": 0,
+  "round_trip_s": 0.06633581803180277,
+  "stop_unconfirmed": false
+ },
+ "log": "/workspace/course-project/data/real/20261125-030214-floor-check/moves/move_20261125T091020_1795597820_FORWARD_25.jsonl",
+ "log_error": null
+}
+# end: 2026-11-25T09:10:22.392Z
+# exit: 1

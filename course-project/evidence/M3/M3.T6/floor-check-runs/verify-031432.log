@@ -1,0 +1,5 @@
+MEAS V0 {"t_unix": 1795598074.2, "frames": 10, "tags": {"1": {"n": 10, "range_m": 1.5567, "bearing_deg": 2.17}, "9": {"n": 10, "range_m": 1.6186, "bearing_deg": -13.91}}}
+MOVE FORWARD_25 -> done fwd=+0.2433 dyaw=+4.43 L=4448 R=4716 scale=car.json
+MEAS V1 {"t_unix": 1795598081.47, "frames": 10, "tags": {"1": {"n": 10, "range_m": 1.3271, "bearing_deg": -2.39}}}
+MOVE FORWARD_25 -> done fwd=+0.2482 dyaw=+3.53 L=4627 R=4719 scale=car.json
+MEAS V2 {"t_unix": 1795598088.68, "frames": 10, "tags": {"1": {"n": 10, "range_m": 1.1014, "bearing_deg": -6.82}}}
