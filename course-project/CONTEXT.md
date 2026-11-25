@@ -64,9 +64,8 @@ the ID 2 copies 2.28 m apart). The mounting sheet's last column is filled (`evid
 with a note: pages centred on tape marks at the nominal distances, not re-measured, 1 cm per reading).
 `configs/arenas/real-room.json` (`real-room-plus8-160mm`, 20 tags, T08 at (3.811, 4.454) m, the other 19 at their
 nominal places) by the batch README's command a with `--error-cm 1.0`. Room, world, batch and resection tests: 213
-passed, 4 skipped; prereg verify OK. **Open: the room model's handedness** (asked Xiaohui: facing T03, is the entrance
-corner on the right and the angled wall on the left?); if mirrored, the world file must be rebuilt before any fix is
-trusted. The tag pilot's placement plan is on the Spark (`evidence/M1/M1.T8/placements.csv`, 32 placements, tag ID 23);
+passed, 4 skipped; prereg verify OK. **Room model's handedness confirmed** (Xiaohui, 2026-11-25: facing T03, the entrance
+corner is on the right and the angled wall on the left, as the survey frame predicts); the world file is not mirrored. The tag pilot's placement plan is on the Spark (`evidence/M1/M1.T8/placements.csv`, 32 placements, tag ID 23);
 Xiaohui is laying part A's floor marks; slanted lines on the entrance-corner side (2.37 m of wall against 0.58 m).
 
 **Tags.** Xiaohui checked a printed tag: about 16 × 16 cm (passes the printer-scaling check; the pilot's step A1 takes
