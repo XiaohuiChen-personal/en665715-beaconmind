@@ -1,0 +1,23 @@
+factor_two_probe.py, 2026-11-25. Four-episode B2 batches, seeds 1 | 2 | 3; "depth" is the smallest true footprint
+depth inside the driving area; odometry_scale:ranges is the range check's halt.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the probe and collected its output here.
+
+== now (the range check's same-tag gate 1.5 moves + 0.10 m; the drift record-only)
+real room   | odometry reads half: the car goes 2x (over-travel)      | ranges on  | odometry_scale:ranges ep1 depth 1.27 | odometry_scale:ranges ep1 depth 1.27 | odometry_scale:ranges ep1 depth 1.27
+real room   | odometry reads half: the car goes 2x (over-travel)      | ranges off | fix_conflict ep1 depth 0.49 | fix_conflict ep1 depth 0.49 | fix_conflict ep1 depth 0.49
+real room   | odometry reads double: the car goes half (under-travel) | ranges on  | odometry_scale:ranges ep1 depth 1.27 | odometry_scale:ranges ep1 depth 1.27 | odometry_scale:ranges ep1 depth 1.27
+real room   | odometry reads double: the car goes half (under-travel) | ranges off | fix_conflict ep3 depth 0.80 | - ep4 depth 0.55 | fix_conflict ep3 depth 0.71
+20-tag room | odometry reads half: the car goes 2x (over-travel)      | ranges on  | odometry_scale:ranges ep1 depth 0.80 | stall ep1 depth -0.00 CONTACT | stall ep1 depth -0.00 CONTACT
+20-tag room | odometry reads half: the car goes 2x (over-travel)      | ranges off | stall ep1 depth -0.00 CONTACT | stall ep1 depth -0.00 CONTACT | stall ep1 depth -0.00 CONTACT
+20-tag room | odometry reads double: the car goes half (under-travel) | ranges on  | odometry_scale:ranges ep1 depth 1.14 | odometry_scale:ranges ep1 depth 1.16 | odometry_scale:ranges ep1 depth 1.16
+20-tag room | odometry reads double: the car goes half (under-travel) | ranges off | fix_conflict ep4 depth 0.65 | fix_conflict ep3 depth 0.76 | fix_conflict ep4 depth 0.69
+
+== 19f71e6 (the gate half a move + 0.10 m; the drift's path-share bound halting)
+real room   | odometry reads half: the car goes 2x (over-travel)      | ranges on  | fix_conflict ep1 depth 0.49 | fix_conflict ep1 depth 0.49 | fix_conflict ep1 depth 0.49
+real room   | odometry reads half: the car goes 2x (over-travel)      | ranges off | fix_conflict ep1 depth 0.49 | fix_conflict ep1 depth 0.49 | fix_conflict ep1 depth 0.49
+real room   | odometry reads double: the car goes half (under-travel) | ranges on  | odometry_scale:ranges ep1 depth 1.27 | odometry_scale:ranges ep1 depth 1.27 | odometry_scale:ranges ep1 depth 1.27
+real room   | odometry reads double: the car goes half (under-travel) | ranges off | fix_conflict ep3 depth 0.80 | - ep4 depth 0.55 | fix_conflict ep3 depth 0.71
+20-tag room | odometry reads half: the car goes 2x (over-travel)      | ranges on  | stall ep1 depth -0.00 CONTACT | stall ep1 depth -0.00 CONTACT | stall ep1 depth -0.00 CONTACT
+20-tag room | odometry reads half: the car goes 2x (over-travel)      | ranges off | stall ep1 depth -0.00 CONTACT | stall ep1 depth -0.00 CONTACT | stall ep1 depth -0.00 CONTACT
+20-tag room | odometry reads double: the car goes half (under-travel) | ranges on  | odometry_scale:ranges ep1 depth 1.14 | odometry_scale:ranges ep1 depth 1.16 | odometry_scale:ranges ep1 depth 1.16
+20-tag room | odometry reads double: the car goes half (under-travel) | ranges off | fix_conflict ep4 depth 0.65 | fix_conflict ep3 depth 0.76 | fix_conflict ep4 depth 0.69

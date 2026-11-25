@@ -9,7 +9,8 @@ ahead of the car with a stated sigma of 5 to 6 cm.
 This note measures that, tries a slip-aware odometry sigma, and recomputes the five real episodes' truth offline.
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the measurements and wrote this note,
-`slip_sigma_exp.py`, `tools/recompute_truth.py` and the slip option in `PoseTracker`.
+`slip_sigma_exp.py`, `tools/recompute_truth.py` and the slip option in `PoseTracker`. Later the same day: §5 and §6
+(the drift made record-only; the same-tag rule), `same_tag_exp.py`, `wrong_tag_walk.py`, `tag_probe_rule.py`.
 
 ## 1. A slip-aware odometry sigma, prototyped (not switched on)
 
@@ -104,7 +105,7 @@ refuses to start without it stated (0 states it off); dry runs and tests default
 The reviewer's verdict on 927e44c was yes: 24 ten-episode batches, no wall contact, smallest depth 0.196 m, and every
 over-travel fault halted (12 of 12). It made four further findings; each is answered here.
 
-### Finding 1: the gross drift bound was not a clean scale test
+### Finding 1: the gross drift bound was not a clean scale test (superseded by §5: record-only)
 
 **The problem.** On a carpet that slips by direction, an out-and-back path changes the odometry's net displacement by
 any factor, so the net length ratio is no scale test. Two correct cars false-halted on it:
@@ -186,4 +187,107 @@ Log: `final-dry-runs-log.txt`.
 
 **The 0.60 halt is the same-tag rule, not changed here** (proposed to the lead). On a long run of single-tag fixes of
 one tag, the tracked sigma may move with the fix but never shrink, so it climbs past 0.25 m by the slip sigma while
-the pose is within a few centimetres. North 0.60 is below anything measured on the real car.
+the pose is within a few centimetres. North 0.60 is below anything measured on the real car. (Changed in §6, on
+the lead's decision: this run now completes 10 of 10.)
+
+## 5. The dead-reckoning drift: record-only in both directions (the lead's decision, later on 2026-11-25)
+
+The path-share bound of Finding 1 is gone as a halt too. With slip that depends on direction, the net displacement
+between two circles is no scale measure in either direction, and the path share was argued, not measured, against a
+real fault. The measurement and all its fields stay. `would_have_halted` lists, for the record, where the net ratio
+left 0.5 to 1.6 or the miss passed 0.6 of the path (beyond the circles' 2 σ); otherwise it is `false`.
+
+What halts a factor-two scale error now, each way, with and without ranged moves, is the table in `../README.md`
+("What halts a factor-two scale error"). In short: the range check halts both directions at the first ranged forward
+move. Without one, `fix_conflict` halts over-travel; under-travel is halted by `fix_conflict` or not at all, the car
+covering less than it thinks. The old bound fired first in none of those runs, on the committed code or now.
+
+Two things came out of that table:
+- **The range check's same-tag gate dropped a factor-two over-travel** as another tag: the range missed its prediction
+  by a whole move, over the gate of half a move plus 0.10 m. The gate is now 1.5 moves plus 0.10 m (told to the lead
+  before the commit). With it, the real room's over-travel halts on the ranges, 1.27 m inside, where before only
+  `fix_conflict` caught it, 0.49 m inside.
+- **A gap that was there before:** in the 20-tag test room a factor-two over-travel drove blind from its first forward
+  moves (no tag in view) and reached a wall: 2 of 3 seeds with the range check, 3 of 3 without. The same happened on
+  `19f71e6`. A remedy, capping blind travel at one forward move until the range check has its 3 moves, is proposed to
+  the lead and not made.
+
+## 6. The same-tag rule: a repeated fix leaves the sigma no larger than its own (the lead's decision, 2026-11-25)
+
+**The rule.** A fix that rests on exactly the tags of the last fix repeats that fix's survey and range-scale error.
+Until now it moved the pose but left the position sigma as it was, so on a long run of one tag's fixes the slip sigma
+built up between them with nothing to bring it down: at north 0.60 the sigma passed `sigma_block_m` (0.25 m) and the
+batch halted `pose_uncertain`, with the pose within a few centimetres of the truth (§4, the final dry runs). Now
+such a fix sets the sigma to min(the sigma, the fix's sigma) (`PoseTracker._shrink`, in `correct` and
+`correct_position`). It never takes the sigma below what one fix of that tag says, and never below the
+inverse-variance result that a fix on new tags would give: no gain from repeating a survey error. Test:
+`test_a_same_tag_fix_leaves_the_sigma_no_larger_than_its_own`.
+
+**On the simulated carpet** (`same_tag_exp.py`, `same_tag_exp-output.jsonl`; ten-episode B2 batches, the exact real
+arguments, `--slip-sigma 0.3`, the slip of §1, old rule against new on the same code, 3 seeds each):
+
+| North | Rule | Completed | Halts | Truth p95 / max | Beyond 2 σ | σ max | Smallest true depth |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.67 | old | 3 of 3 | none | 0.113–0.131 / 0.246–0.256 m | 0 % | 0.201–0.249 m | 0.282 m |
+| 0.67 | new | 3 of 3 | none | 0.113–0.131 / 0.246–0.256 m | 0 % | 0.181–0.189 m | 0.282 m |
+| 0.60 | old | 2 of 3 | 1 × `pose_uncertain` (seed 1, after 7) | 0.139–0.191 / 0.371–0.419 m | 1.4–2.3 % | 0.245–0.251 m | 0.311 m |
+| 0.60 | new | **3 of 3** | none | 0.139–0.173 / 0.371–0.419 m | 1.6–1.7 % | 0.177–0.219 m | 0.268 m |
+
+The pose errors are unchanged: the rule moves the sigma, not the pose. The largest sigma comes down by 0.015 to 0.07 m,
+and the share of steps beyond 2 σ stays where it was. The smallest depth at 0.60 (0.268 m) is seed 1's, which now
+drives all ten episodes instead of seven; it is above the 0.15 m wall margin. The old-rule rows repeat §1's "0.3 × d"
+rows exactly, so the code changed since then (the turn margin, the range gate) changed none of these runs. (A first
+run of this script reused worker processes and stacked the simulated slip on itself; its output was thrown away. The
+script now captures the car's step once, and each worker runs one batch.)
+
+**A tag surveyed 0.3 m wrong, fixed again and again** (`wrong_tag_walk.py`, `wrong_tag_walk-output.txt`). Set-up:
+the test's walk at the window wall, with T06 in the world file 0.3 m into the room and the camera seeing T06 alone.
+The tag steers without a check, which is what a tag already trusted would do before a later circle names it. With
+the check on, the circle names T06 and halts `tag_survey` before any forward move
+(`test_a_tag_surveyed_wrongly_by_d_cannot_pull_the_car_toward_its_wall`).
+
+| Case | Rule | σ along the walk | Pull (tracked − true x) | Forward moves, then refused | Smallest true depth |
+| --- | --- | --- | --- | --- | --- |
+| no slip sigma | old and new alike | 0.092 → 0.105 m | −0.22 m | 9 | 0.178 m |
+| slip sigma 0.3 | old and new alike | 0.094 → 0.135 m | −0.24 m | 9 | 0.178 m |
+| slip sigma 0.3, σ 0.25 before the walk | old | 0.163 → 0.193 m | −0.29 m | 10 | 0.081 m |
+| slip sigma 0.3, σ 0.25 before the walk | new | 0.163 → 0.145 → 0.164 m | −0.29 m | 10 | 0.081 m |
+
+What the rule does here:
+- **To σ.** It changes σ only where σ is above the tag's own fix sigma. T06 seen alone at 1 to 2 m gives
+  0.145–0.215 m, so in the first two cases nothing changes. With σ grown to 0.25 m first, the new rule brings σ down
+  to the fix's 0.145 m, against 0.177 m under the old rule.
+- **To the guard.** It changes nothing here. The guard's straight-move margin adds two σ capped at 0.15 m, and the
+  turn margin adds one σ capped at 0.10 m. Both caps are reached at σ 0.075 and 0.10 m, so with σ above 0.10 m the
+  guard decides the same under either rule: the same moves, the same refusal, the same depth.
+- **The 0.081 m.** That depth in the grown-σ case comes from the first T06 fix after the turn, an ordinary
+  inverse-variance blend, the same in both rules: the larger the σ, the harder the wrong tag pulls. A wrong tag
+  trusted before a circle names it is the tag check's to catch, not the guard's.
+
+**Mis-surveyed tags, the whole probe** (`tag_probe_rule.py`: the review's `tag_probe.py` with the tag check on in
+both modes, the mode now being the rule). Set-up: the 20-tag room, each tag in turn moved 0.1, 0.3 or 0.5 m in each
+of four directions in the world file, plus 8 clean seeds; three-episode B2 batches.
+- **Without the slip sigma** (`tag_probe_rule-output.jsonl`, 248 runs per rule): **all 248 pairs are identical in
+  every field.** At 0.1 m all complete. At 0.3 and 0.5 m every run halts `tag_survey` naming the moved tag (80 of 80),
+  with no contact, at least 0.275 m inside the driving area, and the tracked pose within 0.067 m.
+- **With the slip sigma 0.3, the 0.3 m shifts** (`tag_probe_rule-slip0.3-d0.3.jsonl`, 80 runs per rule): **again
+  identical, 80 of 80**, and again all named. The slip sigma did change 16 of these runs against the run without it
+  (moves, errors), so it was on.
+
+Before `tag_survey` caught it, a tag surveyed 0.3 m wrong steered step fixes in 3 runs of 80: T14 −y twice, T17 +x
+and T17 +y once each. At those fixes the sigma was at its 0.05 m floor and the tracked pose within 0.066 m of the
+truth. In the 20-tag room σ stays near the floor, because nearly every step has a fix and the check names the tag at
+the first circle that sees it with others, so the rule has nothing to act on. It acts where σ has grown above a
+tag's own fix sigma: the long northward runs of the carpet table above, and the grown-σ walk.
+
+### The dry runs of this commit (`--slip-sigma 0.3`, exact real arguments)
+
+Log: `same-tag-dry-runs-log.txt`. The drift is record-only and the same-tag rule is new, against §4's runs.
+
+| Run | Result | Truth p95 / max against the car | Beyond 2 σ | σ max | Miss over path, max | Net ratios | `would_have_halted` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| plain | 10 of 10 | 0.008 / 0.020 m | 0 % | 0.177 m | 0.000 | 0.99–1.00 | none |
+| north 0.78 | 10 of 10 | 0.057 / 0.256 m | 0 % | 0.188 m | 0.196 | 0.78–1.05 | none |
+| north 0.67 | 10 of 10 | 0.122 / 0.305 m | 0 % | 0.162 m | 0.307 | 0.67–1.16 | none |
+| north 0.60 | **10 of 10** (§4: `pose_uncertain` after 8) | 0.138 / 0.406 m | 1.6 % | 0.180 m (§4: 0.259) | 0.373 | 0.60–1.10 | none |
+

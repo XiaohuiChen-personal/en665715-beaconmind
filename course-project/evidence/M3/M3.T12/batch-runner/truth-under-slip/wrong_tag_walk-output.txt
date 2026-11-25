@@ -1,0 +1,74 @@
+== T06 surveyed 0.3 m into the room, steering; same-tag rule old, slip sigma 0.0: 9 forward moves, halt None, contact False
+   step result   sigma   tracked-true x   true depth   believed depth
+      1 done      0.092     -0.056 m       0.948 m      1.003 m
+      2 done      0.093     -0.100 m       0.854 m      0.954 m
+      3 done      0.095     -0.143 m       0.758 m      0.901 m
+      4 done      0.097     -0.185 m       0.661 m      0.845 m
+      5 done      0.099     -0.220 m       0.565 m      0.785 m
+      6 done      0.100     -0.220 m       0.469 m      0.689 m
+      7 done      0.102     -0.220 m       0.372 m      0.592 m
+      8 done      0.104     -0.220 m       0.275 m      0.495 m
+      9 done      0.105     -0.220 m       0.178 m      0.398 m
+     10 refused   0.105     -0.220 m       0.178 m      0.398 m
+== T06 surveyed 0.3 m into the room, steering; same-tag rule new, slip sigma 0.0: 9 forward moves, halt None, contact False
+   step result   sigma   tracked-true x   true depth   believed depth
+      1 done      0.092     -0.056 m       0.948 m      1.003 m
+      2 done      0.093     -0.100 m       0.854 m      0.954 m
+      3 done      0.095     -0.143 m       0.758 m      0.901 m
+      4 done      0.097     -0.185 m       0.661 m      0.845 m
+      5 done      0.099     -0.220 m       0.565 m      0.785 m
+      6 done      0.100     -0.220 m       0.469 m      0.689 m
+      7 done      0.102     -0.220 m       0.372 m      0.592 m
+      8 done      0.104     -0.220 m       0.275 m      0.495 m
+      9 done      0.105     -0.220 m       0.178 m      0.398 m
+     10 refused   0.105     -0.220 m       0.178 m      0.398 m
+== T06 surveyed 0.3 m into the room, steering; same-tag rule old, slip sigma 0.3: 9 forward moves, halt None, contact False
+   step result   sigma   tracked-true x   true depth   believed depth
+      1 done      0.094     -0.059 m       0.948 m      1.007 m
+      2 done      0.100     -0.108 m       0.854 m      0.962 m
+      3 done      0.106     -0.156 m       0.758 m      0.914 m
+      4 done      0.111     -0.203 m       0.661 m      0.863 m
+      5 done      0.116     -0.240 m       0.565 m      0.805 m
+      6 done      0.121     -0.240 m       0.469 m      0.708 m
+      7 done      0.126     -0.240 m       0.372 m      0.612 m
+      8 done      0.131     -0.240 m       0.275 m      0.514 m
+      9 done      0.135     -0.240 m       0.178 m      0.417 m
+     10 refused   0.135     -0.240 m       0.178 m      0.417 m
+== T06 surveyed 0.3 m into the room, steering; same-tag rule new, slip sigma 0.3: 9 forward moves, halt None, contact False
+   step result   sigma   tracked-true x   true depth   believed depth
+      1 done      0.094     -0.059 m       0.948 m      1.007 m
+      2 done      0.100     -0.108 m       0.854 m      0.962 m
+      3 done      0.106     -0.156 m       0.758 m      0.914 m
+      4 done      0.111     -0.203 m       0.661 m      0.863 m
+      5 done      0.116     -0.240 m       0.565 m      0.805 m
+      6 done      0.121     -0.240 m       0.469 m      0.708 m
+      7 done      0.126     -0.240 m       0.372 m      0.612 m
+      8 done      0.131     -0.240 m       0.275 m      0.514 m
+      9 done      0.135     -0.240 m       0.178 m      0.417 m
+     10 refused   0.135     -0.240 m       0.178 m      0.417 m
+== T06 surveyed 0.3 m into the room, steering; same-tag rule old, slip sigma 0.3, the sigma at 0.25 before the walk: 10 forward moves, halt None, contact False
+   step result   sigma   tracked-true x   true depth   believed depth
+      1 done      0.163     -0.176 m       0.948 m      1.124 m
+      2 done      0.167     -0.227 m       0.854 m      1.081 m
+      3 done      0.170     -0.259 m       0.758 m      1.017 m
+      4 done      0.174     -0.282 m       0.661 m      0.942 m
+      5 done      0.177     -0.291 m       0.565 m      0.856 m
+      6 done      0.180     -0.291 m       0.469 m      0.759 m
+      7 done      0.183     -0.291 m       0.372 m      0.663 m
+      8 done      0.187     -0.291 m       0.275 m      0.566 m
+      9 done      0.190     -0.291 m       0.178 m      0.468 m
+     10 done      0.193     -0.291 m       0.081 m      0.372 m
+     11 refused   0.193     -0.291 m       0.081 m      0.372 m
+== T06 surveyed 0.3 m into the room, steering; same-tag rule new, slip sigma 0.3, the sigma at 0.25 before the walk: 10 forward moves, halt None, contact False
+   step result   sigma   tracked-true x   true depth   believed depth
+      1 done      0.163     -0.176 m       0.948 m      1.124 m
+      2 done      0.167     -0.227 m       0.854 m      1.081 m
+      3 done      0.170     -0.259 m       0.758 m      1.017 m
+      4 done      0.162     -0.282 m       0.661 m      0.942 m
+      5 done      0.145     -0.290 m       0.565 m      0.855 m
+      6 done      0.149     -0.290 m       0.469 m      0.759 m
+      7 done      0.152     -0.290 m       0.372 m      0.662 m
+      8 done      0.156     -0.290 m       0.275 m      0.565 m
+      9 done      0.160     -0.290 m       0.178 m      0.468 m
+     10 done      0.164     -0.290 m       0.081 m      0.371 m
+     11 refused   0.164     -0.290 m       0.081 m      0.371 m

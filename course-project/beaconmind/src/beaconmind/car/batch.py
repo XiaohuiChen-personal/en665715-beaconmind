@@ -36,6 +36,10 @@ rule for a step's fix (conflicts still judged on every tag), and the fix sigma f
 and asks for significance (a false halt of the first real practice batch); the scale is checked by the ranges along
 each forward move (range_scale_of_move), which the camera measures well; the transit's and each episode's
 dead-reckoning drift between two circles is a recorded measurement, halting only on a gross error (_dead_reckoning).
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the dead-reckoning drift is record-only in both directions
+(would_have_halted flags the old bounds); a fix on the last fix's tags leaves the position sigma no larger than its own
+(PoseTracker._shrink); the range check keeps a pair up to 1.5 moves off its prediction, so a factor-two over-travel is
+measured rather than dropped as another tag.
 """
 import hashlib
 import json
@@ -96,10 +100,11 @@ class BatchParams:
     max_blind_travel_m: float = 0.75    # no straight move may take the distance driven since the last tag fix past
                                         # this: whatever the odometer's error, it then stays inside the wall margin
     transit_scale_min_m: float = 0.30   # the dead-reckoning drift between two full-circle fixes (the transit, each
-                                        # episode) gets a length ratio when both lengths are at least this
-    path_gross_share: float = 0.6       # ... and halts only when odometry alone ends farther from the second circle
-                                        # than this share of the path it drove (beyond the circles' own 2 sigma): a
-                                        # gross error (wrong units, a dead wheel); see BatchRunner._dead_reckoning
+                                        # episode) is measured over a path at least this long, and gets a length
+                                        # ratio when both net lengths are at least this
+    path_gross_share: float = 0.6       # ... recorded (never a halt since the lead's decision of 2026-11-25) with a
+                                        # flag where odometry alone ended farther from the second circle than this
+                                        # share of the path it drove (beyond the circles' own 2 sigma)
     range_scale_tol: float = 0.12       # the ranges to the tags seen before and after each forward move may say the
                                         # car went farther than its odometry by at most this share (median over the
                                         # moves so far): the dangerous direction
@@ -305,7 +310,7 @@ class PoseTracker:
 
     def _same_tags(self, fix):
         """True when this fix rests on exactly the tags of the last one taken. It then repeats that fix's survey
-        and range-scale error: the pose may follow it, the uncertainty may not shrink on it."""
+        and range-scale error: the pose may follow it, the uncertainty may not shrink below that fix's own (_shrink)."""
         tags = sorted(str(t) for t in fix.get("tags") or [])
         same = bool(tags) and tags == self.last_tags
         self.last_tags = tags or None
@@ -318,8 +323,7 @@ class PoseTracker:
         w = a / (a + b)
         self.pose["x_m"] += w * (fix["pose"]["x_m"] - self.pose["x_m"])
         self.pose["y_m"] += w * (fix["pose"]["y_m"] - self.pose["y_m"])
-        if not same:
-            self.sigma_xy_m = max(math.sqrt(a * b / (a + b)), self.floor_m)
+        self._shrink(same, a, b, fix["sigma_xy_m"])
         c, d = self.sigma_theta_deg ** 2, max(fix["sigma_theta_deg"], 0.2) ** 2
         w = c / (c + d)
         self.pose["theta_deg"] = wrap_deg(self.pose["theta_deg"] + w * wrap_deg(fix["pose"]["theta_deg"] - self.pose["theta_deg"]))
@@ -335,10 +339,20 @@ class PoseTracker:
         w = a / (a + b)
         self.pose["x_m"] += w * (fix["pose"]["x_m"] - self.pose["x_m"])
         self.pose["y_m"] += w * (fix["pose"]["y_m"] - self.pose["y_m"])
-        if not same:
-            self.sigma_xy_m = max(math.sqrt(a * b / (a + b)), self.floor_m)
+        self._shrink(same, a, b, fix["sigma_xy_m"])
         self.steps_since_fix, self.conflicts = 0, 0
         self.fixes += 1
+
+    def _shrink(self, same, a, b, fix_sigma):
+        """The position sigma after a fix blended in. A fix on new tags combines the two by inverse variance. A fix on
+        exactly the last fix's tags repeats that fix's survey and range-scale error, so it gives no inverse-variance
+        gain; but it still says where the car is to its own sigma, so the sigma never stays above it (the lead's
+        decision of 2026-11-25: on a long run of one tag's fixes with the slip sigma, the sigma had climbed past
+        sigma_block_m while the pose was within centimetres)."""
+        if not same:
+            self.sigma_xy_m = max(math.sqrt(a * b / (a + b)), self.floor_m)
+        else:
+            self.sigma_xy_m = max(min(self.sigma_xy_m, float(fix_sigma)), self.floor_m)
 
     def snapshot(self):
         return {"pose": dict(self.pose), "sigma_xy_m": round(self.sigma_xy_m, 4),
@@ -726,7 +740,9 @@ def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10, max_beari
     range measured after. Only ranges enter, which the camera measures to millimetres (the tag pilot); a bearing error
     moves the prediction little for a tag near the line of motion. The pairs of one move are weighted by how much the
     range says about s (d range / d s; below min_info of the move's length the pair is left out). A pair farther off
-    than half the move plus gate_m is not the same tag, and is left out. A turn is not a straight move: the batch
+    than 1.5 times the move plus gate_m is not the same tag, and is left out (half the move until 2026-11-25: that
+    discarded a factor-two error, a whole move off, as another tag; repeated ids are resolved per surveyed tag before
+    this, in _range_check). A turn is not a straight move: the batch
     passes only forward moves of 5 cm or more by odometry (a 30-degree turn moves the axle about 1.3 cm); the
     geometry here works for a backward move too.
     2026-11-25, after a false odometry_scale halt of the first real practice batch: see odometry_bias()."""
@@ -755,7 +771,7 @@ def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10, max_beari
         tu = tx * ux + ty * uy
         predicted = math.hypot(tx - ux, ty - uy)
         info = abs(tu - uu) / max(predicted, 1e-6)
-        if info < min_info * move or abs(r2 - predicted) > 0.5 * move + gate_m:
+        if info < min_info * move or abs(r2 - predicted) > 1.5 * move + gate_m:
             continue
         disc = tu * tu - uu * (r1 * r1 - r2 * r2)
         if disc < 0.0:
@@ -766,6 +782,9 @@ def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10, max_beari
         den += info * info
         pairs += 1
     return None if pairs == 0 else (num / den, pairs)
+
+
+OLD_NET_RATIO_BOUNDS = (0.5, 1.6)      # the drift's net length ratio bounds that halted until 2026-11-25 (recorded)
 
 
 def range_scale_halt(tracker, params):
@@ -837,9 +856,9 @@ def per_step_scale_halt(tracker, params):
     tracked heading's error along it: b2-real-02 read -27 % +- 8 % while the ranges said -12 %; b2-real-04 read
     -56 % +- 18 % from four single-tag fixes of T00 and T01 after northward legs, while the forward moves, the gyro
     corrected, came to about 0.70. Gross under-travel is still halted elsewhere: the range check below its floor
-    (0.55) and the dead-reckoning drift below its gross bound (0.5) at the next circle. Beyond odometry_bias_min the
-    reading is recorded (tracker.bias_under; the manifest's per_step_drift). Held back by the range check, an
-    over-travel reading is recorded too (tracker.bias_gated)."""
+    (0.55) and fix_conflict (the dead-reckoning drift between circles is recorded only, since 2026-11-25). Beyond
+    odometry_bias_min the reading is recorded (tracker.bias_under; the manifest's per_step_drift). Held back by the
+    range check, an over-travel reading is recorded too (tracker.bias_gated)."""
     bias = tracker.odometry_bias()
     if bias is None or abs(bias[0]) <= 3.0 * bias[3]:
         return None
@@ -1621,14 +1640,14 @@ class BatchRunner:
         check: 0.98 over 12 forward moves) and the tracked pose ended 0.06 m from the end circle. The encoder scale is
         the range check's (range_scale_halt).
 
-        Only a gross error halts here, judged against the PATH driven, not the net displacement (the review of
-        2026-11-25): on a carpet whose slip depends on direction, under-travel on an out-and-back path changes the
-        odometry's net displacement by any factor (at north 0.60 a correct car measured 0.79 m by odometry against
-        1.29 m by the circles, a ratio of 1.63, and 0.73 against 0.34, 0.47). The miss can never exceed the path
-        driven times the largest share by which one move goes wrong (the triangle inequality): 0.45 at the 0.55 floor,
-        plus what a heading error swings. So it halts when the miss, less the two circles' own 2 sigma, exceeds
-        path_gross_share (0.6) of the path. A factor-two error on a straight path (a transit) gives a miss of the
-        whole path (1.0) and halts. The net length ratio is recorded as before. fix_sigmas: the two circles' sigmas."""
+        Record-only, in both directions (the lead's decision of 2026-11-25). With slip that depends on direction, the
+        net displacement between two circles is no scale measure: on an out-and-back path it changes by any factor (at
+        north 0.60 a correct car measured net 0.79 m by odometry against 1.29 m by the circles, 1.63; at north 0.67,
+        0.73 against 0.34, 0.47; both false-halted). A wrong scale is halted by the range check (both sides), the
+        per-step statistic (over-travel), fix_conflict and the guard; the README says which, factor two each way
+        (test_a_factor_two_scale_error_each_way_halts_in_the_real_room). For the record, would_have_halted flags
+        where the old net-ratio bounds (above 1.6, below 0.5) or the path share (the miss beyond the circles' 2 sigma
+        over path_gross_share of the path) were crossed. fix_sigmas: the two circles' sigmas."""
         t, p = self.tracker, self.params
         dr, path = t.dead_reckoned, t.dead_reckoned_path_m
         t.dead_reckoned = None
@@ -1636,6 +1655,9 @@ class BatchRunner:
                "circle_sigmas_xy_m": [round(float(v), 3) for v in fix_sigmas] if fix_sigmas else None}
         if origin is None or dr is None:
             return dict(out, why="no full-circle fix at the start of the %s" % what)
+        if path < p.transit_scale_min_m:
+            return dict(out, path_m=round(path, 3), would_have_halted=False,
+                        why="shorter than %.2f m of path" % p.transit_scale_min_m)
         by_odometry = math.hypot(dr["x_m"] - origin["x_m"], dr["y_m"] - origin["y_m"])
         by_tags = math.hypot(t.pose["x_m"] - origin["x_m"], t.pose["y_m"] - origin["y_m"])
         miss = math.hypot(t.pose["x_m"] - dr["x_m"], t.pose["y_m"] - dr["y_m"])
@@ -1646,16 +1668,17 @@ class BatchRunner:
                    heading_miss_deg=round(wrap_deg(t.pose["theta_deg"] - dr["theta_deg"]), 1),
                    miss_over_path=round(max(0.0, miss - slack) / path, 3) if path > 0 else None,
                    gross_share=p.path_gross_share)
+        flags = []
         if by_odometry >= p.transit_scale_min_m and by_tags >= p.transit_scale_min_m:
-            out.update(tags_over_odometry=round(by_tags / by_odometry, 3))
-        if path < p.transit_scale_min_m:
-            return dict(out, why="shorter than %.2f m of path" % p.transit_scale_min_m)
-        out["checked"] = True
+            ratio = by_tags / by_odometry
+            out["tags_over_odometry"] = round(ratio, 3)
+            if ratio > OLD_NET_RATIO_BOUNDS[1] or ratio < OLD_NET_RATIO_BOUNDS[0]:
+                flags.append("net ratio %.2f outside %.1f to %.1f" % (ratio, OLD_NET_RATIO_BOUNDS[0], OLD_NET_RATIO_BOUNDS[1]))
         if miss - slack > p.path_gross_share * path:
-            self.monitor.halt("odometry_scale", "dead reckoning over the %s is grossly off: it ends %.2f m from the "
-                              "circle after %.2f m of path (%.0f %% of it beyond the circles' own %.2f m; limit %.0f "
-                              "%%): an encoder scale, a wheel or the gyro is grossly wrong, or the tags are"
-                              % (what, miss, path, 100 * (miss - slack) / path, slack, 100 * p.path_gross_share))
+            flags.append("miss %.0f %% of the path beyond the circles' sigma (share %.0f %%)" % (
+                100 * (miss - slack) / path, 100 * p.path_gross_share))
+        out["checked"] = True                   # measured; never a halt
+        out["would_have_halted"] = flags or False
         return out
 
     # ------------------------------------------------------------ the batch
@@ -1760,7 +1783,7 @@ class BatchRunner:
             entry["dead_reckoning_transit"] = self._dead_reckoning(origin, transit_sigmas, "transit")
             entry["odometry_scale_check"] = entry["dead_reckoning_transit"]     # (its name before 2026-11-25)
             if self.monitor.halted is not None:
-                raise BatchStop("dead reckoning over the transit")
+                raise BatchStop("a halt during the transit")
             start = dict(self.tracker.pose)
             entry["start_pose_world"] = start
             # the episode's dead-reckoning drift: odometry alone from this circle to the end circle (_dead_reckoning)
@@ -1829,7 +1852,7 @@ class BatchRunner:
                 entry["dead_reckoning_episode"] = self._dead_reckoning(episode_origin, sigmas,
                                                                        "episode (start circle to end circle)")
                 if self.monitor.halted is not None:
-                    raise BatchStop("dead reckoning over the episode")
+                    raise BatchStop("a halt at the end circle")
             else:
                 self.tracker.dead_reckoned = None
                 entry["dead_reckoning_episode"] = {"measurement": "dead-reckoning drift", "checked": False,

@@ -7,6 +7,9 @@ AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote these tests.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: added the tests at the end (usd_cap between episodes, two
 faults in one scan, the tag check, the detector-noise file, quick signals); in older tests: tag_trust off in two that
 use the 12-tag layout, `tag_survey` accepted where a wrong tag halts, the signal test after the first-signal change.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the range check's, the drift's, the per-step statistic's and
+the slip tests (the real batches' halts); later that day the drift test made record-only, the factor-two test each way
+and the same-tag rule's test.
 """
 import hashlib
 import importlib.util
@@ -1325,7 +1328,8 @@ def test_a_weak_circle_is_blended_with_the_tracked_pose_not_trusted_alone(tmp_pa
 
 def test_repeated_fixes_from_the_same_tag_do_not_shrink_the_uncertainty():
     """Review finding 3: the same tag seen again repeats its survey error. The pose may follow it; sigma may not
-    shrink on it. A different tag is new information."""
+    shrink on it. A different tag is new information. (Since 2026-11-25 the sigma may not stay above that fix's own
+    either: test_a_same_tag_fix_leaves_the_sigma_no_larger_than_its_own.)"""
     t = B.PoseTracker(S1, 0.12, 3.0)
     fix = {"pose": {"x_m": 2.55, "y_m": 1.5, "theta_deg": 90.0}, "sigma_xy_m": 0.10, "tags": ["T06"]}
     t.correct_position(dict(fix))
@@ -1339,6 +1343,33 @@ def test_repeated_fixes_from_the_same_tag_do_not_shrink_the_uncertainty():
     for name in ("T06", "T05", "T06", "T05", "T06", "T05"):
         t.correct_position(dict(fix, tags=[name]))
     assert t.sigma_xy_m == pytest.approx(0.05)
+
+
+def test_a_same_tag_fix_leaves_the_sigma_no_larger_than_its_own():
+    """The lead's decision of 2026-11-25 (the north 0.60 pose_uncertain halt of the slip-sigma dry runs): on a long run
+    of one tag's fixes with the slip sigma on, the sigma climbed past sigma_block_m (0.25) between fixes and no fix of
+    that tag brought it back, while the pose was within centimetres. Now a fix on exactly the last fix's tags leaves
+    the sigma at min(the sigma, the fix's sigma): never larger than one fix of that tag says, never smaller (no
+    inverse-variance gain from a repeated survey error). correct() and correct_position() alike."""
+    for method in ("correct_position", "correct"):
+        t = B.PoseTracker(S1, 0.12, 3.0, slip_sigma_per_m=0.3)
+        fix = {"pose": {"x_m": 2.55, "y_m": 1.5, "theta_deg": 90.0}, "sigma_xy_m": 0.10, "sigma_theta_deg": 2.0,
+               "tags": ["T06"]}
+        getattr(t, method)(dict(fix))
+        once = t.sigma_xy_m
+        assert once == pytest.approx(math.sqrt(0.12 ** 2 * 0.10 ** 2 / (0.12 ** 2 + 0.10 ** 2)), abs=1e-6)
+        for _ in range(4):                                      # a blind stretch on the slipping carpet
+            t.predict({"forward_m": 0.25, "left_m": 0.0, "dtheta_deg": 0.0})
+        grown = t.sigma_xy_m
+        assert grown > 0.15
+        getattr(t, method)(dict(fix))                           # the same tag again
+        assert t.sigma_xy_m == pytest.approx(0.10)              # no larger than its own; the old rule kept `grown`
+        a, b = grown ** 2, 0.10 ** 2
+        assert t.sigma_xy_m > math.sqrt(a * b / (a + b))        # and no inverse-variance gain from it
+        getattr(t, method)(dict(fix, sigma_xy_m=0.20))          # a worse fix of the same tag cannot raise it
+        assert t.sigma_xy_m == pytest.approx(0.10)
+        getattr(t, method)(dict(fix, sigma_xy_m=0.01))          # nor take it under the floor
+        assert t.sigma_xy_m == pytest.approx(t.floor_m)
 
 
 def test_guard_margin_has_a_floor_that_no_fix_can_lower():
@@ -2197,18 +2228,19 @@ def _drift(origin, dead_reckoned, circle, path_m, sigmas=(0.026, 0.024), what="e
     return runner._dead_reckoning(origin, sigmas, what), runner.monitor.calls
 
 
-def test_the_dead_reckoning_drift_is_recorded_and_halts_only_on_a_gross_error():
+def test_the_dead_reckoning_drift_is_recorded_and_never_halts():
     """b2-real-01 (2026-11-25), episode 1: start circle (2.540, 1.466, 105.9), odometry alone ends at (3.099, 1.019,
     -1.5), the end circle at (3.098, 0.747, 11.9), after about 3.5 m of path (2.64 m of straights, 70 turns' axle
-    shifts). Recorded (0.27 m miss, 13.4 deg; the net length ratio 1.27 kept), no halt. Since the review of 2026-11-25
-    the gross bound is judged against the path driven (miss beyond the circles' 2 sigma over the path, limit 0.6): the
-    net ratio is no scale test on a carpet that slips by direction. The reviewer's out-and-back case at north 0.60
-    (net 0.79 m by odometry against 1.29 m by the circles, ratio 1.63) passes; a factor-two error on a straight path
-    (odometry reading half of 0.91 m) halts."""
+    shifts). Recorded (0.27 m miss, 13.4 deg; the net length ratio 1.27 kept). Since the lead's decision of 2026-11-25
+    the drift is record-only in both directions: with slip that depends on direction the net displacement between two
+    circles is no scale measure (the reviewer's out-and-back case at north 0.60: net 0.79 m by odometry against 1.29 m
+    by the circles, ratio 1.63). would_have_halted records where the old bounds were crossed (the net ratio outside 0.5
+    to 1.6; the miss beyond the circles' 2 sigma over 0.6 of the path): a factor-two error on a straight path is flagged
+    and does not halt; what halts it is test_a_factor_two_scale_error_each_way_halts_in_the_real_room's."""
     start = {"x_m": 2.5402, "y_m": 1.4662, "theta_deg": 105.88}
     circle = {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89}
     m, halts = _drift(start, {"x_m": 3.0986, "y_m": 1.0189, "theta_deg": -1.51}, circle, 3.5)
-    assert halts == [] and m["measurement"] == "dead-reckoning drift" and m["checked"]
+    assert halts == [] and m["measurement"] == "dead-reckoning drift" and m["checked"] and m["would_have_halted"] is False
     assert m["tags_over_odometry"] == pytest.approx(1.272, abs=0.002) and m["miss_m"] == pytest.approx(0.272, abs=0.002)
     assert m["heading_miss_deg"] == pytest.approx(13.4, abs=0.1) and m["circle_sigmas_xy_m"] == [0.026, 0.024]
     assert m["miss_world_m"] == pytest.approx([-0.001, -0.272], abs=0.002) and m["gross_share"] == 0.6
@@ -2217,18 +2249,20 @@ def test_the_dead_reckoning_drift_is_recorded_and_halts_only_on_a_gross_error():
     origin = {"x_m": 2.0, "y_m": 2.0, "theta_deg": 0.0}
     m, halts = _drift(origin, {"x_m": 2.79, "y_m": 2.0, "theta_deg": 0.0}, {"x_m": 3.29, "y_m": 2.0, "theta_deg": 0.0}, 3.2)
     assert m["tags_over_odometry"] == pytest.approx(1.633, abs=0.01) and halts == [], m
-    # a factor-two error on a straight path: odometry says 0.455 m, the circle 0.91 m
+    assert len(m["would_have_halted"]) == 1 and "net ratio 1.63" in m["would_have_halted"][0]
+    # a factor-two error on a straight path: odometry says 0.455 m, the circle 0.91 m: both old bounds crossed, no halt
     half = {"x_m": start["x_m"] + 0.5 * (circle["x_m"] - start["x_m"]), "y_m": start["y_m"] + 0.5 * (circle["y_m"] - start["y_m"]),
             "theta_deg": 11.89}
     m, halts = _drift(start, half, circle, 0.455)
-    assert m["miss_over_path"] > 0.6 and len(halts) == 1 and halts[0][0] == "odometry_scale" and "grossly off" in halts[0][1]
-    # odometry reading double (the car covering half its count): 0.91 m by odometry, 0.455 m on the floor
-    double = {"x_m": start["x_m"] + 2.0 * (half["x_m"] - start["x_m"]), "y_m": start["y_m"] + 2.0 * (half["y_m"] - start["y_m"]),
+    assert m["miss_over_path"] > 0.6 and halts == [] and len(m["would_have_halted"]) == 2, m
+    # odometry reading 2.2 times (the car covering under half its count): 1.0 m by odometry, 0.455 m on the floor
+    double = {"x_m": start["x_m"] + 2.2 * (half["x_m"] - start["x_m"]), "y_m": start["y_m"] + 2.2 * (half["y_m"] - start["y_m"]),
               "theta_deg": 11.89}
-    m, halts = _drift(start, double, half, 0.91)
-    assert m["miss_over_path"] < 0.6 and halts == []            # under-travel by half: the range floor's (0.55) case
-    m, halts = _drift(start, start, start, 0.1)                 # too short a path to judge
-    assert halts == [] and m["checked"] is False and "of path" in m["why"]
+    m, halts = _drift(start, double, half, 1.0)
+    assert m["tags_over_odometry"] < 0.5 and m["miss_over_path"] < 0.6 and halts == []
+    assert len(m["would_have_halted"]) == 1 and "net ratio 0.45" in m["would_have_halted"][0], m
+    m, halts = _drift(start, start, start, 0.1)                 # too short a path to measure
+    assert halts == [] and m["checked"] is False and "of path" in m["why"] and m["would_have_halted"] is False
 
 
 def test_a_completed_episode_keeps_its_end_pose_when_a_later_check_halts(tmp_path, monkeypatch):
@@ -2523,3 +2557,56 @@ def test_an_error_inside_the_end_circle_leaves_the_episode_done_and_resume_skips
     assert e["status"] == "done" and e["post_episode_error"] == "RuntimeError: camera thread died (test)"
     assert e["end_pose_source"] == "tracked, before the end circle" and e.get("final_pose_error") is not None
     assert {x["index"] for x in m["episodes"] if x["status"] == "done"} == {0}     # what resume skips
+
+
+def _factor_two(tmp_path, factor, ranges, monkeypatch, seed=1):
+    """A four-episode batch in the real room (its scenarios, --slip-sigma 0.3) with car.json's scale wrong by `factor`
+    (0.5: the odometer reads half, the car goes twice as far as it thinks; 2.0: it reads double, the car covers half),
+    the range check working or switched off (no ranged move ever). (result, smallest true footprint depth, contact)."""
+    from beaconmind.car import config as C
+    if not ranges:
+        monkeypatch.setattr(B.BatchEnv, "_range_check", lambda self, exact, sense, record, first: None)
+    cfg = C.load_config()
+    wrong = cfg.replace(ticks_per_m_left=cfg.ticks_per_m_left / factor,
+                        ticks_per_m_right=cfg.ticks_per_m_right / factor)
+    world = json.loads((ROOT / "configs" / "arenas" / "real-room.json").read_text())
+    starts = [dict(sc["start_pose"], id=sc["id"]) for sc in
+              json.loads((ROOT / "configs" / "arenas" / "real-room-scenarios.json").read_text())["scenarios"]]
+    place = {"x_m": 2.369, "y_m": 2.206, "theta_deg": -90.0}
+    params = B.BatchParams(world_path="x", start_poses=starts, initial_pose=dict(place), episodes=4, max_steps=80,
+                           max_range_m=3.0, odometry_slip_sigma_per_m=0.3)
+    rig = B.dry_rig(world, place, latch=Latch(tmp_path / "LATCH"), seed=seed, max_range_m=3.0, cfg=wrong)
+    runner = B.BatchRunner(params, rig, world, tmp_path / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
+                           log=lambda *a: None, run_episode=cl.run_episode)
+    depth = {"min": 9.0}
+    walls = rig.link.on_step
+
+    def watch(link):
+        walls(link)
+        depth["min"] = min(depth["min"], runner.guard.footprint_depth(rig.sim_truth_fn()))
+    rig.link.on_step = watch
+    result = runner.run()
+    return result, depth["min"], bool(rig.link.sim.p.blocked_left or rig.link.sim.p.blocked_right)
+
+
+def test_a_factor_two_scale_error_each_way_halts_in_the_real_room(tmp_path, monkeypatch):
+    """The lead's question of 2026-11-25, with the drift bound record-only: what halts a factor-two scale error in
+    each direction. In the real room, with the range check working: the range check, at the first ranged forward move,
+    both ways (the car going twice as far: 2.0 above the +12 %; covering half: 0.5 below the 0.55 floor). This needs
+    the range check's same-tag gate of 1.5 moves (half a move until 2026-11-25 dropped the over-travel pair as another
+    tag). With the range check off: fix_conflict for over-travel, in episode 1 (the fixes land far ahead of where
+    odometry puts the car); for under-travel fix_conflict in episode 3 in two seeds of three, while the third (seed 2)
+    completes four episodes undetected: the car covers less than it thinks, the safe side, and stayed 0.55 m inside
+    the driving area. No contact in any run. The 20-tag test room is the weak case: there the car going twice as far
+    drove blind from its first forward moves (no tag in view) and reached a wall in 2 of 3 seeds with the range check
+    working, 3 of 3 without; the same on 19f71e6 (the README's factor-two table)."""
+    cases = ((0.5, True, ("odometry_scale",), 1.0), (2.0, True, ("odometry_scale",), 1.0),
+             (0.5, False, ("fix_conflict",), 0.3), (2.0, False, ("fix_conflict", None), 0.3))
+    for factor, ranges, codes, deepest in cases:
+        with monkeypatch.context() as mp:
+            result, depth, contact = _factor_two(tmp_path / ("f%s-%s" % (factor, ranges)), factor, ranges, mp)
+        code = (result.get("halt") or {}).get("code")
+        assert code in codes and result["status"] == ("halted" if code else "complete"), (factor, ranges, result)
+        if ranges:
+            assert "ranges to the tags" in result["halt"]["detail"], result
+        assert depth > deepest and not contact, (factor, ranges, depth)

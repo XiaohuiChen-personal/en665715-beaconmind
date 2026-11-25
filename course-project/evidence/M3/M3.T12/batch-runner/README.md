@@ -19,6 +19,9 @@ the range check along forward moves, made the transit and episode comparisons a 
 gated the per-step statistic on the range check, weighted the
 per-step statistic by the fixes' noise, ran the first batch's rehearsal
 (`rehearsal-2026-11-25.md`, `rehearse_drift.py`) and filled in the record-pass command; edited this note.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25 (later): the dead-reckoning drift made record-only in both
+directions (`would_have_halted`), the factor-two table, the range check's pairing gate, the turn margin's 0.10 m,
+the same-tag rule; edited this note.
 
 ## Files (under `course-project/`)
 
@@ -112,9 +115,10 @@ Per plan §3.6 the pose comes from the surveyed tags, not tape. All of it is rec
   combined sigmas plus 5 cm is not used; three in a row halt the batch.
 - **Tracked pose** (`truth_map`; also what `env.truth()` gives the harness, with `fix`, `sigma_xy_m`,
   `sigma_theta_deg`, `steps_since_fix`): odometry between fixes, each fix blended in by inverse variance. A fix
-  resting on exactly the tags of the fix before it moves the pose but does not shrink the sigma (it repeats that
-  tag's survey and range-scale error), and the position sigma never goes below 0.05 m, so the guard's margin is
-  never under 0.25 m.
+  resting on exactly the tags of the fix before it moves the pose but gives no inverse-variance gain (it repeats
+  that tag's survey and range-scale error); since 2026-11-25 it leaves the sigma no larger than its own fix sigma
+  (`truth-under-slip/` §6). The position sigma never goes below 0.05 m, so the guard's margin is never under
+  0.25 m.
 
 What the stated sigma covers: noise and geometry, with a per-tag noise of `fix_sigma_a_m` + `fix_sigma_b` × range:
 by default the **assumed** 0.03 m + 0.04 × range; with `--detector-noise course-project/configs/detector_noise.json`
@@ -142,14 +146,52 @@ odometry's end to the circle's, arena frame), `heading_miss_deg`, `circle_sigmas
 `path_m` (the distance driven by odometry), `miss_over_path`, `gross_share`. It is a measurement of the car for the report, **not a scale check**: on the real car (b2-real-01,
 `b2-real-01/`) it read 1.14 over the transit (0.09 m miss) and 1.27 over episode 1 (0.27 m miss, 13.4° heading),
 from wheel slip on some moves and the gyro reading 0.6 to 0.8 % short, while the ranges said the encoder scale was
-right (0.98) and the tracked pose ended 0.06 m from the end circle. It halts (`odometry_scale`) only on a gross error:
-when the miss, less the two circles' own 2 sigma, exceeds 0.6 of the **path** driven (`path_gross_share`). Until the
-review of 2026-11-25 it was the net length ratio beyond 1.6 or below 0.5, but on a carpet that slips by direction an
-out-and-back path changes the odometry's net displacement by any factor. At north 0.60 a correct car measured net 0.79
-m against 1.29 m (1.63), and at north 0.67 0.73 against 0.34 (0.47), and both false-halted. The miss can never exceed
-the path times the largest share by which one move goes wrong (0.45 at the 0.55 floor) plus what a heading error
-swings. A factor-two error on a straight path, such as a transit, misses by the whole path (1.0) and halts; one that
-makes the car cover half its count is the range floor's case (0.55). The net ratio is still recorded.
+right (0.98) and the tracked pose ended 0.06 m from the end circle. **It never halts, in either direction** (the
+lead's decision of 2026-11-25). Until the review of 2026-11-25 it halted on the net length ratio beyond 1.6 or below
+0.5. Then, for a few hours, on a miss (less the two circles' own 2 sigma) beyond 0.6 of the **path** driven
+(`path_gross_share`). Neither is a scale measure on a carpet that slips by direction: an out-and-back path changes the
+odometry's net displacement by any factor. At north 0.60 a correct car measured net 0.79 m against 1.29 m (1.63), and
+at north 0.67 0.73 against 0.34 (0.47); both false-halted. `would_have_halted` records, for the report, where either
+old bound was crossed (a list of the reasons, or `false`). What halts a wrong scale instead is in the next paragraph.
+
+**What halts a factor-two scale error** (2026-11-25, `test_a_factor_two_scale_error_each_way_halts_in_the_real_room`).
+Setup: four-episode B2 batches, the simulated car with `configs/car.json`'s ticks per metre wrong by a factor two
+each way, seeds 1 to 3, the slip sigma 0.3 in the real room (0 in the test room); `truth-under-slip/factor_two_probe.py`
+and its output, on `19f71e6` too. "With ranged moves" means the range check works; "without" means it
+measures nothing (no forward move ever ranged). Depth is the smallest true distance of the footprint inside the
+driving area.
+
+| Room | Error | Range check | What halts it, where | Smallest depth |
+| --- | --- | --- | --- | --- |
+| real room | odometer reads half (the car goes 2×, over-travel) | working | `odometry_scale` (the ranges: 2.0 above +12 %), the first ranged forward move, 3 of 3 | 1.27 m |
+| real room | odometer reads double (the car covers half, under-travel) | working | `odometry_scale` (the ranges: 0.5 below the 0.55 floor), the first ranged forward move, 3 of 3 | 1.27 m |
+| real room | over-travel | off | `fix_conflict` in episode 1, 3 of 3 | 0.49 m |
+| real room | under-travel | off | `fix_conflict` in episode 3, 2 of 3. Seed 2 **completed four episodes undetected**: the car covered less than it thought, the safe side | 0.55 m |
+| 20-tag test room | over-travel | working | seed 1: `odometry_scale` (the ranges), 0.80 m. Seeds 2 and 3: **`stall` at contact** | 0.00 m |
+| 20-tag test room | over-travel | off | **`stall` at contact**, 3 of 3 | 0.00 m |
+| 20-tag test room | under-travel | working | `odometry_scale` (the ranges), 3 of 3 | 1.14 m |
+| 20-tag test room | under-travel | off | `fix_conflict` in episode 3 or 4, 3 of 3 | 0.65 m |
+
+So, in each direction:
+
+- **Over-travel (the dangerous side)** is halted by the range check at the first forward move with a tag in view
+  before and after it. Without one, `fix_conflict` and the per-step statistic (+12 %, while the range check has
+  fewer than 3 moves) halt it once fixes come back; in these runs `fix_conflict` came first, in episode 1. The guard
+  keeps the margin only as far as the tracked pose is right.
+- **The gap: the 20-tag test room with the car driving blind.** There, the first forward moves of episode 1 leave
+  every tag out of view (0 detections), and the car reaches a wall before any fix. The guard's cap on blind travel
+  (0.75 m by odometry) holds for a bounded error, not this one: 0.75 m by odometry is 1.5 m driven. This was the same
+  on `19f71e6`, before these changes (3 of 3 seeds with the range check working), and the old drift bound never fired
+  first in any of these runs. In the real room's runs every batch's first forward moves were ranged. A remedy is
+  proposed to the lead, not made: until the range check has its 3 moves, cap blind travel at one forward move.
+- **Under-travel (the safe side)** is halted by the range check below its 0.55 floor. Without ranged moves it is
+  halted by `fix_conflict`, or not at all; the car then covers less than it thinks and keeps more room than the guard
+  plans for (0.55 m or more here).
+
+The over-travel rows rest on a change made with this table. The range check's same-tag gate was half a move plus
+0.10 m until 2026-11-25. A factor-two over-travel misses its predicted range by a whole move, so the gate dropped the
+pair as another tag. It is now 1.5 moves plus 0.10 m (`range_scale_of_move`), and repeated ids are still resolved per
+surveyed tag first. On `19f71e6` the real room's over-travel was halted only by `fix_conflict` (0.49 m).
 
 **Slip by heading** (`range_moves`, `slip_by_heading` in each episode's manifest entry, since 2026-11-25): every
 forward move the range check measured, with its time, world heading, place, odometry distance and tags-over-odometry
@@ -160,7 +202,7 @@ slip test, `b2-real-02/`).
 **Asymmetric scale limits** (2026-11-25, the slip test): the car going farther than its odometry says is the dangerous
 direction and keeps the tight limits (+12 %); the car covering less (under-travel) is the safe direction and is allowed
 down to 0.55 (range check; 0.65 until the evening of 2026-11-25, after the car covered 0.67 to 0.70 at the start of the
-northward path); the dead-reckoning gross bound is judged on the path since the review (above); the per-step fixes
+northward path); the dead-reckoning drift is recorded only, in both directions (above); the per-step fixes
 never halt on under-travel since b2-real-04
 (recorded beyond −45 %). **What passes since then:** an odometer reading up to 45 % long. In fault injection four-episode batches with odometers 25 % and 35 % long completed
 in both rooms, 3 of 3 seeds each, the simulated car at least 0.39 m inside the driving area; an odometer reading 25 %
@@ -187,7 +229,8 @@ x = 0.66 m; convex, counter-clockwise, checked) minus every obstacle box. Everyt
   2026-11-25 a forward move must also *start* there with 5 cm to spare (`start_turn_margin_m`): on the carpet the car
   covers 0.78 of its counted distance northward, so after a blind stretch it stands between the stretch's start and
   the tracked end, and turn room is concave along that line (`b2-real-02/`). It cost no completions in dry runs.
-- **Turn:** the sweep circle (0.178 m) must stay 0.03 m plus one sigma (at most +0.10 m) inside the free area.
+- **Turn:** the sweep circle (0.178 m) must stay 0.10 m plus one sigma (at most +0.10 m) inside the free area (0.03 m
+  until the review of 2026-11-25: `truth-under-slip/`).
 - **Far from the last tag fix:** no straight move may take the distance driven since the last tag fix past
   0.75 m (`max_blind_travel_m`). Whatever the odometer's error, it then stays inside the wall margin. Turns stay
   allowed (turning is how a tag comes into view); the transit looks around with a full circle when it gets there.
@@ -200,7 +243,7 @@ compared with the tape; fixes that disagree with it are refused; and the encoder
 the tags along every forward move (since 2026-11-25; `odometry_scale` in the halt table). Until 2026-11-25 the
 transit between two full-circle fixes also had to measure the same length by odometry and by the tags within 10 %
 plus the fixes' uncertainty; the transit, and each episode from its start circle to its end circle, is now a
-recorded **dead-reckoning drift** measurement (below) that halts only on a gross error. What got through until 2026-11-24:
+recorded **dead-reckoning drift** measurement that never halts (above). What got through until 2026-11-24:
 one tag surveyed 0.3 m wrong, seen alone, pulled the tracked pose up to 0.33 m while the stated sigma stayed near
 0.1 m; in the reviewer's probe the simulated footprint came within 4 cm of the edge of the driving area. That is
 now closed by the tag check (next section). **The tag centres in the world file must still be measured, not
@@ -310,7 +353,7 @@ set, `car.sh clear-latch --operator <name>`; then the `run` command again.
 | `executor_refused` | the executor refused a move the guard allowed (e.g. the drive map was lost) | S | `test_halt_executor_refusal` |
 | `no_fix` | `--no-fix-steps` (24) steps without any tag fix; no full-circle fix at a start pose or at the first circle; the first circle disagrees with the tape | S | `test_halt_repeated_no_fix`, `test_the_first_circle_speaks_without_the_tape_and_a_disagreement_halts` |
 | `fix_conflict` | three fixes in a row far from the tracked pose | S | `test_halt_fix_conflict` |
-| `odometry_scale` | the ranges to the tags seen before and after each forward move say the car went farther than its odometry by more than 12 % (15 % on the first move: the dangerous direction), or less far than 0.55 of it (under-travel, the safe direction, allowed to the carpet's measured slip: 0.78 taped northward, 0.67 to 0.70 at the start of the northward path: `b2-real-02/`, `b2-real-04/`) (median over the moves so far; forward moves only, tags within 30° of ahead and inside the pilot's range window, repeated ids resolved by the tracked pose, the pilot's range bias removed; the same rule over the last 10 moves alone; 2026-11-25, after a false halt of the first real practice batch: `practice-01b/`, `rehearsal-2026-11-25.md`); the dead-reckoning drift of the transit or an episode beyond the gross bound (a miss beyond the circles' 2 sigma of more than 0.6 of the path driven, since the review of 2026-11-25; before that the net length ratio, above 1.6 or below 0.5; below it the drift is a recorded measurement, not a halt: the section on dead-reckoning drift; b2-real-01); or the per-step fixes put the car more than 12 % ahead of its odometry (over-travel, the dangerous direction; fixes behind it never halt on their own since b2-real-04, `b2-real-04/`, and are recorded beyond 45 %) **and** beyond three standard errors (weighted by each fix's noise), while the range check cannot vouch for the scale (fewer than 3 measured forward moves, or itself out of tolerance; otherwise recorded as `per_step_drift`, not a halt: b2-real-02, `b2-real-02/`) | S | `test_the_transit_checks_the_encoder_scale_before_any_episode`, `test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall` (unchanged since review finding 8), `test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms`, `test_the_practice_batch_ranges_say_its_odometer_was_right`, `test_the_range_of_a_tag_along_a_straight_move_measures_the_scale`, `test_the_range_check_resolves_repeated_ids_by_the_tracked_pose_and_keeps_to_the_window`, `test_the_range_check_takes_the_pilots_range_bias_and_window`, `test_the_range_check_skips_backward_moves_and_watches_the_recent_moves_too`, `test_the_dead_reckoning_drift_is_recorded_and_halts_only_on_a_gross_error`, `test_a_completed_episode_keeps_its_end_pose_when_a_later_check_halts`, `test_the_per_step_statistic_halts_only_while_the_range_check_cannot_vouch_for_the_scale`, `test_with_the_range_check_off_the_per_step_fixes_still_halt_a_wrong_scale`, `test_the_measured_carpet_slip_does_not_halt_and_is_recorded_by_heading`, `test_noisy_fixes_after_short_legs_do_not_call_a_correct_odometer_biased` |
+| `odometry_scale` | the ranges to the tags seen before and after each forward move say the car went farther than its odometry by more than 12 % (15 % on the first move: the dangerous direction), or less far than 0.55 of it (under-travel, the safe direction, allowed to the carpet's measured slip: 0.78 taped northward, 0.67 to 0.70 at the start of the northward path: `b2-real-02/`, `b2-real-04/`) (median over the moves so far; forward moves only, tags within 30° of ahead and inside the pilot's range window, repeated ids resolved by the tracked pose, the pilot's range bias removed, a pair kept up to 1.5 moves off its prediction; the same rule over the last 10 moves alone; 2026-11-25, after a false halt of the first real practice batch: `practice-01b/`, `rehearsal-2026-11-25.md`); or the per-step fixes put the car more than 12 % ahead of its odometry (over-travel, the dangerous direction; fixes behind it never halt on their own since b2-real-04, `b2-real-04/`, and are recorded beyond 45 %) **and** beyond three standard errors (weighted by each fix's noise), while the range check cannot vouch for the scale (fewer than 3 measured forward moves, or itself out of tolerance; otherwise recorded as `per_step_drift`, not a halt: b2-real-02, `b2-real-02/`) | S | `test_the_transit_checks_the_encoder_scale_before_any_episode`, `test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall` (unchanged since review finding 8), `test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms`, `test_the_practice_batch_ranges_say_its_odometer_was_right`, `test_the_range_of_a_tag_along_a_straight_move_measures_the_scale`, `test_the_range_check_resolves_repeated_ids_by_the_tracked_pose_and_keeps_to_the_window`, `test_the_range_check_takes_the_pilots_range_bias_and_window`, `test_the_range_check_skips_backward_moves_and_watches_the_recent_moves_too`, `test_the_dead_reckoning_drift_is_recorded_and_never_halts` (the transit's and each episode's drift: record-only since 2026-11-25), `test_a_factor_two_scale_error_each_way_halts_in_the_real_room`, `test_a_completed_episode_keeps_its_end_pose_when_a_later_check_halts`, `test_the_per_step_statistic_halts_only_while_the_range_check_cannot_vouch_for_the_scale`, `test_with_the_range_check_off_the_per_step_fixes_still_halt_a_wrong_scale`, `test_the_measured_carpet_slip_does_not_halt_and_is_recorded_by_heading`, `test_noisy_fixes_after_short_legs_do_not_call_a_correct_odometer_biased` |
 | `pose_uncertain` | tracked position sigma above 0.25 m, or a tracked pose that is not a number | S | `test_halt_pose_too_uncertain` |
 | `detector` | a detection whose range or bearing is not a number | S | `test_detections_that_are_not_numbers_never_reach_the_pose` |
 | `outside_drive_area` | the tracked pose is outside the free area | S | `test_halt_pose_outside_the_driving_area` |
