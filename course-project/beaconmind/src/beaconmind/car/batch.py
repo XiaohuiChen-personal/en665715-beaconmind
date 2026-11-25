@@ -41,6 +41,7 @@ sigma no larger than its own (PoseTracker._shrink); the range check keeps a pair
 so a factor-two over-travel is measured rather than dropped as another tag; until the range check has its first
 ranged moves, the car drives at most one forward move without a tag fix (blind_limit_m). The dead-reckoning drift
 keeps its path-share halt (the lead's decision; record-only for one commit, 9dd80e9).
+The manifest records the driver: its policy and the hashes of the coded procedure's sources (driver_record).
 """
 import hashlib
 import json
@@ -1265,6 +1266,25 @@ def marker_fingerprint(root):
     return out
 
 
+DRIVER_SOURCES = ("envs/kinsim_lite.py", "envs/kinsim_room.py", "harness/closed_loop.py", "geometry.py", "dv.py")
+
+
+def driver_record(driver):
+    """What decided the moves, for the manifest: the arm, the provider, the policy (B2: "kinsim_lite", the frozen
+    procedure, or "kinsim_room.make_b2_policy()", the room's; a model: its request settings) and the sha12 of the
+    sources the coded procedure runs (DRIVER_SOURCES, under the beaconmind package). Until 2026-11-25 tools/car_batch.py
+    gave every batch the frozen procedure, and no manifest said so."""
+    if driver is None:
+        return None
+    header = driver.header() if callable(getattr(driver, "header", None)) else {}
+    rec = {"arm": getattr(driver, "arm", None), "provider": getattr(driver, "provider", None),
+           "policy": getattr(driver, "policy_name", None), "settings": header.get("settings")}
+    if getattr(driver, "policy_name", None) is not None:
+        pkg = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        rec["source_sha12"] = {rel: file_sha12(os.path.join(pkg, rel)) for rel in DRIVER_SOURCES}
+    return rec
+
+
 def file_sha12(path):
     try:
         with open(path, "rb") as handle:
@@ -1442,11 +1462,14 @@ class BatchRunner:
                 if e.get("status") == "running":        # the process died inside it: never replayed, never "done"
                     e["status"] = "abandoned"
             m.setdefault("initial_poses", []).append({"time_utc": utc(), "pose": dict(self.params.initial_pose)})
+            m.setdefault("drivers", []).append({"time_utc": utc(), "driver": driver_record(self.driver)})
+            m["driver"] = driver_record(self.driver)
             return m
         return {"schema": MANIFEST_SCHEMA, "config": self.config, "params": asdict(self.params), "created": utc(),
                 "world_id": self.world.get("world_id"), "real_car": self.rig.real, "resumes": 0, "episodes": [],
                 "halt": None, "status": "running", "moves_sent": 0, "spent_usd": 0.0, "rig": self.rig.notes,
-                "initial_poses": [{"time_utc": utc(), "pose": dict(self.params.initial_pose)}]}
+                "initial_poses": [{"time_utc": utc(), "pose": dict(self.params.initial_pose)}],
+                "driver": driver_record(self.driver)}
 
     def _save(self, status=None):
         m = self.manifest

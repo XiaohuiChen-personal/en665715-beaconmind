@@ -2640,3 +2640,36 @@ def test_until_three_moves_are_ranged_the_car_drives_one_forward_move_blind(tmp_
     result, depth, contact = _factor_two(tmp_path, 0.5, True, monkeypatch, seed=2, room="20")
     assert result["status"] == "halted" and result["halt"]["code"] == "odometry_scale", result
     assert depth > 0.25 and not contact, depth
+
+
+def test_a_batch_at_the_e5_dead_end_continues_with_the_room_b2(tmp_path, capsys):
+    """The video agent's finding (2026-11-25): tools/car_batch.py built its B2 without room=True, so every real batch
+    drove the frozen kinsim_lite procedure, which stops at "E5 leg with no forward move and no E4"; b2-real-06's
+    episode 2 (S3) ended there at step 44. The room's procedure (kinsim_room.make_b2_policy, the study's room B2)
+    decides that step again with the heading blocked (rule 7b) and goes on. The step here is the real one: its
+    observation and previous report from the batch's log (tests/fixtures/b2_real_06_ep02_step44.json), under the
+    design values the batch ran with. Replayed over every step of the real episodes, the two procedures decide
+    alike everywhere else (evidence/M3/M3.T12/batch-runner/b2-policy/). And the tool now gives a batch the room's
+    procedure, says so, and records it in the manifest with its sources' hashes."""
+    from beaconmind import dv_real
+    from beaconmind.envs import kinsim_room as kr
+    fx = json.loads((Path(__file__).parent / "fixtures" / "b2_real_06_ep02_step44.json").read_text())
+    with dv_real.use_dv(dv_real.resolve_arg(str(ROOT / fx["dv_file"]))):
+        assert dv_real.sha12(ROOT / fx["dv_file"]) == fx["dv_sha12"]
+        frozen = cl.B2Driver().step("", fx["observation"], fx["prev_report"], rp.Budget(1e9), lambda *a: None)
+        room = cl.B2Driver(kr.make_b2_policy(), "kinsim_room.make_b2_policy()").step(
+            "", fx["observation"], fx["prev_report"], rp.Budget(1e9), lambda *a: None)
+    assert frozen.get("stop") == "B2 stopped: " + kr.DEAD_END == fx["logged_error"]
+    assert room.get("stop") is None and room["error"] is None
+    report = json.loads(room["final_text"])
+    assert report["decision"] == "TURN_RIGHT_30" and report["memory"]["blocked_heading_deg"] == report["pose"]["theta_deg"]
+    tool = load_batch_tool()
+    out = tmp_path / "dry"
+    assert tool.main(["run", "--world", str(WORLD20_PATH), "--start", "S1:2.5,1.5,90", "--initial-pose", "2.4,1.6,70",
+                      "--max-steps", "3", "--max-range", "3.0", "--dry-run", "--out", str(out)]) == 0
+    driver = json.loads((out / "manifest.json").read_text())["driver"]
+    assert driver["arm"] == "B2" and driver["policy"] == "kinsim_room.make_b2_policy()"
+    assert set(driver["source_sha12"]) == set(B.DRIVER_SOURCES) and all(driver["source_sha12"].values())
+    assert driver["source_sha12"]["envs/kinsim_room.py"] == B.file_sha12(ROOT / "beaconmind" / "src" / "beaconmind" / "envs" / "kinsim_room.py")
+    assert "driver: B2 kinsim_room.make_b2_policy() (sources " in capsys.readouterr().out
+

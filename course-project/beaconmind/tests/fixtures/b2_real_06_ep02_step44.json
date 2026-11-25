@@ -1,0 +1,309 @@
+{
+ "ai_assisted": "AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: extracted this fixture from the batch's log.",
+ "dv_file": "configs/dv-real.json",
+ "dv_sha12": "ea2cd23f9186",
+ "logged_error": "B2 stopped: E5 leg with no forward move and no E4",
+ "observation": {
+  "counters": {
+   "consecutive_contacts": 0,
+   "consecutive_errors": 0,
+   "consecutive_slips": 0,
+   "latched": false,
+   "odometer_m": 1.14,
+   "steps_left": 106,
+   "travel_since_fix_m": 0.07,
+   "turns_since_fix": 0
+  },
+  "detections": [
+   {
+    "bearing_deg": 3.1,
+    "det": 0,
+    "id": 12,
+    "quality": 1.0,
+    "range_m": 0.91
+   },
+   {
+    "bearing_deg": -4.5,
+    "det": 1,
+    "id": 5,
+    "quality": 1.0,
+    "range_m": 1.24
+   }
+  ],
+  "error": null,
+  "last_move": {
+   "action": "TURN_LEFT_30",
+   "result": "done"
+  },
+  "mode": "closed_loop",
+  "obs_id": "s2-044",
+  "odometry": {
+   "dtheta_deg": 30.5,
+   "forward_m": 0.01,
+   "left_m": 0.0,
+   "quality": "ok"
+  },
+  "safety": {
+   "backward_allowed": false,
+   "done_range_m": 0.55,
+   "forward_allowed": [],
+   "scan_allowed": true,
+   "turn_allowed": true
+  },
+  "sensors": {
+   "camera": "ok",
+   "imu": "ok",
+   "pico": "armed"
+  },
+  "source": "real",
+  "status": "ok",
+  "step": 44
+ },
+ "prev_report": {
+  "associations": [
+   {
+    "beacon": "B0",
+    "det": 0,
+    "id": 0,
+    "result": "new"
+   }
+  ],
+  "decision": "TURN_LEFT_30",
+  "loop_closure": [],
+  "map": [
+   {
+    "beacon": "B5",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.01,
+     0.0
+    ],
+    "first_seen_scan": 1,
+    "id": 5,
+    "n_obs": 5,
+    "odo_last_seen_m": 0.73,
+    "state": "confirmed",
+    "suspect": false,
+    "x_m": 1.38,
+    "y_m": 1.26
+   },
+   {
+    "beacon": "B3",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.01,
+     0.0
+    ],
+    "first_seen_scan": 1,
+    "id": 3,
+    "n_obs": 3,
+    "odo_last_seen_m": 0.73,
+    "state": "confirmed",
+    "suspect": false,
+    "x_m": 2.02,
+    "y_m": 1.29
+   },
+   {
+    "beacon": "B7",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.01,
+     0.0
+    ],
+    "first_seen_scan": 1,
+    "id": 7,
+    "n_obs": 2,
+    "odo_last_seen_m": 0.12,
+    "state": "tentative",
+    "suspect": false,
+    "x_m": 2.47,
+    "y_m": 1.44
+   },
+   {
+    "beacon": "B4",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.02,
+     0.0
+    ],
+    "first_seen_scan": 1,
+    "id": 4,
+    "n_obs": 2,
+    "odo_last_seen_m": 0.13,
+    "state": "tentative",
+    "suspect": false,
+    "x_m": 0.51,
+    "y_m": 1.18
+   },
+   {
+    "beacon": "B12",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.02,
+     0.0
+    ],
+    "first_seen_scan": 1,
+    "id": 12,
+    "n_obs": 3,
+    "odo_last_seen_m": 0.73,
+    "state": "confirmed",
+    "suspect": false,
+    "x_m": 1.03,
+    "y_m": 1.19
+   },
+   {
+    "beacon": "B28",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.03,
+     0.01
+    ],
+    "first_seen_scan": 1,
+    "id": 28,
+    "n_obs": 3,
+    "odo_last_seen_m": 0.38,
+    "state": "tentative",
+    "suspect": false,
+    "x_m": -0.01,
+    "y_m": 1.11
+   },
+   {
+    "beacon": "B2",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.03,
+     0.02
+    ],
+    "first_seen_scan": 1,
+    "id": 2,
+    "n_obs": 2,
+    "odo_last_seen_m": 1.07,
+    "state": "confirmed",
+    "suspect": false,
+    "x_m": -0.75,
+    "y_m": 1.04
+   },
+   {
+    "beacon": "B6",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.03,
+     0.02
+    ],
+    "first_seen_scan": 1,
+    "id": 6,
+    "n_obs": 2,
+    "odo_last_seen_m": 1.06,
+    "state": "confirmed",
+    "suspect": false,
+    "x_m": -0.44,
+    "y_m": 1.07
+   },
+   {
+    "beacon": "B29",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.03,
+     0.03
+    ],
+    "first_seen_scan": 1,
+    "id": 29,
+    "n_obs": 3,
+    "odo_last_seen_m": 1.07,
+    "state": "confirmed",
+    "suspect": false,
+    "x_m": -1.55,
+    "y_m": 0.52
+   },
+   {
+    "beacon": "B11",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.03,
+     0.03
+    ],
+    "first_seen_scan": 1,
+    "id": 11,
+    "n_obs": 2,
+    "odo_last_seen_m": 0.66,
+    "state": "confirmed",
+    "suspect": false,
+    "x_m": -1.31,
+    "y_m": 0.98
+   },
+   {
+    "beacon": "B2b",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.01,
+     0.04
+    ],
+    "first_seen_scan": 1,
+    "id": 2,
+    "n_obs": 3,
+    "odo_last_seen_m": 1.09,
+    "state": "confirmed",
+    "suspect": false,
+    "x_m": -1.37,
+    "y_m": -1.27
+   },
+   {
+    "beacon": "B0",
+    "conflicts": 0,
+    "first_seen_from": [
+     0.22,
+     0.72
+    ],
+    "first_seen_scan": 3,
+    "id": 0,
+    "n_obs": 1,
+    "odo_last_seen_m": 1.13,
+    "state": "tentative",
+    "suspect": false,
+    "x_m": 2.94,
+    "y_m": 1.14
+   }
+  ],
+  "memory": {
+   "blocked_heading_deg": null,
+   "leg_moves_left": 0,
+   "legs_since_scan": 0,
+   "recovery": "none",
+   "scan_added": 1,
+   "scan_index": 3,
+   "scan_points": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     0.06,
+     0.5
+    ],
+    [
+     0.2,
+     0.62
+    ]
+   ],
+   "scan_turns_left": 0,
+   "scans_without_new": 0,
+   "stuck": 0,
+   "target_heading_deg": null
+  },
+  "message": null,
+  "mission": "EXPLORE",
+  "mode": "closed_loop",
+  "move_result": "done",
+  "note": null,
+  "pose": {
+   "theta_deg": -1.0,
+   "x_m": 0.22,
+   "y_m": 0.72
+  },
+  "pose_source": "odometry",
+  "requested_mission": null,
+  "step": 43
+ },
+ "schema": "bm.test_fixture/1",
+ "what": "b2-real-06 (2026-11-25, commit 19f71e6), episode 2 (S3), step 44: the observation and the previous report the coded procedure was given when the frozen kinsim_lite B2 stopped with 'E5 leg with no forward move and no E4'. Copied read-only from the batch's seed_2.jsonl (text, no frames). Run under configs/dv-real.json sha12 ea2cd23f9186."
+}

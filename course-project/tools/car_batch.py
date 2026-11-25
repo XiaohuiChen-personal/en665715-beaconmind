@@ -20,7 +20,8 @@ against the room first. Any health problem ends the whole batch: nothing is retr
 clears the halt (and the latch) by name, and runs the same command again, which skips the finished episodes.
 
 --dry-run does all of it on the simulated car in the simulated room (no ROS, no camera, no marker, no recorder).
---policy: b2 (the coded procedure, free) or a model key of configs/providers*.json (needs --cap-usd > 0).
+--policy: b2 (the room's coded procedure, kinsim_room.make_b2_policy; free) or a model key of configs/providers*.json
+(needs --cap-usd > 0).
 The world file, the start poses and the range limit are parameters: the tag configuration decides them.
 --detector-noise configs/detector_noise.json (bm.detector_noise/1, written by tools/tag_pilot.py analyze): the
 per-tag fix sigma from the tag pilot's measured range and bearing errors (batch.fix_sigma_from_detector_noise).
@@ -37,6 +38,8 @@ Exit status: 0 the batch is complete; 3 it halted; 2 it refused to start.
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this tool.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the range check's bias and window from --detector-noise.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: --slip-sigma (stated for every real batch).
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25 (later): --policy b2 drives the room's coded procedure
+(kinsim_room.make_b2_policy), logged with its sources' hashes and recorded in the manifest.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: --detector-noise; only the first of several stop signals
 counts; --dv.
 """
@@ -355,7 +358,10 @@ def cmd_run(args):
         missing_dv.append("a real batch needs --slip-sigma stated: 0.3 on the carpet (the car covers 0.67 to 0.78 of its "
                           "count northward: evidence/M3/M3.T12/batch-runner/truth-under-slip/), 0 to state it off")
     tool = load_runner_tool()
-    driver, cfg, cfg_path, sdk = tool.build_driver(args.policy)
+    # the room's coded procedure (kinsim_room.make_b2_policy: the frozen one plus the dead-end branch a room reaches;
+    # the study's room B2, M2.T7). Until 2026-11-25 this was build_driver(args.policy), the frozen kinsim_lite one,
+    # which stops at "E5 leg with no forward move and no E4" (b2-real-06, episode 2, step 44).
+    driver, cfg, cfg_path, sdk = tool.build_driver(args.policy, room=True)
     if cfg is not None and args.cap_usd <= 0:
         sys.exit("a model policy needs a positive --cap-usd (the hard spend cap of the batch)")
     latch = Latch(args.latch)
@@ -415,6 +421,10 @@ def cmd_run(args):
     log("range check: tags %.2f to %.2f m, range bias %+.4f %+.4f x range m removed" % (
         params.range_min_m, params.max_range_m, params.range_bias_a_m, params.range_bias_b))
     log("design values: %s" % params.dv_file)
+    rec = B.driver_record(driver)
+    log("driver: %s %s%s" % (rec["arm"], rec["policy"] or (rec["settings"] or {}).get("model"),
+                             " (sources %s)" % ", ".join("%s %s" % kv for kv in sorted((rec.get("source_sha12") or {}).items()))
+                             if rec.get("source_sha12") else ""))
     log("tracker: odometry slip sigma %.2f x forward distance%s" % (
         params.odometry_slip_sigma_per_m, "" if args.slip_sigma is not None else " (not stated: a dry run's default)"))
     try:

@@ -1,0 +1,20 @@
+b2_policy_replay.py output, 2026-11-25. Batches b2-real-01 to 06 (b2-real-04 and 06 from read-only copies of the Spark's
+data/batches, text only); each under configs/dv-real.json sha12 ea2cd23f9186, the design values every one ran with.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the replay and collected its output here.
+
+b2-real-01   ep01-a1  halted  ended_by DONE   scenario S1  | {"steps": 83, "frozen_reproduces_logged": 83, "room_differs": 0, "frozen_stopped": null}
+b2-real-02   ep01-a1  done    ended_by DONE   scenario S1  | {"steps": 56, "frozen_reproduces_logged": 56, "room_differs": 0, "frozen_stopped": null}
+b2-real-02   ep02-a1  done    ended_by DONE   scenario S2  | {"steps": 62, "frozen_reproduces_logged": 62, "room_differs": 0, "frozen_stopped": null}
+b2-real-03   ep01-a1  done    ended_by DONE   scenario S1  | {"steps": 56, "frozen_reproduces_logged": 56, "room_differs": 0, "frozen_stopped": null}
+b2-real-03   ep02-a1  halted  ended_by DONE   scenario S2  | {"steps": 81, "frozen_reproduces_logged": 81, "room_differs": 0, "frozen_stopped": null}
+b2-real-04   ep01-a1  halted  ended_by latch  scenario S5  | {"steps": 18, "frozen_reproduces_logged": 18, "room_differs": 0, "frozen_stopped": null}
+b2-real-05   ep01-a1  done    ended_by DONE   scenario S5  | {"steps": 114, "frozen_reproduces_logged": 114, "room_differs": 0, "frozen_stopped": null}
+b2-real-05   ep02-a1  done    ended_by DONE   scenario S4  | {"steps": 132, "frozen_reproduces_logged": 132, "room_differs": 0, "frozen_stopped": null}
+b2-real-05   ep03-a1  done    ended_by DONE   scenario S3  | {"steps": 141, "frozen_reproduces_logged": 141, "room_differs": 0, "frozen_stopped": null}
+b2-real-05   ep04-a1  halted  ended_by latch  scenario S5  | {"steps": 18, "frozen_reproduces_logged": 18, "room_differs": 0, "frozen_stopped": null}
+b2-real-06   ep01-a1  done    ended_by DONE   scenario S4  | {"steps": 80, "frozen_reproduces_logged": 80, "room_differs": 0, "frozen_stopped": null}
+b2-real-06   ep02-a1  done    ended_by error  scenario S3  | {"steps": 44, "frozen_reproduces_logged": 44, "room_differs": 0, "frozen_stopped": {"step": 44, "frozen": "E5 leg with no forward move and no E4", "room_decision": "TURN_RIGHT_30", "room_blocked_heading_deg": 35.4}}
+b2-real-06   ep03-a1  halted  ended_by latch  scenario S5  | {"steps": 3, "frozen_reproduces_logged": 3, "room_differs": 0, "frozen_stopped": null}
+(The three b2-real-06 lines are from the same script, data and design values, run earlier the same day: the
+scratch copy of b2-real-06 was deleted for disk space before this file was written. Its dead-end step is kept as
+beaconmind/tests/fixtures/b2_real_06_ep02_step44.json.)

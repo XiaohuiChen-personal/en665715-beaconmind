@@ -20,7 +20,8 @@ gated the per-step statistic on the range check, weighted the
 per-step statistic by the fixes' noise, ran the first batch's rehearsal
 (`rehearsal-2026-11-25.md`, `rehearse_drift.py`) and filled in the record-pass command; edited this note.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25 (later): the factor-two table, the range check's pairing
-gate, the early blind limit and its cost, the turn margin's 0.10 m, the same-tag rule; edited this note.
+gate, the early blind limit and its cost, the turn margin's 0.10 m, the same-tag rule, the room's B2 for
+`--policy b2`; edited this note.
 
 ## Files (under `course-project/`)
 
@@ -48,6 +49,11 @@ The 29 frozen study files are untouched: `prereg_freeze.py --verify` prints
 
 The batch's folder is `course-project/data/batches/<label>/`: every rerun with the same label finds the earlier
 halt, manifest and spend there (it is deliberately not inside a recorder session, which is new on every run).
+
+`--policy b2` is the room's coded procedure, `kinsim_room.make_b2_policy()` (the study's room B2, M2.T7), recorded in
+the manifest's `driver` with its sources' hashes. Until 2026-11-25 it was the frozen `kinsim_lite` one, which stops at
+the dead end "E5 leg with no forward move and no E4" (b2-real-06, episode 2). On every other step of the real
+episodes the two decide alike (`b2-policy/`).
 
 1. **Refuses to start** unless: the pass marker is valid; the recorder is recording (and its tmux session is
    alive); the project latch `data/LATCH` is clear; no `HALT.LATCH` is in the batch folder; the manifest does not
@@ -395,7 +401,8 @@ because the batch has just halted, the harness reports its own "budget cap reach
 `test_a_request_refused_by_the_wrapper_is_recorded_as_the_halt_not_as_the_spend_cap`), not `usd_cap`.
 
 Not a halt: an episode the harness ends with `no_progress`, or the coded procedure stopping at a branch it does
-not implement (`driver stopped`). The car is healthy; it is that episode's result and the next episode starts
+not implement (`driver stopped`; since 2026-11-25 the room's procedure implements the one dead end real episodes
+reached). The car is healthy; it is that episode's result and the next episode starts
 with a transit elsewhere.
 
 **Battery.** Telemetry has no motor-battery signal: field 5 is the Pico's own supply (the power bank), and the

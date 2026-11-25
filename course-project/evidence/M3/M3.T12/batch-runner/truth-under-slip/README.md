@@ -182,7 +182,7 @@ Log: `final-dry-runs-log.txt`.
 | Run | Result | Truth p95 / max against the car | Beyond 2 σ | Miss over path, max | Net ratios recorded |
 | --- | --- | --- | --- | --- | --- |
 | plain | 10 of 10 | 0.008 / 0.020 m | 0 % | 0.000 | 0.99–1.00 |
-| north 0.78 | 10 of 10 | 0.056 / 0.256 m | 0 % | 0.196 | 0.78–1.05 |
+| north 0.78 | 10 of 10 (one: the B2 dead end, see below) | 0.056 / 0.256 m | 0 % | 0.196 | 0.78–1.05 |
 | north 0.67 | **10 of 10** | 0.118 / 0.305 m | 0 % | 0.307 | 0.47–1.16 (the 0.47 no longer halts) |
 | north 0.60 | halted `pose_uncertain` after 8 done | 0.153 / 0.406 m | 1.9 % | 0.373 | 0.60–1.10 |
 
@@ -303,7 +303,13 @@ gave the same numbers, move for move. Against §4's runs:
 | Run | Result | Truth p95 / max against the car | Beyond 2 σ | σ max | Miss over path, max (halts above 0.6) | Net ratios | Drift halts |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | plain | 10 of 10 | 0.008 / 0.020 m | 0 % | 0.177 m | 0.000 | 0.99–1.00 | none |
-| north 0.78 | 10 of 10 | 0.057 / 0.256 m | 0 % | 0.188 m | 0.196 | 0.78–1.05 | none |
+| north 0.78 | 10 of 10 (one: the B2 dead end, see below) | 0.057 / 0.256 m | 0 % | 0.188 m | 0.196 | 0.78–1.05 | none |
 | north 0.67 | 10 of 10 | 0.122 / 0.305 m | 0 % | 0.162 m | 0.307 | 0.67–1.16 | none |
 | north 0.60 | **10 of 10** (§4: `pose_uncertain` after 8) | 0.138 / 0.406 m | 1.6 % | 0.180 m (§4: 0.259) | 0.373 | 0.60–1.10 | none |
+
+**Correction (later on 2026-11-25).** The "10 of 10" at north 0.78 in §4's and §6's dry-run tables (not §3's) counts an episode
+the coded procedure stopped itself. Episode 3 (S3) ended after 74 steps at "E5 leg with no forward move and no E4",
+the dead end of the frozen `kinsim_lite` B2. The manifest counts it as done (measured at its end circle), and so did
+these summaries. Real batches ran that frozen procedure until the change recorded in `../b2-policy/`. With the room's
+procedure (`kinsim_room.make_b2_policy`) all ten end by DONE.
 
