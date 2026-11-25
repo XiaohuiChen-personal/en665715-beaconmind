@@ -107,7 +107,7 @@ if [ "$CMD" = "run" ] && [ "$DRY" = 0 ] && [ "$DOMAIN" = 0 ]; then
   MISSING="$(grep -E '^(car: NOT FOUND|camera: NOT FOUND|micro-ROS agent: NOT RUNNING)' "$CHECKS" 2>/dev/null)"
   if [ ! -f "$CHECKS" ] || [ -n "$MISSING" ]; then
     echo "car_batch.sh: the recorder's start checks ($CHECKS) say:" >&2
-    printf '  %s\n' "${MISSING:-the checks file is missing}" >&2
+    printf '%s\n' "${MISSING:-the checks file is missing}" | sed 's/^/  /' >&2
     echo "  bash course-project/tools/car_net.sh status; nothing was sent$([ "$STARTED" = 1 ] && echo ' (the session started here is stopped)')" >&2
     exit 2
   fi

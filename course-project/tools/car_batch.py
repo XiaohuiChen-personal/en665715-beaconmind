@@ -101,13 +101,18 @@ def recorder_silent(session, max_age_s=120.0, now=None):
 INTERRUPTS = ("SIGINT", "SIGTERM", "SIGHUP")
 
 
+def _later_signal(_signum, _frame):
+    """A stop signal after the first: nothing to do, the stop is under way. (A Python handler rather than SIG_IGN: a
+    signal already pending when the handler changes would otherwise be reported as "ignored due to race condition".)"""
+
+
 def _as_interrupt(_signum, _frame):
     """docker stop, a closed terminal, kill, Ctrl+C: end as Ctrl+C does, with a halt record. Only the first signal
     counts: the later ones are ignored, so a second Ctrl+C (or docker's proxy repeating one) cannot break off the
     move's stop or the halt record half written. (docker stop's SIGKILL after its grace period still ends a hang.)"""
     import signal
     for name in INTERRUPTS:
-        signal.signal(getattr(signal, name), signal.SIG_IGN)
+        signal.signal(getattr(signal, name), _later_signal)
     raise KeyboardInterrupt
 
 

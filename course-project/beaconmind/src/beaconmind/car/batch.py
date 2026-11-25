@@ -638,6 +638,7 @@ class BatchEnv:
         self.blocked = 0
         self.rows = 0
         self.t_frame = monitor.clock()  # when the camera last answered
+        self.in_scan = False            # True while BatchRunner.scan turns a full circle (the circle is the fix)
         self.use_views = True           # False until a full circle has confirmed the pose: a view fix judged against
                                         # an unconfirmed (taped) pose says nothing, in either direction
 
@@ -755,6 +756,12 @@ class BatchEnv:
                 elif "far_from_prior" in (fix.get("why"), one.get("why")):
                     self.tracker.conflicts += 1
                     fix = dict(fix, position_fix=one.get("why"))
+        if (usable and self.use_views and self.in_scan and fix and not fix.get("ok") and fix.get("untrusted")
+                and not fix.get("rejected") and fix.get("why") != "far_from_prior" and self.tracker.steps_since_fix):
+            # tags in view inside a full circle whose own fix cannot use them (not yet trusted): the circle in
+            # progress is the fix, as on the first circle, so this step does not count toward no_fix (it would
+            # otherwise halt a circle of unchecked tags before the circle could check them)
+            self.tracker.steps_since_fix -= 1
         self.last_fix = fix
         p = self.params
         if self.tracker.steps_since_fix >= p.no_fix_steps:
@@ -1170,6 +1177,13 @@ class BatchRunner:
         fix record (ok or not) with the pose NOW (after the circle) in the arena frame."""
         steps = int(round(360.0 / TURN_DEG))
         rel = {"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}
+        env.in_scan = True
+        try:
+            return self._scan(env, what, steps, rel)
+        finally:
+            env.in_scan = False
+
+    def _scan(self, env, what, steps, rel):
         sense = env.step(None)
         if self.monitor.halted is not None:
             raise BatchStop(what)

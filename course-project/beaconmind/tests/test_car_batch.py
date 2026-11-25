@@ -1095,7 +1095,7 @@ def test_terminate_and_hangup_end_like_an_interrupt():
     try:
         with pytest.raises(KeyboardInterrupt):
             tool._as_interrupt(15, None)
-        assert all(signal.getsignal(getattr(signal, name)) == signal.SIG_IGN for name in tool.INTERRUPTS)
+        assert all(signal.getsignal(getattr(signal, name)) is tool._later_signal for name in tool.INTERRUPTS)
     finally:
         for name, handler in saved.items():
             signal.signal(getattr(signal, name), handler)
@@ -1686,15 +1686,15 @@ def test_an_untrusted_tag_steers_no_fix_and_its_copy_is_never_taken_for_it():
         "fewer than 2 checked tags in view"
 
 
-def tag_batch(tmp_path, wrong_world, seed=1, episodes=2, max_steps=60, starts=("S1", "S3"), **params):
+def tag_batch(tmp_path, wrong_world, seed=1, episodes=2, max_steps=60, starts=("S1", "S3"), place=PLACE20, **params):
     """A dry-run batch in the 20-tag room at 3.0 m whose world file (the runner's) may differ from the room (where
     the simulated camera sees the tags). Returns (runner, rig, result, stats)."""
     scen = {s["id"]: dict(s["start_pose"], id=s["id"])
             for s in json.loads((ROOT / "configs" / "arenas" / "real-room-scenarios.json").read_text())["scenarios"]}
     latch = Latch(tmp_path / "LATCH")
-    p = B.BatchParams(world_path="x", start_poses=[scen[s] for s in starts], initial_pose=dict(PLACE20),
+    p = B.BatchParams(world_path="x", start_poses=[scen[s] for s in starts], initial_pose=dict(place),
                       episodes=episodes, max_steps=max_steps, max_range_m=3.0, seed0=seed, **params)
-    rig = B.dry_rig(WORLD20, PLACE20, latch=latch, seed=seed, max_range_m=3.0)
+    rig = B.dry_rig(WORLD20, place, latch=latch, seed=seed, max_range_m=3.0)
     runner = B.BatchRunner(p, rig, wrong_world, tmp_path / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
                            log=lambda *a: None, run_episode=cl.run_episode)
     stats = {"depth": 9.0, "err": 0.0}
@@ -1879,3 +1879,24 @@ def test_a_batch_with_one_tag_surveyed_wrongly_by_d(tmp_path, d):
     else:
         assert result == {"status": "complete", "halt": None}
         assert stats["depth"] > 0.15 and stats["err"] < 0.12
+
+
+def test_a_circle_of_tags_not_yet_trusted_does_not_count_toward_no_fix(tmp_path):
+    """Found by the stand-in dry run of the first batch's command (2026-11-25): from (2.2, 2.0) every tag is 1.6 m or
+    more away, so with the assumed noise the first circle compares them but trusts none; the second circle, at S1,
+    then counted its own views (tags in them, none usable yet) toward no_fix and the batch halted inside the circle
+    that was about to check them. A circle is the fix: its views with tags do not count. Outside circles they do."""
+    runner, rig, result, stats = tag_batch(tmp_path, WORLD20, episodes=1, starts=("S1",), max_steps=40,
+                                           place={"x_m": 2.2, "y_m": 2.0, "theta_deg": 90.0})
+    assert result == {"status": "complete", "halt": None}
+    m = json.loads((tmp_path / "batch" / "manifest.json").read_text())
+    first = m["episodes"][0]["first_fix"]
+    assert first["ok"] and m["episodes"][0]["start_fix"]["ok"] and len(m["tag_check"]["trusted"]) >= 10
+    assert stats["err"] < 0.08 and not stats["contact"]
+    b, r, env = service_env(tmp_path / "steps")            # outside a circle, views of untrusted tags still count
+    r.tagcheck.stats.clear()
+    for _ in range(r.params.no_fix_steps + 1):
+        if r.monitor.halted:
+            break
+        env.step("TURN_LEFT_30")
+    assert r.monitor.halted["code"] == "no_fix"
