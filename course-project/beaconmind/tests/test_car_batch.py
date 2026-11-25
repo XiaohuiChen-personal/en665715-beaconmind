@@ -2275,9 +2275,11 @@ def test_the_per_step_statistic_halts_only_while_the_range_check_cannot_vouch_fo
     for few in ([], [(1.0, 2)], [(1.0, 2), (0.99, 1)]):                      # fewer than 3 measured moves
         why = B.per_step_scale_halt(_per_step(0.273, 0.081, ranges=few), params)   # ahead: the car goes farther
         assert why is not None and "tag fixes land +27 %" in why and "%d measured forward moves, fewer than 3" % len(few) in why
-        # behind (under-travel, the safe direction) halts only beyond -35 % (the slip test, 2026-11-25)
+        # behind (under-travel, the safe direction) never halts on its own since b2-real-04 (2026-11-25); beyond
+        # -35 % it is recorded
         assert B.per_step_scale_halt(_per_step(-0.273, 0.081, ranges=few), params) is None
-        assert "tag fixes land -45 %" in B.per_step_scale_halt(_per_step(-0.45, 0.081, ranges=few), params)
+        deep = _per_step(-0.45, 0.081, ranges=few)
+        assert B.per_step_scale_halt(deep, params) is None and deep.bias_under["per_step_scale"] == pytest.approx(-0.45)
     out = _per_step(0.273, 0.081, ranges=[(1.20, 2)] * 3)                     # the range check itself out of tolerance
     assert B.range_scale_halt(out, params) is not None and B.per_step_scale_halt(out, params) is not None
     assert B.per_step_scale_halt(_per_step(-0.10, 0.22, ranges=[]), params) is None      # not significant: as before
@@ -2443,3 +2445,19 @@ def test_a_halt_inside_the_end_circle_leaves_the_episode_done_with_its_end_pose(
     assert e["status"] == "done" and e["result"]["complete"] and e["halt"]["code"] == "stall"
     assert e["end_pose_source"] == "tracked, before the end circle" and e["end_pose_map"] is not None
     assert e.get("final_pose_error") is not None and len(b.manifest["episodes"]) == 1
+
+
+def test_b2_real_04s_under_travel_reading_is_recorded_not_a_halt():
+    """b2-real-04 (2026-11-25) halted at its start on the per-step fixes: -56 % +- 18 % over 2.0 m and 5 fixes, four
+    of them single-tag fixes of T00 and T01 (seen across the motion, carrying the tracked heading's error) after
+    northward legs, with one ranged forward move (0.99). Under-travel now never halts on its own; it is recorded. The
+    same reading AHEAD of the odometry (+56 %) still halts, exactly as before, while fewer than 3 moves are ranged."""
+    params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
+    t = _per_step(-0.565, 0.183, travel=2.0, fixes=5, ranges=[(0.9914, 2)])
+    assert B.per_step_scale_halt(t, params) is None
+    assert t.bias_under["per_step_scale"] == pytest.approx(-0.565) and t.bias_under["range_moves"] == 1
+    ahead = _per_step(0.565, 0.183, travel=2.0, fixes=5, ranges=[(0.9914, 2)])
+    why = B.per_step_scale_halt(ahead, params)
+    assert why is not None and "+56 %" in why and "1 measured forward moves, fewer than 3" in why
+    assert B.per_step_scale_halt(_per_step(0.13, 0.04, ranges=[]), params) is not None        # +13 %, 3.25 SE: halts
+    assert B.per_step_scale_halt(_per_step(0.13, 0.05, ranges=[]), params) is None            # 2.6 SE: not yet

@@ -4,10 +4,12 @@ displacement is scaled by k(h) = 0.91 - 0.13 sin(h), h its world direction of tr
 1.04; east and west 0.91), while its wheels count the full distance. Then tools/car_batch.py runs with the arguments
 given.
 
-usage (repository root): python3 course-project/evidence/M3/M3.T12/batch-runner/rehearse_slip.py <car_batch.py arguments>
-(needs --initial-pose x,y,theta: the simulated car's frame starts there, so its world heading is theta + its own)
+usage (repository root): python3 course-project/evidence/M3/M3.T12/batch-runner/rehearse_slip.py [--north K]
+<car_batch.py arguments> (needs --initial-pose x,y,theta: the simulated car's frame starts there, so its world heading
+is theta + its own). --north K: the northward factor (default 0.78; b2-real-04's transit suggested about 0.70, and
+0.67 was asked for); southward stays 1.04, and k(h) = (K + 1.04) / 2 - (1.04 - K) / 2 sin(h).
 
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this rehearsal wrapper."""
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this rehearsal wrapper (and its --north option)."""
 import importlib.util
 import math
 import pathlib
@@ -18,13 +20,17 @@ sys.path.insert(0, str(REPO / "beaconmind" / "src"))
 from beaconmind.car import simcar as S  # noqa: E402
 
 args = sys.argv[1:]
+NORTH, SOUTH = 0.78, 1.04
+if args and args[0] == "--north":
+    NORTH = float(args[1])
+    args = args[2:]
 THETA0 = math.radians(float(args[args.index("--initial-pose") + 1].split(",")[2]))
 orig_step = S.SimCar.step
 STATS = {"m_counted": 0.0, "m_true": 0.0}
 
 
 def k_of(direction):
-    return 0.91 - 0.13 * math.sin(direction)
+    return (NORTH + SOUTH) / 2.0 - (SOUTH - NORTH) / 2.0 * math.sin(direction)
 
 
 def step(self, dt):
@@ -44,6 +50,6 @@ spec = importlib.util.spec_from_file_location("car_batch", REPO / "tools" / "car
 tool = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(tool)
 code = tool.main(args)
-print("carpet slip added: %.2f m counted, %.2f m on the floor (%.3f)" % (
-    STATS["m_counted"], STATS["m_true"], STATS["m_true"] / max(STATS["m_counted"], 1e-9)))
+print("carpet slip added (north %.2f, south %.2f): %.2f m counted, %.2f m on the floor (%.3f)" % (
+    NORTH, SOUTH, STATS["m_counted"], STATS["m_true"], STATS["m_true"] / max(STATS["m_counted"], 1e-9)))
 sys.exit(code)

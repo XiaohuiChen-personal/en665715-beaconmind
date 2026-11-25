@@ -1,0 +1,25 @@
+== halt: tag fixes land -56 % (+-18 %) of the distance from where the odometry puts the car (2.0 m driven, 5 fixes; limits +12 % ahead, -35 % behind; the range check has 1 measured forward moves, fewer than 3, to vouch for the scale): the encoder scale is wrong, or the tags are
+== 1. the per-step fix statistic, fix by fix
+   pre  row  22 view T01       (position) leg 0.513 m at   91.3 deg (2 forward, 5 turns): fix -0.218 m along it (-43 %), fix sigma 0.174 -> -42.5 % +- 35.6 %
+   pre  row  53 view T00       (position) leg 0.498 m at  120.4 deg (2 forward, 3 turns): fix -0.259 m along it (-52 %), fix sigma 0.146 -> -47.9 % +- 23.6 %
+   pre  row  86 view T00       (position) leg 0.491 m at   94.7 deg (2 forward, 5 turns): fix -0.329 m along it (-67 %), fix sigma 0.152 -> -54.4 % +- 19.2 %
+   pre  row 108 view T00       (position) leg 0.245 m at   65.5 deg (1 forward, 7 turns): fix -0.234 m along it (-96 %), fix sigma 0.164 -> -57.3 % +- 18.5 %
+   ep   row  18 view T05,T16   (pose) leg 0.245 m at  -30.8 deg (1 forward, 0 turns): fix -0.013 m along it (-5 %), fix sigma 0.358 -> -56.5 % +- 18.3 %
+   replayed: -56.5 % +- 18.3 % over 2.0 m, 5 fixes
+== 2. the transit, first circle to start circle
+   recorded: {'by_odometry_m': 1.608, 'by_tags_m': 1.082, 'tags_over_odometry': 0.673, 'miss_m': 0.631, 'heading_miss_deg': 20.4}
+   7 forward moves, 107 turns, 2647 deg of rotation net
+   as recorded                        by odometry 1.599 m, by circles 1.075 m, ratio 0.672, miss (-0.301, -0.554) m, heading +20.4 deg
+   forward x0.78 (taped)              by odometry 1.246 m, by circles 1.075 m, ratio 0.863, miss (-0.286, -0.201) m, heading +20.4 deg
+   gyro x1.0077 (closes the heading)  by odometry 1.623 m, by circles 1.075 m, ratio 0.662, miss (-0.026, -0.563) m, heading -0.0 deg
+   forward x0.78, that gyro           by odometry 1.265 m, by circles 1.075 m, ratio 0.850, miss (-0.072, -0.208) m, heading -0.0 deg
+   forward x0.70, that gyro           by odometry 1.135 m, by circles 1.075 m, ratio 0.947, miss (-0.089, -0.079) m, heading -0.0 deg
+== 3. the transit's forward moves
+   row  16 FORWARD_25 at (2.45, 1.71) heading   87.7: yaw disagreement 11.8 deg, odometry slip_suspected, tags []
+   row  17 FORWARD_25 at (2.46, 1.95) heading   89.5: yaw disagreement 12.3 deg, odometry slip_suspected, tags []
+   row  49 FORWARD_25 at (2.29, 2.05) heading  118.7: yaw disagreement  2.1 deg, odometry ok, tags []
+   row  50 FORWARD_25 at (2.16, 2.26) heading  121.2: yaw disagreement 13.2 deg, odometry slip_suspected, tags []
+   row  82 FORWARD_25 at (2.16, 2.32) heading   92.3: yaw disagreement  3.1 deg, odometry ok, tags []
+   row  83 FORWARD_25 at (2.14, 2.56) heading   95.9: yaw disagreement  0.1 deg, odometry ok, tags [(2, 2.85)]
+   row 104 FORWARD_25 at (2.23, 2.59) heading   63.8: yaw disagreement  3.6 deg, odometry ok, tags [(29, 2.96), (11, 2.92)]
+   range check: [{'time_utc': '2026-11-25T14:04:25Z', 'heading_deg': -32.1, 'x_m': 2.4, 'y_m': 2.249, 'forward_m': 0.2444, 'scale': 0.9914, 'pairs': 2}]

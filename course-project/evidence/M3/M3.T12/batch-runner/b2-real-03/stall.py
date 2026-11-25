@@ -38,28 +38,37 @@ for r in rows:
     elif r.get("ev") == "stop":
         print("   t %+.3f STOP %s %s" % (r["t"] - t0, r.get("result"), r.get("reason")))
 
-print("== the right wheel at the slow end of every left turn (its duty 0.28 to 0.31)")
-mins, eff = [], []
+print("== the right wheel at the slow end of every left turn (after its highest duty, at 0.28 to 0.31; corrected: a first")
+print("   version also counted the start ramp, where the duty passes 0.283 on its way up and the wheel is only starting)")
+mins, eff, ramp_mins = [], [], []
 for f in turns:
     rows, tel, res = load(f)
-    v_end, e_l, e_r = [], [], []
+    v_end, e_l, e_r, ramp = [], [], [], []
+    top = max(t["duty"][1] for t in tel)
+    peak_seen = False
     for a, b in zip(tel, tel[1:]):
         dt = b["t_rx"] - a["t_rx"]
         if dt <= 0:
             continue
         vl, vr = (b["l"] - a["l"]) / dt / TPM_L, (b["r"] - a["r"]) / dt / TPM_R
         dl, dr = b["duty"]
+        peak_seen = peak_seen or dr >= top - 1e-9
         if 0.28 <= dr <= 0.31:
-            v_end.append(vr)
+            (v_end if peak_seen and dr < top - 1e-9 else ramp).append(vr)
         if abs(dl) >= 0.28:
             e_l.append(abs(vl) / abs(dl))
         if abs(dr) >= 0.28:
             e_r.append(abs(vr) / abs(dr))
     if res["result"] != "stalled" and v_end:
         mins.append(min(v_end))
+    if res["result"] != "stalled" and ramp:
+        ramp_mins.append(min(ramp))
     eff.append((rows[0]["time_utc"], statistics.median(e_l) if e_l else None, statistics.median(e_r) if e_r else None, res["duration_s"]))
-print("   %d earlier left turns: right-wheel minimum speed median %.3f m/s; under 0.02 m/s in %d of them (lowest %.3f)" % (
-    len(mins), statistics.median(mins), sum(1 for m in mins if m < 0.02), min(mins)))
+print("   %d earlier left turns: right-wheel minimum speed at the slow end median %.3f m/s; under 0.02 m/s in %d, under "
+      "0.03 in %d (lowest %.3f)" % (len(mins), statistics.median(mins), sum(1 for m in mins if m < 0.02),
+                                   sum(1 for m in mins if m < 0.03), min(mins)))
+print("   (in the start ramp, %d of %d turns passed duty 0.28 to 0.31 with the wheel under 0.02 m/s: it was starting)" % (
+    sum(1 for m in ramp_mins if m < 0.02), len(ramp_mins)))
 third = len(eff) // 3
 for name, part in (("first third", eff[:third]), ("middle third", eff[third:2 * third]), ("last third", eff[2 * third:])):
     print("   %-12s %3d turns: wheel speed per unit duty left %.3f right %.3f m/s, duration %.2f s" % (
