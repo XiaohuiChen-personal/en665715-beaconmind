@@ -66,9 +66,21 @@ numbers only; frames go to `perception/tags.py`, which reports ID, range and bea
 
 **Agents' results so far.** Messages to both agents were partly lost (the batch agent never received the DV message;
 the video agent finished believing the length was still an assumption); all were resent on 2026-11-25.
-- **batch:** commits `2cd3415` (wrapper's first run on the Spark found and fixed a recorder-handling bug; a
-  `tag_survey` halt that checks the surveyed tags against each other; the pilot's noise model for the fix sigma) and
-  `05f64c4`. Told to start the `--dv` work next and to clear the Spark before the pilot. Final report pending.
+- **batch:** tasks 1–7 done on the simulated car (commits `2cd3415`, `05f64c4`, `92f9036`; evidence
+  `evidence/M3/M3.T12/batch-runner/`; the real car never commanded). 3.0 m dry run, 20-tag world: 4 of 4 batches, 20 of
+  20 episodes, no halt (2.5 m: 3 of 4, one `no_fix`; 2.0 m: 1 of 4). First run of `car_batch.sh` on the Spark: a
+  simulated batch is a `--dry-run` without recorder; on the real-car path with the car off, `record_session.sh start`
+  exited 1 and left a recorder running (stopped by hand at once); fixed, and a real run is now refused when the
+  recorder finds no car, camera or agent. ROS-path and full real-car path untested past the refusals. New halt
+  `tag_survey`: every full circle checks each tag against the others; 160 of 160 injected 0.3/0.5 m survey errors
+  halted naming the right tag, no false halt in clean runs (review finding 3 closed). `--detector-noise` takes the
+  pilot's model for the fix sigma (recorded in the manifest). Paste-ready first-batch commands in the README ("Before
+  the first real batch"); stand-in dry run 10 of 10, exit 0. Tests: Mac 643 passed (without the video agent's work in
+  progress), container 308. **Decision (Claude, software delegation):** real batches use `--detector-noise
+  configs/detector_noise.json` once the pilot writes it, and `dv-real.json` must come from the same file (checked by
+  sha256). Now doing the `--dv` work on the Mac. Spark checked clear by the lead (no container, recorder, latch);
+  reserved for Xiaohui's sessions. Empty `*-batch-real-refusal-*` sessions and dry-run folders on the Spark: to clean
+  up after the sessions.
 - **video:** commit `6a9c848`; `python3 course-project/tools/demo_video.py all` renders `data/video/parts/sim.mp4`
   (1:59.76) and `data/video/BeaconMind-demo-silent.mp4` (2:41.76, without the car part), 1920 × 1080, 25 fps; checked
   by the lead with ffmpeg. The Opus episode plays at ×24 and every move glides over 0.3 s of output (seen frame by
