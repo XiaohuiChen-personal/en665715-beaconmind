@@ -27,6 +27,7 @@
 # AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: first real execution on the Spark; fixed a recorder left
 # running when its start reported an error, kept the batch's exit status after a signal, named the container, refused a
 # real run without the car, camera and agent in the recorder's checks or with a camera-polling session.
+# AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: --dv and --detector-noise are path options.
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 CP="$REPO/course-project"
@@ -47,7 +48,7 @@ for a in "$@"; do
     --*=course-project/*) a="$opt=/workspace/$val" ;;
   esac
   # a path option must stay inside the repository: anything else would be written inside the container and vanish
-  for popt in --out --latch --marker --world --scenarios --prompt --detector-noise; do
+  for popt in --out --latch --marker --world --scenarios --prompt --detector-noise --dv; do
     v=""
     [ "$prev" = "$popt" ] && v="$a"
     [ "$opt" = "$popt" ] && [ -n "$val" ] && v="${a#*=}"

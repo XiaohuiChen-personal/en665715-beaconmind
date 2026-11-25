@@ -25,12 +25,16 @@ env_file, and passes the git commit); B2 needs no key and also runs on any host 
   seed_<n>.summary.json (metrics/closed_loop.py), seed_<n>.runlog.jsonl (plan C9.2, bm.runlog/1) and, if the
   episode latched, seed_<n>.LATCH. run.json holds the configuration and the simulated world (ground truth: it stays
   in the git-ignored data folder and is never sent to a model).
+- --dv FILE (2026-11-24): the design values the run uses, e.g. configs/dv-real.json (tools/real_dv.py; it may differ
+  from the frozen file only in the pilot's noise model and the range limit). Default: the frozen configs/dv.json.
+  run.json records the file and its sha12 (`dv_file`); a run with another file is another configuration.
 - Exit code 0 when every episode is complete, 2 when the spend cap stopped one, 1 when one failed (rerun to resume),
   3 when an episode latched: a latch ends the whole batch (the seeds after it are not run) until an operator clears
   it. `seed_<n>.moves.jsonl` is the write-ahead list of every move sent to the executor.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this runner (work list 4.1), following
 tools/replay_run.py's conventions (configuration tag, spend file, lock, resume rule).
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: added --dv (beaconmind/dv_real.py).
 """
 import argparse
 import fcntl
@@ -44,6 +48,7 @@ import time
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "beaconmind" / "src"))
 from beaconmind import dv as dvmod  # noqa: E402
+from beaconmind import dv_real  # noqa: E402
 from beaconmind.harness import closed_loop as cl  # noqa: E402
 from beaconmind.harness import replay as rp  # noqa: E402
 from beaconmind.metrics import closed_loop as mc  # noqa: E402
@@ -184,7 +189,19 @@ def main():
                     help="another latch file to obey (repeatable), e.g. the project-wide data/LATCH: the run does not "
                          "start while it exists, and an episode latches when it appears")
     ap.add_argument("--prompt", default=str(ROOT / "prompts" / "robot_system_prompt_v3.3.txt"))
+    ap.add_argument("--dv", default=None, help="design-values file (default: the frozen configs/dv.json), e.g. "
+                                               "configs/dv-real.json from tools/real_dv.py")
     args = ap.parse_args()
+    dv_path = dv_real.resolve_arg(args.dv)
+    if dv_path is not None:
+        problems = dv_real.check_file(dv_path)
+        if problems:
+            sys.exit("--dv: " + "; ".join(problems))
+    with dv_real.use_dv(dv_path) as dv_rec:     # the frozen modules read these values; restored on the way out
+        run(args, dv_rec)
+
+
+def run(args, dv_rec):
     if not 1 <= args.max_steps <= cl.STEPS_BUDGET:
         sys.exit("--max-steps must be 1..%d (the EXPLORE step budget)" % cl.STEPS_BUDGET)
 
@@ -199,6 +216,8 @@ def main():
                  "autolatch_contacts": int(dv["autolatch_contacts"]),
                  "sha12": {"prompt": sha12(args.prompt), "dv.json": sha12(ROOT / "configs" / "dv.json"),
                            "providers_file": sha12(cfg_path) if cfg_path else None, **{f: sha12(SRC / f) for f in HASHED}}}
+    if not dv_rec["frozen"]:
+        invariant["dv_file"] = dv_rec      # (only then: a run on the frozen file keeps its configuration tag)
     config = hashlib.sha256(json.dumps(invariant, sort_keys=True).encode()).hexdigest()[:12]
 
     out_dir = pathlib.Path(args.out)
@@ -223,7 +242,7 @@ def main():
     run_id = out_dir.name
     header = dict(invariant, config=config, run_id=run_id, prompt_file=pathlib.Path(args.prompt).name,
                   provider_file=cfg_path.name if cfg_path else None, seeds=seeds, cap_usd=args.cap_usd,
-                  world_file=args.world,
+                  world_file=args.world, dv_file=dv_rec,
                   git_commit=os.environ.get("BM_GIT_COMMIT"), git_dirty=os.environ.get("BM_GIT_DIRTY"),
                   host=os.environ.get("BM_HOST"), python=sys.version.split()[0], **sdk,
                   resume_reason=args.resume_reason, earlier_resumes=len(resumes),

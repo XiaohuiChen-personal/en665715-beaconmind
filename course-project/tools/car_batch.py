@@ -26,12 +26,17 @@ The world file, the start poses and the range limit are parameters: the tag conf
 per-tag fix sigma from the tag pilot's measured range and bearing errors (batch.fix_sigma_from_detector_noise).
 Without it the assumed 0.03 m + 0.04 x range. The manifest's params.fix_sigma_source says which (configs/dv.json,
 the frozen study's design values, is not read for this and not changed).
+--dv configs/dv-real.json (tools/real_dv.py, after the pilot): the design values the agent's tools and the car code
+read during the batch (beaconmind/dv_real.py). A real batch needs it given explicitly, also when it is the frozen
+configs/dv.json: which noise model the agent judges its fixes by is then always a choice, never a default. With a
+file other than the frozen one, its range limit must equal --max-range, and with --detector-noise it must have been
+made from that same file. The manifest's params.dv_file records the file and its sha12.
 
 Exit status: 0 the batch is complete; 3 it halted; 2 it refused to start.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this tool.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: --detector-noise; only the first of several stop signals
-counts.
+counts; --dv.
 """
 import argparse
 import hashlib
@@ -45,6 +50,7 @@ import time
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "beaconmind" / "src"))
 
+from beaconmind import dv_real                              # noqa: E402
 from beaconmind.car import batch as B                      # noqa: E402
 from beaconmind.car.latch import Latch                     # noqa: E402
 from beaconmind.car.movelog import active_session_dir      # noqa: E402
@@ -165,6 +171,8 @@ def build_parser():
     run.add_argument("--detector-noise", help="bm.detector_noise/1 file of the tag pilot (configs/detector_noise.json): "
                                               "the fix sigma from its measured errors; default: the assumed "
                                               "0.03 m + 0.04 x range")
+    run.add_argument("--dv", help="design-values file: configs/dv-real.json (tools/real_dv.py) or configs/dv.json; "
+                                   "required for a real batch, default for a dry run: the frozen configs/dv.json")
     run.add_argument("--marker", default=str(MARKER))
 
     rp_ = sub.add_parser("record-pass")
@@ -181,6 +189,28 @@ def build_parser():
     st = sub.add_parser("status")
     st.add_argument("--out", required=True)
     return ap
+
+
+def dv_problems(args):
+    """Why --dv cannot be used for this batch (sentences), or []."""
+    path = dv_real.resolve_arg(args.dv)
+    if path is None:
+        return []
+    problems = dv_real.check_file(path)
+    if problems:
+        return problems
+    if dv_real.record(path)["frozen"]:
+        return []
+    doc = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))["values"]
+    limit = float(doc["reject_range_above_m"]["value"])
+    if abs(limit - args.max_range) > 1e-9:
+        problems.append("--dv %s has the range limit %.2f m, --max-range is %.2f m: give the same" % (path, limit, args.max_range))
+    if args.detector_noise:
+        noise = "sha12 %s" % dv_real.sha12(args.detector_noise)
+        if not all(noise in str(doc[k].get("evidence")) for k in dv_real.NOISE_FIELDS):
+            problems.append("--dv %s was not made from --detector-noise %s (its sigmas name another file): make it "
+                            "again with tools/real_dv.py" % (path, args.detector_noise))
+    return problems
 
 
 def fix_sigma(args):
@@ -216,6 +246,9 @@ def fix_sigma(args):
 def params_from(args, world_path):
     duty, speed = (float(v) for v in args.drive_map.split(","))
     sigma_a, sigma_b, source = fix_sigma(args)
+    rec = dv_real.record(dv_real.resolve_arg(args.dv))
+    dv_text = "%s sha12 %s%s" % (rec["file"], rec["sha12"], " (frozen)" if rec["frozen"] else
+                                 " (differs from the frozen file in %s)" % ", ".join(sorted(rec["differs_from_frozen"])))
     return B.BatchParams(
         world_path=os.path.relpath(world_path, ROOT), start_poses=start_poses(args), initial_pose=args.initial_pose,
         episodes=args.episodes, policy=args.policy, max_steps=args.max_steps, max_range_m=args.max_range,
@@ -224,7 +257,7 @@ def params_from(args, world_path):
         min_vsys_mv=args.min_vsys_mv, min_forward_speed_mps=args.min_forward_speed,
         episode_wall_s=args.episode_minutes * 60.0, batch_wall_s=args.batch_hours * 3600.0,
         batch_steps=args.batch_steps, cap_usd=args.cap_usd, drive_map=(duty, speed), fix_sigma_a_m=sigma_a,
-        fix_sigma_b=sigma_b, fix_sigma_source=source)
+        fix_sigma_b=sigma_b, fix_sigma_source=source, dv_file=dv_text)
 
 
 def cmd_run(args):
@@ -249,7 +282,14 @@ def cmd_run(args):
         args.initial_pose = pose_arg(args.initial_pose)
     if not 1 <= args.max_steps <= cl.STEPS_BUDGET or args.episodes < 1:
         sys.exit("--max-steps must be 1..%d and --episodes at least 1" % cl.STEPS_BUDGET)
+    problems = dv_problems(args)
+    if problems:
+        print("refused, nothing was sent:\n- " + "\n- ".join(problems), file=sys.stderr)
+        return 2
     params = params_from(args, world_path)
+    missing_dv = [] if (args.dry_run or args.dv) else [
+        "a real batch needs --dv: course-project/configs/dv-real.json (tools/real_dv.py, after the tag pilot), or "
+        "course-project/configs/dv.json to run on the frozen study's values (the choice is recorded, never a default)"]
     tool = load_runner_tool()
     driver, cfg, cfg_path, sdk = tool.build_driver(args.policy)
     if cfg is not None and args.cap_usd <= 0:
@@ -263,7 +303,7 @@ def cmd_run(args):
         rig = B.dry_rig(world, args.initial_pose, latch=dry_latch, seed=args.dry_seed, max_range_m=args.max_range)
         recorder_check, marker_path = None, None
     else:
-        problems = B.check_pass_marker(args.marker, str(ROOT), world_path=str(world_path))
+        problems = B.check_pass_marker(args.marker, str(ROOT), world_path=str(world_path)) + missing_dv
         session = active_session_dir(str(ROOT / "data"))
         if session is None:
             problems.append("no recorder session is active (rule R2): start through tools/car_batch.sh, or "
@@ -297,6 +337,7 @@ def cmd_run(args):
     budget = rp.Budget(args.cap_usd if args.cap_usd > 0 else float("inf"), rp.spent_in(spend), path=spend)
     dv = dvmod.load_dv()
     extra = {"prompt": tool.sha12(args.prompt), "dv": tool.sha12(ROOT / "configs" / "dv.json"),
+             "dv_file": params.dv_file,
              "world": hashlib.sha256(world_path.read_bytes()).hexdigest()[:12], "provider_entry": cfg,
              "agent": driver.header(), "harness": {f: tool.sha12(tool.SRC / f) for f in tool.HASHED},
              "batch_code": tool.sha12(ROOT / "beaconmind" / "src" / "beaconmind" / "car" / "batch.py"),
@@ -313,8 +354,10 @@ def cmd_run(args):
         runner.config, params.episodes, params.policy, "the simulated car (dry run)" if args.dry_run else "THE REAL CAR",
         world.get("world_id"), out))
     log("fix sigma %.4f + %.4f x range m: %s" % (params.fix_sigma_a_m, params.fix_sigma_b, params.fix_sigma_source))
+    log("design values: %s" % params.dv_file)
     try:
-        result = runner.run()
+        with dv_real.use_dv(dv_real.resolve_arg(args.dv)):     # what the agent's tools and the car code read
+            result = runner.run()
     finally:
         try:
             rig.link.close()

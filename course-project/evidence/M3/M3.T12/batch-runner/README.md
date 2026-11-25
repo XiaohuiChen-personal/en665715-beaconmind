@@ -11,8 +11,8 @@ serves the live-model episodes of M3.T18 (`--policy <model key>`).
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote the runner, the resection, the tests and this
 note. Xiaohui Chen approved unattended batches on 2026-11-18 (plan README §3.6) and runs the attended tests.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: ran the wrapper on the Spark and fixed it, added the tag check
-(`tag_survey`), `--detector-noise`, the tests named below, the 3.0 m dry runs and the first batch's commands; edited
-this note.
+(`tag_survey`), `--detector-noise`, `--dv` and `tools/real_dv.py`, the tests named below, the 3.0 m dry runs and the
+first batch's commands; edited this note.
 
 ## Files (under `course-project/`)
 
@@ -24,7 +24,10 @@ this note.
 | `tools/car_batch.sh` (new) | Spark host: starts the R2 recorder for the whole batch, runs the tool in a `beaconmind-ros` container (`bm-batch-<label>`), stops the recorder |
 | `beaconmind/tests/test_car_batch.py` (new) | 114 tests (91 on 2026-11-18) |
 | `beaconmind/tests/test_car_batch_wrapper.py` (2026-11-24) | 11 tests: `car_batch.sh` and `record_session.sh status` under bash with stand-ins for docker, tmux and the recorder |
-| `tools/record_session.sh` (the recorder, M3.T27; one change 2026-11-24) | `status`, and so `start`, no longer exits 1 when the start checks found no car (see "First execution") |
+| `tools/record_session.sh` (the recorder, M3.T27; changed 2026-11-24) | `status`, and so `start`, no longer exits 1 when the start checks found no car (see "First execution"); the clock line is for the one filmed demo run only |
+| `beaconmind/src/beaconmind/dv_real.py`, `tools/real_dv.py` (2026-11-24) | `configs/dv-real.json` and the `--dv` switch ("Design values for real runs") |
+| `beaconmind/tests/test_dv_real.py` (2026-11-24) | 8 tests |
+| `tools/closed_loop_run.py`, `closed_loop_run.sh`, `room_rehearsal.py` (changed 2026-11-24) | `--dv <file>` |
 | `car/telemetry.py`, `link.py`, `ros_io.py`, `simcar.py` (my own, changed) | the Pico's supply voltage (telemetry field 5); `car_state` carries `drive_status`, `vsys_min_mv`, `agent_rx_age_ms` |
 | `car/camera.py` (my own, changed) | a frame whose counter (`X-BM-Seq`) repeats is a stale picture: an error |
 
@@ -149,6 +152,36 @@ one tag surveyed 0.3 m wrong, seen alone, pulled the tracked pose up to 0.33 m w
 0.1 m; in the reviewer's probe the simulated footprint came within 4 cm of the edge of the driving area. That is
 now closed by the tag check (next section). **The tag centres in the world file must still be measured, not
 nominal:** the check halts on a wrong one, it does not correct it.
+
+## Design values for real runs: `--dv` (2026-11-24)
+
+Xiaohui approved a separate design-values file for real runs ("I am OK with a separate design-values file").
+`tools/real_dv.py` writes `configs/dv-real.json` (schema `bm.dv/1`, the frozen file's keys) after the pilot: the frozen
+`configs/dv.json` with exactly four fields changed, each with its own `source`, `evidence` (the noise file and its
+sha12) and `updated`, and a `$comment` listing them with the sha12 of both files. It refuses to write if anything
+else would differ, refuses the frozen file as its output, and refuses a range limit beyond the range the pilot
+found reliable unless `--beyond-pilot-range` (Xiaohui's explicit decision). The mapping (`beaconmind/dv_real.py`):
+range sigma = (|range bias a| + sigma a) + (|range bias b| + sigma b) r, since the detector does not correct the
+bias; bearing sigma (one value for every range in the agent's model) = |bearing bias| + the pilot's bearing sigma at
+the range limit; rounded up, never under 0.005 m or 0.1 degrees. **Not changed, and why:** `well_cond_sigma_*` and
+`reloc_sigma_*` are acceptance thresholds on a fix's computed uncertainty, a requirement on the result, not a model
+of the camera; the room rehearsal showed that with the frozen sigmas almost no two-tag fix passes them, so honest
+(measured) sigmas are what should change, and scaling the thresholds with them would cancel that. The association
+gates (`gate_*`) also cover pose drift and stay.
+
+`--dv <file>` in `tools/car_batch.py`, `tools/closed_loop_run.py` (and its `.sh`) and `tools/room_rehearsal.py one`
+(also `run_cell(dv=<file>)`): the default stays the frozen file. The frozen modules (`geometry.py`, `dv.py`,
+`kinsim_lite.py`, ...) read their values through `beaconmind.dv.load_dv()`, which caches the parsed default file;
+`dv_real.use_dv` puts the chosen file's values there for the run and restores exactly what was there afterwards (also
+after an exception, also inside the rehearsal's own `dv_override`); no frozen file is edited and
+`prereg_freeze.py --verify` stays OK. A `--dv` file is refused unless it is `bm.dv/1` with the frozen keys and differs
+only in the four fields. Records: `run.json`'s `dv_file` (file, sha12, canonical sha12, the differing values; a run
+on another file is another configuration, a run on the frozen file keeps its old configuration tag), the batch
+manifest's `params.dv_file` and summary line, the rehearsal's output. **A real batch requires `--dv`**, even for the
+frozen file: which noise model the agent judges its fixes by is then always a recorded choice, never a default that
+someone forgot (dry runs default to the frozen file). With a file other than the frozen one the batch also requires its
+range limit to equal `--max-range` and, with `--detector-noise`, that it was made from that same noise file. Tests:
+`beaconmind/tests/test_dv_real.py` (a fixture noise file; `configs/dv-real.json` is not written until the pilot).
 
 ## The check of the surveyed tags against each other (2026-11-24; review finding 3)
 
@@ -410,8 +443,9 @@ The car powered off, the micro-ROS agent stopped, the camera off; clone at `6517
 1. Stand test and floor check pass (`../../M3.T6/README.md` section 5).
 2. The tags mounted, their centres measured and written into
    `evidence/M3/M3.T10/layout-2/mounting.md` (last column); the tag pilot analysed
-   (`tools/tag_pilot.py analyze ... --out course-project/configs/detector_noise.json`); both committed and pulled on
-   the Spark.
+   (`tools/tag_pilot.py analyze ... --out course-project/configs/detector_noise.json`); Xiaohui's range limit decided
+   (3.0 m, or 2.5 m if the pilot does not confirm it); `configs/dv-real.json` written (step a2); all committed and
+   pulled on the Spark.
 3. Put the car at least **0.85 m** from every edge of the driving area (the first circle needs 0.83 m: sweep
    0.178 + margin 0.15 + the 0.5 m the tape may be wrong; README said 0.7 m before 2026-11-24) and tape its pose.
    Choose a first start pose at least 0.3 m away, so the encoder scale is checked in the first transit.
@@ -422,7 +456,8 @@ The car powered off, the micro-ROS agent stopped, the camera off; clone at `6517
 
 **The commands, ready to paste** (Spark, `cd ~/Projects/en665715-beaconmind`). Only the world file changes after
 the measurements: `real-room.json` is what step a writes. Fill in the two session names, the date, the measured
-pose, and the label if this is not the first batch.
+pose, and the label if this is not the first batch. No phone video is needed for a batch (rule R2 since
+2026-11-24: only the one run filmed for the demo has one; the recorder records every batch episode).
 
 ```bash
 # a. the measured world (Mac or Spark; then commit it, push, git pull --ff-only on the other)
@@ -430,6 +465,11 @@ python3 course-project/tools/room_world.py --variant plus8 \
     --measured-md course-project/evidence/M3/M3.T10/layout-2/mounting.md \
     --measured-by "Xiaohui Chen" --date <YYYY-MM-DD> --instrument "tape measure" --error-cm 0.5 \
     --out course-project/configs/arenas/real-room.json
+
+# a2. the real-run design values: the frozen dv.json with the pilot's noise model and the range limit (3.0 or 2.5,
+#     Xiaohui's decision after the pilot; the same number goes into --max-range below)
+python3 course-project/tools/real_dv.py --noise course-project/configs/detector_noise.json --reject-range 3.0 \
+    --evidence course-project/evidence/M1/M1.T8 --out course-project/configs/dv-real.json
 
 # b. the pass marker, after the stand test and the floor check (their recorder session folders under data/real/)
 bash course-project/tools/car_batch.sh - record-pass --operator "Xiaohui Chen" \
@@ -441,7 +481,7 @@ bash course-project/tools/car_batch.sh b2-real-01-dry run \
     --world course-project/configs/arenas/real-room.json \
     --scenarios course-project/configs/arenas/real-room-scenarios.json \
     --initial-pose 2.20,2.00,90 --episodes 10 --policy b2 --max-range 3.0 \
-    --detector-noise course-project/configs/detector_noise.json \
+    --detector-noise course-project/configs/detector_noise.json --dv course-project/configs/dv-real.json \
     --dry-run --out course-project/data/batches/b2-real-01-dry
 bash course-project/tools/car_batch.sh - status --out course-project/data/batches/b2-real-01-dry
 
@@ -450,7 +490,7 @@ bash course-project/tools/car_batch.sh b2-real-01 run \
     --world course-project/configs/arenas/real-room.json \
     --scenarios course-project/configs/arenas/real-room-scenarios.json \
     --initial-pose 2.20,2.00,90 --episodes 10 --policy b2 --max-range 3.0 \
-    --detector-noise course-project/configs/detector_noise.json
+    --detector-noise course-project/configs/detector_noise.json --dv course-project/configs/dv-real.json
 
 # e. after a halt: look at the car, then
 bash course-project/tools/car_batch.sh - clear-halt --out course-project/data/batches/b2-real-01 --operator "Xiaohui Chen"
@@ -461,8 +501,13 @@ bash course-project/tools/car.sh clear-latch --operator "Xiaohui Chen"     # if 
 Notes: `--initial-pose 2.20,2.00,90` is a suggestion (1.5 m or more from every edge, 0.58 m from S1); tape the car
 wherever it really stands and use that in c and d alike. `--episodes 10` runs S1 to S5 twice (the scenario file's
 "2 B2 episodes" each). `--max-range 3.0` is provisional: if the pilot's reliable range ends below it, the batch
-prints a WARNING and the plan says 2.5 m (change it in c and d). Without `detector_noise.json` drop that line: the
-assumed sigma is used and said so. Step c with the nominal 20-tag world as a stand-in for `real-room.json`
+prints a WARNING and the plan says 2.5 m (change it in a2, c and d alike: the batch refuses a `--dv` whose range
+limit differs from `--max-range`, and a `--dv` not made from the given `--detector-noise`). A real batch refuses to
+start without `--dv`; to run on the frozen study's values give `--dv course-project/configs/dv.json` (and drop
+`--detector-noise` if the pilot's file does not exist: the batch's own fix sigma is then the assumed one, said so). If
+the demo run Xiaohui films is ever driven through `car_batch.sh`, the phone starts filming
+`python3 course-project/tools/session_clock.py <session>` once the wrapper has printed the session name, before the
+first circle; no other batch is filmed. Step c with the nominal 20-tag world as a stand-in for `real-room.json`
 (2026-11-25, `dry-runs-2026-11-24.txt` section C, without `--detector-noise`, which does not exist yet; through the
 wrapper on the Spark, commit `05f64c4`): **complete, 10 of 10 episodes** (S1 to S5 twice), 1,453 moves, start miss
 0.02 to 0.20 m, B2's final pose error 0.01 to 0.03 m, 9 episodes ended by B2's DONE and one (S4) ran its 150

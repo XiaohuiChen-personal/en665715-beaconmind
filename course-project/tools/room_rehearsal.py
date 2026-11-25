@@ -29,7 +29,8 @@ angle over-read by 2 %), `carpet` (kinsim_room.CARPET: the car veers on a forwar
 
 DV noise model: `frozen` = configs/dv.json as it is; `measured` = kinsim_room.MEASURED_SIGMA_DV through
 kinsim_room.dv_override (the three sigma values fix_pose's conditioning test uses, set to the simulated estimate of
-the tag detector; no file is edited).
+the tag detector; no file is edited); or (`one --dv FILE`, run_cell(dv=FILE)) a design-values file such as
+configs/dv-real.json from tools/real_dv.py, through beaconmind/dv_real.use_dv (2026-11-24).
 
 Metrics per episode (plan C10; truth is the simulator's): steps, how it ended, share of steps by pose source, ATE-RMSE
 and final pose error of B2 and of dead reckoning B0, tags seen and tags mapped (a map entry within 0.30 m of a tag
@@ -38,6 +39,7 @@ with its ID), phantom entries, duplicated-ID pairs seen and mapped as two beacon
 clearance to a wall or the desk.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this tool.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: --dv takes a design-values file (dv_scope).
 """
 import argparse
 import collections
@@ -52,6 +54,7 @@ TOOLS = pathlib.Path(__file__).resolve().parent
 ROOT = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(ROOT / "beaconmind" / "src"))
+from beaconmind import dv_real  # noqa: E402
 from beaconmind.envs import kinsim_lite as ks  # noqa: E402
 from beaconmind.envs import kinsim_room as kr  # noqa: E402
 from beaconmind.metrics import pilot as pm  # noqa: E402
@@ -161,13 +164,24 @@ def episode_metrics(ep, env=None):
     return out
 
 
+def dv_scope(dv):
+    """The design values a rehearsal runs with: `frozen`, `measured` (kinsim_room.MEASURED_SIGMA_DV) or a file."""
+    if dv in ("frozen", "measured"):
+        return kr.dv_override(**(kr.MEASURED_SIGMA_DV if dv == "measured" else {}))
+    return dv_real.use_dv(dv)
+
+
+def dv_tag(dv):
+    return "" if dv == "frozen" else "-dv-measured" if dv == "measured" else "-dv-%s" % pathlib.Path(dv).stem
+
+
 def run_cell(world, scenarios, seeds, preset, max_range, odometry, policy="block", patience=2, inset=0.0,
              noise_overrides=None, dv="frozen", log_dir=None, save_seeds=0):
     """All scenarios x seeds for one configuration. Returns the per-episode metric rows."""
     odo, bias = ODOMETRY[odometry]
     pol = kr.b2_step if policy == "frozen" else kr.make_b2_policy(dead_end="block", patience=patience)
     rows = []
-    with kr.dv_override(**(kr.MEASURED_SIGMA_DV if dv == "measured" else {})):
+    with dv_scope(dv):
         for sc in scenarios:
             for k, seed in enumerate(seeds):
                 env = kr.KinSimEnv.room(world, sc["start_pose"], preset_name=preset, max_range_m=max_range,
@@ -176,12 +190,13 @@ def run_cell(world, scenarios, seeds, preset, max_range, odometry, policy="block
                 rows.append(dict(episode_metrics(ep, env), scenario=sc["id"], seed=seed))
                 if log_dir is not None and k < save_seeds and ep["records"]:
                     d = pathlib.Path(log_dir) / world["world_id"] / ("%s-r%.1f-%s%s" % (
-                        preset, max_range, odometry, "-dv-measured" if dv == "measured" else "")) / sc["id"]
+                        preset, max_range, odometry, dv_tag(dv))) / sc["id"]
                     d.mkdir(parents=True, exist_ok=True)
                     ep["rehearsal"] = {"scenario": sc["id"], "preset": preset, "max_range_m": max_range,
                                        "odometry": odometry, "policy": policy, "patience": patience,
                                        "drive_inset_m": inset, "dv": dv,
-                                       "dv_values": kr.MEASURED_SIGMA_DV if dv == "measured" else None}
+                                       "dv_values": kr.MEASURED_SIGMA_DV if dv == "measured" else None,
+                                       "dv_file": None if dv in ("frozen", "measured") else dv_real.record(dv)}
                     (d / ("seed_%d.json" % seed)).write_text(json.dumps(ep), encoding="utf-8")
     return rows
 
@@ -440,7 +455,11 @@ def cmd_one(args):
     world = option_world(args.option)
     sc = next(s for s in load_scenarios() if s["id"] == args.scenario)
     odo, bias = ODOMETRY[args.odometry]
-    with kr.dv_override(**(kr.MEASURED_SIGMA_DV if args.dv == "measured" else {})):
+    if args.dv not in ("frozen", "measured"):
+        problems = dv_real.check_file(args.dv)
+        if problems:
+            sys.exit("--dv: " + "; ".join(problems))
+    with dv_scope(args.dv):
         env = kr.KinSimEnv.room(world, sc["start_pose"], preset_name=args.preset, max_range_m=args.range, odometry=odo,
                                 odo_bias=bias, drive_inset_m=args.inset)
         pol = kr.b2_step if args.policy == "frozen" else kr.make_b2_policy(patience=args.patience)
@@ -453,7 +472,8 @@ def cmd_one(args):
                 r["step"], w["x_m"], w["y_m"], w["theta_deg"],
                 ",".join("%s@%.1f" % (world["tags"][d["_tag"]]["uid"], d["range_m"]) for d in r["raw"]["detections"]),
                 rep["pose_source"], rep["decision"], len(rep["map"])))
-    print(json.dumps(episode_metrics(ep, env), indent=1))
+    print(json.dumps(dict(episode_metrics(ep, env), dv=args.dv if args.dv in ("frozen", "measured")
+                          else dv_real.record(args.dv)), indent=1))
     if args.out:
         pathlib.Path(args.out).write_text(json.dumps(ep), encoding="utf-8")
 
@@ -602,7 +622,8 @@ def main(argv=None):
     o.add_argument("--preset", default="camera")
     o.add_argument("--range", type=float, default=2.5)
     o.add_argument("--odometry", default="study", choices=sorted(ODOMETRY))
-    o.add_argument("--dv", default="frozen", choices=("frozen", "measured"))
+    o.add_argument("--dv", default="frozen", help="frozen (configs/dv.json), measured (kinsim_room.MEASURED_SIGMA_DV), "
+                                                "or a design-values file such as configs/dv-real.json")
     o.add_argument("--seed", type=int, default=3000)
     o.add_argument("--policy", default="block", choices=("block", "frozen"))
     o.add_argument("--patience", type=int, default=2)

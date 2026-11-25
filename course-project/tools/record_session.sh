@@ -28,7 +28,8 @@
 # AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-18: wrote this recorder. The pattern (one folder per session, a
 # clock for the phone, tmux) follows the Module 9 real-robot tools in the private course repo; no code was copied.
 # AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: status (and so start) no longer exits 1 when no car was
-# found; tools/car_batch.sh had taken that for a failed start and left the session running.
+# found; tools/car_batch.sh had taken that for a failed start and left the session running. The clock line says it is
+# for the one filmed demo run only (rule R2 since 2026-11-24: no phone video for batch episodes).
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 CP="$REPO/course-project"
@@ -179,7 +180,7 @@ sleep 600"
   echo "recording session $ID"
   echo "  folder  $DIR"
   echo "  windows $(tmux list-windows -t "$S" -F '#W' | tr '\n' ' ')"
-  echo "  clock   python3 course-project/tools/session_clock.py $ID   (film it at the start of the phone video)"
+  echo "  clock   python3 course-project/tools/session_clock.py $ID   (only for the one run filmed for the demo: film it first)"
   echo "  stop    bash course-project/tools/record_session.sh stop"
   sleep 3
   status

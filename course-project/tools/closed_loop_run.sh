@@ -7,6 +7,7 @@
 # The container gets the secrets env_file (ANTHROPIC_API_KEY for the Claude drivers; never printed) and the git commit.
 # It needs no local model server and does not touch the car, the micro-ROS agent or the camera relay.
 # AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this launcher after the pattern of tools/replay_run.sh.
+# AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: --dv is a path option (mapped into /workspace).
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 COMMIT="$(git -C "$REPO" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
@@ -24,7 +25,7 @@ map_path() {   # repository-relative or absolute-in-repo path -> /workspace path
 }
 
 ARGS=()
-PATH_OPTS="--out --world --prompt --watch-latch"
+PATH_OPTS="--out --world --prompt --watch-latch --dv"
 while [ "$#" -gt 0 ]; do
   a="$1"; shift
   opt="${a%%=*}"
