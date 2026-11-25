@@ -121,6 +121,17 @@ and falls back to the same pose.
 - Opus made 25 `move` calls, all `move(NONE)`, all refused by the replay ("the log's move is already executed"), all
   on steps with valid reports. That is 2.9 % of steps; the study's simulated Opus did the same at 1.9 %.
 
+**Paired differences ([`stats.md`](stats.md), [`stats.json`](stats.json); exploratory, not pre-registered).** The
+pre-registration reports the real logs descriptively (prereg.md §6), the end-circle value was chosen after the data,
+and there is no significance claim from a handful of episodes (`evidence/M5/requirements.md`). So `stats.md` gives
+paired differences only: the study's estimator with its exact 95 % interval, and the episodes below and above zero.
+It has no p-values and no verdicts. H2 (against B1) is not run, because B1 needs oracle association and the real logs
+have none. Against the end circle (n = 8):
+- B2 − B0: −40.1 cm (−68.4 to −16.1), 8 episodes below and 0 above.
+- Opus − B0: −40.7 cm (−68.7 to −15.5), 8 / 0. **This gain over dead reckoning is the procedure's:** B2 shows the
+  same gain, and a model that follows the procedure inherits it.
+- Opus − B2: −0.1 cm (−0.8 to +1.0), 4 / 3. Not within 1 cm of B2 on every episode.
+
 **Reading it.**
 - **Opus against B2:** against the end circle, Opus is within 2.1 cm of B2 in all eight episodes, so the two cannot
   be separated here.

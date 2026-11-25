@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""The pre-registered statistics on the real-log replay (M3.T19 / M4.T13), and what the per-step traces show.
+"""Exploratory paired differences on the real-log replay (M3.T19 / M4.T13), and what the per-step traces show.
 
     python3 course-project/tools/real_replay_stats.py --obslogs <set>/obslogs --result <analyze result.json> \
         --run <arm>=<run folder> [--run <arm>=<another folder of that arm>] ... --out <file stem>
 
 `--result` is the output of `tools/real_replay.py analyze` (its per-episode errors against the three truths and the
 truths themselves); `--run` gives the same run folders (trimmed copies are enough: tools' names, estimate_pose,
-checks, fallback, error, seconds, cost_usd per row), for the per-step traces and the run behaviour.
+report.pose_source, checks, fallback, error, seconds, cost_usd per row), for the per-step traces and the run behaviour.
 
-The tests are the study's, unchanged (`tools/study_analyze.py`: `one_test`, `confirmatory`, `model_comparison`, on
-`metrics/stats.py`; pre-registration evidence/M4/M4.T1/prereg.md section 5): the exact one-sided Wilcoxon signed-rank
-test with zeros dropped, the exact sign test instead when the adjusted skewness exceeds 1, the Hodges-Lehmann estimate
-with its exact 95 % interval, Holm within a family, serial gatekeeping, the practical reading (interval below -3 cm),
-the Friedman test and the pairwise two-sided tests among the LLM arms. What changes on the real logs is the value
-tested: the pre-registered primary endpoint is the ATE over all steps against the simulator's truth; here the only
-truth independent of the car's tracker is the end circle, at the last step, so the primary value is the final-position
-error against it (n = the episodes with one, flagged episodes apart). B1 (GTSAM with oracle association) cannot run on
-the real logs (their detections carry no true tag), so family 2 (H2) is not run and counts as p = 1. The same tests on
-the tracker-dependent truths (the last step's logged truth, its slip-aware recomputation, and the ATE over all steps
-against the logged truth) are descriptive.
+**Nothing here is a pre-registered test.** The pre-registration (evidence/M4/M4.T1/prereg.md section 6) reports the
+real logs descriptively, as the sim-to-real gap; the report's Metrics section says they test no hypothesis; the
+value used here (the final-position error against the end circle) was chosen after the data; and
+evidence/M5/requirements.md records "no significance claim from a handful of trials". So this tool reports paired
+differences only: per comparison the study's estimator (`metrics/stats.py`: the Hodges-Lehmann estimate with its exact
+95 % interval, or the sample median with its exact order-statistic interval when the adjusted skewness exceeds 1, the
+pre-registered switch) and the number of episodes below and above zero. No p-value, no multiplicity correction, no
+rejection, no practical-significance verdict. Every model - B0 difference is shown beside B2 - B0, because a model
+that follows the procedure inherits the procedure's gain over dead reckoning. H2 (against B1) is not run: B1 needs
+oracle association, which the real logs do not have (their detections carry no true tag, and the room repeats tag
+IDs).
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this tool.
 """
@@ -38,12 +38,14 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "beaconmind" / "src"))
 from beaconmind import real_replay as rr  # noqa: E402
 from beaconmind.metrics import pilot as pm  # noqa: E402
+from beaconmind.metrics import stats as st  # noqa: E402
+from scipy import stats as sps  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("study_analyze", ROOT / "tools" / "study_analyze.py")
 sa = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(sa)
 
-LLM_ARMS = ("claude-opus-5-5", "qwen38-flash-xhigh", "gemma4-26b")     # the pre-registered family 1, in its order
+LLM_ARMS = ("claude-opus-5-5", "qwen38-flash-xhigh", "gemma4-26b")     # the study's three model arms
 DIVERGE_M = 0.05                                                       # an arm "parts from B2" beyond this
 
 
@@ -100,26 +102,40 @@ def ate_all_steps(docs, runs, seeds):
     return out
 
 
-# ---------------------------------------------------------------- tests
+# ---------------------------------------------------------------- paired differences (exploratory)
 
-def tests_on(per, arms, label, confirm):
-    """Family 1 (H1: arm - B0 < 0, Holm over the three pre-registered arms, absent ones p = 1) when `confirm`, else the
-    same tests as descriptive; arm - B2 two-sided per arm; Friedman and the LLM pairs when three LLM arms are there."""
+def paired(d):
+    """The study's estimator on paired differences d (no test): Hodges-Lehmann with its exact 95 % interval, or the
+    median with its exact interval when |adjusted skewness| > 1 (the pre-registered switch); counts below/above 0."""
+    d = np.asarray(d, dtype=float)
+    skew = st.adjusted_skewness(d) if len(d) > 2 else 0.0
+    est, estimand = (st.median_ci(d), "median") if abs(skew) > sa.SKEW_LIMIT else (st.hodges_lehmann(d), "Hodges-Lehmann")
+    return {"n": int(len(d)), "estimand": estimand, "estimate": est["estimate"], "ci95": est["ci"],
+            "n_below": int((d < 0).sum()), "n_above": int((d > 0).sum()), "n_zero": int((d == 0).sum()),
+            "mean": float(d.mean()), "skewness_G1": float(skew), "d": d.tolist()}
+
+
+def differences(per, arms, label):
+    """Exploratory: every arm - B0 (B2's first: the procedure's own gain), every LLM arm - B2 (with the
+    pre-registration's descriptive "within 1 cm of B2 on every episode" check), the LLM pairs and their mean ranks."""
     seeds = sorted(per)
     llm = [a for a in LLM_ARMS if a in arms]
-    out = {"label": label, "n": len(seeds), "seeds": seeds, "confirmatory": confirm}
-    if confirm:
-        out["family1"] = sa.confirmatory(per, llm, list(LLM_ARMS), have_b1=False)
-    else:
-        out["vs_B0"] = {a: sa.one_test([per[s][a]["ate_m"] - per[s]["B0"]["ate_m"] for s in seeds], "less", True)
-                        for a in llm}
-    out["vs_B2"] = {}
+    out = {"label": label, "n": len(seeds), "seeds": seeds, "exploratory": True,
+           "h2": "not run: B1 needs oracle association, which the real logs do not have",
+           "vs_B0": {}, "vs_B2": {}, "llm_pairs": {}, "mean_rank": None}
+    for a in ["B2"] + llm:
+        out["vs_B0"][a] = paired([per[s][a]["ate_m"] - per[s]["B0"]["ate_m"] for s in seeds])
     for a in llm:
         d = [per[s][a]["ate_m"] - per[s]["B2"]["ate_m"] for s in seeds]
-        t = sa.one_test(d, "two-sided")
-        t["within_1cm_every_seed"] = bool(all(abs(x) <= 0.01 for x in d))
-        out["vs_B2"][a] = t
-    out["models"] = sa.model_comparison(per, llm) if len(llm) == 3 else None
+        out["vs_B2"][a] = dict(paired(d), within_1cm_every_episode=bool(all(abs(x) <= 0.01 for x in d)))
+    for i in range(len(llm)):
+        for j in range(i + 1, len(llm)):
+            out["llm_pairs"]["%s minus %s" % (llm[i], llm[j])] = paired(
+                [per[s][llm[i]]["ate_m"] - per[s][llm[j]]["ate_m"] for s in seeds])
+    if len(llm) >= 2:
+        mat = np.array([[per[s][a]["ate_m"] for a in llm] for s in seeds])
+        ranks = np.apply_along_axis(sps.rankdata, 1, mat)
+        out["mean_rank"] = {a: float(ranks[:, j].mean()) for j, a in enumerate(llm)}
     return out
 
 
@@ -135,9 +151,17 @@ def behaviour(docs, runs, seeds, procedure="procedure"):
         secs = sorted(float(r.get("seconds") or 0.0) for r in rows)
         tools = collections.Counter(c.get("tool") for r in rows for c in r.get("calls") or [])
         agree = tot = 0
+        src_same = src_n = 0
+        src_diff = collections.Counter()
         if proc and arm != procedure:
             for s in seeds:
                 for r, q in zip(_rows(folders, s), _rows(proc, s)):
+                    ra, qa = (r.get("report") or {}).get("pose_source"), (q.get("report") or {}).get("pose_source")
+                    if ra is not None and qa is not None:
+                        src_n += 1
+                        src_same += ra == qa
+                        if ra != qa:
+                            src_diff["%s instead of %s" % (ra, qa)] += 1
                     a = collections.Counter(c["tool"] for c in r.get("calls") or [] if c.get("tool") != "move")
                     b = collections.Counter(c["tool"] for c in q.get("calls") or [] if c.get("tool") != "move")
                     agree += sum((a & b).values())
@@ -149,6 +173,8 @@ def behaviour(docs, runs, seeds, procedure="procedure"):
                     "errors": sum(1 for r in rows if r.get("error")),
                     "calls_per_step": sum(tools.values()) / len(rows), "tools": dict(tools.most_common()),
                     "tool_name_agreement_with_procedure": (agree / tot) if tot else None,
+                    "pose_source_agreement_with_procedure": (src_same / src_n) if src_n else None,
+                    "pose_source_steps_compared": src_n, "pose_source_differences": dict(src_diff.most_common()),
                     "mean_s": statistics.fmean(secs), "median_s": statistics.median(secs),
                     "p95_s": secs[max(0, math.ceil(0.95 * len(secs)) - 1)],
                     "cost_usd": sum(float(r.get("cost_usd") or 0.0) for r in rows)}
@@ -182,56 +208,41 @@ def traces(docs, ate, seeds, arms):
 
 # ---------------------------------------------------------------- markdown
 
-def _family_md(t, display):
-    lines = ["| Arm | n | test | estimate (cm) | 95 % interval (cm) | p | Holm p | reject H0 | practical | seeds below / above B0 |",
-             "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
-    for k, v in t.items():
-        arm = k.split(":", 1)[1]
-        if v.get("not_run"):
-            lines.append("| %s (%s) | | not run | | | | %s | no | | |" % (display(arm), k.split(":")[0], _p(v.get("p_adj"))))
-            continue
-        lines.append("| %s (%s) | %d | %s | %s | %s | %s | %s | %s | %s | %d / %d |" % (
-            display(arm), k.split(":")[0], v["n"], v["test"], _cm(v["estimate"]), _ci(v["ci95"]), _p(v["p"]),
-            _p(v.get("p_adj")), "yes" if v.get("reject_h0") else "no", "yes" if v.get("practical") else "no",
-            v["n_negative"], v["n_positive"]))
-    return lines
-
-
-def _pair_md(tests, display, what):
-    lines = ["| Arm | n | test | %s estimate (cm) | 95 %% interval (cm) | p | seeds below / above | every seed within 1 cm |" % what,
-             "| --- | --- | --- | --- | --- | --- | --- | --- |"]
-    for a, v in tests.items():
-        lines.append("| %s | %d | %s | %s | %s | %s | %d / %d | %s |" % (
-            display(a), v["n"], v["test"], _cm(v["estimate"]), _ci(v["ci95"]), _p(v["p"]), v["n_negative"],
-            v["n_positive"], ("yes" if v.get("within_1cm_every_seed") else "no") if "within_1cm_every_seed" in v else ""))
+def _diff_md(rows, display, what):
+    lines = ["| %s | n | estimate (cm) | 95 %% interval (cm) | estimator | episodes below / above zero |" % what,
+             "| --- | --- | --- | --- | --- | --- |"]
+    for name, v in rows:
+        lines.append("| %s | %d | %s | %s | %s | %d / %d |" % (name, v["n"], _cm(v["estimate"]), _ci(v["ci95"]),
+                                                             v["estimand"], v["n_below"], v["n_above"]))
     return lines
 
 
 def markdown(res):
     display = lambda a: sa.DISPLAY.get(a, a)  # noqa: E731
-    L = ["# Real-log replay: pre-registered statistics and per-step traces", "",
-         "Set `%s`: %d episodes in the main analysis, %d flagged and kept apart. Tests as pre-registered "
-         "(evidence/M4/M4.T1/prereg.md section 5, `tools/study_analyze.py`), on the values below; cm." % (
-             res["set"], len(res["main_seeds"]), len(res["flagged_seeds"])), ""]
+    L = ["# Real-log replay: exploratory paired differences and per-step traces (not pre-registered)", "",
+         "Set `%s`: %d episodes in the main analysis, %d flagged and kept apart; cm." % (
+             res["set"], len(res["main_seeds"]), len(res["flagged_seeds"])), "",
+         "**Exploratory, not pre-registered.** The pre-registration reports the real logs descriptively (prereg.md "
+         "section 6), the value compared here was chosen after the data, and there is no significance claim from a "
+         "handful of episodes (evidence/M5/requirements.md). Each line is a paired difference: the study's estimator "
+         "(Hodges-Lehmann with its exact 95 % interval, or the median with its exact interval when the skewness switch "
+         "applies) and the episodes below and above zero. No p-values, no multiplicity correction, no verdicts. "
+         "H2 (against B1) is not run: B1 needs oracle association, which the real logs do not have.", ""]
     for t in res["tests"]:
-        L += ["## %s (n = %d%s)" % (t["label"], t["n"], ", confirmatory" if t["confirmatory"] else ", descriptive"), ""]
-        if t["confirmatory"]:
-            L += ["Family 1, H1[arm]: median(arm - B0) < 0, Holm over the three pre-registered arms (an arm not run "
-                  "counts as p = 1). Family 2 (H2, against B1) is not run: B1 needs oracle association, which the "
-                  "real logs do not have.", ""] + _family_md(t["family1"], display)
-        else:
-            L += ["Arm - B0, one-sided (the H1 direction), not a confirmatory test:", ""] + _pair_md(t["vs_B0"], display, "arm - B0")
-        L += ["", "Arm - B2, two-sided (descriptive; the pre-registration's \"within 1 cm of B2 on every seed\" check):",
-              ""] + _pair_md(t["vs_B2"], display, "arm - B2")
-        m = t.get("models")
-        if m:
-            L += ["", "Among the LLM arms: Friedman chi2 %.2f, p %s, Kendall's W %.2f; mean ranks %s. Pairs (two-sided, "
-                  "Holm), %s:" % (m["friedman_chi2"], _p(m["friedman_p"]), m["kendall_w"],
-                                  ", ".join("%s %.2f" % (display(a), r) for a, r in m["mean_rank"].items()),
-                                  "interpreted" if m["interpret_pairs"] else "not interpreted (Friedman not significant)"), ""]
-            for k, v in m["pairs"].items():
-                L.append("- %s: estimate %s cm (%s), p %s, Holm p %s" % (k, _cm(v["estimate"]), _ci(v["ci95"]),
-                                                                         _p(v["p"]), _p(v["p_holm"])))
+        L += ["## %s (n = %d; exploratory, not pre-registered)" % (t["label"], t["n"]), "",
+              "Arm - B0. B2 - B0 is the procedure's own gain over dead reckoning; a model that follows the procedure "
+              "inherits it, so a model's gain over B0 is the procedure's, not the model's:", ""]
+        L += _diff_md([(display(a) + " - B0", v) for a, v in t["vs_B0"].items()], display, "Difference")
+        if t["vs_B2"]:
+            L += ["", "Model - B2 (what the model adds to or loses against the procedure it was given):", ""]
+            L += _diff_md([(display(a) + " - B2", v) for a, v in t["vs_B2"].items()], display, "Difference")
+            L += [""] + ["- %s within 1 cm of B2 on every episode: %s" % (
+                display(a), "yes" if v["within_1cm_every_episode"] else "no") for a, v in t["vs_B2"].items()]
+        if t["llm_pairs"]:
+            L += ["", "Between the models (mean rank, 1 = smallest error: %s):" % ", ".join(
+                "%s %.2f" % (display(a), r) for a, r in t["mean_rank"].items()), ""]
+            L += _diff_md([(" - ".join(display(x) for x in k.split(" minus ")), v) for k, v in t["llm_pairs"].items()],
+                          display, "Difference")
         L.append("")
     L += ["## Run behaviour (the main episodes)", "",
           "| Arm | steps | valid | fallbacks | repaired | step errors | calls per step | tool names as the procedure's | mean / median / p95 s per step | cost (US$) |",
@@ -245,6 +256,14 @@ def markdown(res):
     L += ["", "`tool names as the procedure's`: per step, the share of tool calls (by name, `move` left out) the arm "
           "has in common with the coded procedure on the same input; the study's call precision and recall also "
           "match the arguments, which the trimmed rows here do not keep.", "",
+          "Pose source as the procedure's (the steps where both reported one; the study's pose-source agreement), and "
+          "the arm's differences from the procedure:", ""]
+    for a, b in res["behaviour"].items():
+        if b.get("pose_source_agreement_with_procedure") is not None:
+            L.append("- %s: %.1f %% of %d steps; %s" % (
+                display(a), 100 * b["pose_source_agreement_with_procedure"], b["pose_source_steps_compared"],
+                "; ".join("%s: %d" % kv for kv in b["pose_source_differences"].items()) or "no difference"))
+    L += ["",
           "## Per-step traces", "",
           "Error against the batch's logged (tracked) truth at 25/50/75/100 %% of each episode (tracker-dependent), "
           "and where each LLM arm's estimate first parts from B2's by more than %.0f cm (truth-free):" % (100 * DIVERGE_M),
@@ -294,14 +313,14 @@ def main(argv=None):
     complete = [x for x in arms if all((result["errors"].get(x, {}).get(str(s)) or {}).get("complete") for s in main_seeds)]
     ate = ate_all_steps(docs, {k: v for k, v in runs.items() if k in complete}, seeds)
     per_ate = {s: {x: {"ate_m": ate[s][x]["ate_m"]} for x in complete} for s in main_seeds}
-    tests = [tests_on(values(result, "vs_end_circle_m", main_seeds, complete), complete,
-                      "Final-position error against the end circle (primary)", True),
-             tests_on(values(result, "final_m", main_seeds, complete), complete,
-                      "Final-position error against the last step's logged truth (tracker-dependent)", False),
-             tests_on(values(result, "vs_recomputed_m", main_seeds, complete), complete,
-                      "Final-position error against the recomputed truth (tracker-dependent)", False),
-             tests_on(per_ate, complete, "ATE over all steps against the logged truth (tracker-dependent)", False)]
-    res = {"schema": "bm.real_replay_stats/1", "set": index.get("batch"), "main_seeds": main_seeds,
+    tests = [differences(values(result, "vs_end_circle_m", main_seeds, complete), complete,
+                         "Final-position error against the end circle"),
+             differences(values(result, "final_m", main_seeds, complete), complete,
+                         "Final-position error against the last step's logged truth (tracker-dependent)"),
+             differences(values(result, "vs_recomputed_m", main_seeds, complete), complete,
+                         "Final-position error against the recomputed truth (tracker-dependent)"),
+             differences(per_ate, complete, "ATE over all steps against the logged truth (tracker-dependent)")]
+    res = {"schema": "bm.real_replay_stats/2", "exploratory": True, "set": index.get("batch"), "main_seeds": main_seeds,
            "flagged_seeds": flagged, "arms_complete": complete, "tests": tests,
            "behaviour": behaviour(docs, runs, main_seeds),
            "behaviour_flagged": behaviour(docs, runs, flagged) if flagged else None,
