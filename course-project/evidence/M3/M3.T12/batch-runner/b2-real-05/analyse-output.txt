@@ -1,0 +1,256 @@
+analyse.py output, 2026-11-25 (the command is in README.md). AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the analysis.
+
+== 1. The motors through the day, from each batch's per-move diagnostics (all moves that ran)
+batch       first move (UTC)  | FORWARD_25: n, median duration s, peak speed m/s, s_right/s_left, speed at stop | TURN_*_30: n, median duration s, peak rate deg/s
+floor check 09:08 (03:08 CST) |   4 3.05   -   1.039   -   |   6 1.03   -   (the log has durations and counts only)
+b2-real-01  11:22:48 |  13 2.75 0.124 1.017 0.072 | 132 1.01 58.2
+b2-real-02  12:05:03 |  41 2.79 0.122 1.013 0.070 | 396 1.00 56.8
+b2-real-03  13:26:07 |  29 2.73 0.125 1.002 0.072 | 212 0.99 57.8
+b2-real-04  13:59:52 |   8 2.68 0.127 1.024 0.072 | 124 0.99 56.2
+b2-real-05  16:50:43 |  99 2.61 0.130 1.008 0.074 | 696 0.97 59.4
+b2-real-06  17:29:19 |  35 2.56 0.133 1.008 0.074 | 358 0.96 59.3
+
+== 1b. From the recorder sessions' telemetry (both wheels, ~50 Hz), where copied: |speed| per |duty| while driven,
+   peak |speed|, time to 90 % of it, highest |duty|; medians over the batch's moves
+floor check FORWARD_25 n  11 | L: 0.164 m/s/duty, peak 0.141, t90 0.69 s, duty max 0.682 | R: 0.222 m/s/duty, peak 0.149, t90 0.38 s, duty max 0.587 | R/L per duty 1.304 | moves with a slow moment: right 0, left 0
+floor check TURN       n   6 | L: 0.116 m/s/duty, peak 0.048, t90 0.39 s, duty max 0.341 | R: 0.228 m/s/duty, peak 0.094, t90 0.37 s, duty max 0.341 | R/L per duty 2.050 | moves with a slow moment: right 0, left 0
+b2-real-01  session telemetry not copied
+b2-real-02  FORWARD_25 n  41 | L: 0.173 m/s/duty, peak 0.148, t90 0.63 s, duty max 0.689 | R: 0.223 m/s/duty, peak 0.153, t90 0.46 s, duty max 0.585 | R/L per duty 1.287 | moves with a slow moment: right 0, left 0
+b2-real-02  TURN       n 396 | L: 0.130 m/s/duty, peak 0.055, t90 0.33 s, duty max 0.341 | R: 0.232 m/s/duty, peak 0.098, t90 0.34 s, duty max 0.341 | R/L per duty 1.800 | moves with a slow moment: right 3, left 13
+b2-real-03  FORWARD_25 n  29 | L: 0.185 m/s/duty, peak 0.130, t90 0.47 s, duty max 0.669 | R: 0.227 m/s/duty, peak 0.132, t90 0.30 s, duty max 0.579 | R/L per duty 1.221 | moves with a slow moment: right 0, left 0
+b2-real-03  TURN       n 212 | L: 0.148 m/s/duty, peak 0.053, t90 0.28 s, duty max 0.341 | R: 0.241 m/s/duty, peak 0.086, t90 0.28 s, duty max 0.341 | R/L per duty 1.631 | moves with a slow moment: right 0, left 0
+b2-real-04  FORWARD_25 n   8 | L: 0.190 m/s/duty, peak 0.126, t90 0.41 s, duty max 0.655 | R: 0.227 m/s/duty, peak 0.131, t90 0.31 s, duty max 0.583 | R/L per duty 1.192 | moves with a slow moment: right 0, left 0
+b2-real-04  TURN       n 124 | L: 0.153 m/s/duty, peak 0.054, t90 0.28 s, duty max 0.341 | R: 0.236 m/s/duty, peak 0.084, t90 0.28 s, duty max 0.341 | R/L per duty 1.537 | moves with a slow moment: right 0, left 0
+b2-real-05  FORWARD_25 n  99 | L: 0.195 m/s/duty, peak 0.135, t90 0.45 s, duty max 0.661 | R: 0.235 m/s/duty, peak 0.135, t90 0.29 s, duty max 0.582 | R/L per duty 1.199 | moves with a slow moment: right 2, left 0
+b2-real-05  TURN       n 696 | L: 0.159 m/s/duty, peak 0.057, t90 0.28 s, duty max 0.341 | R: 0.244 m/s/duty, peak 0.086, t90 0.28 s, duty max 0.341 | R/L per duty 1.535 | moves with a slow moment: right 3, left 2
+b2-real-06  FORWARD_25 n  35 | L: 0.200 m/s/duty, peak 0.138, t90 0.45 s, duty max 0.666 | R: 0.240 m/s/duty, peak 0.137, t90 0.29 s, duty max 0.581 | R/L per duty 1.220 | moves with a slow moment: right 0, left 0
+b2-real-06  TURN       n 358 | L: 0.154 m/s/duty, peak 0.055, t90 0.27 s, duty max 0.341 | R: 0.251 m/s/duty, peak 0.089, t90 0.27 s, duty max 0.341 | R/L per duty 1.623 | moves with a slow moment: right 2, left 1
+
+== 1c. Moves with a slow moment (a wheel under 0.03 m/s at duty >= 0.3 after it had reached 0.05 m/s), per session:
+  b2-real-02 move_20261125T120657_48_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.56, 0.025, 0.301)] (t s, speed m/s, duty); result done  from (2.49, 1.46, -104) to (2.49, 1.45); wheels from the tape line L 0.187 R 0.056 m
+  b2-real-02 move_20261125T120743_13_TURN_RIGHT_30.jsonl TURN_RIGHT_30: left wheel slow at [(0.58, 0.029, 0.302)] (t s, speed m/s, duty); result done  from (2.53, 1.46, 102) to (2.52, 1.45); wheels from the tape line L 0.091 R 0.220 m
+  b2-real-02 move_20261125T120906_44_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.61, 0.024, 0.307)] (t s, speed m/s, duty); result done  from (2.83, 0.82, -117) to (2.83, 0.81); wheels from the tape line L 0.520 R 0.390 m
+  b2-real-02 move_20261125T120957_9_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.55, 0.021, 0.315)] (t s, speed m/s, duty); result done  from (2.90, 0.75, 116) to (2.89, 0.76); wheels from the tape line L 0.475 R 0.554 m
+  b2-real-02 move_20261125T121009_1_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.56, 0.03, 0.304)] (t s, speed m/s, duty); result done  from (2.85, 0.73, -117) to (2.85, 0.71); wheels from the tape line L 0.541 R 0.412 m
+  b2-real-02 move_20261125T121148_39_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.48, 0.03, 0.319)] (t s, speed m/s, duty); result done  from (1.73, 0.75, -5) to (1.73, 0.74); wheels from the tape line L 0.635 R 0.608 m
+  b2-real-02 move_20261125T121223_51_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.55, 0.022, 0.307)] (t s, speed m/s, duty); result done  from (1.72, 1.34, 93) to (1.71, 1.35); wheels from the tape line L 0.711 R 0.584 m
+  b2-real-02 move_20261125T121253_63_TURN_RIGHT_30.jsonl TURN_RIGHT_30: right wheel slow at [(0.54, 0.025, 0.333)] (t s, speed m/s, duty); result done  from (1.77, 1.41, 66) to (1.75, 1.39); wheels from the tape line L 0.653 R 0.542 m
+  b2-real-02 move_20261125T121424_22_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.4, 0.027, 0.333)] (t s, speed m/s, duty); result done  from (2.37, 1.06, 130) to (2.35, 1.04); wheels from the tape line L 0.040 R 0.005 m
+  b2-real-02 move_20261125T121628_5_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.49, 0.027, 0.316)] (t s, speed m/s, duty); result done  from (2.47, 1.38, -62) to (2.48, 1.38); wheels from the tape line L 0.145 R 0.038 m
+  b2-real-02 move_20261125T121756_28_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.56, 0.028, 0.307)] (t s, speed m/s, duty); result done  from (2.47, 1.74, 21) to (2.47, 1.75); wheels from the tape line L 0.052 R 0.120 m
+  b2-real-02 move_20261125T121850_51_TURN_RIGHT_30.jsonl TURN_RIGHT_30: left wheel slow at [(0.48, 0.03, 0.31)] (t s, speed m/s, duty); result done  from (2.43, 1.69, 168) to (2.44, 1.69); wheels from the tape line L 0.025 R 0.072 m
+  b2-real-02 move_20261125T121923_63_TURN_LEFT_30.jsonl TURN_LEFT_30: right wheel slow at [(0.57, 0.024, 0.333)] (t s, speed m/s, duty); result done  from (2.45, 2.11, -64) to (2.46, 2.09); wheels from the tape line L 0.130 R 0.020 m
+  b2-real-02 move_20261125T122242_144_TURN_LEFT_30.jsonl TURN_LEFT_30: right wheel slow at [(0.63, 0.03, 0.33)] (t s, speed m/s, duty); result done  from (2.50, 2.60, 137) to (2.49, 2.61); wheels from the tape line L 0.088 R 0.128 m
+  b2-real-02 move_20261125T122242_144_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.63, 0.016, 0.33)] (t s, speed m/s, duty); result done  from (2.50, 2.60, 137) to (2.49, 2.61); wheels from the tape line L 0.088 R 0.128 m
+  b2-real-02 move_20261125T122258_150_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.54, 0.027, 0.31)] (t s, speed m/s, duty); result done  from (2.49, 2.54, -41) to (2.50, 2.54); wheels from the tape line L 0.141 R 0.074 m
+  b2-real-05 move_20261125T165305_36_TURN_LEFT_30.jsonl TURN_LEFT_30: right wheel slow at [(0.29, 0.012, 0.341), (0.38, 0.0, 0.341), (0.47, 0.0, 0.8), (0.57, 0.002, 0.8)] (t s, speed m/s, duty); result done  from (3.11, 1.65, 11) to (3.10, 1.64); wheels from the tape line L 0.688 R 0.751 m
+  b2-real-05 move_20261125T165305_36_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.57, 0.021, 0.329), (0.67, 0.001, 0.328), (1.06, 0.011, 0.309)] (t s, speed m/s, duty); result done  from (3.11, 1.65, 11) to (3.10, 1.64); wheels from the tape line L 0.688 R 0.751 m
+  b2-real-05 move_20261125T165346_54_TURN_RIGHT_30.jsonl TURN_RIGHT_30: left wheel slow at [(0.64, 0.004, 0.33), (0.72, 0.012, 0.33)] (t s, speed m/s, duty); result done  from (2.98, 2.29, 108) to (2.98, 2.28); wheels from the tape line L 0.547 R 0.677 m
+  b2-real-05 move_20261125T170052_127_TURN_LEFT_30.jsonl TURN_LEFT_30: right wheel slow at [(0.51, 0.029, 0.326)] (t s, speed m/s, duty); result done  from (1.55, 3.85, -72) to (1.56, 3.83); wheels from the tape line L 0.781 R 0.863 m
+  b2-real-05 move_20261125T170600_4_TURN_LEFT_30.jsonl TURN_LEFT_30: right wheel slow at [(0.52, 0.026, 0.333)] (t s, speed m/s, duty); result done  from (2.19, 0.96, -26) to (2.20, 0.95); wheels from the tape line L 0.154 R 0.164 m
+  b2-real-05 move_20261125T170710_23_FORWARD_25.jsonl FORWARD_25: right wheel slow at [(2.18, 0.024, 0.307)] (t s, speed m/s, duty); result done  from (2.33, 1.80, 83) to (2.34, 2.04); wheels from the tape line L 0.098 R 0.024 m
+  b2-real-05 move_20261125T171954_18_FORWARD_25.jsonl FORWARD_25: right wheel slow at [(1.92, 0.017, 0.36), (2.02, 0.0, 0.418)] (t s, speed m/s, duty); result stalled stall_right from (2.28, 2.12, -62) to (2.39, 1.92); wheels from the tape line L 0.003 R 0.040 m
+  b2-real-06 move_20261125T172919_2_TURN_LEFT_30.jsonl TURN_LEFT_30: left wheel slow at [(0.47, 0.007, 0.341), (0.57, 0.002, 0.341), (0.97, 0.0, 0.33), (1.06, 0.023, 0.33)] (t s, speed m/s, duty); result done  from (2.35, 2.15, -29) to (2.35, 2.15); wheels from the tape line L 0.000 R 0.022 m
+  b2-real-06 move_20261125T173901_13_TURN_LEFT_30.jsonl TURN_LEFT_30: right wheel slow at [(0.76, 0.002, 0.8), (0.85, 0.002, 0.8), (1.22, 0.002, 0.8), (1.31, 0.023, 0.8)] (t s, speed m/s, duty); result done  from (2.67, 3.74, -110) to (2.67, 3.74); wheels from the tape line L 0.365 R 0.240 m
+  b2-real-06 move_20261125T174043_5_TURN_LEFT_30.jsonl TURN_LEFT_30: right wheel slow at [(0.77, 0.001, 0.8), (0.87, 0.001, 0.8)] (t s, speed m/s, duty); result done  from (3.41, 3.37, 50) to (3.41, 3.36); wheels from the tape line L 0.974 R 1.097 m
+
+== 1d. The firmware's stall assist (a wheel kicked at duty 0.8 when it stops while driven), per session:
+  floor check   23 moves,  0 kicks: none
+  b2-real-02   442 moves,  3 kicks: left wheel in a turn 3
+  b2-real-03   246 moves,  0 kicks: none
+  b2-real-04   132 moves,  0 kicks: none
+  b2-real-05   803 moves, 11 kicks: left wheel in a turn 8, right wheel in a turn 3
+  b2-real-06   395 moves,  9 kicks: left wheel in a turn 1, right wheel in a turn 8
+  turns and kicks by where the car stood (north strip y >= 3.3 m against the rest), the sessions with a batch:
+    b2-real-02  turns north    1, kicks there  0 | turns elsewhere  395, kicks there  3
+    b2-real-03  turns north    0, kicks there  0 | turns elsewhere  212, kicks there  0
+    b2-real-04  turns north    0, kicks there  0 | turns elsewhere  124, kicks there  0
+    b2-real-05  turns north  122, kicks there  6 | turns elsewhere  574, kicks there  5
+    b2-real-06  turns north  226, kicks there  6 | turns elsewhere  133, kicks there  3
+  each kick: session, move, wheel, the axle midpoint's and the wheels' nearest approach to the tape line
+    b2-real-02 move_20261125T121253_63_TURN_RIGHT_30.jsonl  left   t 0.37 s  at (1.77, 1.41, 66): mid 0.603, L 0.653, R 0.542 m; result done
+    b2-real-02 move_20261125T121923_63_TURN_LEFT_30.jsonl   left   t 0.39 s  at (2.45, 2.11, -64): mid 0.080, L 0.130, R 0.020 m; result done
+    b2-real-02 move_20261125T121939_70_TURN_RIGHT_30.jsonl  left   t 0.37 s  at (2.48, 2.02, 21): mid 0.093, L 0.086, R 0.085 m; result done
+    b2-real-05 move_20261125T165305_36_TURN_LEFT_30.jsonl   right  t 0.47 s  at (3.11, 1.65, 11): mid 0.733, L 0.688, R 0.751 m; result done
+    b2-real-05 move_20261125T165305_36_TURN_LEFT_30.jsonl   right  t 0.91 s  at (3.11, 1.65, 11): mid 0.733, L 0.688, R 0.751 m; result done
+    b2-real-05 move_20261125T165346_54_TURN_RIGHT_30.jsonl  right  t 0.52 s  at (2.98, 2.29, 108): mid 0.613, L 0.547, R 0.677 m; result done
+    b2-real-05 move_20261125T170052_127_TURN_LEFT_30.jsonl  left   t 0.37 s  at (1.55, 3.85, -72): mid 0.827, L 0.781, R 0.863 m; result done
+    b2-real-05 move_20261125T170105_3_TURN_LEFT_30.jsonl    left   t 0.36 s  at (1.62, 3.87, 109): mid 0.773, L 0.822, R 0.719 m; result done
+    b2-real-05 move_20261125T170117_9_TURN_LEFT_30.jsonl    left   t 0.33 s  at (1.57, 3.84, -72): mid 0.807, L 0.761, R 0.844 m; result done
+    b2-real-05 move_20261125T170145_21_TURN_LEFT_30.jsonl   left   t 0.34 s  at (2.28, 3.73, 83): mid 0.104, L 0.167, R 0.052 m; result done
+    b2-real-05 move_20261125T170228_40_TURN_LEFT_30.jsonl   left   t 0.34 s  at (2.92, 3.60, -157): mid 0.532, L 0.573, R 0.479 m; result done
+    b2-real-05 move_20261125T170600_4_TURN_LEFT_30.jsonl    left   t 0.35 s  at (2.19, 0.96, -26): mid 0.169, L 0.154, R 0.164 m; result done
+    b2-real-05 move_20261125T170717_25_TURN_LEFT_30.jsonl   left   t 0.35 s  at (2.33, 2.05, 117): mid 0.034, L 0.081, R 0.000 m; result done
+    b2-real-05 move_20261125T170918_79_TURN_LEFT_30.jsonl   left   t 0.36 s  at (1.86, 3.62, 19): mid 0.504, L 0.526, R 0.460 m; result done
+    b2-real-06 move_20261125T172919_2_TURN_LEFT_30.jsonl    right  t 0.34 s  at (2.35, 2.15, -29): mid 0.017, L 0.000, R 0.022 m; result done
+    b2-real-06 move_20261125T172919_2_TURN_LEFT_30.jsonl    right  t 0.80 s  at (2.35, 2.15, -29): mid 0.017, L 0.000, R 0.022 m; result done
+    b2-real-06 move_20261125T172919_2_TURN_LEFT_30.jsonl    right  t 1.24 s  at (2.35, 2.15, -29): mid 0.017, L 0.000, R 0.022 m; result done
+    b2-real-06 move_20261125T173901_13_TURN_LEFT_30.jsonl   right  t 0.73 s  at (2.67, 3.74, -110): mid 0.306, L 0.365, R 0.240 m; result done
+    b2-real-06 move_20261125T173901_13_TURN_LEFT_30.jsonl   right  t 1.17 s  at (2.67, 3.74, -110): mid 0.306, L 0.365, R 0.240 m; result done
+    b2-real-06 move_20261125T174043_5_TURN_LEFT_30.jsonl    right  t 0.74 s  at (3.41, 3.37, 50): mid 1.039, L 0.974, R 1.097 m; result done
+    b2-real-06 move_20261125T174043_5_TURN_LEFT_30.jsonl    right  t 1.18 s  at (3.41, 3.37, 50): mid 1.039, L 0.974, R 1.097 m; result done
+    b2-real-06 move_20261125T174045_6_TURN_LEFT_30.jsonl    right  t 0.35 s  at (3.41, 3.36, 79): mid 1.037, L 0.972, R 1.100 m; result done
+    b2-real-06 move_20261125T174045_6_TURN_LEFT_30.jsonl    left   t 0.65 s  at (3.41, 3.36, 79): mid 1.037, L 0.972, R 1.100 m; result done
+
+== 2. The stalled moves (the batch's diagnostics)
+b2-real-03 ep02-a1 post step 7 2026-11-25T13:35:23Z TURN_LEFT_30: stall_right; duration 1.15 s, achieved 0.002 m, s_left -0.036 s_right 0.040 m, gyro 27.0 deg, encoder yaw 32.8 deg, peak 0.019 m/s, at the stop -0.017 m/s; from (2.41, 1.54, 3) to (2.41, 1.54, 30); nearest the tape line 0.043 m (wheels: left 0.012, right 0.047)
+b2-real-05 ep04-a1 episode step 18 2026-11-25T17:19:57Z FORWARD_25: stall_right; duration 2.37 s, achieved 0.227 m, s_left 0.236 s_right 0.218 m, gyro -5.8 deg, encoder yaw -7.6 deg, peak 0.140 m/s, at the stop 0.033 m/s; from (2.28, 2.12, -62) to (2.39, 1.92, -68); nearest the tape line 0.001 m (wheels: left 0.003, right 0.040)
+
+== 3. Where: slip flags, stalls and the range ratios against the tape line (moves with a pose before and after)
+(batches run after the long tape was removed are left out of this section: b2-real-06)
+straight moves: 211, of them 49 (23 %) within 0.10 m of the tape line; slip flags 18, of them 9 within it (18 % of the moves there against 5.6 % elsewhere)
+turns: 1560, of them 283 (18 %) within 0.10 m of the tape line; slip flags 0, of them 0 within it (0 % of the moves there against 0.0 % elsewhere)
+every slip-flagged move: batch episode phase step action, from -> to, the axle midpoint's and each wheel's
+nearest approach to the tape line, the wheel-gyro yaw disagreement, the wheels' distances s_left / s_right
+  b2-real-01 ep01-a1 episode  24 FORWARD_25    (2.89, 1.12,   79) -> (2.92, 1.36)  mid 0.525  L 0.460  R 0.591 m  16.7 deg  0.259 / 0.230 m
+  b2-real-02 ep02-a1 pre      17 FORWARD_25    (2.87, 0.72,  159) -> (2.64, 0.78)  mid 0.274  L 0.252  R 0.297 m  14.7 deg  0.260 / 0.229 m
+  b2-real-02 ep03-a1 pre      17 FORWARD_25    (2.47, 1.32,   85) -> (2.48, 1.57)  mid 0.098  L 0.032  R 0.165 m  11.2 deg  0.233 / 0.263 m
+  b2-real-02 ep03-a1 pre      18 FORWARD_25    (2.48, 1.57,   87) -> (2.49, 1.82)  mid 0.112  L 0.045  R 0.178 m  12.5 deg  0.228 / 0.261 m
+  b2-real-03 ep01-a1 episode  41 FORWARD_25    (3.27, 1.71,  101) -> (3.21, 1.95)  mid 0.837  L 0.772  R 0.902 m  12.5 deg  0.257 / 0.235 m
+  b2-real-03 ep02-a1 episode  78 FORWARD_25    (2.87, 1.67,  179) -> (2.63, 1.65)  mid 0.262  L 0.266  R 0.259 m  14.0 deg  0.258 / 0.234 m
+  b2-real-04 ep01-a1 pre      16 FORWARD_25    (2.45, 1.46,   87) -> (2.45, 1.71)  mid 0.079  L 0.012  R 0.145 m  11.8 deg  0.231 / 0.259 m
+  b2-real-04 ep01-a1 pre      17 FORWARD_25    (2.45, 1.71,   88) -> (2.46, 1.95)  mid 0.085  L 0.018  R 0.151 m  12.3 deg  0.229 / 0.262 m
+  b2-real-04 ep01-a1 pre      50 FORWARD_25    (2.29, 2.05,  119) -> (2.16, 2.26)  mid 0.080  L 0.139  R 0.022 m  13.2 deg  0.257 / 0.232 m
+  b2-real-05 ep01-a1 episode  81 FORWARD_25    (3.09, 1.55,   25) -> (3.27, 1.64)  mid 0.723  L 0.696  R 0.751 m  12.7 deg  0.254 / 0.235 m
+  b2-real-05 ep02-a1 pre      85 FORWARD_25    (2.16, 2.76,  122) -> (2.02, 2.96)  mid 0.207  L 0.264  R 0.150 m  12.6 deg  0.257 / 0.236 m
+  b2-real-05 ep03-a1 pre      24 FORWARD_25    (2.33, 1.80,   83) -> (2.34, 2.04)  mid 0.032  L 0.098  R 0.024 m  19.9 deg  0.263 / 0.226 m
+  b2-real-05 ep03-a1 pre      63 FORWARD_25    (2.28, 1.82,   80) -> (2.30, 2.07)  mid 0.067  L 0.133  R 0.001 m  18.7 deg  0.261 / 0.227 m
+  b2-real-05 ep03-a1 pre      64 FORWARD_25    (2.30, 2.07,   84) -> (2.31, 2.31)  mid 0.058  L 0.125  R 0.000 m  19.6 deg  0.264 / 0.227 m
+  b2-real-05 ep03-a1 pre      65 FORWARD_25    (2.31, 2.31,   87) -> (2.26, 2.48)  mid 0.058  L 0.125  R 0.001 m  19.8 deg  0.264 / 0.226 m
+  b2-real-05 ep03-a1 pre      66 FORWARD_25    (2.26, 2.48,   91) -> (2.21, 2.67)  mid 0.108  L 0.174  R 0.041 m  18.3 deg  0.262 / 0.229 m
+  b2-real-05 ep03-a1 pre      70 FORWARD_25    (2.03, 3.19,  102) -> (1.96, 3.38)  mid 0.339  L 0.405  R 0.274 m  14.4 deg  0.256 / 0.232 m
+  b2-real-05 ep04-a1 pre      83 FORWARD_25    (2.33, 2.31,  116) -> (2.23, 2.47)  mid 0.035  L 0.095  R 0.004 m  11.0 deg  0.255 / 0.237 m
+the stalls:
+  b2-real-03 TURN_LEFT_30: stall_right at (2.41, 1.54, 30), 2026-11-25T13:35:23Z: 0.046 m from the tape line
+  b2-real-05 FORWARD_25: stall_right at (2.39, 1.92, -68), 2026-11-25T17:19:57Z: 0.022 m from the tape line
+range-measured forward moves: 109 over the batches; the 12 lowest ratios and the 5 highest:
+  b2-real-05 17:08:59 heading  110.5  (1.88, 3.56) -> (1.85, 3.65)  ratio 0.765  nearest the tape line 0.490 m
+  b2-real-06 17:32:01 heading   92.8  (1.81, 2.46) -> (1.80, 2.71)  ratio 0.787  nearest the tape line 0.560 m
+  b2-real-05 17:14:50 heading   67.5  (2.67, 2.20) -> (2.76, 2.43)  ratio 0.787  nearest the tape line 0.301 m
+  b2-real-05 16:59:12 heading  125.9  (2.02, 2.96) -> (1.87, 3.15)  ratio 0.797  nearest the tape line 0.353 m
+  b2-real-05 17:00:25 heading  103.8  (1.76, 3.48) -> (1.70, 3.71)  ratio 0.813  nearest the tape line 0.607 m
+  b2-real-05 17:14:53 heading   69.8  (2.75, 2.42) -> (2.84, 2.65)  ratio 0.817  nearest the tape line 0.384 m
+  b2-real-06 17:32:10 heading   94.0  (1.75, 2.87) -> (1.73, 3.11)  ratio 0.817  nearest the tape line 0.621 m
+  b2-real-05 17:00:18 heading   96.9  (1.87, 3.12) -> (1.84, 3.36)  ratio 0.818  nearest the tape line 0.503 m
+  b2-real-05 16:53:14 heading   72.4  (3.10, 1.65) -> (3.18, 1.89)  ratio 0.820  nearest the tape line 0.733 m
+  b2-real-05 17:00:14 heading   94.4  (1.89, 2.91) -> (1.88, 3.15)  ratio 0.821  nearest the tape line 0.475 m
+  b2-real-06 17:38:04 heading  137.7  (2.83, 3.74) -> (2.65, 3.91)  ratio 0.822  nearest the tape line 0.364 m
+  b2-real-05 17:08:50 heading  100.9  (2.08, 3.01) -> (2.04, 3.25)  ratio 0.825  nearest the tape line 0.288 m
+  b2-real-05 17:03:26 heading  -82.1  (3.25, 2.81) -> (3.28, 2.56)  ratio 1.053  nearest the tape line 0.878 m
+  b2-real-05 17:02:55 heading  -89.8  (3.20, 3.33) -> (3.20, 3.08)  ratio 1.055  nearest the tape line 0.828 m
+  b2-real-05 17:03:31 heading -107.8  (3.32, 2.56) -> (3.24, 2.33)  ratio 1.057  nearest the tape line 0.875 m
+  b2-real-05 17:11:45 heading  -85.8  (3.20, 3.09) -> (3.22, 2.85)  ratio 1.059  nearest the tape line 0.833 m
+  b2-real-05 17:02:58 heading  -86.9  (3.22, 3.08) -> (3.24, 2.84)  ratio 1.077  nearest the tape line 0.854 m
+
+== 4. Range ratios (tags over odometry) by direction of travel, on and off the tape line (within 0.10 m)
+b2-real-03        north (45-135)   on the tape: n  0 median   -   | off it: n   4 median 0.840
+b2-real-03        south (225-315)  on the tape: n  2 median 0.998 | off it: n   3 median 0.981
+b2-real-03        east (315-45)    on the tape: n  2 median 0.957 | off it: n   6 median 0.912
+b2-real-03        west (135-225)   on the tape: n  3 median 1.025 | off it: n   7 median 0.985
+b2-real-04        east (315-45)    on the tape: n  1 median 0.991 | off it: n   0 median   -  
+b2-real-05        north (45-135)   on the tape: n  1 median 0.907 | off it: n  18 median 0.825
+b2-real-05        south (225-315)  on the tape: n  8 median 0.993 | off it: n  24 median 1.020
+b2-real-05        east (315-45)    on the tape: n  2 median 0.956 | off it: n  11 median 0.958
+b2-real-06        north (45-135)   on the tape line (removed): n  0 median   -   | off it: n   8 median 0.832
+b2-real-06        east (315-45)    on the tape line (removed): n  2 median 0.972 | off it: n   5 median 0.959
+b2-real-06        west (135-225)   on the tape line (removed): n  1 median 0.882 | off it: n   1 median 0.822
+all with the tape north (45-135)   on the tape: n  1 median 0.907 | off it: n  22 median 0.829
+all with the tape south (225-315)  on the tape: n 10 median 0.994 | off it: n  27 median 1.016
+all with the tape east (315-45)    on the tape: n  5 median 0.965 | off it: n  17 median 0.950
+all with the tape west (135-225)   on the tape: n  3 median 1.025 | off it: n   7 median 0.985
+each batch's own slip_by_heading (the manifest, last episode: the batch so far, 45-degree sectors by heading):
+  b2-real-01 (no slip_by_heading in this manifest)
+  b2-real-02 (no slip_by_heading in this manifest)
+  b2-real-03 0: 3 x 0.933  45: 3 x 0.885  90: 3 x 0.846  180: 5 x 0.963  225: 5 x 0.992  315: 8 x 0.973
+  b2-real-04 315: 1 x 0.991
+  b2-real-05 0: 11 x 0.958  45: 6 x 0.901  90: 14 x 0.823  135: 1 x 0.797  225: 9 x 1.003  270: 16 x 1.029  315: 7 x 1.001
+  b2-real-06 0: 7 x 0.959  90: 7 x 0.833  135: 2 x 0.823  225: 1 x 0.882
+
+== 4b. Range ratio per tag (each tag ranged before and after a forward move), by direction of travel and wall:
+   median (n). A car covering less than its count shows on every wall it ranges; a mis-sized tag on its own wall.
+  b2-real-01 north window 0.882 (1)
+  b2-real-01 south angled 0.998 (3)  w295 1.009 (5)
+  b2-real-01 east  angled 0.965 (2)  window 0.962 (1)
+  b2-real-01 west  w295 0.970 (5)
+  b2-real-02 north doors 0.845 (3)  window 0.906 (12)
+  b2-real-02 south angled 1.000 (5)  w295 0.993 (2)
+  b2-real-02 east  angled 0.945 (7)  window 0.916 (3)
+  b2-real-02 west  desk 0.937 (3)
+  b2-real-03 north window 0.841 (8)
+  b2-real-03 south angled 0.986 (5)
+  b2-real-03 east  angled 0.929 (4)  window 0.919 (8)
+  b2-real-03 west  desk 0.951 (2)  w295 1.009 (4)
+  b2-real-04 east  window 0.991 (2)
+  b2-real-05 north doors 0.827 (13)  window 0.867 (20)
+  b2-real-05 south angled 1.023 (28)  w295 1.020 (31)  window 1.042 (15)
+  b2-real-05 east  window 0.949 (27)
+  b2-real-06 north doors 0.829 (8)  window 0.841 (1)
+  b2-real-06 east  window 0.958 (14)
+  b2-real-06 west  desk 0.882 (1)  doors 0.822 (1)
+  all        north doors 0.830 (24)  window 0.866 (42)
+  all        south angled 1.006 (41)  w295 1.016 (38)  window 1.042 (15)
+  all        east  angled 0.945 (13)  window 0.956 (55)
+  all        west  desk 0.938 (6)  doors 0.822 (1)  w295 0.986 (9)
+   per tag, all batches, all directions: median (n)
+    angled  T04  east  0.947 (12)
+    angled  T04  south 1.000 (22)
+    angled  T12  south 1.022 (19)
+    desk    T00  west  0.938 (6)
+    doors   T10  north 0.826 (16)
+    doors   T11  north 0.845 (7)
+    w295    T01  west  0.992 (5)
+    w295    T02  south 1.002 (8)
+    w295    T02  west  0.959 (2)
+    w295    T03  south 1.009 (10)
+    w295    T17  south 1.020 (12)
+    w295    T18  south 1.019 (8)
+    window  T05  east  0.932 (6)
+    window  T05  south 1.067 (5)
+    window  T06  north 0.880 (6)
+    window  T07  east  0.965 (15)
+    window  T07  north 0.864 (10)
+    window  T08  east  0.916 (3)
+    window  T08  north 0.852 (6)
+    window  T13  east  0.958 (8)
+    window  T13  north 0.849 (6)
+    window  T14  east  0.895 (3)
+    window  T14  north 0.913 (4)
+    window  T15  east  0.933 (8)
+    window  T15  north 0.868 (6)
+    window  T16  east  0.966 (8)
+    window  T16  south 1.026 (8)
+    window  T19  east  0.895 (3)
+    window  T19  north 0.838 (4)
+
+map written: floor-map.svg
+
+== 2b. tools/stall_check.py on b2-real-05 with its recorder session's move logs
+batch b2-real-05: halted, halt FORWARD_25: stall_right
+stalled move: move_20261125T171954_18_FORWARD_25.jsonl FORWARD_25, stall_right (right wheel)
+  duty at the stop 0.418 (the move's highest 0.589)
+  deceleration: gradual [0.07, 0.052, 0.038, 0.031, 0.023, 0.024, 0.0]
+  while it stood (0.16 s): other wheel 0.07 m/s, gyro turned 4.17 deg
+  firmware cut-off False, bump False
+  tracked pose (2.391, 1.925, -67.6 deg), sigma 0.113 m: footprint 1.34 m inside the driving area, axle 1.43 m, turn room 1.25 m
+  stalls in this batch: 1; earlier ones within 0.30 m of here: 0
+VERDICT: marginal-duty stall, clear of everything
+
+== 5. tools/recompute_truth.py as of 19f71e6 (the code both batches ran)
+== b2-real-05 --slip-sigma 0.3 (code 19f71e6)
+{"episode": "ep01-a1", "scenario": "S5", "steps": 114, "largest_difference_from_the_logged_truth_m": 0.108, "replay_halts": [], "final_error_logged_m": 0.101, "final_error_recomputed_m": 0.099, "final_truth_sigma_logged_m": 0.0501, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.002, "final_error_vs_end_circle_m": 0.062, "end_circle_rms_m": 0.027, "logged_minus_end_circle_m": 0.093, "recomputed_minus_end_circle_m": 0.092}
+{"episode": "ep02-a1", "scenario": "S4", "steps": 132, "largest_difference_from_the_logged_truth_m": 0.004, "replay_halts": [], "final_error_logged_m": 0.291, "final_error_recomputed_m": 0.291, "final_truth_sigma_logged_m": 0.05, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.0, "final_error_vs_end_circle_m": 0.232, "end_circle_rms_m": 0.049, "logged_minus_end_circle_m": 0.083, "recomputed_minus_end_circle_m": 0.083}
+{"episode": "ep03-a1", "scenario": "S3", "steps": 141, "largest_difference_from_the_logged_truth_m": 0.0, "replay_halts": [], "final_error_logged_m": 0.197, "final_error_recomputed_m": 0.197, "final_truth_sigma_logged_m": 0.05, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.0, "final_error_vs_end_circle_m": 0.204, "end_circle_rms_m": 0.029, "logged_minus_end_circle_m": 0.062, "recomputed_minus_end_circle_m": 0.062}
+{"episode": "ep04-a1", "scenario": "S5", "steps": 19, "largest_difference_from_the_logged_truth_m": 0.018, "replay_halts": [], "final_error_logged_m": 0.097, "final_error_recomputed_m": 0.106, "final_truth_sigma_logged_m": 0.0881, "final_truth_sigma_recomputed_m": 0.088, "final_truth_shift_m": 0.009}
+== b2-real-05 --slip-sigma 0 (code 19f71e6)
+{"episode": "ep01-a1", "scenario": "S5", "steps": 114, "largest_difference_from_the_logged_truth_m": 0.101, "replay_halts": [], "final_error_logged_m": 0.101, "final_error_recomputed_m": 0.124, "final_truth_sigma_logged_m": 0.0501, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.038, "final_error_vs_end_circle_m": 0.062, "end_circle_rms_m": 0.027, "logged_minus_end_circle_m": 0.093, "recomputed_minus_end_circle_m": 0.129}
+{"episode": "ep02-a1", "scenario": "S4", "steps": 132, "largest_difference_from_the_logged_truth_m": 0.124, "replay_halts": [], "final_error_logged_m": 0.291, "final_error_recomputed_m": 0.247, "final_truth_sigma_logged_m": 0.05, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.048, "final_error_vs_end_circle_m": 0.232, "end_circle_rms_m": 0.049, "logged_minus_end_circle_m": 0.083, "recomputed_minus_end_circle_m": 0.07}
+{"episode": "ep03-a1", "scenario": "S3", "steps": 141, "largest_difference_from_the_logged_truth_m": 0.229, "replay_halts": [], "final_error_logged_m": 0.197, "final_error_recomputed_m": 0.199, "final_truth_sigma_logged_m": 0.05, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.01, "final_error_vs_end_circle_m": 0.204, "end_circle_rms_m": 0.029, "logged_minus_end_circle_m": 0.062, "recomputed_minus_end_circle_m": 0.071}
+{"episode": "ep04-a1", "scenario": "S5", "steps": 19, "largest_difference_from_the_logged_truth_m": 0.018, "replay_halts": [], "final_error_logged_m": 0.097, "final_error_recomputed_m": 0.108, "final_truth_sigma_logged_m": 0.0881, "final_truth_sigma_recomputed_m": 0.053, "final_truth_shift_m": 0.012}
+== b2-real-06 --slip-sigma 0.3 (code 19f71e6)
+{"episode": "ep01-a1", "scenario": "S4", "steps": 80, "largest_difference_from_the_logged_truth_m": 0.004, "replay_halts": [], "final_error_logged_m": 0.13, "final_error_recomputed_m": 0.13, "final_truth_sigma_logged_m": 0.05, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.0, "final_error_vs_end_circle_m": 0.072, "end_circle_rms_m": 0.032, "logged_minus_end_circle_m": 0.059, "recomputed_minus_end_circle_m": 0.059}
+{"episode": "ep02-a1", "scenario": "S3", "steps": 45, "largest_difference_from_the_logged_truth_m": 0.0, "replay_halts": [], "final_error_logged_m": 0.066, "final_error_recomputed_m": 0.066, "final_truth_sigma_logged_m": 0.058, "final_truth_sigma_recomputed_m": 0.058, "final_truth_shift_m": 0.0, "end_circle_rms_m": 0.045, "logged_minus_end_circle_m": 0.051, "recomputed_minus_end_circle_m": 0.051}
+{"episode": "ep03-a1", "scenario": "S5", "steps": 4, "largest_difference_from_the_logged_truth_m": 0.018, "replay_halts": [], "final_error_logged_m": 0.039, "final_error_recomputed_m": 0.054, "final_truth_sigma_logged_m": 0.05, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.016}
+== b2-real-06 --slip-sigma 0 (code 19f71e6)
+{"episode": "ep01-a1", "scenario": "S4", "steps": 80, "largest_difference_from_the_logged_truth_m": 0.131, "replay_halts": [], "final_error_logged_m": 0.13, "final_error_recomputed_m": 0.176, "final_truth_sigma_logged_m": 0.05, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.046, "final_error_vs_end_circle_m": 0.072, "end_circle_rms_m": 0.032, "logged_minus_end_circle_m": 0.059, "recomputed_minus_end_circle_m": 0.104}
+{"episode": "ep02-a1", "scenario": "S3", "steps": 45, "largest_difference_from_the_logged_truth_m": 0.026, "replay_halts": [], "final_error_logged_m": 0.066, "final_error_recomputed_m": 0.059, "final_truth_sigma_logged_m": 0.058, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.014, "end_circle_rms_m": 0.045, "logged_minus_end_circle_m": 0.051, "recomputed_minus_end_circle_m": 0.061}
+{"episode": "ep03-a1", "scenario": "S5", "steps": 4, "largest_difference_from_the_logged_truth_m": 0.018, "replay_halts": [], "final_error_logged_m": 0.039, "final_error_recomputed_m": 0.054, "final_truth_sigma_logged_m": 0.05, "final_truth_sigma_recomputed_m": 0.05, "final_truth_shift_m": 0.016}
