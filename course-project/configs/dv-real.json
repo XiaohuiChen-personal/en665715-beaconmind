@@ -1,0 +1,534 @@
+{
+  "$comment": "Real-run design values (Xiaohui Chen, 2026-11-24: a separate design-values file). Written by tools/real_dv.py on 2026-11-25 from configs/dv.json (frozen, sha12 be20213dd9c9) and configs/detector_noise.json (sha12 68ff4796a4c4). Only these fields differ from the frozen file: reject_range_above_m, sigma_range_a_m, sigma_range_b_per_m, sigma_bearing_deg; values changed: sigma_range_a_m 0.05 -> 0.0063; sigma_range_b_per_m 0.05 -> 0.017; sigma_bearing_deg 2.0 -> 1.937; reject_range_above_m 2.0 -> 3.0. Every other entry is the frozen file's, entry for entry. AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: wrote the tool that writes this file; the numbers are the pilot's and Xiaohui's.",
+  "schema": "bm.dv/1",
+  "values": {
+    "gate_range_m": {
+      "value": 0.3,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 gate_detection; l2_geometry.py",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_bearing_deg": {
+      "value": 15.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 gate_detection; l2_geometry.py",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_widen_range_per_m": {
+      "value": 0.1,
+      "unit": "m/m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_widen_bearing_per_m": {
+      "value": 5.0,
+      "unit": "deg/m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_widen_bearing_per_turn_deg": {
+      "value": 1.0,
+      "unit": "deg/turn",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_cap_range_m": {
+      "value": 0.6,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_cap_bearing_deg": {
+      "value": 30.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "revisit_travel_m": {
+      "value": 1.5,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "prior_gate_m": {
+      "value": 0.5,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 fix_pose",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "prior_gate_deg": {
+      "value": 20.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 fix_pose",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "position_fix_gate_m": {
+      "value": 0.3,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 fix_pose",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "heading_safe_deg": {
+      "value": 3.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 fix_pose",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "well_cond_sigma_xy_m": {
+      "value": 0.15,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "well_cond_sigma_theta_deg": {
+      "value": 8.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reloc_min_beacons": {
+      "value": 3,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reloc_residual_m": {
+      "value": 0.1,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reloc_sigma_xy_m": {
+      "value": 0.25,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reloc_sigma_theta_deg": {
+      "value": 10.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "confirm_n_obs": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "confirm_baseline_m": {
+      "value": 0.4,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "suspect_conflicts": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reject_quality_below": {
+      "value": 0.5,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 3",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "reject_range_above_m": {
+      "value": 3.0,
+      "unit": "m",
+      "status": "DV",
+      "source": "Xiaohui Chen's range limit after the tag pilot (plan 3.6: 3.0 m, or 2.5 m if the pilot does not confirm it); the pilot's reliable range 3.135 m",
+      "evidence": "configs/detector_noise.json sha12 68ff4796a4c4 (sha256 68ff4796a4c49425e994b6170e9308e298e55b7ee2d2184781fd78949f7f6f50); evidence/M1/M1.T8",
+      "updated": "2026-11-25"
+    },
+    "conflict_radius_m": {
+      "value": 1.0,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D7 step 3",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "new_place_m": {
+      "value": 0.5,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5, D7 E4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "scan_turns": {
+      "value": 12,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5, D7 E4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "v_max_mps": {
+      "value": 0.15,
+      "unit": "m/s",
+      "status": "DV",
+      "source": "AGENT-DESIGN D4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "move_timeout_s": {
+      "value": 5.0,
+      "unit": "s",
+      "status": "DV",
+      "source": "AGENT-DESIGN D4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "turn_rate_dps": {
+      "value": 45.0,
+      "unit": "deg/s",
+      "status": "DV",
+      "source": "proposed default (M3.T4 confirms); AGENT-DESIGN D4 leaves it to W3",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "steps_explore": {
+      "value": 150,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "steps_navigation": {
+      "value": 60,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D4",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "done_range_m": {
+      "value": 0.55,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D2; placeholder until M1.T9/M1.T8 (talk track)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "success_margin_beacon_m": {
+      "value": 0.15,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D2 T4 scoring",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "success_bearing_deg": {
+      "value": 25.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D2 T4 scoring",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "success_start_m": {
+      "value": 0.3,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D2 T4 scoring",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_yaw_disagree_deg": {
+      "value": 10.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_range_min_m": {
+      "value": 0.08,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_range_frac": {
+      "value": 0.3,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_ahead_deg": {
+      "value": 30.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "slip_dropout_m": {
+      "value": 0.8,
+      "unit": "m",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "autolatch_contacts": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 validator",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "autolatch_slips": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 validator",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "autolatch_errors": {
+      "value": 2,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN D5 validator",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "stall_grace_ms": {
+      "value": 200,
+      "unit": "ms",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W motion",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "stall_window_ms": {
+      "value": 200,
+      "unit": "ms",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W motion",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "stall_frac": {
+      "value": 0.5,
+      "unit": "1",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W motion",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "estop_max_s": {
+      "value": 0.2,
+      "unit": "s",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W wheels-down gate",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "watchdog_ms": {
+      "value": 500,
+      "unit": "ms",
+      "status": "DV",
+      "source": "proposed default (M3.T7 confirms from the measured p99 link latency)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "obs_frames": {
+      "value": 5,
+      "unit": "1",
+      "status": "DV",
+      "source": "proposed default (M1.T8 confirms)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "obs_min_frames": {
+      "value": 3,
+      "unit": "1",
+      "status": "DV",
+      "source": "proposed default (M1.T8 confirms)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "obs_settle_s": {
+      "value": 0.3,
+      "unit": "s",
+      "status": "DV",
+      "source": "proposed default (M1.T8 confirms)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "forward_wall_limit_m": {
+      "value": 0.35,
+      "unit": "m",
+      "status": "DV",
+      "source": "tools/backstory_sim.py WALL_LIMIT_M; proposed default (M1.T9 confirms)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "pack_min_v": {
+      "value": 5.5,
+      "unit": "V",
+      "status": "DV",
+      "source": "AGENT-DESIGN \u00a7W operator procedure",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "gate_travel_cap_m": {
+      "value": 3.0,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sigma_range_a_m": {
+      "value": 0.0063,
+      "unit": "m",
+      "status": "measured",
+      "source": "tag pilot 20261125-020811-tag-pilot frames.csv (2026-11-25, 420 frames, 14 placements): |range bias a| 0.0049 + range sigma a 0.0013 m (dv_real.py)",
+      "evidence": "configs/detector_noise.json sha12 68ff4796a4c4 (sha256 68ff4796a4c49425e994b6170e9308e298e55b7ee2d2184781fd78949f7f6f50); evidence/M1/M1.T8",
+      "updated": "2026-11-25"
+    },
+    "sigma_range_b_per_m": {
+      "value": 0.017,
+      "unit": "m/m",
+      "status": "measured",
+      "source": "tag pilot 20261125-020811-tag-pilot frames.csv (2026-11-25, 420 frames, 14 placements): |range bias b| 0.0166 + range sigma b 0.0004 m/m (dv_real.py)",
+      "evidence": "configs/detector_noise.json sha12 68ff4796a4c4 (sha256 68ff4796a4c49425e994b6170e9308e298e55b7ee2d2184781fd78949f7f6f50); evidence/M1/M1.T8",
+      "updated": "2026-11-25"
+    },
+    "sigma_bearing_deg": {
+      "value": 1.937,
+      "unit": "deg",
+      "status": "measured",
+      "source": "tag pilot 20261125-020811-tag-pilot frames.csv (2026-11-25, 420 frames, 14 placements): |bearing bias| 0.077 + bearing sigma 1.860 + 0.0000 x 3.00 m (the range limit) deg (dv_real.py)",
+      "evidence": "configs/detector_noise.json sha12 68ff4796a4c4 (sha256 68ff4796a4c49425e994b6170e9308e298e55b7ee2d2184781fd78949f7f6f50); evidence/M1/M1.T8",
+      "updated": "2026-11-25"
+    },
+    "near_blocked_deg": {
+      "value": 30.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_width_deg": {
+      "value": 30.0,
+      "unit": "deg",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_wall_clearance_m": {
+      "value": 0.6,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_leg_step_m": {
+      "value": 0.25,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_max_leg_moves": {
+      "value": 3,
+      "unit": "1",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "sector_unknown_leg_moves": {
+      "value": 1,
+      "unit": "1",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "leg_lookahead_m": {
+      "value": 0.75,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "scan_point_ignore_m": {
+      "value": 0.1,
+      "unit": "m",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    },
+    "interior_weight": {
+      "value": 0.5,
+      "unit": "1",
+      "status": "DV",
+      "source": "l2_geometry.py (ported in M1.T2)",
+      "evidence": null,
+      "updated": "2026-10-06"
+    }
+  }
+}

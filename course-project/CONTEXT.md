@@ -88,6 +88,8 @@ with tag centres at 0.215 m. The pilot supports the 3.0 m range limit (Xiaohui d
 `bm-micro-ros-agent` still up, recorder stopped, clone at `6fa8b0e`; scratch wrapper `~/bm-scratch/pilot_mark3.py` on the
 Spark (outside the repo) can be deleted.
 
+**Range limit 3.0 m (Xiaohui, 2026-11-25: "I would say 3.0 will be better")**, inside the pilot's reliable range (to 3.135 m). `configs/dv-real.json` written by the batch README's command a2 (sha12 `ea2cd23f9186`): the frozen file with `sigma_range_a_m` 0.05 → 0.0063, `sigma_range_b_per_m` 0.05 → 0.017, `sigma_bearing_deg` 2.0 → 1.937, `reject_range_above_m` 2.0 → 3.0; frozen `dv.json` unchanged. Real batches run with `--max-range 3.0 --detector-noise course-project/configs/detector_noise.json --dv course-project/configs/dv-real.json`. Motor pack: 4 × AA alkaline (6.67 V fresh on 2026-09-20, 5.7–5.9 V by mid-October; `pack_min_v` 5.5 V); Claude advised a fresh set before the stand test, kept for the floor check and the first batches; there is no battery signal on the car.
+
 **Tags.** Xiaohui checked a printed tag: about 16 × 16 cm (passes the printer-scaling check; the pilot's step A1 takes
 the exact reading). Mounting started 2026-11-25 from a mounting page Claude published (a to-scale plan and a
 wall-by-wall list generated from `layout-2/layout.json`; private claude.ai artifact). Xiaohui asked whether to fold the
