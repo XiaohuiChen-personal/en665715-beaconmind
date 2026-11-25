@@ -1,6 +1,6 @@
 # Course Project Context
 
-Last updated: 2026-11-24
+Last updated: 2026-11-25
 
 **Project name: BeaconMind** (chosen 2026-09-28). "Beacon" for the AprilTags on the walls, "Mind" for
 the language model that owns the pose belief, the beacon map and the SLAM decisions. Use this name in
@@ -10,7 +10,7 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
 
-## 2026-11-24 — presentation timing from Canvas; agents started on the demo video and the batch runner (entry in progress)
+## 2026-11-24 and 2026-11-25 — real-car day: tags mounted, pilot, nine real B2 episodes, real-log replays, firmware and motor (newest paragraph first; each paragraph names its own date and time)
 
 **Presentation timing (Canvas, "Presentation Timing", screenshot sent by Xiaohui on 2026-11-24):** slides 5–10
 minutes; demo 3–5 minutes as a pre-recorded video; 15 minutes in all per project (20 for a group of two, which does
