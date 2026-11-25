@@ -1254,7 +1254,10 @@ def test_halt_file_appearing_mid_run(tmp_path):
 
 def test_the_transit_checks_the_encoder_scale_before_any_episode(tmp_path):
     """Review finding 8. The first transit is measured by odometry and by the tags. With the odometer reading 25 %
-    short the batch halts there: no episode starts, and the simulated car is nowhere near a wall."""
+    short the batch halts before the car comes near a wall. Changed 2026-11-25 (b2-real-01): the transit's comparison
+    is a recorded dead-reckoning measurement (it drifted 14 % on the real car with a right encoder scale), so the halt
+    now comes from the range check at the first forward move with a tag in view before and after it, in the episode
+    (this transit, toward the room's tagless side, has none); the transit records the 1.33."""
     from beaconmind.car import config as C
     cfg = C.load_config()
     far = {"id": "F", "x_m": 2.4, "y_m": 2.9, "theta_deg": 90.0}             # 1.2 m from where the car stands
@@ -1272,7 +1275,9 @@ def test_the_transit_checks_the_encoder_scale_before_any_episode(tmp_path):
                                log=lambda *a: None, run_episode=cl.run_episode)
         result = runner.run()
         assert result["status"] == "halted" and result["halt"]["code"] in ("odometry_scale", "fix_conflict"), result
-        assert not (out / "batch" / "episodes" / "ep01-a1" / "seed_1.jsonl").exists()      # no episode started
+        transit = json.loads((out / "batch" / "manifest.json").read_text())["episodes"][0]["dead_reckoning_transit"]
+        assert transit["tags_over_odometry"] == pytest.approx(1.33, abs=0.03)          # recorded
+        assert "ranges to the tags" in result["halt"]["detail"] and len(runner.tracker.range_moves) == 1, result
         assert runner.guard.footprint_depth(rig.sim_truth_fn()) > 0.5 and latch.is_set()
     near = Batch(tmp_path / "near", max_steps=3)                # S1 is 0.28 m away: too short to judge, and it says so
     near.run()
@@ -2160,3 +2165,63 @@ def test_the_range_check_skips_backward_moves_and_watches_the_recent_moves_too()
     assert why is not None and "over the 10 most recent straight moves" in why and "1.30" in why
     tracker.range_moves = [(1.0, 3)] * 5 + [(1.3, 2)] * 2                     # under 10 moves: the whole-batch rule
     assert B.range_scale_halt(tracker, params) is None
+
+
+class _Halts:
+    def __init__(self):
+        self.calls = []
+
+    def halt(self, code, detail, safety=None):
+        self.calls.append((code, detail))
+
+
+def _drift(origin, dead_reckoned, circle, sigmas=(0.026, 0.024), what="episode (start circle to end circle)"):
+    runner = B.BatchRunner.__new__(B.BatchRunner)
+    runner.params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
+    runner.tracker = B.PoseTracker(circle, 0.024, 1.0)
+    runner.tracker.dead_reckoned = dict(dead_reckoned)
+    runner.monitor = _Halts()
+    return runner._dead_reckoning(origin, sigmas, what), runner.monitor.calls
+
+
+def test_the_dead_reckoning_drift_is_recorded_and_halts_only_on_a_gross_error():
+    """b2-real-01 (2026-11-25), episode 1: start circle (2.540, 1.466, 105.9), odometry alone ends at (3.099, 1.019,
+    -1.5), the end circle at (3.098, 0.747, 11.9). Recorded as a measurement (0.27 m miss, length ratio 1.27, 13.4 deg
+    heading), no halt; it halted the batch under the episode check it replaces. A factor-two error (odometry reading
+    half the distance) passes the gross bound of 1.6 and halts."""
+    start = {"x_m": 2.5402, "y_m": 1.4662, "theta_deg": 105.88}
+    m, halts = _drift(start, {"x_m": 3.0986, "y_m": 1.0189, "theta_deg": -1.51}, {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89})
+    assert halts == [] and m["measurement"] == "dead-reckoning drift" and m["checked"]
+    assert m["tags_over_odometry"] == pytest.approx(1.272, abs=0.002) and m["miss_m"] == pytest.approx(0.272, abs=0.002)
+    assert m["heading_miss_deg"] == pytest.approx(13.4, abs=0.1) and m["circle_sigmas_xy_m"] == [0.026, 0.024]
+    assert m["miss_world_m"] == pytest.approx([-0.001, -0.272], abs=0.002) and m["gross_bound"] == [0.625, 1.6]
+    half = {"x_m": start["x_m"] + 0.5 * (3.0976 - start["x_m"]), "y_m": start["y_m"] + 0.5 * (0.7473 - start["y_m"]),
+            "theta_deg": 11.89}
+    m, halts = _drift(start, half, {"x_m": 3.0976, "y_m": 0.7473, "theta_deg": 11.89})
+    assert m["tags_over_odometry"] == pytest.approx(2.0, abs=0.01)
+    assert len(halts) == 1 and halts[0][0] == "odometry_scale" and "grossly off" in halts[0][1]
+    m, halts = _drift(start, start, start)                                   # too short for a ratio
+    assert halts == [] and m["checked"] is False and "no length ratio" in m["why"]
+
+
+def test_a_completed_episode_keeps_its_end_pose_when_a_later_check_halts(tmp_path, monkeypatch):
+    """b2-real-01 (2026-11-25): the end-of-episode check halted the batch after episode 1 had ended by DONE, and the
+    manifest was left without end_pose_map and final_pose_error, with the episode marked halted. Now the end pose and
+    the agent's final error are written before any end-of-episode check, and the episode stays done (its log is
+    complete); the halt is the batch's."""
+    real = B.BatchRunner._dead_reckoning
+
+    def gross_at_the_end(self, origin, sigmas, what):
+        out = real(self, origin, sigmas, what)
+        if what.startswith("episode"):
+            self.monitor.halt("odometry_scale", "dead reckoning over the %s is grossly off (test)" % what)
+        return out
+    monkeypatch.setattr(B.BatchRunner, "_dead_reckoning", gross_at_the_end)
+    b = Batch(tmp_path, episodes=2, max_steps=30, starts=(S1, S5))
+    b.run()
+    assert b.result["status"] == "halted" and b.result["halt"]["code"] == "odometry_scale", b.result
+    e = b.manifest["episodes"][0]
+    assert e["status"] == "done" and e["result"]["complete"] and e["halt"]["code"] == "odometry_scale"
+    assert e["end_pose_map"] is not None and e["end_pose_world"] is not None and e.get("final_pose_error") is not None
+    assert e["dead_reckoning_episode"]["measurement"] == "dead-reckoning drift"
+    assert len(b.manifest["episodes"]) == 1                                  # the batch stopped there

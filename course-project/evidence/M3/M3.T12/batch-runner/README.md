@@ -14,7 +14,8 @@ AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: ran the wrapper on the
 (`tag_survey`), `--detector-noise`, `--dv` and `tools/real_dv.py`, the tests named below, the 3.0 m dry runs and the
 first batch's commands; edited this note.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: diagnosed the false `odometry_scale` halt of the first real
-practice batch (`practice-01b/`), added the range check along straight moves and the episode scale check, weighted the
+practice batch (`practice-01b/`) and the halt of b2-real-01 (`b2-real-01/`), added the range check along forward
+moves, made the transit and episode comparisons a recorded dead-reckoning measurement, weighted the
 per-step statistic by the fixes' noise, ran the first batch's rehearsal
 (`rehearsal-2026-11-25.md`, `rehearse_drift.py`) and filled in the record-pass command; edited this note.
 
@@ -129,7 +130,30 @@ is also looked for by the tag check below. The agent sees none of this.
 
 `final_pose_error` compares the agent's last report with the tracked pose at that observation (the move decided in
 the last step runs afterwards); `tracked_minus_end_scan` says how far the tracked pose was from what the end circle
-then measured; `odometry_scale_check` holds the transit's two lengths.
+then measured. Both, with `end_pose_world` and `end_pose_map`, are written before any end-of-episode check, and an
+episode that ended and was measured stays `done` when a later check halts the batch (b2-real-01, 2026-11-25).
+
+**Dead-reckoning drift** (`dead_reckoning_transit`, `dead_reckoning_episode`; the transit's was called
+`odometry_scale_check` and is kept under that name too): between two full-circle fixes, where odometry alone puts
+the car against where the second circle puts it. Fields: `by_odometry_m`, `by_tags_m` (the straight-line distances),
+`tags_over_odometry` (their ratio, when both are 0.3 m or more), `miss_m` and `miss_world_m` (the vector from the
+odometry's end to the circle's, arena frame), `heading_miss_deg`, `circle_sigmas_xy_m` (the two circles' own sigmas),
+`gross_bound`. It is a measurement of the car for the report, **not a scale check**: on the real car (b2-real-01,
+`b2-real-01/`) it read 1.14 over the transit (0.09 m miss) and 1.27 over episode 1 (0.27 m miss, 13.4° heading),
+from wheel slip on some moves and the gyro reading 0.6 to 0.8 % short, while the ranges said the encoder scale was
+right (0.98) and the tracked pose ended 0.06 m from the end circle. It halts (`odometry_scale`) only beyond the
+gross bound, a ratio of 1.6 either way: more than twice the largest real drift, and passed by a factor-two error
+(wrong units in car.json, a dead encoder).
+
+**What is lost with it** (2026-11-25): a wrong encoder scale in a stretch where no forward move has a tag in view
+before and after it (within 30° of ahead, 0.785 to 3.0 m) is no longer halted by a transit or episode comparison.
+Then nothing halts it as a scale error; what keeps the car off the walls is the tracked pose re-fixed at every step
+with a tag, the 0.75 m cap on driving without a fix (by odometry: 1.0 m true at 25 % short), the wall margin
+(0.15 m plus twice the pose sigma), and `fix_conflict` and `tag_survey` for fixes that disagree. In the review's
+fault injection with no scale halt firing (commit `5086391`, before the range check: seeds 1 to 3 completed) the
+simulated car stayed 0.17 m or more inside the driving area. In the 20-tag room every
+rehearsal episode had forward moves with tags in view (103 over ten episodes), and every injected 25 % error halted
+on the ranges at the first such move.
 
 ## The guard
 
@@ -148,10 +172,11 @@ x = 0.66 m; convex, counter-clockwise, checked) minus every obstacle box. Everyt
   the agent sees are the guard's, intersected with the backend's own. A blocked scan or transit move halts.
 
 **The guard is only as good as the tracked pose.** Three things keep the tracked pose honest: the first circle is
-compared with the tape; fixes that disagree with it are refused; and the encoder scale is checked twice (the
-transit between two full-circle fixes must measure the same length by odometry and by the tags within 10 % plus
-the fixes' own uncertainty when it is 0.3 m or longer; and during episodes, fixes that keep landing ahead of or
-behind the odometry by more than 12 % of the distance driven halt the batch). What got through until 2026-11-24:
+compared with the tape; fixes that disagree with it are refused; and the encoder scale is checked by the ranges to
+the tags along every forward move (since 2026-11-25; `odometry_scale` in the halt table). Until 2026-11-25 the
+transit between two full-circle fixes also had to measure the same length by odometry and by the tags within 10 %
+plus the fixes' uncertainty; the transit, and each episode from its start circle to its end circle, is now a
+recorded **dead-reckoning drift** measurement (below) that halts only on a gross error. What got through until 2026-11-24:
 one tag surveyed 0.3 m wrong, seen alone, pulled the tracked pose up to 0.33 m while the stated sigma stayed near
 0.1 m; in the reviewer's probe the simulated footprint came within 4 cm of the edge of the driving area. That is
 now closed by the tag check (next section). **The tag centres in the world file must still be measured, not
@@ -261,7 +286,7 @@ set, `car.sh clear-latch --operator <name>`; then the `run` command again.
 | `executor_refused` | the executor refused a move the guard allowed (e.g. the drive map was lost) | S | `test_halt_executor_refusal` |
 | `no_fix` | `--no-fix-steps` (24) steps without any tag fix; no full-circle fix at a start pose or at the first circle; the first circle disagrees with the tape | S | `test_halt_repeated_no_fix`, `test_the_first_circle_speaks_without_the_tape_and_a_disagreement_halts` |
 | `fix_conflict` | three fixes in a row far from the tracked pose | S | `test_halt_fix_conflict` |
-| `odometry_scale` | the ranges to the tags seen before and after each straight move change by another distance than the odometry's (median over the moves so far off by more than 12 %, 15 % on the first move; forward moves only, tags within 30° of ahead and inside the pilot's range window, repeated ids resolved by the tracked pose, the pilot's range bias removed; the same rule over the last 10 moves alone; 2026-11-25, after a false halt of the first real practice batch: `practice-01b/`, `rehearsal-2026-11-25.md`); the transit's two lengths differ; the episode's two lengths (start circle to end circle, odometry alone against the circles' fixes) differ; or the per-step fixes put the scale off by more than 12 % **and** three standard errors (weighted by each fix's noise) | S | `test_the_transit_checks_the_encoder_scale_before_any_episode`, `test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall` (unchanged since review finding 8), `test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms`, `test_the_practice_batch_ranges_say_its_odometer_was_right`, `test_the_range_of_a_tag_along_a_straight_move_measures_the_scale`, `test_the_range_check_resolves_repeated_ids_by_the_tracked_pose_and_keeps_to_the_window`, `test_the_range_check_takes_the_pilots_range_bias_and_window`, `test_the_range_check_skips_backward_moves_and_watches_the_recent_moves_too`, `test_noisy_fixes_after_short_legs_do_not_call_a_correct_odometer_biased` |
+| `odometry_scale` | the ranges to the tags seen before and after each forward move change by another distance than the odometry's (median over the moves so far off by more than 12 %, 15 % on the first move; forward moves only, tags within 30° of ahead and inside the pilot's range window, repeated ids resolved by the tracked pose, the pilot's range bias removed; the same rule over the last 10 moves alone; 2026-11-25, after a false halt of the first real practice batch: `practice-01b/`, `rehearsal-2026-11-25.md`); the dead-reckoning drift of the transit or an episode beyond the gross bound (length ratio 1.6 either way; below it the drift is a recorded measurement, not a halt: the section on dead-reckoning drift; b2-real-01); or the per-step fixes put the scale off by more than 12 % **and** three standard errors (weighted by each fix's noise) | S | `test_the_transit_checks_the_encoder_scale_before_any_episode`, `test_a_wrong_encoder_scale_halts_before_the_car_reaches_a_wall` (unchanged since review finding 8), `test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms`, `test_the_practice_batch_ranges_say_its_odometer_was_right`, `test_the_range_of_a_tag_along_a_straight_move_measures_the_scale`, `test_the_range_check_resolves_repeated_ids_by_the_tracked_pose_and_keeps_to_the_window`, `test_the_range_check_takes_the_pilots_range_bias_and_window`, `test_the_range_check_skips_backward_moves_and_watches_the_recent_moves_too`, `test_the_dead_reckoning_drift_is_recorded_and_halts_only_on_a_gross_error`, `test_a_completed_episode_keeps_its_end_pose_when_a_later_check_halts`, `test_noisy_fixes_after_short_legs_do_not_call_a_correct_odometer_biased` |
 | `pose_uncertain` | tracked position sigma above 0.25 m, or a tracked pose that is not a number | S | `test_halt_pose_too_uncertain` |
 | `detector` | a detection whose range or bearing is not a number | S | `test_detections_that_are_not_numbers_never_reach_the_pose` |
 | `outside_drive_area` | the tracked pose is outside the free area | S | `test_halt_pose_outside_the_driving_area` |
@@ -461,7 +486,7 @@ The car powered off, the micro-ROS agent stopped, the camera off; clone at `6517
    pulled on the Spark.
 3. Put the car at least **0.85 m** from every edge of the driving area (the first circle needs 0.83 m: sweep
    0.178 + margin 0.15 + the 0.5 m the tape may be wrong; README said 0.7 m before 2026-11-24) and tape its pose.
-   Choose a first start pose at least 0.3 m away, so the encoder scale is checked in the first transit.
+   Choose a first start pose at least 0.3 m away, so the first transit's dead-reckoning drift is measured.
 4. The first one or two episodes attended (plan §3.6): watch the first circle, the transit and one guard
    refusal; tape the first start pose against `start_pose_world` in the manifest.
 5. `--min-forward-speed` from the floor check's peak speeds, if a fading pack should halt early.

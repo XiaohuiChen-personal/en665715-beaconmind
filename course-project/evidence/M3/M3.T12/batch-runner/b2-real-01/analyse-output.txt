@@ -1,0 +1,100 @@
+== halt: the episode (start circle to end circle) measures 0.72 m by odometry and 0.91 m by the tags (ratio 1.27, limit 1 +- 0.18): the encoder scale in configs/car.json is wrong, or the tags are
+== 1. the range check (the batch's own code, the pilot's range bias removed)
+   pre     step 15 forward 0.244 m: tags over odometry 1.000 (2 pairs)
+   pre     step 16 forward 0.248 m: tags over odometry 0.993 (1 pairs)
+   pre     step 17 forward 0.094 m: tags over odometry 0.975 (1 pairs)
+   pre     step 40 forward 0.243 m: tags over odometry 0.948 (2 pairs)
+   episode step 18 forward 0.245 m: tags over odometry 0.939 (1 pairs)
+   episode step 19 forward 0.244 m: tags over odometry 0.991 (1 pairs)
+   episode step 24 forward 0.244 m: tags over odometry 0.882 (1 pairs)
+   episode step 43 forward 0.243 m: tags over odometry 0.962 (1 pairs)
+   episode step 48 forward 0.244 m: tags over odometry 1.009 (3 pairs)
+   episode step 49 forward 0.246 m: tags over odometry 1.006 (2 pairs)
+   episode step 51 forward 0.244 m: tags over odometry 0.984 (3 pairs)
+   episode step 69 forward 0.094 m: tags over odometry 0.930 (1 pairs)
+   median 0.980 over 12 forward moves (19 pairs); halt: None
+== 2. the circles
+   first_fix 16 tags, rms 0.062 m, sigma 0.031 m, pose after the circle (2.303, 2.147, -91.4)
+   start_fix 14 tags, rms 0.023 m, sigma 0.026 m, pose after the circle (2.540, 1.466, 105.9)
+   end_fix    9 tags, rms 0.023 m, sigma 0.024 m, pose after the circle (3.098, 0.747, 11.9)
+   transit as recorded: {'checked': True, 'by_odometry_m': 0.633, 'by_tags_m': 0.721, 'tags_over_odometry': 1.139, 'limit': 0.377}
+   episode as recorded: {'checked': True, 'by_odometry_m': 0.715, 'by_tags_m': 0.91, 'tags_over_odometry': 1.272, 'limit': 0.179}
+== 3. dead reckoning under hypotheses
+   transit (first circle to start circle):
+   as recorded                                  miss 0.088 m (dx +0.027, dy -0.084), heading  +8.6 deg, by odometry 0.629 m, by tags 0.717 m, ratio 1.140
+   gyro turn angles x1.0075                     miss 0.084 m (dx -0.015, dy -0.083), heading  -0.9 deg, by odometry 0.645 m, by tags 0.717 m, ratio 1.112
+   episode (start circle to end circle):
+   as recorded                                  miss 0.272 m (dx -0.001, dy -0.272), heading +13.4 deg, by odometry 0.715 m, by tags 0.910 m, ratio 1.272
+   turns in place (no axle shift)               miss 0.311 m (dx -0.058, dy -0.305), heading +13.4 deg, by odometry 0.741 m, by tags 0.910 m, ratio 1.227
+   turn shift x2                                miss 0.245 m (dx +0.055, dy -0.239), heading +13.4 deg, by odometry 0.695 m, by tags 0.910 m, ratio 1.310
+   gyro turn angles x1.0079                     miss 0.316 m (dx -0.038, dy -0.314), heading  +0.1 deg, by odometry 0.720 m, by tags 0.910 m, ratio 1.263
+   steps 24-26 at 0.86 of their odometry        miss 0.170 m (dx +0.010, dy -0.170), heading +13.4 deg, by odometry 0.775 m, by tags 0.910 m, ratio 1.174
+   steps 24-26 at 0.80 of their odometry        miss 0.127 m (dx +0.015, dy -0.126), heading +13.4 deg, by odometry 0.803 m, by tags 0.910 m, ratio 1.132
+== 4. along the episode: odometry alone from the start circle against the step fixes
+   row  2 TURN_LEFT_30 odometry (2.52, 1.49)  fix T00            (2.55, 1.33) fix - odometry (+0.02, -0.16)
+   row  3 TURN_LEFT_30 odometry (2.51, 1.49)  fix T01            (2.56, 1.38) fix - odometry (+0.05, -0.11)
+   row  4 TURN_LEFT_30 odometry (2.50, 1.48)  fix T02,T01        (2.53, 1.46) fix - odometry (+0.03, -0.02)
+   row  5 TURN_LEFT_30 odometry (2.49, 1.47)  fix T03,T17        (2.45, 1.45) fix - odometry (-0.04, -0.02)
+   row  6 TURN_LEFT_30 odometry (2.49, 1.46)  fix T12,T18        (2.48, 1.43) fix - odometry (-0.01, -0.03)
+   row  7 TURN_LEFT_30 odometry (2.49, 1.45)  fix T04            (2.54, 1.49) fix - odometry (+0.05, +0.04)
+   row  8 TURN_LEFT_30 odometry (2.51, 1.44)  fix T16            (2.53, 1.47) fix - odometry (+0.02, +0.02)
+   row  9 TURN_LEFT_30 odometry (2.52, 1.44)  fix T14,T05        (2.52, 1.42) fix - odometry (+0.00, -0.02)
+   row 10 TURN_LEFT_30 odometry (2.53, 1.45)  fix T07,T13,T06,T14 (2.54, 1.41) fix - odometry (+0.01, -0.04)
+   row 11 TURN_LEFT_30 odometry (2.54, 1.46)  fix T07            (2.42, 1.46) fix - odometry (-0.12, -0.00)
+   row 13 TURN_RIGHT_30 odometry (2.54, 1.46)  fix T07            (2.41, 1.44) fix - odometry (-0.13, -0.02)
+   row 14 TURN_RIGHT_30 odometry (2.54, 1.45)  fix T07,T13,T06,T14 (2.53, 1.40) fix - odometry (-0.00, -0.05)
+   row 15 TURN_RIGHT_30 odometry (2.52, 1.44)  fix T14,T05        (2.52, 1.40) fix - odometry (-0.00, -0.04)
+   row 16 TURN_RIGHT_30 odometry (2.51, 1.44)  fix T16            (2.52, 1.41) fix - odometry (+0.01, -0.03)
+   row 17 TURN_RIGHT_30 odometry (2.50, 1.45)  fix T04            (2.52, 1.44) fix - odometry (+0.02, -0.01)
+   row 18 FORWARD_25   odometry (2.68, 1.28)  fix T04            (2.68, 1.28) fix - odometry (+0.01, -0.00)  wheel/gyro yaw disagreement 3.0 deg
+   row 19 FORWARD_25   odometry (2.86, 1.12)  fix T04            (2.87, 1.13) fix - odometry (+0.00, +0.02)  wheel/gyro yaw disagreement 2.2 deg
+   row 20 TURN_LEFT_30 odometry (2.87, 1.11)  fix T16            (2.86, 1.10) fix - odometry (-0.01, -0.01)
+   row 21 TURN_LEFT_30 odometry (2.89, 1.11)  fix T05            (2.87, 1.11) fix - odometry (-0.01, +0.00)
+   row 22 TURN_LEFT_30 odometry (2.90, 1.12)  fix T06,T14        (2.87, 1.10) fix - odometry (-0.03, -0.02)
+   row 23 TURN_LEFT_30 odometry (2.90, 1.13)  fix T07            (2.83, 1.09) fix - odometry (-0.08, -0.03)
+   row 24 FORWARD_25   odometry (2.94, 1.37)  fix T07            (2.84, 1.30) fix - odometry (-0.11, -0.06)  wheel/gyro yaw disagreement 16.7 deg
+   row 25 FORWARD_25   odometry (2.97, 1.61)  wheel/gyro yaw disagreement 3.6 deg
+   row 26 FORWARD_25   odometry (2.99, 1.85)  wheel/gyro yaw disagreement 3.6 deg
+   row 29 TURN_LEFT_30 odometry (2.96, 1.88)  fix T00            (2.91, 1.56) fix - odometry (-0.05, -0.32)
+   row 30 TURN_LEFT_30 odometry (2.95, 1.88)  fix T02,T01        (2.90, 1.75) fix - odometry (-0.05, -0.14)
+   row 31 TURN_LEFT_30 odometry (2.94, 1.87)  fix T03,T17,T02    (2.83, 1.74) fix - odometry (-0.11, -0.13)
+   row 32 TURN_LEFT_30 odometry (2.93, 1.86)  fix T12,T18        (2.84, 1.73) fix - odometry (-0.10, -0.13)
+   row 33 TURN_LEFT_30 odometry (2.94, 1.85)  fix T04            (2.91, 1.76) fix - odometry (-0.03, -0.09)
+   row 34 TURN_LEFT_30 odometry (2.94, 1.84)  fix T16            (2.89, 1.74) fix - odometry (-0.05, -0.11)
+   row 35 TURN_LEFT_30 odometry (2.95, 1.84)  fix T05            (2.88, 1.75) fix - odometry (-0.08, -0.09)
+   row 36 TURN_LEFT_30 odometry (2.97, 1.84)  fix T06,T14        (2.87, 1.70) fix - odometry (-0.10, -0.14)
+   row 37 TURN_LEFT_30 odometry (2.97, 1.85)  fix T15,T07,T13,T06 (2.87, 1.71) fix - odometry (-0.10, -0.14)
+   row 39 TURN_RIGHT_30 odometry (2.98, 1.85)  fix T07,T13,T06    (2.88, 1.70) fix - odometry (-0.10, -0.15)
+   row 40 TURN_RIGHT_30 odometry (2.97, 1.84)  fix T06,T14        (2.88, 1.68) fix - odometry (-0.09, -0.17)
+   row 41 TURN_RIGHT_30 odometry (2.96, 1.84)  fix T05            (2.86, 1.71) fix - odometry (-0.10, -0.13)
+   row 42 TURN_RIGHT_30 odometry (2.95, 1.85)  fix T16            (2.87, 1.69) fix - odometry (-0.08, -0.15)
+   row 43 FORWARD_25   odometry (3.15, 1.71)  fix T16            (3.06, 1.58) fix - odometry (-0.09, -0.14)  wheel/gyro yaw disagreement 1.1 deg
+   row 44 FORWARD_25   odometry (3.37, 1.59)  wheel/gyro yaw disagreement 3.5 deg
+   row 45 TURN_RIGHT_30 odometry (3.36, 1.60)  fix T04            (3.28, 1.50) fix - odometry (-0.07, -0.10)
+   row 46 TURN_RIGHT_30 odometry (3.35, 1.61)  fix T12            (3.26, 1.49) fix - odometry (-0.09, -0.12)
+   row 47 TURN_RIGHT_30 odometry (3.36, 1.62)  fix T18,T03,T17    (3.23, 1.51) fix - odometry (-0.13, -0.11)
+   row 48 FORWARD_25   odometry (3.23, 1.41)  fix T18,T03,T17    (3.14, 1.28) fix - odometry (-0.09, -0.14)  wheel/gyro yaw disagreement 2.7 deg
+   row 49 FORWARD_25   odometry (3.11, 1.20)  fix T18,T03        (3.04, 1.06) fix - odometry (-0.08, -0.14)  wheel/gyro yaw disagreement 3.0 deg
+   row 50 TURN_RIGHT_30 odometry (3.12, 1.20)  fix T03,T17,T02    (3.07, 1.06) fix - odometry (-0.05, -0.15)
+   row 51 FORWARD_25   odometry (2.93, 1.06)  fix T03,T17,T02    (2.90, 0.89) fix - odometry (-0.03, -0.16)  wheel/gyro yaw disagreement 6.1 deg
+   row 52 TURN_LEFT_30 odometry (2.92, 1.05)  fix T18,T03        (2.88, 0.88) fix - odometry (-0.04, -0.17)
+   row 56 TURN_LEFT_30 odometry (2.94, 1.02)  fix T16            (2.93, 0.81) fix - odometry (-0.01, -0.20)
+   row 57 TURN_LEFT_30 odometry (2.95, 1.02)  fix T14,T05        (2.93, 0.83) fix - odometry (-0.02, -0.19)
+   row 58 TURN_LEFT_30 odometry (2.95, 1.03)  fix T07,T13,T06,T14 (2.94, 0.82) fix - odometry (-0.02, -0.20)
+   row 62 TURN_LEFT_30 odometry (2.93, 1.06)  fix T02,T01        (2.95, 0.87) fix - odometry (+0.02, -0.19)
+   row 63 TURN_LEFT_30 odometry (2.92, 1.05)  fix T03,T17,T02    (2.90, 0.85) fix - odometry (-0.02, -0.21)
+   row 64 TURN_LEFT_30 odometry (2.90, 1.04)  fix T18,T03        (2.88, 0.84) fix - odometry (-0.02, -0.21)
+   row 68 TURN_LEFT_30 odometry (2.92, 1.00)  fix T16            (2.91, 0.80) fix - odometry (-0.01, -0.21)
+   row 69 FORWARD_10   odometry (3.01, 1.01)  fix T16            (3.00, 0.81) fix - odometry (-0.01, -0.20)  wheel/gyro yaw disagreement 3.0 deg
+   row 70 FORWARD_10   odometry (3.11, 1.02)  fix T16            (3.09, 0.83) fix - odometry (-0.02, -0.19)  wheel/gyro yaw disagreement 3.0 deg
+   row 71 TURN_LEFT_30 odometry (3.12, 1.02)  fix T14,T05        (3.09, 0.81) fix - odometry (-0.03, -0.21)
+   row 72 TURN_LEFT_30 odometry (3.13, 1.03)  fix T06,T14        (3.11, 0.81) fix - odometry (-0.02, -0.23)
+   row 76 TURN_LEFT_30 odometry (3.11, 1.07)  fix T02,T01        (3.12, 0.87) fix - odometry (+0.01, -0.20)
+   row 77 TURN_LEFT_30 odometry (3.09, 1.06)  fix T03,T17,T02    (3.06, 0.85) fix - odometry (-0.03, -0.22)
+   row 78 TURN_LEFT_30 odometry (3.08, 1.05)  fix T18            (3.09, 0.82) fix - odometry (+0.01, -0.24)
+   row 82 TURN_LEFT_30 odometry (3.10, 1.02)  fix T16            (3.07, 0.81) fix - odometry (-0.03, -0.20)
+   end circle (3.10, 0.75): - odometry (-0.01, -0.27)
+== 5. the circles refitted with the gyro's turn angles scaled (rows of each circle from the step logs)
+   first circle x1.000 rms 0.052; x1.005 rms 0.042; x1.010 rms 0.033; x1.015 rms 0.028; x1.020 rms 0.030
+   start circle x1.000 rms 0.023; x1.005 rms 0.024; x1.010 rms 0.029; x1.015 rms 0.034; x1.020 rms 0.041
+   end circle   x1.000 rms 0.023; x1.005 rms 0.022; x1.010 rms 0.022; x1.015 rms 0.022; x1.020 rms 0.022

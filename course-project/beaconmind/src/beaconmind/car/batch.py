@@ -34,7 +34,8 @@ AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: added TagCheck, the `t
 rule for a step's fix (conflicts still judged on every tag), and the fix sigma from the tag pilot's detector-noise file
 (fix_sigma_from_detector_noise, fix_sigma_source). 2026-11-25: the odometry-bias halt weighs each fix by its noise
 and asks for significance (a false halt of the first real practice batch); the scale is checked by the ranges along
-each straight move (range_scale_of_move), which the camera measures well, and over each episode between its circles.
+each forward move (range_scale_of_move), which the camera measures well; the transit's and each episode's
+dead-reckoning drift between two circles is a recorded measurement, halting only on a gross error (_dead_reckoning).
 """
 import hashlib
 import json
@@ -87,8 +88,10 @@ class BatchParams:
                                         # share of the distance driven halt the batch (a wrong encoder scale)
     max_blind_travel_m: float = 0.75    # no straight move may take the distance driven since the last tag fix past
                                         # this: whatever the odometer's error, it then stays inside the wall margin
-    transit_scale_tol: float = 0.10     # the transit between two full-circle fixes must measure the same length by
-    transit_scale_min_m: float = 0.30   # odometry and by the tags within this share, when it is at least this long
+    transit_scale_min_m: float = 0.30   # the dead-reckoning drift between two full-circle fixes (the transit, each
+                                        # episode) gets a length ratio when both lengths are at least this
+    path_gross_ratio: float = 1.6       # ... and halts only beyond this ratio either way (a gross error: wrong units,
+                                        # a dead wheel); the real car reached 1.27 over one episode (b2-real-01)
     range_scale_tol: float = 0.12       # the ranges to the tags seen before and after each straight move must change
                                         # by what the odometry says within this share (median over the moves so far)
     range_scale_move_sigma: float = 0.05    # one move's scatter (the real car: 0.94 to 1.05 over six moves, range bias
@@ -1476,31 +1479,40 @@ class BatchRunner:
                           "%.2f m, %.0f degrees)" % (what, miss, turn, attempt + 1, p.start_tol_m, p.start_tol_deg))
         raise BatchStop(what)
 
-    def _scale_check(self, origin, fix_sigmas=None, what="transit"):
-        """The transit from one full-circle fix to the next, measured twice: by odometry alone and by the tags. A
-        wrong encoder scale (a wrong car.json) shows here, in the first minute, before any episode. fix_sigmas: the
-        two circles' own position sigmas (the episode check); without them the tracked sigma and the floor are taken,
-        as the transit always has."""
+    def _dead_reckoning(self, origin, fix_sigmas, what):
+        """The dead-reckoning drift over a stretch between two full-circle fixes (the transit; each episode from its
+        start circle to its end circle): where odometry alone puts the car against where the second circle puts it.
+
+        A measurement of the car, recorded in the manifest for the report, not a scale check (2026-11-25): on the real
+        car dead reckoning drifted 0.09 m over a transit and 0.27 m over one episode (wheel slip on some moves, the
+        gyro reading 0.6 to 0.8 % short), length ratios 1.14 and 1.27, while the encoder scale was right (the range
+        check: 0.98 over 12 forward moves) and the tracked pose ended 0.06 m from the end circle. The encoder scale is
+        the range check's (range_scale_halt). Only a gross error halts here: a length ratio beyond path_gross_ratio
+        (1.6) either way, more than twice the largest real drift (0.27), which a factor-two error (wrong units in
+        car.json, a dead encoder) passes. fix_sigmas: the two circles' position sigmas, recorded with it."""
         t, p = self.tracker, self.params
         dr = t.dead_reckoned
         t.dead_reckoned = None
+        out = {"measurement": "dead-reckoning drift", "what": what, "checked": False,
+               "circle_sigmas_xy_m": [round(float(v), 3) for v in fix_sigmas] if fix_sigmas else None}
         if origin is None or dr is None:
-            return {"checked": False, "why": "no full-circle fix before the transit"}
+            return dict(out, why="no full-circle fix at the start of the %s" % what)
         by_odometry = math.hypot(dr["x_m"] - origin["x_m"], dr["y_m"] - origin["y_m"])
         by_tags = math.hypot(t.pose["x_m"] - origin["x_m"], t.pose["y_m"] - origin["y_m"])
-        out = {"checked": False, "by_odometry_m": round(by_odometry, 3), "by_tags_m": round(by_tags, 3)}
+        out.update(by_odometry_m=round(by_odometry, 3), by_tags_m=round(by_tags, 3),
+                   miss_m=round(math.hypot(t.pose["x_m"] - dr["x_m"], t.pose["y_m"] - dr["y_m"]), 3),
+                   miss_world_m=[round(t.pose["x_m"] - dr["x_m"], 3), round(t.pose["y_m"] - dr["y_m"], 3)],
+                   heading_miss_deg=round(wrap_deg(t.pose["theta_deg"] - dr["theta_deg"]), 1))
         if by_odometry < p.transit_scale_min_m or by_tags < p.transit_scale_min_m:
-            return dict(out, why="transit shorter than %.2f m" % p.transit_scale_min_m)
+            return dict(out, why="shorter than %.2f m: no length ratio" % p.transit_scale_min_m)
         ratio = by_tags / by_odometry
-        if fix_sigmas:
-            slack = 2.0 * math.hypot(*fix_sigmas) / by_tags            # the two circles' own uncertainty
-        else:
-            slack = 2.0 * (t.sigma_xy_m + p.fix_floor_m) / by_tags      # what the two fixes' own uncertainty allows
-        out.update(checked=True, tags_over_odometry=round(ratio, 3), limit=round(p.transit_scale_tol + slack, 3))
-        if abs(ratio - 1.0) > p.transit_scale_tol + slack:
-            self.monitor.halt("odometry_scale", "the %s measures %.2f m by odometry and %.2f m by the tags (ratio "
-                              "%.2f, limit 1 +- %.2f): the encoder scale in configs/car.json is wrong, or the tags are"
-                              % (what, by_odometry, by_tags, ratio, p.transit_scale_tol + slack))
+        out.update(checked=True, tags_over_odometry=round(ratio, 3),
+                   gross_bound=[round(1.0 / p.path_gross_ratio, 3), p.path_gross_ratio])
+        if ratio > p.path_gross_ratio or ratio < 1.0 / p.path_gross_ratio:
+            self.monitor.halt("odometry_scale", "dead reckoning over the %s is grossly off: %.2f m by odometry against "
+                              "%.2f m by the circles (ratio %.2f, bound %.2f to %.2f; the real car drifted to 1.27 "
+                              "over one episode): an encoder scale, a wheel or the gyro is grossly wrong, or the tags "
+                              "are" % (what, by_odometry, by_tags, ratio, 1.0 / p.path_gross_ratio, p.path_gross_ratio))
         return out
 
     # ------------------------------------------------------------ the batch
@@ -1588,6 +1600,7 @@ class BatchRunner:
         self.monitor.t_episode = self.monitor.clock()
         self._save()
         self._mark("episode_start", entry)
+        completed = False
         try:
             pre = self._service_env(ep_id + "-pre", os.path.join(ep_dir, "pre"))
             pre.reset(entry["seed"])
@@ -1599,13 +1612,14 @@ class BatchRunner:
             pre.use_views = True
             origin = self.tracker.mark_dead_reckoning() if entry["first_fix"]["ok"] else None
             entry["start_fix"] = self.go_to(pre, target, "%s: to the start pose" % ep_id)
-            entry["odometry_scale_check"] = self._scale_check(origin)
+            transit_sigmas = (_circle_sigma(entry["first_fix"]), _circle_sigma(entry["start_fix"]))
+            entry["dead_reckoning_transit"] = self._dead_reckoning(origin, transit_sigmas, "transit")
+            entry["odometry_scale_check"] = entry["dead_reckoning_transit"]     # (its name before 2026-11-25)
             if self.monitor.halted is not None:
-                raise BatchStop("odometry scale")
+                raise BatchStop("dead reckoning over the transit")
             start = dict(self.tracker.pose)
             entry["start_pose_world"] = start
-            # the episode itself is checked like the transit: odometry alone from this circle to the end circle
-            # against the two circles' fixes (2026-11-25; the per-step statistic alone was too noisy on the car)
+            # the episode's dead-reckoning drift: odometry alone from this circle to the end circle (_dead_reckoning)
             episode_origin = self.tracker.mark_dead_reckoning()
             scene = self.kr.room_scene(self.world, start_pose=start)
             inner = self.rig.make_env(ep_id, scene=scene, log_dir=os.path.join(ep_dir, "backend"))
@@ -1638,30 +1652,8 @@ class BatchRunner:
             if self.monitor.halted is not None:
                 raise BatchStop("episode")
             before = dict(self.tracker.pose)
-            post = self._service_env(ep_id + "-post", os.path.join(ep_dir, "post"))
-            post.reset(entry["seed"])
-            entry["end_fix"] = self.localise(post, "%s: end pose" % ep_id, required=False)
-            if entry["end_fix"].get("ok") and not entry["end_fix"].get("tracked_only"):
-                sigmas = (float(entry["start_fix"].get("circle_sigma_xy_m") or entry["start_fix"]["sigma_xy_m"]),
-                          float(entry["end_fix"].get("circle_sigma_xy_m") or entry["end_fix"]["sigma_xy_m"]))
-                entry["odometry_scale_check_episode"] = self._scale_check(episode_origin, fix_sigmas=sigmas,
-                                                                          what="episode (start circle to end circle)")
-                if self.monitor.halted is not None:
-                    raise BatchStop("odometry scale over the episode")
-            else:
-                self.tracker.dead_reckoned = None
-                entry["odometry_scale_check_episode"] = {"checked": False, "why": "no full-circle fix at the end"}
-            ranges = self.tracker.range_scale(1)
-            entry["odometry_range_scale"] = None if ranges is None else {
-                "tags_over_odometry_median": round(ranges[0], 3), "straight_moves": ranges[1], "range_pairs": ranges[2],
-                "note": "the whole batch so far"}
-            entry["end_pose_world"] = dict(self.tracker.pose)
-            entry["end_pose_map"] = to_map_pose(start, self.tracker.pose)
-            # how far the pose tracked through the episode was from what the end circle then measured
-            entry["tracked_minus_end_scan"] = {
-                "m": round(math.hypot(before["x_m"] - self.tracker.pose["x_m"], before["y_m"] - self.tracker.pose["y_m"]), 3),
-                "deg": round(abs(wrap_deg(before["theta_deg"] - self.tracker.pose["theta_deg"])), 1),
-                "end_scan_is_a_full_fix": bool(entry["end_fix"]["ok"])}
+            # the agent's final pose error first: it needs nothing after the episode, and no later check may leave a
+            # completed episode without it (b2-real-01, 2026-11-25)
             agent, truth = _last_report(path)
             entry["agent_final_pose_map"], entry["truth_at_that_step_map"] = agent, truth
             if agent and truth:
@@ -1671,9 +1663,36 @@ class BatchRunner:
                                              "deg": round(abs(wrap_deg(agent["theta_deg"] - truth["theta_deg"])), 1),
                                              "truth_sigma_xy_m": truth.get("sigma_xy_m"),
                                              "truth_is_a_tag_fix": bool(truth.get("fix"))}
+            post = self._service_env(ep_id + "-post", os.path.join(ep_dir, "post"))
+            post.reset(entry["seed"])
+            entry["end_fix"] = self.localise(post, "%s: end pose" % ep_id, required=False)
+            entry["end_pose_world"] = dict(self.tracker.pose)
+            entry["end_pose_map"] = to_map_pose(start, self.tracker.pose)
+            # how far the pose tracked through the episode was from what the end circle then measured
+            entry["tracked_minus_end_scan"] = {
+                "m": round(math.hypot(before["x_m"] - self.tracker.pose["x_m"], before["y_m"] - self.tracker.pose["y_m"]), 3),
+                "deg": round(abs(wrap_deg(before["theta_deg"] - self.tracker.pose["theta_deg"])), 1),
+                "end_scan_is_a_full_fix": bool(entry["end_fix"]["ok"])}
+            completed = True                    # the episode and its end pose are recorded: it is "done" from here
+            if entry["end_fix"].get("ok") and not entry["end_fix"].get("tracked_only"):
+                sigmas = (_circle_sigma(entry["start_fix"]), _circle_sigma(entry["end_fix"]))
+                entry["dead_reckoning_episode"] = self._dead_reckoning(episode_origin, sigmas,
+                                                                       "episode (start circle to end circle)")
+                if self.monitor.halted is not None:
+                    raise BatchStop("dead reckoning over the episode")
+            else:
+                self.tracker.dead_reckoned = None
+                entry["dead_reckoning_episode"] = {"measurement": "dead-reckoning drift", "checked": False,
+                                                   "why": "no full-circle fix at the end"}
+            ranges = self.tracker.range_scale(1)
+            entry["odometry_range_scale"] = None if ranges is None else {
+                "tags_over_odometry_median": round(ranges[0], 3), "straight_moves": ranges[1], "range_pairs": ranges[2],
+                "note": "the whole batch so far"}
             entry["status"] = "done"
         except BatchStop:
-            entry["status"] = "halted"
+            # a halt after the episode and its end pose were recorded (a later check) leaves the episode done: its
+            # log is complete; the halt is the batch's (entry["halt"])
+            entry["status"] = "done" if completed else "halted"
             raise
         except Exception:
             entry["status"] = "failed"
@@ -1686,6 +1705,13 @@ class BatchRunner:
             self.monitor.t_episode = None
             self._save()
             self._mark("episode_end", entry)
+
+
+def _circle_sigma(fix):
+    """A full-circle fix's own position sigma (before any blend with the tracked pose), or None."""
+    fix = fix or {}
+    value = fix.get("circle_sigma_xy_m") or fix.get("sigma_xy_m")
+    return None if value is None else float(value)
 
 
 def _last_report(path):
