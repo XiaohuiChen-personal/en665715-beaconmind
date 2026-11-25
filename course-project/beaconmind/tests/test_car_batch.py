@@ -2225,3 +2225,68 @@ def test_a_completed_episode_keeps_its_end_pose_when_a_later_check_halts(tmp_pat
     assert e["end_pose_map"] is not None and e["end_pose_world"] is not None and e.get("final_pose_error") is not None
     assert e["dead_reckoning_episode"]["measurement"] == "dead-reckoning drift"
     assert len(b.manifest["episodes"]) == 1                                  # the batch stopped there
+
+
+# b2-real-02 (2026-11-25): the range check's 25 forward moves (tags over odometry, range pairs), in order
+B2_REAL_02_RANGES = [(0.991, 2), (1.043, 2), (0.978, 2), (1.020, 1), (0.790, 1), (0.934, 1), (0.964, 1), (0.942, 2),
+                     (0.989, 2), (1.007, 1), (0.914, 1), (0.978, 1), (0.937, 1), (0.966, 2), (0.871, 2), (0.912, 2),
+                     (0.945, 1), (0.972, 1), (0.938, 3), (0.900, 3), (0.863, 4), (0.820, 1), (0.845, 1), (0.909, 1),
+                     (0.827, 1)]
+
+
+def _per_step(scale, se, travel=10.5, fixes=37, ranges=()):
+    t = B.PoseTracker(S1, 0.05, 2.0)
+    t.bias_travel, t.bias_fixes = travel, fixes
+    t.bias_sxx = 1.0 / se ** 2
+    t.bias_sxy = scale * t.bias_sxx
+    t.range_moves = list(ranges)
+    return t
+
+
+def test_the_per_step_statistic_halts_only_while_the_range_check_cannot_vouch_for_the_scale():
+    """b2-real-02 halted on the per-step fixes, -27 % +- 8 % over 10.5 m and 37 fixes, from real slip on northward
+    moves, while the range check over 25 forward moves read 0.94 (0.90 over the last 10): held back now, and recorded.
+    With fewer than 3 measured forward moves the same statistic halts, as with the range check out of tolerance."""
+    params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
+    t = _per_step(-0.273, 0.081, ranges=B2_REAL_02_RANGES)
+    assert t.odometry_bias()[0] == pytest.approx(-0.273) and B.range_scale_halt(t, params) is None
+    assert B.per_step_scale_halt(t, params) is None
+    g = t.bias_gated
+    assert g["per_step_scale"] == pytest.approx(-0.273) and g["range_moves"] == 25 and g["range_moves_recent"] == 10
+    assert g["range_median"] == pytest.approx(0.938, abs=0.002) and g["range_median_recent"] == pytest.approx(0.905, abs=0.003)
+    for few in ([], [(1.0, 2)], [(1.0, 2), (0.99, 1)]):                      # fewer than 3 measured moves
+        why = B.per_step_scale_halt(_per_step(-0.273, 0.081, ranges=few), params)
+        assert why is not None and "tag fixes land -27 %" in why and "%d measured forward moves, fewer than 3" % len(few) in why
+    out = _per_step(-0.273, 0.081, ranges=[(0.80, 2)] * 3)                    # the range check itself out of tolerance
+    assert B.range_scale_halt(out, params) is not None and B.per_step_scale_halt(out, params) is not None
+    assert B.per_step_scale_halt(_per_step(-0.10, 0.22, ranges=[]), params) is None      # not significant: as before
+
+
+def test_with_the_range_check_off_the_per_step_fixes_still_halt_a_wrong_scale(tmp_path, monkeypatch):
+    """The review (2026-11-25): with the range check off, the per-step fix statistic is the layer that halts a wrong
+    encoder scale. The gate keeps that: with no measured forward move, an odometer reading 25 % short or long halts
+    on the fixes in the 20-tag room, the simulated car inside the driving area."""
+    from beaconmind.car import config as C
+    monkeypatch.setattr(B.BatchEnv, "_range_check", lambda self, exact, sense, record, first: None)
+    cfg = C.load_config()
+    place = {"x_m": 2.4, "y_m": 1.6, "theta_deg": 70.0}
+    starts = [{"id": "S1", "x_m": 2.5, "y_m": 1.5, "theta_deg": 90.0}, {"id": "S5", "x_m": 2.25, "y_m": 2.6, "theta_deg": 180.0}]
+    for factor in (0.75, 1.25):
+        wrong = cfg.replace(ticks_per_m_left=cfg.ticks_per_m_left / factor, ticks_per_m_right=cfg.ticks_per_m_right / factor)
+        out = tmp_path / ("f%s" % factor)
+        params = B.BatchParams(world_path="x", start_poses=starts, initial_pose=dict(place), episodes=4, max_steps=80,
+                               max_range_m=3.0)
+        rig = B.dry_rig(WORLD20, place, latch=Latch(out / "LATCH"), seed=1, max_range_m=3.0, cfg=wrong)
+        runner = B.BatchRunner(params, rig, WORLD20, out / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
+                               log=lambda *a: None, run_episode=cl.run_episode)
+        depth = {"min": 9.0}
+        walls = rig.link.on_step
+
+        def watch(link, walls=walls, depth=depth, runner=runner, rig=rig):
+            walls(link)
+            depth["min"] = min(depth["min"], runner.guard.footprint_depth(rig.sim_truth_fn()))
+        rig.link.on_step = watch
+        result = runner.run()
+        assert result["status"] == "halted" and result["halt"]["code"] == "odometry_scale", (factor, result)
+        assert "tag fixes land" in result["halt"]["detail"] and "0 measured forward moves" in result["halt"]["detail"]
+        assert depth["min"] > 0.05 and not rig.link.sim.p.blocked_left, (factor, depth)

@@ -84,6 +84,9 @@ class BatchParams:
     fix_floor_m: float = 0.05           # no fix makes the position more certain than this: fixes of one tag repeat
                                         # its survey and range-scale error, they do not average it away
     camera_probe_after_s: float = 3.0   # a move after this long without a frame asks the camera for one first
+    range_gate_min_moves: int = 3       # the per-step fix statistic halts only while the range check has fewer
+                                        # measured forward moves than this, or is out of its own tolerance
+                                        # (per_step_scale_halt; b2-real-02)
     odometry_bias_max: float = 0.12     # fixes that keep landing ahead of (or behind) the odometry by more than this
                                         # share of the distance driven halt the batch (a wrong encoder scale)
     max_blind_travel_m: float = 0.75    # no straight move may take the distance driven since the last tag fix past
@@ -186,6 +189,7 @@ class PoseTracker:
         self.bias_sxy = 0.0             # weighted least squares of (innovation along the leg) = scale x leg, weights
         self.bias_sxx = 0.0             # 1 / (fix sigma^2 + tracked sigma^2): see odometry_bias()
         self.dead_reckoned = None       # the pose by odometry alone since mark_dead_reckoning()
+        self.bias_gated = None          # the first time the range check held the per-step statistic's halt back
         self.range_moves = []           # (tags over odometry, range pairs) of each straight move: range_scale()
         self.travel_since_fix_m = 0.0   # distance driven by odometry since the last fix that was taken
         self.last_tags = None           # the tags of the last fix taken
@@ -746,6 +750,35 @@ def range_scale_halt(tracker, params):
     return None
 
 
+def per_step_scale_halt(tracker, params):
+    """Why the per-step tag fixes say the encoder scale is wrong (the halt's detail), or None.
+
+    The noise-weighted statistic (PoseTracker.odometry_bias) says the scale is off by more than odometry_bias_max and
+    three standard errors. It measures dead reckoning between fixes, so wheel slip and a heading error enter it as
+    well as the scale: in b2-real-02 (2026-11-25) it read -28 % +- 8 % from real slip on northward moves while the
+    range check read 0.94 over 25 forward moves. So it halts only while the range check cannot vouch for the scale:
+    fewer than range_gate_min_moves (3) measured forward moves, or the range check out of its own tolerance (which
+    halts by itself). With the range check off it is still the layer that halts a wrong scale (the review). Held
+    back, it is recorded (tracker.bias_gated, the manifest's per_step_drift)."""
+    bias = tracker.odometry_bias()
+    # the scale is off by more than the limit AND the fixes say so beyond their own noise (three standard errors)
+    if bias is None or abs(bias[0]) <= params.odometry_bias_max or abs(bias[0]) <= 3.0 * bias[3]:
+        return None
+    if len(tracker.range_moves) >= params.range_gate_min_moves and range_scale_halt(tracker, params) is None:
+        if tracker.bias_gated is None:
+            ranges, recent = tracker.range_scale(), tracker.range_scale(last=params.range_scale_window)
+            tracker.bias_gated = {"time_utc": utc(), "per_step_scale": round(bias[0], 3), "per_step_se": round(bias[3], 3),
+                                  "travel_m": round(bias[1], 2), "fixes": bias[2],
+                                  "range_median": round(ranges[0], 3), "range_moves": ranges[1],
+                                  "range_median_recent": round(recent[0], 3), "range_moves_recent": recent[1]}
+        return None
+    return ("tag fixes land %+.0f %% (+-%.0f %%) of the distance from where the odometry puts the car (%.1f m driven, "
+            "%d fixes; limit %.0f %%; the range check has %d measured forward moves, fewer than %d, to vouch for the "
+            "scale): the encoder scale is wrong, or the tags are" % (100 * bias[0], 100 * bias[3], bias[1], bias[2],
+                                                                     100 * params.odometry_bias_max,
+                                                                     len(tracker.range_moves), params.range_gate_min_moves))
+
+
 class BatchEnv:
     """RealCarEnv with the tracker, the guard and the monitor on every step. Implements the closed-loop harness's
     environment protocol. `start` is the arena-frame pose that is the origin of the map frame the harness sees."""
@@ -942,13 +975,9 @@ class BatchEnv:
         wrong_scale = range_scale_halt(self.tracker, p)
         if wrong_scale:
             self.monitor.halt("odometry_scale", wrong_scale)
-        bias = self.tracker.odometry_bias()
-        # the scale is off by more than the limit AND the fixes say so beyond their own noise (three standard errors)
-        if bias is not None and abs(bias[0]) > p.odometry_bias_max and abs(bias[0]) > 3.0 * bias[3]:
-            self.monitor.halt("odometry_scale", "tag fixes land %+.0f %% (+-%.0f %%) of the distance from where the "
-                              "odometry puts the car (%.1f m driven, %d fixes; limit %.0f %%): the encoder scale is "
-                              "wrong, or the tags are" % (100 * bias[0], 100 * bias[3], bias[1], bias[2],
-                                                          100 * p.odometry_bias_max))
+        fixes_say = per_step_scale_halt(self.tracker, p)
+        if fixes_say:
+            self.monitor.halt("odometry_scale", fixes_say)
         if self.tracker.sigma_xy_m > p.sigma_block_m:
             self.monitor.halt("pose_uncertain", "position uncertainty %.2f m above %.2f m" % (self.tracker.sigma_xy_m, p.sigma_block_m))
         if self.guard.axle_depth(self.tracker.pose) < 0:
@@ -1688,6 +1717,12 @@ class BatchRunner:
             entry["odometry_range_scale"] = None if ranges is None else {
                 "tags_over_odometry_median": round(ranges[0], 3), "straight_moves": ranges[1], "range_pairs": ranges[2],
                 "note": "the whole batch so far"}
+            bias = self.tracker.odometry_bias()
+            entry["per_step_drift"] = {
+                "measurement": "per-step fix drift (the whole batch so far)",
+                "scale": None if bias is None else round(bias[0], 3), "se": None if bias is None else round(bias[3], 3),
+                "travel_m": round(self.tracker.bias_travel, 2), "fixes": self.tracker.bias_fixes,
+                "halt_held_back_by_the_range_check": self.tracker.bias_gated}
             entry["status"] = "done"
         except BatchStop:
             # a halt after the episode and its end pose were recorded (a later check) leaves the episode done: its

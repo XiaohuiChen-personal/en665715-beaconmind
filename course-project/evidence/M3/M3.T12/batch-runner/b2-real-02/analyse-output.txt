@@ -1,0 +1,105 @@
+== halt: tag fixes land -28 % (+-8 %) of the distance from where the odometry puts the car (10.5 m driven, 37 fixes; limit 12 %): the encoder scale is wrong, or the tags are
+== 1. the range check per forward move (the batch's own code, the pilot's range bias removed)
+   ep01 pre   15 12:05:34 FORWARD_25  at (2.41, 1.93) heading  -64.1  done  2.76 s, peak 0.123 m/s, yaw disagreement   1.4 deg, odometry ok             range 0.991 (2 pairs)
+   ep01 pre   16 12:05:38 FORWARD_25  at (2.53, 1.72) heading  -60.5  done  2.79 s, peak 0.121 m/s, yaw disagreement   1.2 deg, odometry ok             range 1.043 (2 pairs)
+   ep01 pre   17 12:05:41 FORWARD_10  at (2.58, 1.64) heading  -57.2  done  1.48 s, peak 0.115 m/s, yaw disagreement   0.7 deg, odometry ok             range 0.978 (2 pairs)
+   ep01 pre   18 12:05:44 FORWARD_10  at (2.66, 1.59) heading  -53.0  done  1.50 s, peak 0.110 m/s, yaw disagreement   2.2 deg, odometry ok             range 1.020 (1 pairs)
+   ep01 pre   40 12:06:34 FORWARD_10  at (2.59, 1.54) heading -168.0  done  1.53 s, peak 0.113 m/s, yaw disagreement   6.4 deg, odometry ok             range 0.790 (1 pairs)
+   ep01 pre   41 12:06:37 FORWARD_10  at (2.50, 1.50) heading -166.2  done  1.56 s, peak 0.110 m/s, yaw disagreement   3.5 deg, odometry ok             
+   ep01 ep    18 12:08:00 FORWARD_25  at (2.67, 1.26) heading  -42.0  done  2.90 s, peak 0.117 m/s, yaw disagreement   2.2 deg, odometry ok             range 0.934 (1 pairs)
+   ep01 ep    19 12:08:04 FORWARD_25  at (2.85, 1.11) heading  -38.9  done  2.86 s, peak 0.116 m/s, yaw disagreement   1.1 deg, odometry ok             range 0.964 (1 pairs)
+   ep01 ep    23 12:08:15 FORWARD_25  at (3.01, 1.30) heading   53.0  done  2.91 s, peak 0.113 m/s, yaw disagreement   6.1 deg, odometry ok             range 0.942 (2 pairs)
+   ep01 ep    41 12:09:00 FORWARD_25  at (2.93, 1.05) heading  -92.5  done  2.81 s, peak 0.119 m/s, yaw disagreement   7.5 deg, odometry ok             range 0.989 (2 pairs)
+   ep01 ep    43 12:09:06 FORWARD_25  at (2.83, 0.82) heading -116.8  done  2.80 s, peak 0.120 m/s, yaw disagreement   0.3 deg, odometry ok             range 1.007 (1 pairs)
+   ep02 pre   17 12:10:49 FORWARD_25  at (2.64, 0.78) heading  159.9  done  3.00 s, peak 0.122 m/s, yaw disagreement  14.7 deg, odometry slip_suspected 
+   ep02 pre   18 12:10:53 FORWARD_25  at (2.41, 0.84) heading  162.8  done  2.85 s, peak 0.121 m/s, yaw disagreement   6.0 deg, odometry ok             range 0.914 (1 pairs)
+   ep02 pre   19 12:10:57 FORWARD_25  at (2.18, 0.88) heading  167.2  done  2.82 s, peak 0.126 m/s, yaw disagreement   3.0 deg, odometry ok             range 0.978 (1 pairs)
+   ep02 pre   20 12:11:01 FORWARD_25  at (1.95, 0.89) heading  170.6  done  2.81 s, peak 0.121 m/s, yaw disagreement   6.5 deg, odometry ok             range 0.937 (1 pairs)
+   ep02 pre   21 12:11:05 FORWARD_25  at (1.70, 0.92) heading  173.8  done  2.87 s, peak 0.120 m/s, yaw disagreement   0.8 deg, odometry ok             
+   ep02 pre   44 12:12:00 FORWARD_25  at (1.74, 1.01) heading   89.6  done  2.94 s, peak 0.121 m/s, yaw disagreement   5.3 deg, odometry ok             
+   ep02 pre   45 12:12:04 FORWARD_25  at (1.73, 1.25) heading   91.2  done  2.81 s, peak 0.118 m/s, yaw disagreement   2.0 deg, odometry ok             
+   ep02 pre   46 12:12:07 FORWARD_10  at (1.72, 1.35) heading   94.1  done  1.51 s, peak 0.112 m/s, yaw disagreement   2.0 deg, odometry ok             
+   ep02 pre   65 12:12:53 FORWARD_25  at (1.77, 1.41) heading   66.1  done  2.92 s, peak 0.117 m/s, yaw disagreement   3.1 deg, odometry ok             
+   ep02 ep    14 12:14:04 FORWARD_25  at (1.90, 1.18) heading  -22.2  done  2.81 s, peak 0.122 m/s, yaw disagreement   2.9 deg, odometry ok             range 0.966 (2 pairs)
+   ep02 ep    15 12:14:08 FORWARD_25  at (2.13, 1.10) heading  -19.6  done  2.81 s, peak 0.118 m/s, yaw disagreement   3.0 deg, odometry ok             range 0.871 (2 pairs)
+   ep02 ep    16 12:14:12 FORWARD_25  at (2.36, 1.03) heading  -17.2  done  2.77 s, peak 0.125 m/s, yaw disagreement   3.9 deg, odometry ok             range 0.912 (2 pairs)
+   ep02 ep    29 12:14:45 FORWARD_25  at (2.53, 0.99) heading  -17.7  done  2.73 s, peak 0.124 m/s, yaw disagreement   2.5 deg, odometry ok             range 0.945 (1 pairs)
+   ep02 ep    30 12:14:49 FORWARD_25  at (2.75, 0.95) heading  -15.3  done  2.75 s, peak 0.123 m/s, yaw disagreement   3.5 deg, odometry ok             range 0.972 (1 pairs)
+   ep02 ep    33 12:14:58 FORWARD_25  at (2.91, 1.14) heading   52.3  done  2.73 s, peak 0.127 m/s, yaw disagreement   3.7 deg, odometry ok             range 0.938 (3 pairs)
+   ep02 ep    34 12:15:02 FORWARD_25  at (3.03, 1.33) heading   56.3  done  2.80 s, peak 0.126 m/s, yaw disagreement   9.9 deg, odometry ok             range 0.900 (3 pairs)
+   ep02 ep    35 12:15:07 FORWARD_25  at (3.13, 1.52) heading   57.9  done  2.75 s, peak 0.123 m/s, yaw disagreement   1.9 deg, odometry ok             range 0.863 (4 pairs)
+   ep02 ep    52 12:15:48 FORWARD_25  at (3.12, 1.24) heading  -66.4  done  2.71 s, peak 0.125 m/s, yaw disagreement   3.0 deg, odometry ok             
+   ep02 ep    57 12:16:02 FORWARD_25  at (2.89, 1.25) heading  174.9  done  2.74 s, peak 0.126 m/s, yaw disagreement   4.1 deg, odometry ok             
+   ep02 ep    59 12:16:09 FORWARD_25  at (2.70, 1.37) heading  148.0  done  2.81 s, peak 0.123 m/s, yaw disagreement   5.9 deg, odometry ok             
+   ep02 ep    60 12:16:13 FORWARD_25  at (2.49, 1.47) heading  150.4  done  2.75 s, peak 0.120 m/s, yaw disagreement   0.4 deg, odometry ok             
+   ep03 pre   17 12:17:27 FORWARD_25  at (2.48, 1.57) heading   86.7  done  2.75 s, peak 0.125 m/s, yaw disagreement  11.2 deg, odometry slip_suspected 
+   ep03 pre   18 12:17:32 FORWARD_25  at (2.49, 1.82) heading   88.4  done  2.68 s, peak 0.127 m/s, yaw disagreement  12.5 deg, odometry slip_suspected 
+   ep03 pre   57 12:19:01 FORWARD_25  at (2.48, 1.91) heading   84.1  done  2.82 s, peak 0.122 m/s, yaw disagreement   7.1 deg, odometry ok             
+   ep03 pre   58 12:19:05 FORWARD_25  at (2.49, 2.15) heading   86.9  done  2.80 s, peak 0.118 m/s, yaw disagreement   1.7 deg, odometry ok             
+   ep03 pre   97 12:20:36 FORWARD_25  at (2.54, 2.19) heading   78.3  done  2.84 s, peak 0.120 m/s, yaw disagreement   2.5 deg, odometry ok             
+   ep03 pre   98 12:20:40 FORWARD_25  at (2.58, 2.43) heading   80.7  done  2.77 s, peak 0.122 m/s, yaw disagreement   4.6 deg, odometry ok             
+   ep03 pre  136 12:22:07 FORWARD_25  at (2.53, 2.50) heading  107.0  done  2.72 s, peak 0.124 m/s, yaw disagreement   1.9 deg, odometry ok             
+   ep03 pre  137 12:22:12 FORWARD_25  at (2.45, 2.73) heading  109.5  done  2.70 s, peak 0.128 m/s, yaw disagreement   0.5 deg, odometry ok             range 0.820 (1 pairs)
+   ep03 pre  175 12:23:39 FORWARD_25  at (2.58, 2.74) heading   81.8  done  2.77 s, peak 0.121 m/s, yaw disagreement   0.5 deg, odometry ok             range 0.845 (1 pairs)
+   ep03 pre  176 12:23:43 FORWARD_25  at (2.61, 2.98) heading   84.8  done  2.66 s, peak 0.125 m/s, yaw disagreement   7.8 deg, odometry ok             range 0.909 (1 pairs)
+   ep03 pre  177 12:23:47 FORWARD_25  at (2.63, 3.21) heading   87.5  done  2.73 s, peak 0.127 m/s, yaw disagreement   0.9 deg, odometry ok             range 0.827 (1 pairs)
+   ep03 pre  178 12:23:52 FORWARD_25  at (2.63, 3.45) heading   89.6  done  2.71 s, peak 0.122 m/s, yaw disagreement   3.8 deg, odometry ok             
+   ep03 pre  179 12:23:55 FORWARD_25  at (2.62, 3.70) heading   92.4  done  2.71 s, peak 0.125 m/s, yaw disagreement   3.8 deg, odometry ok             
+   ep03 pre  180 12:23:59 FORWARD_25  at (2.60, 3.94) heading   94.9  done  2.70 s, peak 0.127 m/s, yaw disagreement   1.0 deg, odometry ok             
+   whole batch: median 0.938 over 25 moves; last 10: median 0.904; halt: None
+   by heading: north (30 to 150 deg) n 8 median 0.881; other n 17 median 0.966
+   by time: ep01-a1 north n 1 mean 0.942
+   by time: ep01-a1 other n 9 mean 0.969
+   ep01-a1 FORWARD_25: mean duration 2.83 s, mean peak speed 0.118 m/s (7 moves)
+   by time: ep02-a1 north n 3 mean 0.900
+   by time: ep02-a1 other n 8 mean 0.937
+   ep02-a1 FORWARD_25: mean duration 2.81 s, mean peak speed 0.122 m/s (20 moves)
+   by time: ep03-a1 north n 4 mean 0.850
+   ep03-a1 FORWARD_25: mean duration 2.74 s, mean peak speed 0.124 m/s (14 moves)
+== 2. the dead-reckoning drift records
+   ep01-a1 dead_reckoning_transit ratio 1.151, miss 0.099 m (world [0.052, -0.084]), heading miss +9.4 deg, circles' sigma [0.031, 0.026]
+   ep01-a1 dead_reckoning_episode ratio 1.191, miss 0.134 m (world [0.016, -0.133]), heading miss +10.4 deg, circles' sigma [0.026, 0.028]
+   ep02-a1 dead_reckoning_transit ratio 0.872, miss 0.459 m (world [-0.09, -0.45]), heading miss +9.5 deg, circles' sigma [0.028, 0.031]
+   ep02-a1 dead_reckoning_episode ratio 0.732, miss 0.325 m (world [-0.257, -0.199]), heading miss +12.6 deg, circles' sigma [0.031, 0.026]
+== 3. the per-step fix statistic replayed, and what drove it
+   replayed: -27.3 % +- 8.1 % over 10.5 m, 37 fixes
+      27 % of it: ep03 pre  row 181 view T10                 leg 0.743 m at   92.5 deg (3 forward, 1 turns), fix -0.295 m along it, fix sigma 0.124
+      10 % of it: ep03 pre  row  22 view T00                 leg 0.498 m at   89.4 deg (2 forward, 5 turns), fix -0.260 m along it, fix sigma 0.165
+       9 % of it: ep03 pre  row 141 view T00                 leg 0.488 m at  108.3 deg (2 forward, 6 turns), fix -0.288 m along it, fix sigma 0.183
+       7 % of it: ep03 pre  row 103 view T00                 leg 0.489 m at   81.2 deg (2 forward, 7 turns), fix -0.218 m along it, fix sigma 0.189
+       6 % of it: ep03 pre  row  62 view T00                 leg 0.485 m at   85.2 deg (2 forward, 6 turns), fix -0.188 m along it, fix sigma 0.176
+       6 % of it: ep02 ep   row  35 view T07,T13,T06,T14     leg 0.243 m at   59.2 deg (1 forward, 0 turns), fix -0.135 m along it, fix sigma 0.103
+       5 % of it: ep02 ep   row  60 view T00                 leg 0.475 m at  149.6 deg (2 forward, 1 turns), fix -0.146 m along it, fix sigma 0.185
+       4 % of it: ep02 ep   row  30 view T04                 leg 0.244 m at  -15.2 deg (1 forward, 0 turns), fix -0.053 m along it, fix sigma 0.065
+       4 % of it: ep02 ep   row  29 view T04                 leg 0.247 m at  -18.4 deg (1 forward, 0 turns), fix -0.062 m along it, fix sigma 0.081
+       4 % of it: ep02 ep   row  34 view T07,T13,T06,T14     leg 0.245 m at   55.5 deg (1 forward, 0 turns), fix -0.121 m along it, fix sigma 0.130
+   share by phase: {'ep01-a1 pre': '1 %', 'ep01-a1 ep': '0 %', 'ep02-a1 pre': '10 %', 'ep02-a1 ep': '23 %', 'ep03-a1 pre': '65 %'}
+== 4. the S3 transit between its two circles (episode 3, pre)
+   circles at rows 14 and 151: (2.46, 1.34) to (2.50, 2.60)
+   as recorded            (8 forward, 122 turns) by odometry 1.902 m, by circles 1.261 m, ratio 0.663, miss (-0.118, -0.635) m, heading +13.5 deg
+   forward moves x0.83    (8 forward, 122 turns) by odometry 1.573 m, by circles 1.261 m, ratio 0.801, miss (-0.087, -0.308) m, heading +13.5 deg
+   forward moves x0.70    (8 forward, 122 turns) by odometry 1.322 m, by circles 1.261 m, ratio 0.954, miss (-0.064, -0.058) m, heading +13.5 deg
+   gyro x1.009            (8 forward, 122 turns) by odometry 1.895 m, by circles 1.261 m, ratio 0.665, miss (+0.026, -0.635) m, heading +0.7 deg
+   turns in place         (8 forward, 122 turns) by odometry 1.933 m, by circles 1.261 m, ratio 0.652, miss (-0.137, -0.665) m, heading +13.5 deg
+== 5. episode 2: B2's own estimate against the truth (map frame)
+   step  0 B2 (0.00, 0.00) truth (-0.00, -0.00) tag fix: error 0.001 m
+   step  5 B2 (0.03, 0.03) truth (0.01, 0.02) tag fix: error 0.026 m
+   step 10 B2 (-0.01, 0.01) truth (-0.02, -0.02) tag fix: error 0.029 m
+   step 15 B2 (0.42, -0.24) truth (0.43, -0.23) tag fix: error 0.016 m
+   step 16 B2 (0.57, -0.36) truth (0.65, -0.31) tag fix: error 0.097 m
+   step 20 B2 (0.61, -0.33) truth (0.67, -0.29) tracked: error 0.078 m
+   step 25 B2 (0.58, -0.36) truth (0.60, -0.33) tag fix: error 0.041 m
+   step 30 B2 (1.01, -0.51) truth (1.04, -0.41) tag fix: error 0.103 m
+   step 31 B2 (1.01, -0.59) truth (1.04, -0.42) tag fix: error 0.175 m
+   step 35 B2 (1.40, -0.01) truth (1.45, 0.13) tag fix: error 0.146 m
+   step 40 B2 (1.43, -0.04) truth (1.43, 0.16) tag fix: error 0.196 m
+   step 45 B2 (1.42, -0.06) truth (1.38, 0.09) tag fix: error 0.151 m
+   step 50 B2 (1.37, -0.11) truth (1.34, 0.07) tag fix: error 0.184 m
+   step 55 B2 (1.49, -0.33) truth (1.43, -0.15) tag fix: error 0.189 m
+   step 60 B2 (0.86, -0.08) truth (0.81, 0.12) tag fix: error 0.209 m
+   step 61 B2 (0.85, -0.09) truth (0.80, 0.11) tag fix: error 0.203 m
+   final_pose_error {'m': 0.203, 'deg': 4.5, 'truth_sigma_xy_m': 0.0582, 'truth_is_a_tag_fix': True}; tracked_minus_end_scan {'m': 0.077, 'deg': 4.0, 'end_scan_is_a_full_fix': True}; end circle 14 tags, rms 0.026 m
+== 6. physical checks
+   move results {'done': 442}; stall 0, bump 0; slip_suspected 3: ['ep02 pre row 17 FORWARD_25', 'ep03 pre row 17 FORWARD_25', 'ep03 pre row 18 FORWARD_25']
+   telemetry age max 0.058 s; agent receive age max 1010 ms; car state at the end: cutoffs 0, boots 0, lost_samples 1, vsys_min_mv 4708
+   frames per step {5: 467}; frames that lost every tag their four siblings saw: 2 ["ep01 pre row 3, frames [2, 2, 2, 0, 2], step's tags [3, 7]", "ep02 pre row 6, frames [0, 2, 2, 2, 2], step's tags [3, 7]"]
