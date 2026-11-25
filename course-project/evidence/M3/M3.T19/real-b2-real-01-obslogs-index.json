@@ -1,0 +1,34 @@
+{
+ "schema": "bm.real_obslog_index/1",
+ "batch": "b2-real-01",
+ "batch_config": "611d90a41329",
+ "real_car": true,
+ "status": "halted",
+ "halt": {
+  "code": "odometry_scale",
+  "detail": "the episode (start circle to end circle) measures 0.72 m by odometry and 0.91 m by the tags (ratio 1.27, limit 1 +- 0.18): the encoder scale in configs/car.json is wrong, or the tags are",
+  "time_utc": "2026-11-25T11:29:06Z",
+  "safety": true
+ },
+ "world_file": "configs/arenas/real-room.json",
+ "world_sha12": "35572d7656f3",
+ "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
+ "max_range_m": 3.0,
+ "created": "2026-11-25T05:42:01-0600",
+ "episodes": [
+  {
+   "seed": 1,
+   "episode": "ep01-a1",
+   "scenario": "S1",
+   "steps": 83,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "c9cacd0e7d61",
+   "note": "completed; batch halted after the end by odometry_scale",
+   "end_pose_source": "end_fix.pose_now"
+  }
+ ],
+ "excluded": [],
+ "steps": 83
+}

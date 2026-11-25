@@ -72,6 +72,64 @@ def batch(tmp_path):
     return b
 
 
+def _as_real_folder(batch):
+    """Make the fixture look like the first real batch b2-real-01 (2026-11-25): real car, detections without a true tag
+    (`_tag` null), observations with source "real", one step's odometry flagged slip_suspected, and episode 1 halted
+    by a check after its end, so the manifest has status "halted", no end_pose_map and no final_pose_error, but a
+    complete result and the end circle's fix with its pose_now."""
+    path = batch / "episodes" / "ep01-a1" / "seed_1.jsonl"
+    rows = [json.loads(line) for line in open(path)]
+    for r in rows:
+        for d in r["raw"]["detections"]:
+            d["_tag"] = None
+        r["observation"]["source"] = "real"
+        if r["step"] == 2 and r["observation"]["odometry"]:
+            r["observation"]["odometry"]["quality"] = "slip_suspected"
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    man = json.loads((batch / "manifest.json").read_text())
+    man.update(real_car=True, status="halted", halt={"code": "odometry_scale", "detail": "after the episode"})
+    e = man["episodes"][0]
+    end_world = {"x_m": 2.31, "y_m": 1.62, "theta_deg": 130.0}
+    e.update(status="halted", halt={"code": "odometry_scale", "detail": "after the episode"},
+             result={"complete": True, "ended_by": "DONE", "detail": "decision", "steps": 6},
+             end_fix={"ok": True, "pose": {"x_m": 2.3, "y_m": 1.6, "theta_deg": 129.0}, "pose_now": end_world,
+                      "sigma_xy_m": 0.024})
+    for k in ("end_pose_map", "end_pose_world", "final_pose_error"):
+        e.pop(k, None)
+    (batch / "manifest.json").write_text(json.dumps(man))
+    return end_world
+
+
+def test_an_episode_halted_only_after_its_end_is_converted(batch, tmp_path):
+    end_world = _as_real_folder(batch)
+    idx = rr.convert_batch(str(batch), str(tmp_path / "o"))
+    ep = [e for e in idx["episodes"] if e["episode"] == "ep01-a1"]
+    assert ep and ep[0]["note"] == "completed; batch halted after the end by odometry_scale"
+    assert ep[0]["end_pose_source"] == "end_fix.pose_now" and idx["real_car"] is True
+    doc = json.loads((tmp_path / "o" / "seed_1.json").read_text())
+    assert doc["real"]["end_pose_map"] == pytest.approx(rr.to_map_pose(START, end_world))
+    assert all(d["_tag"] is None for r in doc["records"] for d in r["raw"]["detections"])
+    assert doc["records"][2]["observation_real"]["odometry_quality"] == "slip_suspected"
+    # the free arm still reproduces B2 on it, and sees the real observation's flags
+    out = tmp_path / "runs"
+    assert tool.cmd_run(_args(provider="procedure", obslogs=str(tmp_path / "o"), out=str(out))) == 0
+    rows = [json.loads(line) for line in open(out / "seed_1.jsonl")]
+    assert [r["estimate_pose"] for r in rows] == [rec["b2_estimate"] for rec in doc["records"]]
+    assert rows[2]["observation"]["odometry"]["quality"] == "slip_suspected" and rows[2]["observation"]["source"] == "real"
+    err = rr.final_errors({1: doc}, {})
+    assert "vs_end_circle_m" in err["B2"][1]
+
+
+def test_an_episode_halted_before_its_end_is_not_converted(batch, tmp_path):
+    _as_real_folder(batch)
+    man = json.loads((batch / "manifest.json").read_text())
+    man["episodes"][0]["result"] = {"complete": False, "ended_by": "halt", "detail": "odometry_scale"}
+    (batch / "manifest.json").write_text(json.dumps(man))
+    idx = rr.convert_batch(str(batch), str(tmp_path / "o"))
+    assert "ep01-a1" not in [e["episode"] for e in idx["episodes"]]
+    assert [x for x in idx["excluded"] if x["episode"] == "ep01-a1"][0]["reason"].startswith("did not end normally")
+
+
 def test_convert_keeps_truth_b2_and_the_real_observation(batch, tmp_path):
     out = tmp_path / "obslogs"
     idx = rr.convert_batch(str(batch), str(out))

@@ -1,0 +1,4 @@
+b2-real-01: 1 episodes, 83 steps (longest 83)
+  claude-opus-5-5      cost US$   6.05   time 0.1 h at the study's throughput, 0.4 h for the longest episode alone at the study's latency
+  qwen38-flash-xhigh   cost US$   0.00   time 0.7 h at the study's throughput, 5.4 h for the longest episode alone at the study's latency
+  gemma4-26b           cost US$   0.00   time 2.5 h at the study's throughput, 28.6 h for the longest episode alone at the study's latency

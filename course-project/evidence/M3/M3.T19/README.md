@@ -71,6 +71,44 @@ truth lies 0.3 cm (median) and at most 0.6 cm from the simulator's own pose at t
 the errors. Differences between arms smaller than about 5 cm are not resolved by this ground truth. The "vs end
 circle" column uses the full circle after the episode (sigma about 2–3 cm) as a second truth for position.
 
+## First real batch `b2-real-01`, episode 1 (2026-11-25)
+
+The batch halted after episode 1 (`odometry_scale`: 0.72 m by odometry against 0.91 m by the tags over the episode).
+The episode itself ran to its end: DONE after 83 steps, `result.complete` true, end circle OK. The check that halted
+it runs after the episode, so the manifest has status "halted" and has no `end_pose_map` and no `final_pose_error`.
+The converter now accepts such an episode: `real_replay.finished` requires the result complete and DONE or the step
+budget, and status done or halted with an end circle. It takes the end pose from `end_fix.pose_now`, the pose the
+batch tracks after the end circle (`car/batch.py` sets `end_pose_world` from that same pose). It records the episode
+in `index.json` with "completed; batch halted after the end by odometry_scale". An episode halted before its end is
+still excluded. Both cases are tests, built on the structure of the real folder: `real_car` true, `_tag` null, source
+"real", one `slip_suspected` step, no `end_pose_map`. No frames are involved; the episode folder holds none.
+
+`convert` (`real-b2-real-01-convert.txt`), `estimate` (`real-b2-real-01-estimate.txt`) and the free procedure arm
+(`real-b2-real-01-check-procedure.md`):
+
+| Arm | Final-position error (cm) | Heading error (deg) | Truth sigma (cm) | vs end circle (cm) |
+| --- | --- | --- | --- | --- |
+| B0 (dead reckoning) | 19.7 | 7.7 | 5.0 | 26.1 |
+| B2 (live driver) | 3.1 | 3.7 | 5.0 | 3.4 |
+| procedure (stand-in) | 3.1 | 3.7 | 5.0 | 3.4 |
+
+The stand-in's estimate equals the live B2 at 83 of 83 steps, with 83 valid reports, 0 move calls and 0 errors. On
+the carpet, dead reckoning drifted about 20 cm over the episode, and B2's fixes kept it to 3 cm. This is one episode.
+
+**What the real folder's format held, against the dry runs:**
+- `real_car` true, `source` "real" at all 83 steps.
+- **No `status: error` step**: all 83 observations are `ok`, with sensors camera ok, imu ok, pico armed. The error path
+  is still exercised only by the tests.
+- Odometry quality: `slip_suspected` at step 24, the rest `ok`, and none at step 0 (null odometry, normal). The overlay
+  carries `slip_suspected` into the replayed step message, checked.
+- **`_tag` is null in all 105 detections.** The converter, the replay and the final-error analysis do not need it.
+  The study's association precision and recall (`metrics/pilot.py LabelTracker`) and `tags_ever_detected` do, so they
+  cannot be computed on real logs. Map scoring against the surveyed tags (C10.3) still can.
+- truth.jsonl: 83 rows numbered 0 to 82, equal to the rows' truth. 60 are tag fixes and 23 are tracked since a fix;
+  sigma 0.050–0.059 m; `sim_truth_world` null (handled; there is no simulator column).
+- The manifest has no `end_pose_map`, `end_pose_world`, `agent_final_pose_map` or `final_pose_error`. They are handled
+  as above; the final error comes from truth.jsonl anyway, the same method as the batch's.
+
 ## Commands for the real batch (Spark host, repository root `~/Projects/en665715-beaconmind`)
 
 The order is Opus 5.5, then Qwen3.8, then Gemma 4, with one GPU server at a time. The Opus arm uses no GPU, so it may
@@ -155,4 +193,5 @@ For the real batch, rerun `estimate` on its converted logs.
   in use.
 - The container's Python 3.10 itself. The syntax was checked with `ast` at 3.10, and the code ran under 3.12 and 3.13.
 - Real provider calls: Opus through the real API, Qwen3.8 and Gemma 4 servers.
-- A real batch folder: `real_car: true`, detections with `_tag: null`, real `status: error` steps, halted episodes.
+- A real `status: error` step: the first real episode had none.
+- A batch halted inside an episode, on real data (only the test fixture).

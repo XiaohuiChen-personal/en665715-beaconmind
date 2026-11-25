@@ -72,6 +72,8 @@ def cmd_convert(a):
         print("  seed %-3d %-8s %-3s %4d steps  ended %-8s  last truth sigma %.3f m (%s)" % (
             e["seed"], e["episode"], e["scenario"], e["steps"], e["ended_by"], e["truth_sigma_xy_m_last"] or -1,
             "tag fix" if e["truth_is_a_fix_last"] else "tracked since the last fix"))
+        if e.get("note"):
+            print("           %s; end pose from %s" % (e["note"], e.get("end_pose_source")))
     for x in idx["excluded"]:
         print("  excluded %s: %s" % (x["episode"], x["reason"]))
     return 0

@@ -8,8 +8,9 @@ The frozen replay loop (harness/replay.py replay_seed) reads observation logs in
 tools/pilot_record.py / kinsim_room.run_episode): {seed, world, records: [{step, truth, raw, report, calls}], noise,
 arena}. So:
 
-- episode_to_obslog()  converts one episode; convert_batch() a whole batch (only episodes that ended normally; the
-                       others are listed with the reason). Each record keeps the truth with its sigma, B2's own
+- episode_to_obslog()  converts one episode; convert_batch() a whole batch (only episodes that ran to their own end:
+                       status done, or halted by a check after the end, noted in index.json; the others are listed
+                       with the reason). Each record keeps the truth with its sigma, B2's own
                        estimate (the reference row), and `observation_real`: the fields of the observation the driver
                        really saw that the frozen kinsim_lite.as_observation cannot rebuild from `raw` (source "real",
                        status and error, sensors, odometry quality, the validator's counters).
@@ -110,15 +111,34 @@ def episode_to_obslog(batch_dir, entry, world_doc, world_file=None):
         records.append(rec)
     scene = kr.room_scene(world_doc, start_pose=start)
     end_fix = entry.get("end_fix") or {}
+    end_map, end_source = entry.get("end_pose_map"), "manifest end_pose_map" if entry.get("end_pose_map") else None
+    if end_map is None and end_fix.get("ok") and end_fix.get("pose_now"):
+        # a batch halted by a check after the episode writes no end_pose_map; the end circle's own result is the pose
+        # the batch tracked after it (car/batch.py sets end_pose_world from that same tracked pose)
+        end_map, end_source = to_map_pose(start, end_fix["pose_now"]), "end_fix.pose_now"
     return {"schema": SCHEMA, "seed": seed, "world": scene["world"], "arena": scene["arena"], "records": records,
             "noise": None,
             "real": {"batch": os.path.basename(os.path.normpath(batch_dir)), "episode": entry["id"],
                      "attempt": entry.get("attempt"), "scenario": entry.get("scenario"), "policy": entry.get("policy"),
                      "ended_by": (entry.get("result") or {}).get("ended_by"), "steps": len(records),
                      "start_pose_world": start, "world_file": world_file, "world_id": world_doc.get("world_id"),
-                     "end_pose_map": entry.get("end_pose_map"), "end_fix_sigma_xy_m": end_fix.get("sigma_xy_m"),
+                     "end_pose_map": end_map, "end_pose_source": end_source,
+                     "end_fix_sigma_xy_m": end_fix.get("sigma_xy_m"),
                      "end_fix_ok": end_fix.get("ok"), "final_pose_error_batch": entry.get("final_pose_error"),
                      "real_car": None}}
+
+
+END_NORMALLY = ("DONE", "budget")
+
+
+def finished(entry):
+    """True when the episode ran to its own end (DONE, or the step budget) with every step written: status "done",
+    or status "halted" by a check that ran after the episode (result complete, ended normally; car/batch.py checks
+    the end circle and the odometry over the episode after run_episode has returned)."""
+    res = entry.get("result") or {}
+    if not res.get("complete") or res.get("ended_by") not in END_NORMALLY:
+        return False
+    return entry.get("status") == "done" or (entry.get("status") == "halted" and entry.get("end_fix") is not None)
 
 
 def convert_batch(batch_dir, out_dir, world_path=None):
@@ -143,7 +163,7 @@ def convert_batch(batch_dir, out_dir, world_path=None):
         by_index.setdefault(e["index"], []).append(e)
     for idx in sorted(by_index):
         tries = by_index[idx]
-        done = [e for e in tries if e.get("status") == "done" and (e.get("result") or {}).get("complete")]
+        done = [e for e in tries if finished(e)]
         for e in tries:
             if e not in done[-1:]:
                 if e in done:
@@ -162,6 +182,10 @@ def convert_batch(batch_dir, out_dir, world_path=None):
             index["excluded"].append({"episode": e["id"], "status": e.get("status"), "reason": str(exc)})
             continue
         doc["real"]["real_car"] = man.get("real_car")
+        note = None
+        if e.get("status") != "done":
+            note = "completed; batch halted after the end by %s" % ((e.get("halt") or {}).get("code") or e.get("halt"))
+            doc["real"]["note"] = note
         data = json.dumps(doc).encode()
         path = os.path.join(out_dir, "seed_%d.json" % doc["seed"])
         with open(path, "wb") as fh:
@@ -170,7 +194,8 @@ def convert_batch(batch_dir, out_dir, world_path=None):
         index["episodes"].append({"seed": doc["seed"], "episode": e["id"], "scenario": e.get("scenario"),
                                   "steps": len(doc["records"]), "ended_by": doc["real"]["ended_by"],
                                   "truth_sigma_xy_m_last": last["truth"].get("sigma_xy_m"),
-                                  "truth_is_a_fix_last": last["truth"].get("fix"), "sha12": sha12_bytes(data)})
+                                  "truth_is_a_fix_last": last["truth"].get("fix"), "sha12": sha12_bytes(data),
+                                  "note": note, "end_pose_source": doc["real"]["end_pose_source"]})
     index["steps"] = sum(e["steps"] for e in index["episodes"])
     with open(os.path.join(out_dir, "index.json"), "w", encoding="utf-8") as fh:
         json.dump(index, fh, indent=1)
