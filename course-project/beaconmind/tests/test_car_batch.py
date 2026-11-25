@@ -2464,3 +2464,28 @@ def test_b2_real_04s_under_travel_reading_is_recorded_not_a_halt():
     assert why is not None and "+56 %" in why and "1 measured forward moves, fewer than 3" in why
     assert B.per_step_scale_halt(_per_step(0.13, 0.04, ranges=[]), params) is not None        # +13 %, 3.25 SE: halts
     assert B.per_step_scale_halt(_per_step(0.13, 0.05, ranges=[]), params) is None            # 2.6 SE: not yet
+
+
+def test_the_tool_takes_the_slip_sigma_and_a_real_batch_must_state_it(tmp_path, capsys):
+    """--slip-sigma (2026-11-25, the carpet): the tracker's extra sigma per metre of a forward move, recorded in the
+    manifest's params. A dry run without it runs as before (0); a real batch without it is refused, like --dv; with it
+    stated (0.3, or 0 to state it off) that refusal goes."""
+    tool = load_batch_tool()
+    base = ["run", "--world", str(WORLD20_PATH), "--start", "S1:2.5,1.5,90", "--initial-pose", "2.4,1.6,70",
+            "--max-steps", "3", "--max-range", "3.0", "--dry-run"]
+    assert tool.main(base + ["--out", str(tmp_path / "a"), "--slip-sigma", "0.3"]) == 0
+    assert json.loads((tmp_path / "a" / "manifest.json").read_text())["params"]["odometry_slip_sigma_per_m"] == 0.3
+    assert "odometry slip sigma 0.30 x forward distance" in capsys.readouterr().out
+    assert tool.main(base + ["--out", str(tmp_path / "b")]) == 0
+    assert json.loads((tmp_path / "b" / "manifest.json").read_text())["params"]["odometry_slip_sigma_per_m"] == 0.0
+    real = ["run", "--world", str(WORLD20_PATH), "--start", "S1:2.5,1.5,90", "--initial-pose", "2.4,1.6,70", "--label", "t",
+            "--marker", str(tmp_path / "none.json"), "--latch", str(tmp_path / "LATCH")]
+    capsys.readouterr()
+    assert tool.main(real) == 2
+    assert "a real batch needs --slip-sigma stated" in capsys.readouterr().err
+    for stated in ("0.3", "0"):
+        assert tool.main(real + ["--slip-sigma", stated]) == 2              # still refused: no marker, no recorder
+        err = capsys.readouterr().err
+        assert "no pass marker" in err and "--slip-sigma" not in err
+    with pytest.raises(SystemExit, match="--slip-sigma must be 0 to 1"):
+        tool.main(base + ["--out", str(tmp_path / "c"), "--slip-sigma", "1.5"])

@@ -540,7 +540,7 @@ bash course-project/tools/car_batch.sh b2-real-01-dry run \
     --scenarios course-project/configs/arenas/real-room-scenarios.json \
     --initial-pose 2.20,2.00,90 --episodes 10 --policy b2 --max-range 3.0 \
     --detector-noise course-project/configs/detector_noise.json --dv course-project/configs/dv-real.json \
-    --dry-run --out course-project/data/batches/b2-real-01-dry
+    --slip-sigma 0.3 --dry-run --out course-project/data/batches/b2-real-01-dry
 bash course-project/tools/car_batch.sh - status --out course-project/data/batches/b2-real-01-dry
 
 # d. the real batch, inside tmux (tmux new -s bm-batch), the car taped at the --initial-pose
@@ -548,7 +548,8 @@ bash course-project/tools/car_batch.sh b2-real-01 run \
     --world course-project/configs/arenas/real-room.json \
     --scenarios course-project/configs/arenas/real-room-scenarios.json \
     --initial-pose 2.20,2.00,90 --episodes 10 --policy b2 --max-range 3.0 \
-    --detector-noise course-project/configs/detector_noise.json --dv course-project/configs/dv-real.json
+    --detector-noise course-project/configs/detector_noise.json --dv course-project/configs/dv-real.json \
+    --slip-sigma 0.3
 
 # e. after a halt: look at the car, then
 bash course-project/tools/car_batch.sh - clear-halt --out course-project/data/batches/b2-real-01 --operator "Xiaohui Chen"
@@ -562,7 +563,12 @@ wherever it really stands and use that in c and d alike. `--episodes 10` runs S1
 prints a WARNING and the plan says 2.5 m (change it in a2, c and d alike: the batch refuses a `--dv` whose range
 limit differs from `--max-range`, and a `--dv` not made from the given `--detector-noise`). Real batches run with the
 pilot's file (the lead's decision, 2026-11-25): a real batch refuses to start without `--detector-noise` and a `--dv`
-made from that same file; the manifest's `params.sigma_sources` says they agree, with the sha256. If
+made from that same file; the manifest's `params.sigma_sources` says they agree, with the sha256. Since 2026-11-25
+a real batch also refuses to start without `--slip-sigma` stated (the lead's decision: 0.3 on the carpet, where the car
+covers 0.67 to 0.78 of its counted distance northward; 0 states it off): the tracker then adds 0.3 m of position sigma
+per metre of a forward move, which keeps the ground truth's stated sigma honest and ends the false `fix_conflict` halts
+on northward stretches (`truth-under-slip/`); it is recorded as `params.odometry_slip_sigma_per_m` and printed at the
+start. If
 the demo run Xiaohui films is ever driven through `car_batch.sh`, the phone starts filming
 `python3 course-project/tools/session_clock.py <session>` once the wrapper has printed the session name, before the
 first circle; no other batch is filmed. Step c with the nominal 20-tag world as a stand-in for `real-room.json`

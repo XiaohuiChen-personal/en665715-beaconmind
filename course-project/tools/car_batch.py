@@ -36,6 +36,7 @@ Exit status: 0 the batch is complete; 3 it halted; 2 it refused to start.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this tool.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the range check's bias and window from --detector-noise.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: --slip-sigma (stated for every real batch).
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: --detector-noise; only the first of several stop signals
 counts; --dv.
 """
@@ -190,6 +191,10 @@ def build_parser():
                                               "0.03 m + 0.04 x range")
     run.add_argument("--dv", help="design-values file: configs/dv-real.json (tools/real_dv.py) or configs/dv.json; "
                                    "required for a real batch, default for a dry run: the frozen configs/dv.json")
+    run.add_argument("--slip-sigma", type=float, default=None,
+                     help="the tracker's extra position sigma per metre of a forward move, for floor slip the encoders "
+                          "cannot see (0.3 on the carpet: evidence/M3/M3.T12/batch-runner/truth-under-slip/); must be "
+                          "stated for a real batch (0 states it off); default for a dry run: 0")
     run.add_argument("--marker", default=str(MARKER))
 
     rp_ = sub.add_parser("record-pass")
@@ -309,7 +314,8 @@ def params_from(args, world_path, agreement=""):
         min_vsys_mv=args.min_vsys_mv, min_forward_speed_mps=args.min_forward_speed,
         episode_wall_s=args.episode_minutes * 60.0, batch_wall_s=args.batch_hours * 3600.0,
         batch_steps=args.batch_steps, cap_usd=args.cap_usd, drive_map=(duty, speed), fix_sigma_a_m=sigma_a,
-        fix_sigma_b=sigma_b, fix_sigma_source=source, dv_file=dv_text, sigma_sources=agreement, **range_model(args))
+        fix_sigma_b=sigma_b, fix_sigma_source=source, dv_file=dv_text, sigma_sources=agreement,
+        odometry_slip_sigma_per_m=float(args.slip_sigma or 0.0), **range_model(args))
 
 
 def cmd_run(args):
@@ -341,8 +347,13 @@ def cmd_run(args):
     if problems:
         print("refused, nothing was sent:\n- " + "\n- ".join(problems), file=sys.stderr)
         return 2
+    if args.slip_sigma is not None and not 0.0 <= args.slip_sigma <= 1.0:
+        sys.exit("--slip-sigma must be 0 to 1 (metres of sigma per metre of a forward move)")
     params = params_from(args, world_path, agreement)
     missing_dv = [] if args.dry_run else sources         # (listed with the pass marker's refusals)
+    if not args.dry_run and args.slip_sigma is None:
+        missing_dv.append("a real batch needs --slip-sigma stated: 0.3 on the carpet (the car covers 0.67 to 0.78 of its "
+                          "count northward: evidence/M3/M3.T12/batch-runner/truth-under-slip/), 0 to state it off")
     tool = load_runner_tool()
     driver, cfg, cfg_path, sdk = tool.build_driver(args.policy)
     if cfg is not None and args.cap_usd <= 0:
@@ -404,6 +415,8 @@ def cmd_run(args):
     log("range check: tags %.2f to %.2f m, range bias %+.4f %+.4f x range m removed" % (
         params.range_min_m, params.max_range_m, params.range_bias_a_m, params.range_bias_b))
     log("design values: %s" % params.dv_file)
+    log("tracker: odometry slip sigma %.2f x forward distance%s" % (
+        params.odometry_slip_sigma_per_m, "" if args.slip_sigma is not None else " (not stated: a dry run's default)"))
     try:
         with dv_real.use_dv(dv_real.resolve_arg(args.dv)):     # what the agent's tools and the car code read
             result = runner.run()

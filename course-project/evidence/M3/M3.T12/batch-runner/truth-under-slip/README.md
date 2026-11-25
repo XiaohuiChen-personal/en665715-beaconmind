@@ -73,3 +73,28 @@ solved on its own geometry; the tracked pose only resolves repeated tag ids with
   uncertainty stated, or mark it as without an independent final truth.
 - **The logged step truth:** carries the tracker's overconfidence on northward stretches. Recomputed offline with
   0.3 × d it moves closer to the end circle in every episode that has one.
+
+## 3. Switched on for real batches: `--slip-sigma 0.3`
+
+The lead's decision (2026-11-25): real batches run with 0.3 × d, as an explicit argument of `tools/car_batch.py`
+(`--slip-sigma`), recorded in the manifest (`params.odometry_slip_sigma_per_m`) and printed at the start. A real batch
+refuses to start without it stated (0 states it off); dry runs and tests default to 0.
+
+**Exact-argument dry runs with `--slip-sigma 0.3`** (log `slip-sigma-0.3-dry-runs-log.txt`):
+
+| Run | Result | Truth error against the car: p95 / max | Rows beyond 2 σ |
+| --- | --- | --- | --- |
+| plain | 10 of 10 | 0.007 / 0.012 m | 0 % |
+| north 0.78 | 10 of 10 | 0.067 / 0.245 m | 0 % |
+| north 0.67 | **halted after 8 episodes, all 8 done** | 0.124 / 0.305 m | 0 % |
+
+**The north-0.67 halt:**
+- **What fired:** the dead-reckoning gross bound on the under-travel side. Episode 8 measured 0.73 m by odometry
+  against 0.34 m by the circles: ratio 0.47, below 0.5.
+- **Why:** on a carpet whose slip depends on direction, a short net displacement made of moves north and south shrinks
+  much more than any one move. For example, 0.5 m north and 0.2 m south by odometry come out as 0.335 and 0.208 m on
+  the floor: net 0.30 m by odometry, 0.13 m on the floor.
+- **How rare:** over 130 transit and episode measurements on the simulated carpets this is the only ratio under 0.6.
+  With 0.6 m or more of net distance by the circles, the lowest is 0.604, at north 0.60.
+- **Not caused by the slip sigma:** the ratio does not use the tracker's sigma.
+- **A possible change, not made:** judge the under-travel side only over net distances of 0.6 m or more.
