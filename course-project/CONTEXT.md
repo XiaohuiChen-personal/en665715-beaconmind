@@ -78,9 +78,21 @@ the video agent finished believing the length was still an assumption); all were
   the first real batch"); stand-in dry run 10 of 10, exit 0. Tests: Mac 643 passed (without the video agent's work in
   progress), container 308. **Decision (Claude, software delegation):** real batches use `--detector-noise
   configs/detector_noise.json` once the pilot writes it, and `dv-real.json` must come from the same file (checked by
-  sha256). Now doing the `--dv` work on the Mac. Spark checked clear by the lead (no container, recorder, latch);
+  sha256). **`--dv` done** (commits `f1897e9`, `f4d0e87`): `tools/real_dv.py` writes `configs/dv-real.json` = the
+  frozen file with exactly `sigma_range_a_m`, `sigma_range_b_per_m`, `sigma_bearing_deg` (pilot's bias added to its
+  sigma, since the detector does not correct it) and `reject_range_above_m` changed; `well_cond_*`, `reloc_sigma_*`,
+  `gate_*` stay frozen (thresholds, not noise models). `--dv` in `car_batch.py`, `closed_loop_run.py`,
+  `room_rehearsal.py` through a scoped dv-cache override (frozen modules untouched; restored on exit). A real batch
+  requires an explicit `--dv`. Checked by the lead: `configs/dv.json` unchanged since `65173fe`, no `dv-real.json`
+  yet, prereg verify OK, `test_dv_real.py` 8 passed. Spark checked clear by the lead (no container, recorder, latch);
   reserved for Xiaohui's sessions. Empty `*-batch-real-refusal-*` sessions and dry-run folders on the Spark: to clean
-  up after the sessions.
+  up after the sessions. **Spark clone pulled to `f4d0e87`** before the pilot (scripts parse; the system
+  `/usr/bin/python3` has OpenCV 4.13 with aruco; `tag_pilot.py --selftest` passes, 15 checks).
+- **video, revised** (commit `8652a5d`): 3:00–5:00 is a hard check; silent video now 3:37.64 without the car part
+  (simulation 2:56; with the car part it shrinks to about 2:09, whole video at most 4:16). Each move is drawn at its
+  commanded speed (0.15 m/s, 45°/s) played at ×2, thinking at ×14 (×34 with the car part); car to scale with a
+  close-up and a simulated camera view. Checked by the lead: duration, a mid-video frame, the agent's six-frame
+  continuity strips. Adding a 7-frame-per-move test, a fallback mode and keep-last-good-video.
 - **video:** commit `6a9c848`; `python3 course-project/tools/demo_video.py all` renders `data/video/parts/sim.mp4`
   (1:59.76) and `data/video/BeaconMind-demo-silent.mp4` (2:41.76, without the car part), 1920 × 1080, 25 fps; checked
   by the lead with ffmpeg. The Opus episode plays at ×24 and every move glides over 0.3 s of output (seen frame by
