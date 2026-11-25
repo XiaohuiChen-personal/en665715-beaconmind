@@ -48,7 +48,14 @@ disjoint files, no API spend, nothing that commands the car, no edits to this fi
   `configs/detector_noise.json` sigmas; paste-ready first-batch commands. Must not start the micro-ROS agent, publish to
   `/pico/*`, or write `ATTENDED_PASS.json`.
 
-**Still open for Xiaohui:** confirm the harness-based demo video; after the pilot, the range limit (3.0 or 2.5 m). **Needs Xiaohui next (unchanged):** measure one printed square
+**Demo video confirmed (Xiaohui, 2026-11-24):** "build the demo video from the harness logs shall be enough as long as
+the video could be shown the robot running in simulator. For the real run, I will record one run." So: no ROSA
+runtime (M6.T2, T7, T8 not built); the simulation part animates the car's motion between steps, to scale, labelled as
+the kinematic simulator; the car part is built around one filmed real run (expected: the closed-loop Opus demo take).
+Passed to the video agent. Claude reads "one run" as the run filmed for the video, as on 2026-11-13 (the other real
+episodes kept); asked Xiaohui to confirm.
+
+**Still open for Xiaohui:** after the pilot, the range limit (3.0 or 2.5 m). **Needs Xiaohui next (unchanged):** measure one printed square
 (160 ± 1 mm); mount the 20 tags from the new sheet and record the centres; tag pilot; stand test and floor check.
 
 ## 2026-11-18 (later) — delegation, unattended batches, spend approvals; parallel agents, room rehearsal, tag layout C20 decided
