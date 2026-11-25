@@ -286,3 +286,13 @@ def test_a_set_of_batches_keeps_its_seeds_and_grows_on_a_rerun(batch, tmp_path):
     with pytest.raises(ValueError):                                   # a single-batch folder is not a set
         rr.convert_batch(str(batch), str(tmp_path / "single"))
         rr.convert_batches([str(batch)], str(tmp_path / "single"))
+
+
+def test_the_logs_do_not_depend_on_the_working_directory(batch, tmp_path, monkeypatch):
+    shas = []
+    for cwd in (ROOT, ROOT.parent):
+        monkeypatch.chdir(cwd)
+        idx = rr.convert_batch(str(batch), str(tmp_path / ("o-%d" % len(shas))))
+        shas.append([e["sha12"] for e in idx["episodes"]])
+        assert idx["world_file"] == "configs/arenas/real-room.json"
+    assert shas[0] == shas[1]

@@ -141,6 +141,14 @@ def finished(entry):
     return entry.get("status") == "done" or (entry.get("status") == "halted" and entry.get("end_fix") is not None)
 
 
+def _course_rel(path):
+    """A path relative to course-project/ (so the logs' bytes do not depend on the directory the tool ran in)."""
+    import beaconmind
+    root = os.path.realpath(str(beaconmind.course_root()))
+    p = os.path.realpath(path)
+    return os.path.relpath(p, root) if p.startswith(root + os.sep) else p
+
+
 def convert_batch(batch_dir, out_dir, world_path=None, seed_base=0, write_index=True):
     """Write <out_dir>/seed_<n>.json for every episode that ran to its end and index.json; returns the index. The log's
     seed is seed_base + the batch's own seed of the episode (convert_batches gives every batch its own base)."""
@@ -156,7 +164,7 @@ def convert_batch(batch_dir, out_dir, world_path=None, seed_base=0, write_index=
     os.makedirs(out_dir, exist_ok=True)
     index = {"schema": "bm.real_obslog_index/1", "batch": os.path.basename(os.path.normpath(batch_dir)),
              "batch_config": man.get("config"), "real_car": man.get("real_car"), "status": man.get("status"),
-             "halt": man.get("halt"), "world_file": os.path.relpath(world_path), "world_sha12": sha12_bytes(world_bytes),
+             "halt": man.get("halt"), "world_file": _course_rel(world_path), "world_sha12": sha12_bytes(world_bytes),
              "dv_file": man["params"].get("dv_file"), "max_range_m": man["params"].get("max_range_m"),
              "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "episodes": [], "excluded": []}
     by_index = {}
