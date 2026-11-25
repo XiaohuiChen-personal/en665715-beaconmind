@@ -124,6 +124,18 @@ mildly, because its "north" spans 30° to 150°.
 - **The next fix still lands.** A 0.26 m gap stays inside what a fix may differ by (three combined sigmas plus 5 cm:
   about 0.28 m for a 5 cm fix, more for a single far tag). No real batch has had a fix refused as far from the
   tracked pose.
+- **The turn margin at the true position** (a review note, 2026-11-25). The turn room, meaning the depth of the axle
+  inside the driving area less the sweep radius, is concave along a straight line, because the area is convex. So the
+  room at the true position, which lies between the stretch's start and its tracked end, is at least the smaller of
+  the two. The end is checked with 0.05 m to spare, but the start of a blind stretch is usually where the car last
+  turned, which is checked only with the turn margin (0.03 m plus one sigma). So after a blind northward stretch from
+  a spot where a turn only just fitted (the south-east corner by the angled wall is the tight place), the true room
+  is no more than that start's: thin by geometry, but no thinner than any turn the guard allows.
+  - On the simulated carpet, with B2 driving the real scenarios (3 seeds × 10 episodes), the true turn room at every
+    turn start was **0.265 m or more**.
+  - **Closed since:** a forward move now has to start with the end's 0.05 m to spare as well
+    (`start_turn_margin_m`). It costs nothing in completions: with and without it, 3 seeds × 10 episodes of the exact
+    real arguments, plain and on the slipping carpet, all completed 10 of 10 with no guard refusal.
 - **The tracker's sigma understates the error.** The odometry noise of 5 % of the distance driven understates a
   22 % slip. That error lies along the motion and in the safe direction, but the stated sigma is too small northward.
 
@@ -159,6 +171,15 @@ mildly, because its "north" spans 30° to 150°.
 
 - **The tracked pose** ended within 0.003 to 0.027 m of every end circle, and B2's final errors were 0.003 to
   0.071 m.
+
+**The transit's attempts** (after b2-real-03 was started; not used by it):
+- **The problem:** `go_to` gave 5 attempts, each driving at most 0.75 m by odometry between two looks around. That is
+  0.58 m on the floor northward. On the simulated carpet the 2.4 m northward transit to S3 ran out 0.30 m short in 2 of
+  4 ten-episode batches (start_pose halts, no contact).
+- **The change:** `go_to` now allows `start_attempts` plus one attempt per 0.49 m of floor (0.75 m at the 0.65 floor),
+  and never fewer than the old 5.
+- **The result:** 6 of 6 ten-episode batches complete, the S3 transit using 5 or 6 attempts, the smallest true
+  footprint depth 0.27 m.
 
 **An option for Xiaohui, not implemented:** correct the odometry by heading, for example forward distance ×
 (0.78 + 0.26 × sin² of the angle from north) fitted to the slip test and the ranges. That would remove most of the

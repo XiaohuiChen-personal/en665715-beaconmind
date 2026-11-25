@@ -114,6 +114,7 @@ class BatchParams:
     range_scale_window: int = 10        # the range rule also over the last this many moves alone (a change mid-batch)
     # guard
     wall_margin_m: float = 0.15
+    start_turn_margin_m: float = 0.05   # a forward move must start where a turn fits with this to spare, as it must end
     sigma_block_m: float = 0.25
     initial_sigma_m: float = 0.10
     initial_sigma_deg: float = 10.0
@@ -479,8 +480,10 @@ class MoveGuard:
     spot it cannot turn away from."""
 
     turn_margin_m = 0.03
+    start_turn_margin_m = 0.0       # a forward move must also START where a turn fits with this much to spare (the
+                                    # batch sets 0.05: see BatchParams.start_turn_margin_m)
 
-    def __init__(self, world, footprint, sweep_radius_m, margin_m, sigma_block_m):
+    def __init__(self, world, footprint, sweep_radius_m, margin_m, sigma_block_m, start_turn_margin_m=0.0):
         arena = world["arena"]
         self.drive = [tuple(p) for p in arena.get("drive_polygon_m") or arena["polygon_m"]]
         if _signed_area(self.drive) <= 0:
@@ -488,6 +491,7 @@ class MoveGuard:
         self.obstacles = [[tuple(p) for p in o["polygon_m"]] for o in arena.get("obstacles") or []]
         self.footprint = [tuple(p) for p in footprint]
         self.sweep_radius_m, self.margin_m, self.sigma_block_m = sweep_radius_m, margin_m, sigma_block_m
+        self.start_turn_margin_m = start_turn_margin_m
 
     def point_depth(self, p):
         """How far a point is inside the free area: inside the driving area AND outside every obstacle box (the
@@ -526,6 +530,14 @@ class MoveGuard:
                 "turn: the sweep circle is %.2f m from the edge of the driving area, need %.2f m" % (room, turn_need)
         distance = (table_distance if distance_m is None else abs(distance_m)) + 0.04
         signed = distance if kind == "forward" else -distance
+        if kind == "forward" and self.start_turn_margin_m > 0:
+            # where the car really is lies between the stretch's start and the tracked end (under-travel: the carpet
+            # covers 0.78 northward); turn room is concave along a straight line, so it is at least the smaller of
+            # the two: the start gets the end's spare margin too (a review note, 2026-11-25)
+            start_room = self.axle_depth(pose) - self.sweep_radius_m
+            if start_room < turn_need + self.start_turn_margin_m:
+                return "%s would start where a turn has only %.2f m of room, need %.2f m" % (
+                    action, start_room, turn_need + self.start_turn_margin_m)
         worst = turn_room = float("inf")
         for bend in (-5.0, 0.0, 5.0):
             heading = math.radians(pose["theta_deg"] + bend)
@@ -1327,7 +1339,8 @@ class BatchRunner:
         self.manifest_path = os.path.join(self.out, "manifest.json")
         self.monitor = Monitor(params, self.halt_path, rig.latch, rig.clock, log, recorder_check)
         self.marker_path = marker_path          # episode markers inside the recorder's session
-        self.guard = MoveGuard(world, self.footprint, self.sweep, params.wall_margin_m, params.sigma_block_m)
+        self.guard = MoveGuard(world, self.footprint, self.sweep, params.wall_margin_m, params.sigma_block_m,
+                               start_turn_margin_m=params.start_turn_margin_m)
         self.tracker = PoseTracker(params.initial_pose, params.initial_sigma_m, params.initial_sigma_deg,
                                    params.fix_floor_m)
         self.tagcheck = TagCheck(params.tag_check_k, params.tag_check_min_m, params.tag_trust_max_m, params.tag_trust_k)
@@ -1513,9 +1526,18 @@ class BatchRunner:
             self._must(env, "TURN_LEFT_30" if n > 0 else "TURN_RIGHT_30", what)
 
     def go_to(self, env, target, what):
-        """Drive to the target pose with C2 moves: face it, go, look again. Bounded; halts when not reached."""
+        """Drive to the target pose with C2 moves: face it, go, look again. Bounded; halts when not reached.
+
+        Attempts: start_attempts, plus one for every stretch the car may drive between two looks around, counted on
+        the floor at the under-travel floor (max_blind_travel_m x range_scale_floor: 0.49 m), at least as many as
+        before (5). On this carpet the car covers 0.78 of its counted distance northward (the slip test), and a
+        2.4 m northward transit ran out of 5 attempts 0.30 m short in simulation (2026-11-25)."""
         p = self.params
-        for attempt in range(p.start_attempts + int(2.0 / p.max_blind_travel_m)):
+        pose = self.tracker.pose
+        start_dist = math.hypot(target["x_m"] - pose["x_m"], target["y_m"] - pose["y_m"])
+        attempts = max(p.start_attempts + int(2.0 / p.max_blind_travel_m),
+                       p.start_attempts + int(math.ceil(start_dist / (p.max_blind_travel_m * p.range_scale_floor))))
+        for attempt in range(attempts):
             pose = self.tracker.pose
             dx, dy = target["x_m"] - pose["x_m"], target["y_m"] - pose["y_m"]
             dist = math.hypot(dx, dy)
@@ -1733,17 +1755,23 @@ class BatchRunner:
                                              "deg": round(abs(wrap_deg(agent["theta_deg"] - truth["theta_deg"])), 1),
                                              "truth_sigma_xy_m": truth.get("sigma_xy_m"),
                                              "truth_is_a_tag_fix": bool(truth.get("fix"))}
+            # the end pose as tracked, before the end circle: a halt inside the circle (b2-real-03, a stall) must not
+            # leave a finished episode without one; the circle's result replaces it below
+            entry["end_pose_world"] = dict(before)
+            entry["end_pose_map"] = to_map_pose(start, before)
+            entry["end_pose_source"] = "tracked, before the end circle"
+            completed = True                    # the agent's episode and its end pose are recorded: "done" from here
             post = self._service_env(ep_id + "-post", os.path.join(ep_dir, "post"))
             post.reset(entry["seed"])
             entry["end_fix"] = self.localise(post, "%s: end pose" % ep_id, required=False)
             entry["end_pose_world"] = dict(self.tracker.pose)
             entry["end_pose_map"] = to_map_pose(start, self.tracker.pose)
+            entry["end_pose_source"] = "end circle" if entry["end_fix"].get("ok") else "tracked after the end circle"
             # how far the pose tracked through the episode was from what the end circle then measured
             entry["tracked_minus_end_scan"] = {
                 "m": round(math.hypot(before["x_m"] - self.tracker.pose["x_m"], before["y_m"] - self.tracker.pose["y_m"]), 3),
                 "deg": round(abs(wrap_deg(before["theta_deg"] - self.tracker.pose["theta_deg"])), 1),
                 "end_scan_is_a_full_fix": bool(entry["end_fix"]["ok"])}
-            completed = True                    # the episode and its end pose are recorded: it is "done" from here
             if entry["end_fix"].get("ok") and not entry["end_fix"].get("tracked_only"):
                 sigmas = (_circle_sigma(entry["start_fix"]), _circle_sigma(entry["end_fix"]))
                 entry["dead_reckoning_episode"] = self._dead_reckoning(episode_origin, sigmas,

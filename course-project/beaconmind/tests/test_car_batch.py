@@ -2286,8 +2286,11 @@ def test_the_per_step_statistic_halts_only_while_the_range_check_cannot_vouch_fo
 def test_with_the_range_check_off_the_per_step_fixes_still_halt_a_wrong_scale(tmp_path, monkeypatch):
     """The review (2026-11-25): with the range check off, the per-step fix statistic is the layer that halts a wrong
     encoder scale. The gate keeps that: with no measured forward move, an odometer reading 25 % short (the car going
-    farther than it thinks) halts on the fixes in the 20-tag room, the simulated car inside the driving area. One
-    reading 25 % long (under-travel, -20 %) passes as slip since the slip test; the car stays inside the area."""
+    farther than it thinks) halts on the fixes in the 20-tag room, by the second episode, the simulated car's
+    footprint 0.10 m or more inside the driving area (0.13 m measured). One reading 25 % long (under-travel, -20 %)
+    passes as slip since the slip test; the car stays 0.30 m or more inside (0.45 m measured). (The 8-tag room at
+    2.5 m is the thin case of this layer alone: there 25 % short halts only in episode 3, at 0.04 m; with the range
+    check on it halts at the first ranged move. Review note, 2026-11-25.)"""
     from beaconmind.car import config as C
     monkeypatch.setattr(B.BatchEnv, "_range_check", lambda self, exact, sense, record, first: None)
     cfg = C.load_config()
@@ -2309,12 +2312,15 @@ def test_with_the_range_check_off_the_per_step_fixes_still_halt_a_wrong_scale(tm
             depth["min"] = min(depth["min"], runner.guard.footprint_depth(rig.sim_truth_fn()))
         rig.link.on_step = watch
         result = runner.run()
-        assert depth["min"] > 0.05 and not rig.link.sim.p.blocked_left, (factor, depth)
+        assert not rig.link.sim.p.blocked_left, factor
         if factor == 1.25:
             assert result["halt"] is None or "tag fixes land" not in result["halt"]["detail"], result
+            assert depth["min"] > 0.30, depth
             continue
         assert result["status"] == "halted" and result["halt"]["code"] == "odometry_scale", (factor, result)
         assert "tag fixes land" in result["halt"]["detail"] and "0 measured forward moves" in result["halt"]["detail"]
+        episodes = json.loads((out / "batch" / "manifest.json").read_text())["episodes"]
+        assert len(episodes) <= 2 and depth["min"] > 0.10, (len(episodes), depth)
 
 
 # The slip test (2026-11-25, recorder session 20261125-064330-slip-test): 4 x FORWARD_25 each way on the pilot's
@@ -2348,3 +2354,92 @@ def test_the_measured_carpet_slip_does_not_halt_and_is_recorded_by_heading(tmp_p
     assert moves and all(set(m) >= {"time_utc", "heading_deg", "x_m", "y_m", "forward_m", "scale", "pairs"} for m in moves)
     table = b.manifest["episodes"][-1]["slip_by_heading"]
     assert sum(row["moves"] for row in table) == len(moves) and all(0.9 < row["median"] < 1.1 for row in table)
+
+
+def test_a_long_northward_transit_on_the_slipping_carpet_reaches_its_start(tmp_path, monkeypatch):
+    """The transit to S3 runs about 2.4 m north, where the car covers 0.78 of its counted distance (the slip test).
+    With 5 attempts it ran out 0.30 m short in 2 of 4 simulated batches (2026-11-25); go_to now gives one attempt per
+    0.49 m of floor (0.75 m blind at the 0.65 floor) besides start_attempts. Here, on a simulated carpet with the
+    measured slip, from (2.6, 1.0) facing north to S3 (2.9 m): reached, using all of the old 5 attempts, with 9 now
+    allowed. (In ten-episode batches on the same carpet the S3 transit needed 6 in 2 of 6 seeds.)"""
+    from beaconmind.car import simcar as S
+    world = json.loads((ROOT / "configs" / "arenas" / "real-room.json").read_text())
+    place = {"x_m": 2.6, "y_m": 1.0, "theta_deg": 90.0}
+    theta0 = math.radians(place["theta_deg"])
+    real_step = S.SimCar.step
+
+    def slipping(self, dt):
+        x0, y0 = self.x, self.y
+        real_step(self, dt)
+        dx, dy = self.x - x0, self.y - y0
+        if dx or dy:
+            k = 0.91 - 0.13 * math.sin(theta0 + math.atan2(dy, dx))         # 0.78 north, 1.04 south
+            self.x, self.y = x0 + k * dx, y0 + k * dy
+    monkeypatch.setattr(S.SimCar, "step", slipping)
+    s3 = {"id": "S3", "x_m": 2.60, "y_m": 3.90, "theta_deg": -90.0}
+    params = B.BatchParams(world_path="x", start_poses=[s3], initial_pose=dict(place), episodes=1, max_steps=5,
+                           max_range_m=3.0, range_bias_a_m=0.00492, range_bias_b=-0.01658, range_min_m=0.785)
+    rig = B.dry_rig(world, place, latch=Latch(tmp_path / "LATCH"), seed=2, max_range_m=3.0)
+    runner = B.BatchRunner(params, rig, world, tmp_path / "batch", driver=cl.B2Driver(), budget=rp.Budget(float("inf")),
+                           log=lambda *a: None, run_episode=cl.run_episode)
+    result = runner.run()
+    e = json.loads((tmp_path / "batch" / "manifest.json").read_text())["episodes"][0]
+    assert result["status"] == "complete", result
+    assert e["start_fix"]["miss_m"] <= 0.20 and not rig.link.sim.p.blocked_left
+    pose = {"x_m": place["x_m"], "y_m": place["y_m"]}
+    allowed = params.start_attempts + math.ceil(math.hypot(s3["x_m"] - pose["x_m"], s3["y_m"] - pose["y_m"])
+                                                / (params.max_blind_travel_m * params.range_scale_floor))
+    assert allowed == 9 and 5 <= e["start_fix"]["attempts"] <= allowed, (allowed, e["start_fix"]["attempts"])
+
+
+def test_a_forward_move_starts_where_a_turn_fits_with_the_end_margin_to_spare():
+    """A review note (2026-11-25): on the carpet the car covers 0.78 of its counted distance northward, so after a
+    blind stretch it really stands between the stretch's start and the tracked end. Turn room is concave along a
+    straight line, so it is at least the smaller of the two; the end already needs the turn margin plus 0.05 m, and
+    now the start does too. A turn itself is still allowed with the plain turn margin."""
+    from beaconmind.car.config import load_car
+    c = load_car()
+    plain = B.MoveGuard(WORLD, [tuple(p) for p in c["corners"]], float(c["sweep_radius_m"]), 0.15, 0.25)
+    spare = B.MoveGuard(WORLD, [tuple(p) for p in c["corners"]], float(c["sweep_radius_m"]), 0.15, 0.25,
+                        start_turn_margin_m=0.05)
+    sigma = 0.05
+    need = B.MoveGuard.turn_margin_m + sigma
+    # a pose facing into the room whose turn room is between the turn's need and that need plus 0.05 m
+    found = None
+    for i in range(400):
+        y = 0.20 + i * 0.005
+        pose = {"x_m": 1.5, "y_m": y, "theta_deg": 90.0}
+        room = plain.axle_depth(pose) - plain.sweep_radius_m
+        if need + 0.01 <= room <= need + 0.04:
+            found = (pose, room)
+            break
+    assert found, "no pose with a tight turn room in WORLD"
+    pose, room = found
+    assert plain.check("TURN_LEFT_30", pose, sigma) is None and spare.check("TURN_LEFT_30", pose, sigma) is None
+    assert plain.check("FORWARD_10", pose, sigma) is None, plain.check("FORWARD_10", pose, sigma)
+    why = spare.check("FORWARD_10", pose, sigma)
+    assert why is not None and "would start where a turn has only" in why, why
+    roomy = {"x_m": 1.5, "y_m": pose["y_m"] + 0.10, "theta_deg": 90.0}
+    assert spare.check("FORWARD_10", roomy, sigma) is None
+    assert B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1)).start_turn_margin_m == 0.05
+
+
+def test_a_halt_inside_the_end_circle_leaves_the_episode_done_with_its_end_pose(tmp_path, monkeypatch):
+    """b2-real-03 (2026-11-25): a stall in the end circle of episode 2 left the episode `halted`, without an end
+    pose, although it had ended DONE with its final error written. Now the end pose is written from the tracked pose
+    and the episode marked done before the end circle; a halt inside the circle stops the batch but not the episode."""
+    real = B.BatchRunner.localise
+
+    def stall_in_the_end_circle(self, env, what, required=True):
+        if "end pose" in what and self.monitor.halted is None:
+            self.monitor.halt("stall", "TURN_LEFT_30: stall_right (test)")
+            raise B.BatchStop(what)
+        return real(self, env, what, required=required)
+    monkeypatch.setattr(B.BatchRunner, "localise", stall_in_the_end_circle)
+    b = Batch(tmp_path, episodes=2, max_steps=30, starts=(S1, S5))
+    b.run()
+    assert b.result["status"] == "halted" and b.result["halt"]["code"] == "stall"
+    e = b.manifest["episodes"][0]
+    assert e["status"] == "done" and e["result"]["complete"] and e["halt"]["code"] == "stall"
+    assert e["end_pose_source"] == "tracked, before the end circle" and e["end_pose_map"] is not None
+    assert e.get("final_pose_error") is not None and len(b.manifest["episodes"]) == 1

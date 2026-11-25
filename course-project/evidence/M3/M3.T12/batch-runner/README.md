@@ -176,7 +176,10 @@ x = 0.66 m; convex, counter-clockwise, checked) minus every obstacle box. Everyt
 
 - **Straight move:** the footprint (`configs/car.json` `corners`, cables included) at the end of the move, taken
   4 cm longer and at ±5° of heading, must stay `--wall-margin` (0.15 m) plus two sigma of the position (at most
-  +0.15 m) inside the free area; and the move must end where a turn is still allowed with 5 cm to spare.
+  +0.15 m) inside the free area; and the move must end where a turn is still allowed with 5 cm to spare. Since
+  2026-11-25 a forward move must also *start* there with 5 cm to spare (`start_turn_margin_m`): on the carpet the car
+  covers 0.78 of its counted distance northward, so after a blind stretch it stands between the stretch's start and
+  the tracked end, and turn room is concave along that line (`b2-real-02/`). It cost no completions in dry runs.
 - **Turn:** the sweep circle (0.178 m) must stay 0.03 m plus one sigma (at most +0.10 m) inside the free area.
 - **Far from the last tag fix:** no straight move may take the distance driven since the last tag fix past
   0.75 m (`max_blind_travel_m`). Whatever the odometer's error, it then stays inside the wall margin. Turns stay
