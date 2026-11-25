@@ -296,3 +296,25 @@ def test_the_logs_do_not_depend_on_the_working_directory(batch, tmp_path, monkey
         shas.append([e["sha12"] for e in idx["episodes"]])
         assert idx["world_file"] == "configs/arenas/real-room.json"
     assert shas[0] == shas[1]
+
+
+def test_an_episode_whose_end_circle_was_interrupted_is_converted(batch, tmp_path):
+    """b2-real-03 ep02 (2026-11-25): DONE at its last step, then a stall inside the end circle halted the batch, so
+    the manifest has no end_fix and no end_pose_*, but a complete result and the final error."""
+    _as_real_folder(batch)
+    man = json.loads((batch / "manifest.json").read_text())
+    e = man["episodes"][0]
+    e["halt"] = {"code": "stall", "detail": "TURN_LEFT_30: stall_right"}
+    for k in ("end_fix", "end_pose_map", "end_pose_world"):
+        e.pop(k, None)
+    (batch / "manifest.json").write_text(json.dumps(man))
+    idx = rr.convert_batch(str(batch), str(tmp_path / "o"))
+    ep = [x for x in idx["episodes"] if x["episode"] == "ep01-a1"][0]
+    assert ep["note"] == "completed; end circle interrupted by stall"
+    assert ep["end_pose_source"] == rr.LAST_STEP_TRUTH
+    doc = json.loads((tmp_path / "o" / "seed_1.json").read_text())
+    last = doc["records"][-1]["truth"]
+    assert doc["real"]["end_pose_map"] == {k: last[k] for k in ("x_m", "y_m", "theta_deg")}
+    err = rr.final_errors({1: doc}, {})
+    assert "vs_end_circle_m" not in err["B2"][1] and err["B2"][1]["complete"]       # no end circle: no such column
+    assert rr.summarize(err)["B2"]["median_vs_end_circle_m"] is None

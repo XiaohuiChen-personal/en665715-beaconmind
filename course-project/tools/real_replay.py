@@ -217,7 +217,9 @@ def cmd_analyze(a):
     errors = rr.final_errors(docs, runs)
     summary = rr.summarize(errors)
     order = ["B0", "B2"] + list(runs)
-    md = rr.result_markdown(a.title or "Real-log replay: final-position error per arm", index, errors, summary, order)
+    stats = rr.run_stats(docs, runs)
+    md = rr.result_markdown(a.title or "Real-log replay: final-position error per arm", index, errors, summary, order,
+                            stats)
     if a.compare:
         other = json.loads(pathlib.Path(a.compare).read_text(encoding="utf-8"))
         md += "\nGap to `%s` (%s): median final-position error here minus there, cm.\n\n" % (
@@ -226,7 +228,7 @@ def cmd_analyze(a):
         for arm in order:
             h, t = summary.get(arm, {}).get("median_m"), other["summary"].get(arm, {}).get("median_m")
             md += "| %s | %s | %s | %s |\n" % (arm, rr._cm(h), rr._cm(t), rr._cm(h - t) if h is not None and t is not None else "")
-    doc = {"schema": "bm.real_replay_result/1", "index": index, "runs": runs, "summary": summary,
+    doc = {"schema": "bm.real_replay_result/1", "index": index, "runs": runs, "summary": summary, "run_stats": stats,
            "errors": {arm: {str(k): v for k, v in by.items()} for arm, by in errors.items()},
            "created": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
     pathlib.Path(a.out + ".json").write_text(json.dumps(doc, indent=1))

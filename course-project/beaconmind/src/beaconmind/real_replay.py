@@ -116,6 +116,11 @@ def episode_to_obslog(batch_dir, entry, world_doc, world_file=None):
         # a batch halted by a check after the episode writes no end_pose_map; the end circle's own result is the pose
         # the batch tracked after it (car/batch.py sets end_pose_world from that same tracked pose)
         end_map, end_source = to_map_pose(start, end_fix["pose_now"]), "end_fix.pose_now"
+    if end_map is None and not entry.get("end_fix"):
+        # the end circle itself was interrupted (b2-real-03 ep02: a stall in it): there is no end-circle pose; the end
+        # pose is the last step's truth, and the analysis leaves the "vs end circle" column empty for it
+        tm = truth_rows[-1]["truth_map"]
+        end_map, end_source = {k: tm[k] for k in ("x_m", "y_m", "theta_deg")}, LAST_STEP_TRUTH
     return {"schema": SCHEMA, "seed": seed, "world": scene["world"], "arena": scene["arena"], "records": records,
             "noise": None,
             "real": {"batch": os.path.basename(os.path.normpath(batch_dir)), "episode": entry["id"],
@@ -129,16 +134,19 @@ def episode_to_obslog(batch_dir, entry, world_doc, world_file=None):
 
 
 END_NORMALLY = ("DONE", "budget")
+LAST_STEP_TRUTH = "last step's truth (no end circle)"
+END_CIRCLE_SOURCES = ("manifest end_pose_map", "end_fix.pose_now")
 
 
 def finished(entry):
     """True when the episode ran to its own end (DONE, or the step budget) with every step written: status "done",
-    or status "halted" by a check that ran after the episode (result complete, ended normally; car/batch.py checks
-    the end circle and the odometry over the episode after run_episode has returned)."""
+    or status "halted" by something after the agent's last step (result complete, ended normally): a check after the
+    episode (car/batch.py checks the odometry over the episode after run_episode has returned), or a halt inside the
+    end circle (a stall)."""
     res = entry.get("result") or {}
     if not res.get("complete") or res.get("ended_by") not in END_NORMALLY:
         return False
-    return entry.get("status") == "done" or (entry.get("status") == "halted" and entry.get("end_fix") is not None)
+    return entry.get("status") in ("done", "halted")
 
 
 def _course_rel(path):
@@ -195,7 +203,11 @@ def convert_batch(batch_dir, out_dir, world_path=None, seed_base=0, write_index=
         doc["real"]["real_car"] = man.get("real_car")
         note = None
         if e.get("status") != "done":
-            note = "completed; batch halted after the end by %s" % ((e.get("halt") or {}).get("code") or e.get("halt"))
+            code = (e.get("halt") or {}).get("code") if isinstance(e.get("halt"), dict) else e.get("halt")
+            if e.get("end_fix"):
+                note = "completed; batch halted after the end by %s" % code
+            else:
+                note = "completed; end circle interrupted by %s" % code
             doc["real"]["note"] = note
         data = json.dumps(doc).encode()
         path = os.path.join(out_dir, "seed_%d.json" % doc["seed"])
@@ -381,16 +393,40 @@ def final_errors(docs, runs):
                 out[arm][seed] = {"episode": d["real"]["episode"], "complete": False}
                 continue
             e = _err(est, truth)
-            row = {"episode": d["real"]["episode"], "scenario": d["real"]["scenario"], "steps": len(recs),
+            row = {"episode": d["real"]["episode"], "batch": d["real"].get("batch"), "scenario": d["real"]["scenario"],
+                   "steps": len(recs),
                    "complete": True, "final_m": e["m"], "final_deg": e["deg"],
                    "truth_sigma_xy_m": truth.get("sigma_xy_m"), "truth_is_a_fix": truth.get("fix"),
                    "estimate": est}
             end = d["real"].get("end_pose_map")
-            if end:
+            if end and d["real"].get("end_pose_source", "manifest end_pose_map") in END_CIRCLE_SOURCES:
                 row["vs_end_circle_m"] = math.hypot(est["x_m"] - end["x_m"], est["y_m"] - end["y_m"])
             if last.get("truth_sim"):
                 row["vs_sim_truth_m"] = _err(est, last["truth_sim"])["m"]
             out[arm][seed] = row
+    return out
+
+
+def run_stats(docs, runs):
+    """{arm: {steps, expected_steps, valid, fallbacks, repaired, errors, move_calls, cost_usd, mean_s, p95_s}} from
+    the run folders' rows."""
+    out = {}
+    for arm, folder in runs.items():
+        rows = []
+        for seed in docs:
+            path = os.path.join(folder, "seed_%d.jsonl" % seed)
+            if os.path.exists(path):
+                rows += _jsonl(path)
+        secs = sorted(float(r.get("seconds") or 0.0) for r in rows)
+        out[arm] = {"steps": len(rows), "expected_steps": sum(len(d["records"]) for d in docs.values()),
+                    "valid": sum(1 for r in rows if (r.get("checks") or {}).get("valid")),
+                    "fallbacks": sum(1 for r in rows if r.get("fallback")),
+                    "repaired": sum(1 for r in rows if (r.get("checks") or {}).get("repaired_chars")),
+                    "errors": sum(1 for r in rows if r.get("error")),
+                    "move_calls": sum(1 for r in rows for c in r.get("calls") or [] if c.get("tool") == "move"),
+                    "cost_usd": sum(float(r.get("cost_usd") or 0.0) for r in rows),
+                    "mean_s": statistics.fmean(secs) if secs else None,
+                    "p95_s": secs[max(0, math.ceil(0.95 * len(secs)) - 1)] if secs else None}
     return out
 
 
@@ -427,7 +463,7 @@ def _cm(v):
     return "" if v is None else "%.1f" % (100 * v)
 
 
-def result_markdown(title, index, errors, summary, order):
+def result_markdown(title, index, errors, summary, order, stats=None):
     lines = ["# %s" % title, "",
              "Batch `%s` (config %s, real car: %s); %d episodes, %d steps; world `%s` (sha12 %s); %s." % (
                  index["batch"], index.get("batch_config"), index.get("real_car"), len(index["episodes"]),
@@ -460,10 +496,22 @@ def result_markdown(title, index, errors, summary, order):
         for arm in order:
             r = errors.get(arm, {}).get(seed)
             cells.append(_cm(r["final_m"]) if r and r.get("complete") else "incomplete")
-        lines.append("| %s | %s | %s | %s | %s |" % (b0["episode"], b0.get("scenario"), b0.get("steps"),
+        lines.append("| %s %s | %s | %s | %s | %s |" % (b0.get("batch") or "", b0["episode"], b0.get("scenario"),
+                                                       b0.get("steps"),
                                                     _cm(b0.get("truth_sigma_xy_m")), " | ".join(cells)))
+    if stats:
+        lines += ["", "Runs: replayed steps (of the logs' steps), valid reports, harness fallbacks, repaired reports, "
+                  "step errors, `move` calls (the replay rule wants 0), cost, seconds per step.", "",
+                  "| Arm | steps | valid | fallbacks | repaired | errors | move calls | cost (US$) | mean s/step | p95 s/step |",
+                  "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+        for arm, st in stats.items():
+            lines.append("| %s | %d of %d | %d | %d | %d | %d | %d | %.2f | %s | %s |" % (
+                arm, st["steps"], st["expected_steps"], st["valid"], st["fallbacks"], st["repaired"], st["errors"],
+                st["move_calls"], st["cost_usd"], "" if st["mean_s"] is None else "%.1f" % st["mean_s"],
+                "" if st["p95_s"] is None else "%.1f" % st["p95_s"]))
     if index.get("excluded"):
-        lines += ["", "Not replayed: " + "; ".join("%s (%s)" % (x["episode"], x["reason"]) for x in index["excluded"])]
+        lines += ["", "Not replayed: " + "; ".join("%s %s (%s)" % (x.get("batch", ""), x["episode"], x["reason"])
+                                                   for x in index["excluded"])]
     return "\n".join(lines) + "\n"
 
 
