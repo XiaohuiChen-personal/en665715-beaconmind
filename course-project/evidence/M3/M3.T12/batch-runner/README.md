@@ -342,9 +342,14 @@ with either code. In the 12-tag world 3.0 m changes little against 2.5 m (one S3
 
 ## Tests
 
+- 2026-11-25, Mac, commit `f1897e9`: `tests/test_dv_real.py` **8 passed**; the suite without the demo-video tests
+  **651 passed, 10 skipped** (with them, run while the video agent was editing its files, 2 of theirs failed; run
+  alone a minute later, theirs: 47 passed); `prereg_freeze.py --verify` OK.
 - 2026-11-24, Mac (Python 3.13), `pytest-mac.txt`: `tests/test_car_batch.py` **114 passed**, `tests/test_car_batch_wrapper.py` **11 passed**; whole suite **643 passed, 10 skipped** (without the demo-video agent's three untracked test files, work in progress in the same tree); `prereg_freeze.py --verify` OK (29 files, 30 logs).
-- 2026-11-25, container on the Spark (Python 3.10.12, `--network none`, ROS_DOMAIN_ID 42), commit `05f64c4`,
-  `pytest-container.txt`: the batch file, the wrapper file and the five car test files **308 passed, 1 skipped**.
+- 2026-11-25, container on the Spark (Python 3.10.12, `--network none`, ROS_DOMAIN_ID 42), commit `f1897e9` (a
+  scratch checkout: the main clone was in use for the tag pilot), `pytest-container.txt`: the batch file, the wrapper
+  file, `test_dv_real.py` and the five car test files **316 passed, 1 skipped** (on `05f64c4`, without the dv tests:
+  308 passed, 1 skipped).
   (On `2cd3415` the new quick-signals test failed there: Python 3.10 printed "Signal 2 ignored due to race
   condition" for a signal already pending when the handler became SIG_IGN; the later signals now go to a no-op
   Python handler instead.)
