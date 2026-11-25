@@ -1,0 +1,23 @@
+{
+  "$comment": "AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the floor check's encoder scales (work list 2.8, M3.T8) as a separate input of tools/write_car_json.py (--extra-values), so that a rebuild of configs/car.json from the M1.T9 CSV keeps them. The numbers were added to car.json on 2026-11-25 (commit a9a2cf2); their derivation is in floor-check.md beside this file.",
+  "values": {
+    "enc_ticks_per_m_left": {
+      "value": 19385.0,
+      "unit": "counts/m",
+      "status": "measured",
+      "source": "floor check 2026-11-25 (work list 2.8, M3.T8), session 20261125-030214-floor-check, tape-measured straight: lens over the tag pilot's 2.75 m tick, four FORWARD_25, lens then 1.83 m from the baseboard and 0.19 m left of the line (Xiaohui's tape); gyro 12.13 deg left; lens 0.12 m ahead of the axle; track 0.1335 m -> axle arc 0.9390 m; left wheel 0.9249 m / 17929 counts, right 0.9532 m / 18876 counts. Replaces the first estimate from wall-tag fixes (18555 / 19096), whose lateral fixes were about 10 cm off",
+      "evidence": "evidence/M3/M3.T6/floor-check.md",
+      "updated": "2026-11-25",
+      "uncertainty": 194
+    },
+    "enc_ticks_per_m_right": {
+      "value": 19804.0,
+      "unit": "counts/m",
+      "status": "measured",
+      "source": "floor check 2026-11-25 (work list 2.8, M3.T8), session 20261125-030214-floor-check, tape-measured straight: lens over the tag pilot's 2.75 m tick, four FORWARD_25, lens then 1.83 m from the baseboard and 0.19 m left of the line (Xiaohui's tape); gyro 12.13 deg left; lens 0.12 m ahead of the axle; track 0.1335 m -> axle arc 0.9390 m; left wheel 0.9249 m / 17929 counts, right 0.9532 m / 18876 counts. Replaces the first estimate from wall-tag fixes (18555 / 19096), whose lateral fixes were about 10 cm off",
+      "evidence": "evidence/M3/M3.T6/floor-check.md",
+      "updated": "2026-11-25",
+      "uncertainty": 198
+    }
+  }
+}

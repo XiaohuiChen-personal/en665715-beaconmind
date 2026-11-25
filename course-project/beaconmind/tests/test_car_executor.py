@@ -6,6 +6,7 @@ asked to end within 1 cm of its distance and a turn within 3 degrees of its angl
 (counts, heading) is asked to match what the simulated car really did within 2 mm and 0.2 degrees.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote these tests.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the report test reads the simulated car's per-wheel scales.
 """
 import math
 
@@ -90,9 +91,9 @@ def test_the_report_matches_what_the_car_did():
     assert odo["left_m"] == pytest.approx(truth["y_m"], abs=0.002)
     assert odo["dtheta_deg"] == pytest.approx(truth["theta_deg"], abs=0.2)
     assert result["gyro_dyaw_deg"] == pytest.approx(truth["theta_deg"], abs=0.2)
-    ticks = link.sim.p.ticks_per_m
-    assert result["enc_left_ticks"] == pytest.approx(link.sim.travel[0] * ticks, abs=2)
-    assert result["enc_right_ticks"] == pytest.approx(link.sim.travel[1] * ticks, abs=2)
+    left, right = link.sim.ticks_per_m          # (per wheel since 2026-11-25: car.json's measured scales)
+    assert result["enc_left_ticks"] == pytest.approx(link.sim.travel[0] * left, abs=2)
+    assert result["enc_right_ticks"] == pytest.approx(link.sim.travel[1] * right, abs=2)
 
 
 def test_counts_and_heading_that_wrap_change_nothing():

@@ -12,6 +12,8 @@ AI-assisted: Claude Opus 5.5 (xhigh effort) via Cursor, 2026-10-29: followed the
 ("front-most corner"; it was "ESP32-CAM front corner") in test_writer_rows_rules_and_derived; the checks are the same.
 After a review the same day: followed the corners / sweep source texts that state both assumptions, and added
 test_row_specific_uncertainty_applies_to_the_exact_row_name_only (ROW_UNCERTAINTY).
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the writer-output test takes the floor check's encoder scales
+as the writer's --extra-values input; a test of that input.
 """
 import csv
 import importlib.util
@@ -239,14 +241,32 @@ def test_configs_car_json_is_the_writer_output():
         pytest.skip("configs/car.json (M1.T9) not written yet")
     car = json.loads(car_path.read_text(encoding="utf-8"))
     assert validate("car", car) == []
-    named = {e["evidence"] for e in car["values"].values() if str(e.get("evidence", "")).endswith(".csv")}
-    dates = {e["updated"] for e in car["values"].values()}
+    writer = _writer()
+    # the floor check's encoder scales (2026-11-25) are a later, separate input (--extra-values), with their own date
+    extra_path = root / "evidence" / "M3" / "M3.T6" / "encoder-scales.json"
+    extra = json.loads(extra_path.read_text(encoding="utf-8"))["values"] if extra_path.is_file() else None
+    base = {k: e for k, e in car["values"].items() if k not in (extra or {})}
+    named = {e["evidence"] for e in base.values() if str(e.get("evidence", "")).endswith(".csv")}
+    dates = {e["updated"] for e in base.values()}
     assert len(named) == 1 and len(dates) == 1, (named, dates)
     csv_path = root / named.pop()
     assert csv_path.parent == ev, csv_path
     measured = json.loads((ev / "measured.json").read_text(encoding="utf-8"))
-    doc, _, _ = _writer().build(csv_path.read_text(encoding="utf-8"), csv_path.name, dates.pop(), measured)
+    doc, _, _ = writer.build(csv_path.read_text(encoding="utf-8"), csv_path.name, dates.pop(), measured, extra_values=extra)
     assert car == doc
+    if extra:
+        assert set(extra) <= set(writer.EXTRA_KEYS) and all(car["values"][k] == extra[k] for k in extra)
+
+
+def test_extra_values_are_only_the_floor_checks_keys_and_never_override_the_csv():
+    writer = _writer()
+    entry = {"value": 19385.0, "unit": "counts/m", "status": "measured", "source": "floor check", "evidence": "x.md",
+             "updated": "2026-11-25", "uncertainty": 194}
+    doc, report, _ = writer.build(SYNTHETIC, "synthetic.csv", "2026-10-10", MEASURED,
+                                  extra_values={"enc_ticks_per_m_left": entry})
+    assert doc["values"]["enc_ticks_per_m_left"] == entry and validate("car", doc) == []
+    with pytest.raises(ValueError, match="is not one of"):
+        writer.build(SYNTHETIC, "synthetic.csv", "2026-10-10", MEASURED, extra_values={"track_width_m": entry})
 
 
 # ---------------------------------------------------------------- the plate CAD (2026-10-16)

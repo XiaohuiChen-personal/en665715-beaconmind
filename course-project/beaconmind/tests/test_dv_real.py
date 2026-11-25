@@ -1,7 +1,7 @@
 """configs/dv-real.json and the --dv switch (beaconmind/dv_real.py, tools/real_dv.py; Xiaohui Chen approved a separate
 design-values file for real runs on 2026-11-24). Everything here uses a fixture detector-noise file: the real
 configs/dv-real.json is written only after the tag pilot, and configs/dv.json and the pre-registered files stay as they
-are (checked at the end of every test that runs a tool).
+are (checked at the end of every test that runs a tool); so does configs/dv-real.json once it exists.
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: wrote these tests.
 """
@@ -25,6 +25,7 @@ ROOT = beaconmind.course_root()
 FROZEN = ROOT / "configs" / "dv.json"
 FROZEN_BYTES = FROZEN.read_bytes()
 REAL = ROOT / "configs" / "dv-real.json"
+REAL_BYTES = REAL.read_bytes() if REAL.exists() else None      # (written after the pilot; the tests must not touch it)
 WORLD20 = ROOT / "configs" / "arenas" / "real-room-plus8-160mm-nominal.json"
 FROZEN_VALUES = {k: v["value"] for k, v in json.loads(FROZEN_BYTES)["values"].items()}
 
@@ -57,7 +58,8 @@ def real_dv(tmp_path):
     assert tool("real_dv").main(["--noise", str(noise), "--reject-range", "3.0", "--out", str(out),
                                  "--date", "2026-11-25"]) == 0
     yield out, noise
-    assert FROZEN.read_bytes() == FROZEN_BYTES and not REAL.exists()
+    assert FROZEN.read_bytes() == FROZEN_BYTES
+    assert (REAL.read_bytes() if REAL.exists() else None) == REAL_BYTES
 
 
 def test_the_pilots_model_maps_onto_the_agents_noise_fields():

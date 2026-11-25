@@ -5,7 +5,12 @@ Usage (repository root, Mac venv):
     course-project/.venv/bin/python course-project/tools/write_car_json.py \
         course-project/evidence/M1/M1.T9/measurements-xiaohui-chen-2026-10-10.csv \
         --measured course-project/evidence/M1/M1.T9/measured.json \
-        --updated 2026-10-10 --out course-project/configs/car.json
+        --updated 2026-10-10 --out course-project/configs/car.json \
+        [--extra-values course-project/evidence/M3/M3.T6/encoder-scales.json]
+
+--extra-values (2026-11-25): a JSON file {"values": {key: entry}} of values measured later and elsewhere (the floor
+check's enc_ticks_per_m_left / enc_ticks_per_m_right), written as they are, each with its own source, evidence and
+date; only keys in EXTRA_KEYS, and never one the CSV already gives.
 
 Input CSV: columns quantity, reading_1, reading_2, reading_3, unit, instrument, notes (the M1.T9 template,
 course-project/tools/car_measurements_template.csv; assignments/assignment6/measurements.csv uses the same columns).
@@ -65,6 +70,7 @@ point"; they had named the ESP32-CAM board and the plate's rear apex). The value
 unchanged by those edits. After a review the same day: added ROW_UNCERTAINTY (one exact-name exception, checked
 first in Reading.uncertainty, for B3_front_most_x_remeasure) and made the corners / sweep_radius_m source texts state
 both assumptions of the front-most corners (width and centring).
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: --extra-values (the floor check's encoder scales).
 """
 
 import argparse
@@ -281,8 +287,12 @@ def clean(x, ndigits=6):
     return round(x, ndigits) + 0.0
 
 
-def build(text, csv_name, updated, measured, evidence_dir="evidence/M1/M1.T9"):
-    """Return (car.json dict, report lines). `text` is the CSV, `measured` the bm.car/1 `measured` block."""
+EXTRA_KEYS = ("enc_ticks_per_m_left", "enc_ticks_per_m_right")
+
+
+def build(text, csv_name, updated, measured, evidence_dir="evidence/M1/M1.T9", extra_values=None):
+    """Return (car.json dict, report lines). `text` is the CSV, `measured` the bm.car/1 `measured` block,
+    `extra_values` {key: entry} of later measurements (EXTRA_KEYS only) added as they are."""
     rows = read_csv(text)
     raw_ev = "%s/%s" % (evidence_dir, csv_name)
     der_ev = "%s/derived.txt" % evidence_dir
@@ -485,6 +495,13 @@ def build(text, csv_name, updated, measured, evidence_dir="evidence/M1/M1.T9"):
             omitted.append(key)
 
     omitted += ["counts_per_rev_left", "counts_per_rev_right", "ticks_per_wheel_rev"]
+    for key, entry in (extra_values or {}).items():
+        if key not in EXTRA_KEYS:
+            raise ValueError("--extra-values: %s is not one of %s" % (key, ", ".join(EXTRA_KEYS)))
+        if key in values:
+            raise ValueError("--extra-values: %s is already given by the CSV" % key)
+        values[key] = dict(entry)
+        report.append("%s = %s %s (extra: %s)" % (key, entry.get("value"), entry.get("unit"), entry.get("evidence")))
     doc = {"schema": "bm.car/1", "values": values, "measured": measured}
     return doc, report, sorted(set(omitted))
 
@@ -495,10 +512,13 @@ def main(argv=None):
     ap.add_argument("--measured", type=Path, required=True, help="JSON file holding the bm.car/1 measured block")
     ap.add_argument("--updated", required=True, help="YYYY-MM-DD written into every value's 'updated'")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--extra-values", type=Path, help="JSON {\"values\": {key: entry}} of later measurements (EXTRA_KEYS)")
     args = ap.parse_args(argv)
 
     measured = json.loads(args.measured.read_text(encoding="utf-8"))
-    doc, report, omitted = build(args.csv.read_text(encoding="utf-8"), args.csv.name, args.updated, measured)
+    extra = json.loads(args.extra_values.read_text(encoding="utf-8"))["values"] if args.extra_values else None
+    doc, report, omitted = build(args.csv.read_text(encoding="utf-8"), args.csv.name, args.updated, measured,
+                                 extra_values=extra)
     args.out.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     print("write_car_json.py: %s -> %s" % (args.csv.name, args.out.name))

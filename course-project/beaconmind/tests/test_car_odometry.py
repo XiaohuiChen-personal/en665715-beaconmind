@@ -1,6 +1,7 @@
 """Odometry, telemetry decoding, the move table and the command checks of the car package (work list 2.6).
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote these tests.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the config test expects the floor check's measured scales.
 """
 import math
 
@@ -30,8 +31,10 @@ def test_config_comes_from_the_project_files(cfg):
     assert cfg.v_max_mps == 0.15 and cfg.turn_rate_dps == 45.0 and cfg.move_timeout_s == 5.0    # configs/dv.json
     assert cfg.link_gap_s == 0.5 and cfg.stall_window_s == 0.2
     assert cfg.track_width_m == 0.1335                                                          # configs/car.json
-    assert cfg.scale_source == "nominal"            # until the floor check writes enc_ticks_per_m_left/right
-    assert cfg.ticks_per_m_left == pytest.approx(4320 / (math.pi * 0.067))
+    # the floor check of 2026-11-25 wrote enc_ticks_per_m_left/right (tape-measured straight, evidence/M3/M3.T6)
+    assert cfg.scale_source == "car.json"
+    assert (cfg.ticks_per_m_left, cfg.ticks_per_m_right) == (19385.0, 19804.0)
+    assert C.nominal_ticks_per_m(0.067) == pytest.approx(4320 / (math.pi * 0.067))       # what it was before
     assert cfg.command_period_s < C.FW_COMMAND_TIMEOUT_S / 4       # several commands inside the car's timeout
 
 

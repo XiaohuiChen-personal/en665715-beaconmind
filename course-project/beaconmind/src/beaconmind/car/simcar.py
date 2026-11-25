@@ -20,6 +20,9 @@ imbalance (CONTEXT.md 2026-11-02). The numbers are stand-ins for tests, not a ca
 No wall clock and no randomness: step(dt) advances the car's own time.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this simulated car.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: counts per metre per wheel, by default the scales the
+executor reads (configs/car.json since the floor check of 2026-11-25), so the simulated car is the car as car.json
+says, as it was while both were nominal.
 """
 import math
 from dataclasses import dataclass, field
@@ -28,6 +31,17 @@ from . import config as C
 from . import telemetry as T
 
 EPOCH_S = 1.8e9     # the simulated Unix time at t = 0 (any value above the firmware's CMD_STAMP_MIN_S)
+
+
+_SCALES = {}
+
+
+def _configured_scales():
+    """(left, right) counts per metre the executor reads (configs/car.json, or nominal), read once per process."""
+    if "lr" not in _SCALES:
+        cfg = C.load_config()
+        _SCALES["lr"] = (float(cfg.ticks_per_m_left), float(cfg.ticks_per_m_right))
+    return _SCALES["lr"]
 
 
 @dataclass
@@ -47,7 +61,12 @@ class SimCarParams:
     blocked_left: bool = False          # the wheel cannot turn (a stall)
     blocked_right: bool = False
     track_width_m: float = 0.1335       # configs/car.json track_width_m
-    ticks_per_m: float = C.FW_COUNTS_PER_WHEEL_REV / (math.pi * 0.067)   # 4320 per turn, 67 mm tyre
+    ticks_per_m: float = C.FW_COUNTS_PER_WHEEL_REV / (math.pi * 0.067)   # 4320 per turn, 67 mm tyre (nominal)
+    # the encoders' true counts per metre of wheel travel; None: the scales the executor reads from configs/car.json
+    # (config.load_config: the floor check's measured values, or the nominal one above). A test that wants the
+    # executor to be wrong about the scale changes the executor's config, not these.
+    ticks_per_m_left: float = None
+    ticks_per_m_right: float = None
     # initial state
     left0: int = 0
     right0: int = 0
@@ -81,6 +100,10 @@ class SimCar:
     def __init__(self, params=None):
         self.p = params or SimCarParams()
         p = self.p
+        if p.ticks_per_m_left is None or p.ticks_per_m_right is None:
+            cfg = _configured_scales()
+        self.ticks_per_m = (p.ticks_per_m_left if p.ticks_per_m_left is not None else cfg[0],
+                            p.ticks_per_m_right if p.ticks_per_m_right is not None else cfg[1])
         self.t = 0.0
         self.x = self.y = self.theta = 0.0          # true pose, m and rad, in the frame of the start
         self.speed = [0.0, 0.0]                     # wheel speeds, m/s
@@ -265,8 +288,8 @@ class SimCar:
                  | (T.FLAG_CUT_LEFT if self.cut[0] else 0) | (T.FLAG_CUT_RIGHT if self.cut[1] else 0))
         age = -1 if self.last_rx_t is None else int(round((t - self.last_rx_t) * 1000))
         data = T.encode_wheel_ticks(
-            left=_to_int32(self.left0 + int(math.floor(self.travel[0] * p.ticks_per_m + 0.5))),
-            right=_to_int32(self.right0 + int(math.floor(self.travel[1] * p.ticks_per_m + 0.5))),
+            left=_to_int32(self.left0 + int(math.floor(self.travel[0] * self.ticks_per_m[0] + 0.5))),
+            right=_to_int32(self.right0 + int(math.floor(self.travel[1] * self.ticks_per_m[1] + 0.5))),
             uptime_ms=int(round((t - self.boot_t) * 1000)), seq=self.seq, flags=flags,
             vsys_min_mv=p.vsys_mv, vsys_max_mv=p.vsys_mv,
             yaw_cdeg=0 if imu_fail else int(round(yaw * 100)), imu_fails=self.imu_fails, commands=self.commands,
