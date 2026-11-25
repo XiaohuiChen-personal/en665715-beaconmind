@@ -35,6 +35,7 @@ import json
 import math
 import os
 import pathlib
+import re
 
 import beaconmind
 from beaconmind import dv as dvm
@@ -84,7 +85,7 @@ def noise_to_dv(model, reject_range_m):
             "sigma_bearing_deg": max(_ceil(abs(bb) + bsa + bsb * limit), 0.1)}
 
 
-def build_real_dv(frozen_doc, frozen_sha12, model, noise_rel, noise_sha12, reject_range_m, today,
+def build_real_dv(frozen_doc, frozen_sha12, model, noise_rel, noise_sha256, reject_range_m, today,
                   evidence=None, beyond_pilot=False):
     """The configs/dv-real.json document. Refuses (ValueError) a range limit beyond the range the pilot found
     reliable unless beyond_pilot (Xiaohui's explicit decision), and any difference from the frozen file outside the
@@ -102,7 +103,8 @@ def build_real_dv(frozen_doc, frozen_sha12, model, noise_rel, noise_sha12, rejec
     source = model.get("source") or {}
     pilot = "tag pilot %s (%s, %s frames, %s placements)" % (source.get("log"), source.get("date"),
                                                            source.get("n_frames"), source.get("n_placements"))
-    where = "%s sha12 %s%s" % (noise_rel, noise_sha12, "; %s" % evidence if evidence else "")
+    noise_sha12 = noise_sha256[:12]
+    where = "%s sha12 %s (sha256 %s)%s" % (noise_rel, noise_sha12, noise_sha256, "; %s" % evidence if evidence else "")
     values = json.loads(json.dumps(frozen_doc["values"]))
     rb, rs, bs = model["range_bias_m"], model["range_sigma_m"], model["bearing_sigma_deg"]
     texts = {
@@ -134,6 +136,24 @@ def build_real_dv(frozen_doc, frozen_sha12, model, noise_rel, noise_sha12, rejec
     if extra:
         raise ValueError("would differ from the frozen file outside the four fields: %s" % extra)
     return doc
+
+
+def sha256(path):
+    with open(path, "rb") as handle:
+        return hashlib.sha256(handle.read()).hexdigest()
+
+
+def noise_source(path):
+    """The sha256 of the detector-noise file a dv file's three sigmas were made from (tools/real_dv.py writes it
+    into their `evidence`), or None when they do not name one and the same one (the frozen file names none)."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            values = json.load(handle)["values"]
+        found = {re.search(r"sha256 ([0-9a-f]{64})", str(values[k].get("evidence")) or "") for k in NOISE_FIELDS}
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    shas = {m.group(1) if m else None for m in found}
+    return shas.pop() if len(shas) == 1 else None
 
 
 def differs_outside(frozen_doc, doc):

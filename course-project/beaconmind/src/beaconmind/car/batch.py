@@ -100,6 +100,7 @@ class BatchParams:
     fix_sigma_b: float = 0.04
     fix_sigma_source: str = ASSUMED_FIX_SIGMA   # where the two numbers above came from (recorded in the manifest)
     dv_file: str = "configs/dv.json (frozen)"   # the design values the agent's tools read (car_batch.py --dv)
+    sigma_sources: str = ""             # whether --dv's sigmas and the fix sigma come from one detector-noise file
     # the check of the surveyed tags against each other (TagCheck): a tag is halted on when the other tags put it,
     # over all the batch's fits so far, farther from its surveyed centre than max(tag_check_min_m, tag_check_k sigma);
     # it may steer a step's fix by itself only while that distance is at most max(tag_check_min_m, tag_trust_k sigma)
@@ -1536,6 +1537,8 @@ def summary_text(m):
             "; DISAGREEING: %s" % ", ".join(tc["flagged"]) if tc.get("flagged") else ""))
     lines.append("fix sigma: %s" % m["params"].get("fix_sigma_source", ASSUMED_FIX_SIGMA))
     lines.append("design values: %s" % m["params"].get("dv_file", "configs/dv.json (frozen)"))
+    if m["params"].get("sigma_sources"):
+        lines.append("sigma sources: %s" % m["params"]["sigma_sources"])
     lines.append("")
     for e in m.get("episodes", []):
         res = e.get("result") or {}

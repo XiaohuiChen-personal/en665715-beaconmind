@@ -90,6 +90,7 @@ def test_the_real_file_differs_from_the_frozen_one_in_exactly_four_fields(real_d
     for k in dv_real.NOISE_FIELDS:
         e = doc["values"][k]
         assert e["status"] == "measured" and e["updated"] == "2026-11-25" and "sha12 %s" % noise_sha in e["evidence"]
+        assert "sha256 %s" % hashlib.sha256(noise.read_bytes()).hexdigest() in e["evidence"]
         assert "fixture frames.csv" in e["source"] and e["unit"] == frozen["values"][k]["unit"]
     r = doc["values"]["reject_range_above_m"]
     assert r["value"] == 3.0 and r["status"] == "DV" and "Xiaohui" in r["source"] and r["updated"] == "2026-11-25"
@@ -99,6 +100,8 @@ def test_the_real_file_differs_from_the_frozen_one_in_exactly_four_fields(real_d
     from beaconmind.schemas import validate
     assert validate("dv", doc) == []
     assert dv_real.check_file(out) == []
+    assert dv_real.noise_source(out) == hashlib.sha256(noise.read_bytes()).hexdigest()
+    assert dv_real.noise_source(FROZEN) is None
 
 
 def test_the_tool_refuses_what_it_must(tmp_path, real_dv, monkeypatch):
@@ -258,3 +261,38 @@ def test_room_rehearsal_one_takes_a_file(tmp_path, real_dv):
     with rehearsal.dv_scope("measured"):
         assert dvm.load_dv()["sigma_bearing_deg"] == kr.MEASURED_SIGMA_DV["sigma_bearing_deg"]
     assert dvm.load_dv() == FROZEN_VALUES
+
+
+def test_a_real_batch_takes_both_sigmas_from_one_detector_noise_file(tmp_path, real_dv, capsys):
+    """The lead's rule (2026-11-25): the agent's sigmas (--dv) and the batch's fix sigma (--detector-noise) come from
+    the same configs/detector_noise.json, and real batches run with it. The manifest says whether they agree, with the
+    sha256; a real batch is refused when they would not (these refusals are listed with the pass marker's, before
+    anything is sent)."""
+    out, noise = real_dv
+    batch = tool("car_batch")
+    run = ["run", "--world", str(WORLD20), "--start", "S1:2.5,1.5,90", "--initial-pose", "2.4,1.6,70", "--max-steps", "3",
+           "--max-range", "3.0"]
+    real = run + ["--label", "t", "--marker", str(tmp_path / "none.json"), "--latch", str(tmp_path / "L")]
+    full = hashlib.sha256(noise.read_bytes()).hexdigest()
+    assert batch.main(real + ["--dv", str(out), "--detector-noise", str(noise)]) == 2
+    err = capsys.readouterr().err
+    assert "no pass marker" in err and "--dv" not in err and "--detector-noise" not in err      # only the marker stops it
+    for extra, why in ((["--dv", str(FROZEN), "--detector-noise", str(noise)], "not the frozen configs/dv.json"),
+                       (["--dv", str(out)], "a real batch needs --detector-noise"),
+                       (["--detector-noise", str(noise)], "a real batch needs --dv")):
+        assert batch.main(real + extra) == 2
+        err = capsys.readouterr().err
+        assert why in err and "no pass marker" in err, (extra, err)
+    other = tmp_path / "other_noise.json"
+    other.write_text(json.dumps(noise_model(bearing_bias_deg=0.1)))
+    assert batch.main(real + ["--dv", str(out), "--detector-noise", str(other)]) == 2
+    assert "was not made from --detector-noise" in capsys.readouterr().err
+    # the dry run records the agreement with the sha256, and says so in the summary
+    assert batch.main(run + ["--dry-run", "--out", str(tmp_path / "a"), "--dv", str(out), "--detector-noise", str(noise)]) == 0
+    m = json.loads((tmp_path / "a" / "manifest.json").read_text())
+    assert m["params"]["sigma_sources"].startswith("agree:") and full in m["params"]["sigma_sources"]
+    assert "sigma sources: agree" in (tmp_path / "a" / "summary.txt").read_text()
+    assert batch.main(run + ["--dry-run", "--out", str(tmp_path / "b"), "--detector-noise", str(noise)]) == 0
+    assert json.loads((tmp_path / "b" / "manifest.json").read_text())["params"]["sigma_sources"].startswith(
+        "not the same file: the agent's sigmas are the frozen study's")
+    assert dvm.load_dv() == FROZEN_VALUES and FROZEN.read_bytes() == FROZEN_BYTES

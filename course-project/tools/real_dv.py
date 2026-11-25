@@ -67,7 +67,7 @@ def main(argv=None):
     evidence = os.path.relpath(pathlib.Path(args.evidence).resolve(), ROOT) if args.evidence else None
     try:
         doc = dv_real.build_real_dv(frozen_doc, dv_real.sha12(FROZEN), model, dv_real._rel(args.noise),
-                                    dv_real.sha12(args.noise), args.reject_range, args.date, evidence=evidence,
+                                    dv_real.sha256(args.noise), args.reject_range, args.date, evidence=evidence,
                                     beyond_pilot=args.beyond_pilot_range)
     except ValueError as exc:
         print("refused: %s" % exc, file=sys.stderr)

@@ -26,7 +26,7 @@ first batch's commands; edited this note.
 | `beaconmind/tests/test_car_batch_wrapper.py` (2026-11-24) | 11 tests: `car_batch.sh` and `record_session.sh status` under bash with stand-ins for docker, tmux and the recorder |
 | `tools/record_session.sh` (the recorder, M3.T27; changed 2026-11-24) | `status`, and so `start`, no longer exits 1 when the start checks found no car (see "First execution"); the clock line is for the one filmed demo run only |
 | `beaconmind/src/beaconmind/dv_real.py`, `tools/real_dv.py` (2026-11-24) | `configs/dv-real.json` and the `--dv` switch ("Design values for real runs") |
-| `beaconmind/tests/test_dv_real.py` (2026-11-24) | 8 tests |
+| `beaconmind/tests/test_dv_real.py` (2026-11-24) | 9 tests |
 | `tools/closed_loop_run.py`, `closed_loop_run.sh`, `room_rehearsal.py` (changed 2026-11-24) | `--dv <file>` |
 | `car/telemetry.py`, `link.py`, `ros_io.py`, `simcar.py` (my own, changed) | the Pico's supply voltage (telemetry field 5); `car_state` carries `drive_status`, `vsys_min_mv`, `agent_rx_age_ms` |
 | `car/camera.py` (my own, changed) | a frame whose counter (`X-BM-Seq`) repeats is a stale picture: an error |
@@ -177,10 +177,14 @@ after an exception, also inside the rehearsal's own `dv_override`); no frozen fi
 `prereg_freeze.py --verify` stays OK. A `--dv` file is refused unless it is `bm.dv/1` with the frozen keys and differs
 only in the four fields. Records: `run.json`'s `dv_file` (file, sha12, canonical sha12, the differing values; a run
 on another file is another configuration, a run on the frozen file keeps its old configuration tag), the batch
-manifest's `params.dv_file` and summary line, the rehearsal's output. **A real batch requires `--dv`**, even for the
-frozen file: which noise model the agent judges its fixes by is then always a recorded choice, never a default that
-someone forgot (dry runs default to the frozen file). With a file other than the frozen one the batch also requires its
-range limit to equal `--max-range` and, with `--detector-noise`, that it was made from that same noise file. Tests:
+manifest's `params.dv_file` and summary line, the rehearsal's output. **One measurement for both sigmas** (the lead's
+decision, 2026-11-25, under Xiaohui's software delegation): a real batch runs with `--detector-noise
+course-project/configs/detector_noise.json` and with a `--dv` that `real_dv.py` made from that same file. The dv
+file's three sigma entries carry the noise file's sha256 in their `evidence`; the batch compares it with the sha256
+of `--detector-noise`, records the result in `params.sigma_sources` ("agree: ... sha256 ...", or what differs) and
+the summary, and refuses a real batch without either argument, with the frozen `dv.json`, or with files that do not
+agree (listed with the pass marker's refusals, before anything is sent). The `--dv` file's range limit must also
+equal `--max-range`. A dry run defaults to the frozen file and is refused only when two given files disagree. Tests:
 `beaconmind/tests/test_dv_real.py` (a fixture noise file; `configs/dv-real.json` is not written until the pilot).
 
 ## The check of the surveyed tags against each other (2026-11-24; review finding 3)
@@ -342,7 +346,7 @@ with either code. In the 12-tag world 3.0 m changes little against 2.5 m (one S3
 
 ## Tests
 
-- 2026-11-25, Mac, commit `f1897e9`: `tests/test_dv_real.py` **8 passed**; the suite without the demo-video tests
+- 2026-11-25, Mac, after the same-file rule: the whole suite **695 passed, 10 skipped** (demo-video tests included), `tests/test_dv_real.py` 9 of them. Earlier, commit `f1897e9`: `tests/test_dv_real.py` **8 passed**; the suite without the demo-video tests
   **651 passed, 10 skipped** (with them, run while the video agent was editing its files, 2 of theirs failed; run
   alone a minute later, theirs: 47 passed); `prereg_freeze.py --verify` OK.
 - 2026-11-24, Mac (Python 3.13), `pytest-mac.txt`: `tests/test_car_batch.py` **114 passed**, `tests/test_car_batch_wrapper.py` **11 passed**; whole suite **643 passed, 10 skipped** (without the demo-video agent's three untracked test files, work in progress in the same tree); `prereg_freeze.py --verify` OK (29 files, 30 logs).
@@ -507,9 +511,9 @@ Notes: `--initial-pose 2.20,2.00,90` is a suggestion (1.5 m or more from every e
 wherever it really stands and use that in c and d alike. `--episodes 10` runs S1 to S5 twice (the scenario file's
 "2 B2 episodes" each). `--max-range 3.0` is provisional: if the pilot's reliable range ends below it, the batch
 prints a WARNING and the plan says 2.5 m (change it in a2, c and d alike: the batch refuses a `--dv` whose range
-limit differs from `--max-range`, and a `--dv` not made from the given `--detector-noise`). A real batch refuses to
-start without `--dv`; to run on the frozen study's values give `--dv course-project/configs/dv.json` (and drop
-`--detector-noise` if the pilot's file does not exist: the batch's own fix sigma is then the assumed one, said so). If
+limit differs from `--max-range`, and a `--dv` not made from the given `--detector-noise`). Real batches run with the
+pilot's file (the lead's decision, 2026-11-25): a real batch refuses to start without `--detector-noise` and a `--dv`
+made from that same file; the manifest's `params.sigma_sources` says they agree, with the sha256. If
 the demo run Xiaohui films is ever driven through `car_batch.sh`, the phone starts filming
 `python3 course-project/tools/session_clock.py <session>` once the wrapper has printed the session name, before the
 first circle; no other batch is filmed. Step c with the nominal 20-tag world as a stand-in for `real-room.json`

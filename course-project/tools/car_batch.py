@@ -27,10 +27,10 @@ per-tag fix sigma from the tag pilot's measured range and bearing errors (batch.
 Without it the assumed 0.03 m + 0.04 x range. The manifest's params.fix_sigma_source says which (configs/dv.json,
 the frozen study's design values, is not read for this and not changed).
 --dv configs/dv-real.json (tools/real_dv.py, after the pilot): the design values the agent's tools and the car code
-read during the batch (beaconmind/dv_real.py). A real batch needs it given explicitly, also when it is the frozen
-configs/dv.json: which noise model the agent judges its fixes by is then always a choice, never a default. With a
-file other than the frozen one, its range limit must equal --max-range, and with --detector-noise it must have been
-made from that same file. The manifest's params.dv_file records the file and its sha12.
+read during the batch (beaconmind/dv_real.py); default for a dry run: the frozen configs/dv.json. A real batch needs
+both --detector-noise and a --dv made from that same detector-noise file (sha256), whose range limit is --max-range:
+the agent's sigmas and the batch's fix sigma then come from one measurement (the lead's decision, 2026-11-25). The
+manifest records params.dv_file (file, sha12) and params.sigma_sources (whether the two agree, with the sha256).
 
 Exit status: 0 the batch is complete; 3 it halted; 2 it refused to start.
 
@@ -191,26 +191,47 @@ def build_parser():
     return ap
 
 
-def dv_problems(args):
-    """Why --dv cannot be used for this batch (sentences), or []."""
+def dv_file_problems(args):
+    """A --dv file that cannot be used at all (refused before anything else)."""
     path = dv_real.resolve_arg(args.dv)
-    if path is None:
-        return []
-    problems = dv_real.check_file(path)
-    if problems:
-        return problems
-    if dv_real.record(path)["frozen"]:
-        return []
-    doc = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))["values"]
-    limit = float(doc["reject_range_above_m"]["value"])
-    if abs(limit - args.max_range) > 1e-9:
-        problems.append("--dv %s has the range limit %.2f m, --max-range is %.2f m: give the same" % (path, limit, args.max_range))
-    if args.detector_noise:
-        noise = "sha12 %s" % dv_real.sha12(args.detector_noise)
-        if not all(noise in str(doc[k].get("evidence")) for k in dv_real.NOISE_FIELDS):
-            problems.append("--dv %s was not made from --detector-noise %s (its sigmas name another file): make it "
-                            "again with tools/real_dv.py" % (path, args.detector_noise))
-    return problems
+    return [] if path is None else dv_real.check_file(path)
+
+
+def noise_agreement(args):
+    """(text for the manifest, problems): do the agent's sigmas (--dv) and the batch's fix sigma (--detector-noise)
+    come from one and the same detector-noise file (sha256)? A real batch must have both, from the same file, and the
+    --dv file's range limit must be --max-range (the lead's decision of 2026-11-25: real batches run with the pilot's
+    file); a dry run is only refused when two given files disagree."""
+    path = dv_real.resolve_arg(args.dv)
+    frozen = path is None or dv_real.record(path)["frozen"]
+    noise_sha = dv_real.sha256(args.detector_noise) if args.detector_noise else None
+    dv_sha = None if frozen else dv_real.noise_source(path)
+    problems = []
+    if not frozen:
+        limit = float(json.loads(pathlib.Path(path).read_text(encoding="utf-8"))["values"]["reject_range_above_m"]["value"])
+        if abs(limit - args.max_range) > 1e-9:
+            problems.append("--dv %s has the range limit %.2f m, --max-range is %.2f m: give the same"
+                            % (path, limit, args.max_range))
+    if noise_sha and not frozen and dv_sha != noise_sha:
+        problems.append("--dv %s was not made from --detector-noise %s (its sigmas name %s): make it again with "
+                        "tools/real_dv.py" % (path, args.detector_noise, "sha256 %s" % dv_sha if dv_sha else "no file"))
+    if not args.dry_run:
+        if not args.dv:
+            problems.append("a real batch needs --dv course-project/configs/dv-real.json (tools/real_dv.py, after the tag "
+                            "pilot)")
+        if not noise_sha:
+            problems.append("a real batch needs --detector-noise course-project/configs/detector_noise.json (the tag "
+                            "pilot's file; the batch's fix sigma and the agent's sigmas both come from it)")
+        if args.dv and frozen:
+            problems.append("a real batch needs --dv made from its --detector-noise (configs/dv-real.json), not the "
+                            "frozen configs/dv.json: the agent's sigmas and the batch's fix sigma must come from one file")
+    if noise_sha and dv_sha == noise_sha:
+        text = "agree: the agent's sigmas (--dv) and the batch's fix sigma come from the same detector-noise file (sha256 %s)" % noise_sha
+    else:
+        text = "not the same file: the agent's sigmas are %s, the batch's fix sigma %s" % (
+            "the frozen study's" if frozen else ("from sha256 %s" % dv_sha if dv_sha else "from no named file"),
+            "from sha256 %s" % noise_sha if noise_sha else "the assumed 0.03 + 0.04 r")
+    return text, problems
 
 
 def fix_sigma(args):
@@ -243,7 +264,7 @@ def fix_sigma(args):
     return a, b, "%s sha256:%s: %s" % (rel, hashlib.sha256(raw).hexdigest()[:12], text)
 
 
-def params_from(args, world_path):
+def params_from(args, world_path, agreement=""):
     duty, speed = (float(v) for v in args.drive_map.split(","))
     sigma_a, sigma_b, source = fix_sigma(args)
     rec = dv_real.record(dv_real.resolve_arg(args.dv))
@@ -257,7 +278,7 @@ def params_from(args, world_path):
         min_vsys_mv=args.min_vsys_mv, min_forward_speed_mps=args.min_forward_speed,
         episode_wall_s=args.episode_minutes * 60.0, batch_wall_s=args.batch_hours * 3600.0,
         batch_steps=args.batch_steps, cap_usd=args.cap_usd, drive_map=(duty, speed), fix_sigma_a_m=sigma_a,
-        fix_sigma_b=sigma_b, fix_sigma_source=source, dv_file=dv_text)
+        fix_sigma_b=sigma_b, fix_sigma_source=source, dv_file=dv_text, sigma_sources=agreement)
 
 
 def cmd_run(args):
@@ -282,14 +303,15 @@ def cmd_run(args):
         args.initial_pose = pose_arg(args.initial_pose)
     if not 1 <= args.max_steps <= cl.STEPS_BUDGET or args.episodes < 1:
         sys.exit("--max-steps must be 1..%d and --episodes at least 1" % cl.STEPS_BUDGET)
-    problems = dv_problems(args)
+    problems = dv_file_problems(args)
+    if not problems:
+        agreement, sources = noise_agreement(args)
+        problems = sources if args.dry_run else []
     if problems:
         print("refused, nothing was sent:\n- " + "\n- ".join(problems), file=sys.stderr)
         return 2
-    params = params_from(args, world_path)
-    missing_dv = [] if (args.dry_run or args.dv) else [
-        "a real batch needs --dv: course-project/configs/dv-real.json (tools/real_dv.py, after the tag pilot), or "
-        "course-project/configs/dv.json to run on the frozen study's values (the choice is recorded, never a default)"]
+    params = params_from(args, world_path, agreement)
+    missing_dv = [] if args.dry_run else sources         # (listed with the pass marker's refusals)
     tool = load_runner_tool()
     driver, cfg, cfg_path, sdk = tool.build_driver(args.policy)
     if cfg is not None and args.cap_usd <= 0:
