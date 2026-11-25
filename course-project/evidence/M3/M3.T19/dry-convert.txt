@@ -1,0 +1,11 @@
+converted 10 episodes, 732 steps, into data/real-replay/b2-real-01-dry-r1-20261125/obslogs
+  seed 1   ep01-a1  S1    56 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+  seed 2   ep02-a1  S2    43 steps  ended DONE      last truth sigma 0.050 m (tracked since the last fix)
+  seed 3   ep03-a1  S3   104 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+  seed 4   ep04-a1  S4    64 steps  ended DONE      last truth sigma 0.054 m (tag fix)
+  seed 5   ep05-a1  S5    57 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+  seed 6   ep06-a1  S1    69 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+  seed 7   ep07-a1  S2    70 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+  seed 8   ep08-a1  S3    69 steps  ended DONE      last truth sigma 0.050 m (tracked since the last fix)
+  seed 9   ep09-a1  S4   150 steps  ended budget    last truth sigma 0.050 m (tracked since the last fix)
+  seed 10  ep10-a1  S5    50 steps  ended DONE      last truth sigma 0.050 m (tag fix)

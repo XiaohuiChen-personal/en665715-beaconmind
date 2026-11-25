@@ -1,0 +1,117 @@
+{
+ "schema": "bm.real_obslog_index/1",
+ "batch": "b2-real-01-dry-r1-20261125",
+ "batch_config": "9b9aaa7efdc3",
+ "real_car": false,
+ "status": "complete",
+ "halt": null,
+ "world_file": "configs/arenas/real-room.json",
+ "world_sha12": "35572d7656f3",
+ "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
+ "max_range_m": 3.0,
+ "created": "2026-11-25T04:08:12-0600",
+ "episodes": [
+  {
+   "seed": 1,
+   "episode": "ep01-a1",
+   "scenario": "S1",
+   "steps": 56,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "f1c86b798046"
+  },
+  {
+   "seed": 2,
+   "episode": "ep02-a1",
+   "scenario": "S2",
+   "steps": 43,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.0501,
+   "truth_is_a_fix_last": false,
+   "sha12": "73547e628dce"
+  },
+  {
+   "seed": 3,
+   "episode": "ep03-a1",
+   "scenario": "S3",
+   "steps": 104,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "e74b7faa3c65"
+  },
+  {
+   "seed": 4,
+   "episode": "ep04-a1",
+   "scenario": "S4",
+   "steps": 64,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.054,
+   "truth_is_a_fix_last": true,
+   "sha12": "20810d1a2db5"
+  },
+  {
+   "seed": 5,
+   "episode": "ep05-a1",
+   "scenario": "S5",
+   "steps": 57,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "df3e7f4fefed"
+  },
+  {
+   "seed": 6,
+   "episode": "ep06-a1",
+   "scenario": "S1",
+   "steps": 69,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "d89c575f4568"
+  },
+  {
+   "seed": 7,
+   "episode": "ep07-a1",
+   "scenario": "S2",
+   "steps": 70,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "c0fd10dac9ae"
+  },
+  {
+   "seed": 8,
+   "episode": "ep08-a1",
+   "scenario": "S3",
+   "steps": 69,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.0503,
+   "truth_is_a_fix_last": false,
+   "sha12": "bf0f00f36547"
+  },
+  {
+   "seed": 9,
+   "episode": "ep09-a1",
+   "scenario": "S4",
+   "steps": 150,
+   "ended_by": "budget",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": false,
+   "sha12": "fa28901b95c5"
+  },
+  {
+   "seed": 10,
+   "episode": "ep10-a1",
+   "scenario": "S5",
+   "steps": 50,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "d01111754d12"
+  }
+ ],
+ "excluded": [],
+ "steps": 732
+}

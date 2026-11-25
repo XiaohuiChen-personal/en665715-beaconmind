@@ -1,0 +1,858 @@
+{
+ "schema": "bm.real_replay_result/1",
+ "index": {
+  "schema": "bm.real_obslog_index/1",
+  "batch": "b2-real-01-dry-r1-20261125",
+  "batch_config": "9b9aaa7efdc3",
+  "real_car": false,
+  "status": "complete",
+  "halt": null,
+  "world_file": "configs/arenas/real-room.json",
+  "world_sha12": "35572d7656f3",
+  "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
+  "max_range_m": 3.0,
+  "created": "2026-11-25T04:08:12-0600",
+  "episodes": [
+   {
+    "seed": 1,
+    "episode": "ep01-a1",
+    "scenario": "S1",
+    "steps": 56,
+    "ended_by": "DONE",
+    "truth_sigma_xy_m_last": 0.05,
+    "truth_is_a_fix_last": true,
+    "sha12": "f1c86b798046"
+   },
+   {
+    "seed": 2,
+    "episode": "ep02-a1",
+    "scenario": "S2",
+    "steps": 43,
+    "ended_by": "DONE",
+    "truth_sigma_xy_m_last": 0.0501,
+    "truth_is_a_fix_last": false,
+    "sha12": "73547e628dce"
+   },
+   {
+    "seed": 3,
+    "episode": "ep03-a1",
+    "scenario": "S3",
+    "steps": 104,
+    "ended_by": "DONE",
+    "truth_sigma_xy_m_last": 0.05,
+    "truth_is_a_fix_last": true,
+    "sha12": "e74b7faa3c65"
+   },
+   {
+    "seed": 4,
+    "episode": "ep04-a1",
+    "scenario": "S4",
+    "steps": 64,
+    "ended_by": "DONE",
+    "truth_sigma_xy_m_last": 0.054,
+    "truth_is_a_fix_last": true,
+    "sha12": "20810d1a2db5"
+   },
+   {
+    "seed": 5,
+    "episode": "ep05-a1",
+    "scenario": "S5",
+    "steps": 57,
+    "ended_by": "DONE",
+    "truth_sigma_xy_m_last": 0.05,
+    "truth_is_a_fix_last": true,
+    "sha12": "df3e7f4fefed"
+   },
+   {
+    "seed": 6,
+    "episode": "ep06-a1",
+    "scenario": "S1",
+    "steps": 69,
+    "ended_by": "DONE",
+    "truth_sigma_xy_m_last": 0.05,
+    "truth_is_a_fix_last": true,
+    "sha12": "d89c575f4568"
+   },
+   {
+    "seed": 7,
+    "episode": "ep07-a1",
+    "scenario": "S2",
+    "steps": 70,
+    "ended_by": "DONE",
+    "truth_sigma_xy_m_last": 0.05,
+    "truth_is_a_fix_last": true,
+    "sha12": "c0fd10dac9ae"
+   },
+   {
+    "seed": 8,
+    "episode": "ep08-a1",
+    "scenario": "S3",
+    "steps": 69,
+    "ended_by": "DONE",
+    "truth_sigma_xy_m_last": 0.0503,
+    "truth_is_a_fix_last": false,
+    "sha12": "bf0f00f36547"
+   },
+   {
+    "seed": 9,
+    "episode": "ep09-a1",
+    "scenario": "S4",
+    "steps": 150,
+    "ended_by": "budget",
+    "truth_sigma_xy_m_last": 0.05,
+    "truth_is_a_fix_last": false,
+    "sha12": "fa28901b95c5"
+   },
+   {
+    "seed": 10,
+    "episode": "ep10-a1",
+    "scenario": "S5",
+    "steps": 50,
+    "ended_by": "DONE",
+    "truth_sigma_xy_m_last": 0.05,
+    "truth_is_a_fix_last": true,
+    "sha12": "d01111754d12"
+   }
+  ],
+  "excluded": [],
+  "steps": 732
+ },
+ "runs": {
+  "procedure (stand-in)": "data/real-replay/b2-real-01-dry-r1-20261125/runs/procedure-final"
+ },
+ "summary": {
+  "B0": {
+   "n": 10,
+   "n_incomplete": 0,
+   "median_m": 0.022278672007638098,
+   "q1_m": 0.014701644586014705,
+   "q3_m": 0.027548053994959548,
+   "min_m": 0.011108372355146189,
+   "max_m": 0.05023250925877665,
+   "mean_m": 0.02329647615829235,
+   "median_deg": 0.16928519160717315,
+   "median_truth_sigma_m": 0.05,
+   "median_vs_end_circle_m": 0.02080558039898046,
+   "median_vs_sim_truth_m": 0.022846854859538464
+  },
+  "B2": {
+   "n": 10,
+   "n_incomplete": 0,
+   "median_m": 0.029365439230134197,
+   "q1_m": 0.022496345676194397,
+   "q3_m": 0.047601735020334324,
+   "min_m": 0.00823043325721299,
+   "max_m": 0.05507159631434086,
+   "mean_m": 0.03278531048728524,
+   "median_deg": 0.8072131083950467,
+   "median_truth_sigma_m": 0.05,
+   "median_vs_end_circle_m": 0.030258794712367726,
+   "median_vs_sim_truth_m": 0.030435325760433025
+  },
+  "procedure (stand-in)": {
+   "n": 10,
+   "n_incomplete": 0,
+   "median_m": 0.029365439230134197,
+   "q1_m": 0.022496345676194397,
+   "q3_m": 0.047601735020334324,
+   "min_m": 0.00823043325721299,
+   "max_m": 0.05507159631434086,
+   "mean_m": 0.03278531048728524,
+   "median_deg": 0.8072131083950467,
+   "median_truth_sigma_m": 0.05,
+   "median_vs_end_circle_m": 0.030258794712367726,
+   "median_vs_sim_truth_m": 0.030435325760433025
+  }
+ },
+ "errors": {
+  "B0": {
+   "1": {
+    "episode": "ep01-a1",
+    "scenario": "S1",
+    "steps": 56,
+    "complete": true,
+    "final_m": 0.013858599348306275,
+    "final_deg": 0.4435454090471751,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.5400085421734669,
+     "y_m": -0.08609092681938649,
+     "theta_deg": 116.1
+    },
+    "vs_end_circle_m": 0.01034485053152032,
+    "vs_sim_truth_m": 0.010391360957444144
+   },
+   "2": {
+    "episode": "ep02-a1",
+    "scenario": "S2",
+    "steps": 43,
+    "complete": true,
+    "final_m": 0.018455467406077057,
+    "final_deg": 0.15139252112319923,
+    "truth_sigma_xy_m": 0.0501,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": 1.1535811795815911,
+     "y_m": -0.3577322077284757,
+     "theta_deg": -35.69999999999993
+    },
+    "vs_end_circle_m": 0.018213811720518322,
+    "vs_sim_truth_m": 0.016980378789750623
+   },
+   "3": {
+    "episode": "ep03-a1",
+    "scenario": "S3",
+    "steps": 104,
+    "complete": true,
+    "final_m": 0.028899834313167047,
+    "final_deg": 0.21917750158104354,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.0926404812177726,
+     "y_m": -0.9036132310558846,
+     "theta_deg": 158.60000000000002
+    },
+    "vs_end_circle_m": 0.028585479766807732,
+    "vs_sim_truth_m": 0.028280880246571317
+   },
+   "4": {
+    "episode": "ep04-a1",
+    "scenario": "S4",
+    "steps": 64,
+    "complete": true,
+    "final_m": 0.026101876609199135,
+    "final_deg": 0.21199330203552336,
+    "truth_sigma_xy_m": 0.054,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.4495853051708167,
+     "y_m": -1.299425815063763,
+     "theta_deg": 22.100000000000026
+    },
+    "vs_end_circle_m": 0.027855934027641357,
+    "vs_sim_truth_m": 0.031510596133633634
+   },
+   "5": {
+    "episode": "ep05-a1",
+    "scenario": "S5",
+    "steps": 57,
+    "complete": true,
+    "final_m": 0.011108372355146189,
+    "final_deg": 0.18034790965214142,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.6771389553016182,
+     "y_m": -0.13477485815387047,
+     "theta_deg": -92.29999999999995
+    },
+    "vs_end_circle_m": 0.010454104416914996,
+    "vs_sim_truth_m": 0.011120788063124156
+   },
+   "6": {
+    "episode": "ep06-a1",
+    "scenario": "S1",
+    "steps": 69,
+    "complete": true,
+    "final_m": 0.027824606258241985,
+    "final_deg": 0.15822247356220487,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.5662101454297712,
+     "y_m": 0.8052190350388353,
+     "theta_deg": 63.699999999999996
+    },
+    "vs_end_circle_m": 0.027474412387805434,
+    "vs_sim_truth_m": 0.02769565142247919
+   },
+   "7": {
+    "episode": "ep07-a1",
+    "scenario": "S2",
+    "steps": 70,
+    "complete": true,
+    "final_m": 0.02671839720511223,
+    "final_deg": 0.01536919660861713,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.4470366877518646,
+     "y_m": -0.4185747798464087,
+     "theta_deg": -118.60000000000005
+    },
+    "vs_end_circle_m": 0.0233973490774426,
+    "vs_sim_truth_m": 0.026689042644354063
+   },
+   "8": {
+    "episode": "ep08-a1",
+    "scenario": "S3",
+    "steps": 69,
+    "complete": true,
+    "final_m": 0.012534318529756935,
+    "final_deg": 0.1495064097234149,
+    "truth_sigma_xy_m": 0.0503,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": -0.6787353834282717,
+     "y_m": 0.6803384955953484,
+     "theta_deg": 26.500000000000057
+    },
+    "vs_end_circle_m": 0.013539247336381352,
+    "vs_sim_truth_m": 0.012695797029114508
+   },
+   "9": {
+    "episode": "ep09-a1",
+    "scenario": "S4",
+    "steps": 150,
+    "complete": true,
+    "final_m": 0.05023250925877665,
+    "final_deg": 0.1341812620867131,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": -0.33504321587134034,
+     "y_m": -2.175705211753125,
+     "theta_deg": 117.40000000000009
+    },
+    "vs_end_circle_m": 0.2859771180640949,
+    "vs_sim_truth_m": 0.048051461889231026
+   },
+   "10": {
+    "episode": "ep10-a1",
+    "scenario": "S5",
+    "steps": 50,
+    "complete": true,
+    "final_m": 0.01723078029913999,
+    "final_deg": 0.21574836954795273,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -1.028403931815233,
+     "y_m": 0.5917774971392229,
+     "theta_deg": 119.90000000000002
+    },
+    "vs_end_circle_m": 0.016904027871447923,
+    "vs_sim_truth_m": 0.019004667074722866
+   }
+  },
+  "B2": {
+   "1": {
+    "episode": "ep01-a1",
+    "scenario": "S1",
+    "steps": 56,
+    "complete": true,
+    "final_m": 0.04900616338837023,
+    "final_deg": 1.756454590952842,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.49,
+     "y_m": -0.05,
+     "theta_deg": 118.3
+    },
+    "vs_end_circle_m": 0.052079766749027735,
+    "vs_sim_truth_m": 0.05271347249863659
+   },
+   "2": {
+    "episode": "ep02-a1",
+    "scenario": "S2",
+    "steps": 43,
+    "complete": true,
+    "final_m": 0.00823043325721299,
+    "final_deg": 0.8486074788767155,
+    "truth_sigma_xy_m": 0.0501,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": 1.13,
+     "y_m": -0.35,
+     "theta_deg": -34.7
+    },
+    "vs_end_circle_m": 0.007872318651319973,
+    "vs_sim_truth_m": 0.008353831665931384
+   },
+   "3": {
+    "episode": "ep03-a1",
+    "scenario": "S3",
+    "steps": 104,
+    "complete": true,
+    "final_m": 0.05206096484772354,
+    "final_deg": 1.2191775015810151,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.08,
+     "y_m": -0.83,
+     "theta_deg": 159.6
+    },
+    "vs_end_circle_m": 0.05337026097889659,
+    "vs_sim_truth_m": 0.05368986314120269
+   },
+   "4": {
+    "episode": "ep04-a1",
+    "scenario": "S4",
+    "steps": 64,
+    "complete": true,
+    "final_m": 0.01448061250954715,
+    "final_deg": 0.11199330203550062,
+    "truth_sigma_xy_m": 0.054,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.43,
+     "y_m": -1.3,
+     "theta_deg": 22.0
+    },
+    "vs_end_circle_m": 0.016302408616581263,
+    "vs_sim_truth_m": 0.019973957058344025
+   },
+   "5": {
+    "episode": "ep05-a1",
+    "scenario": "S5",
+    "steps": 57,
+    "complete": true,
+    "final_m": 0.025333317916355173,
+    "final_deg": 0.21965209034789268,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.68,
+     "y_m": -0.15,
+     "theta_deg": -92.7
+    },
+    "vs_end_circle_m": 0.02397752004837229,
+    "vs_sim_truth_m": 0.023784636313228875
+   },
+   "6": {
+    "episode": "ep06-a1",
+    "scenario": "S1",
+    "steps": 69,
+    "complete": true,
+    "final_m": 0.04338844991622662,
+    "final_deg": 0.7582224735621992,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.53,
+     "y_m": 0.8,
+     "theta_deg": 63.1
+    },
+    "vs_end_circle_m": 0.04240444463646156,
+    "vs_sim_truth_m": 0.04208281140093106
+   },
+   "7": {
+    "episode": "ep07-a1",
+    "scenario": "S2",
+    "steps": 70,
+    "complete": true,
+    "final_m": 0.029977790419623576,
+    "final_deg": 1.3153691966085717,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.45,
+     "y_m": -0.42,
+     "theta_deg": -119.9
+    },
+    "vs_end_circle_m": 0.02664979172010188,
+    "vs_sim_truth_m": 0.029944407704879644
+   },
+   "8": {
+    "episode": "ep08-a1",
+    "scenario": "S3",
+    "steps": 69,
+    "complete": true,
+    "final_m": 0.021550688262807472,
+    "final_deg": 0.14950640972347173,
+    "truth_sigma_xy_m": 0.0503,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": -0.68,
+     "y_m": 0.69,
+     "theta_deg": 26.5
+    },
+    "vs_end_circle_m": 0.022793078454411125,
+    "vs_sim_truth_m": 0.021859570838735968
+   },
+   "9": {
+    "episode": "ep09-a1",
+    "scenario": "S4",
+    "steps": 150,
+    "complete": true,
+    "final_m": 0.05507159631434086,
+    "final_deg": 0.7658187379133778,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": -0.36,
+     "y_m": -2.17,
+     "theta_deg": 116.5
+    },
+    "vs_end_circle_m": 0.27197503695482955,
+    "vs_sim_truth_m": 0.05225368433716491
+   },
+   "10": {
+    "episode": "ep10-a1",
+    "scenario": "S5",
+    "steps": 50,
+    "complete": true,
+    "final_m": 0.028753088040644813,
+    "final_deg": 1.3842516304520132,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.99,
+     "y_m": 0.6,
+     "theta_deg": 121.5
+    },
+    "vs_end_circle_m": 0.03386779770463357,
+    "vs_sim_truth_m": 0.030926243815986406
+   }
+  },
+  "procedure (stand-in)": {
+   "1": {
+    "episode": "ep01-a1",
+    "scenario": "S1",
+    "steps": 56,
+    "complete": true,
+    "final_m": 0.04900616338837023,
+    "final_deg": 1.756454590952842,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.49,
+     "y_m": -0.05,
+     "theta_deg": 118.3
+    },
+    "vs_end_circle_m": 0.052079766749027735,
+    "vs_sim_truth_m": 0.05271347249863659
+   },
+   "2": {
+    "episode": "ep02-a1",
+    "scenario": "S2",
+    "steps": 43,
+    "complete": true,
+    "final_m": 0.00823043325721299,
+    "final_deg": 0.8486074788767155,
+    "truth_sigma_xy_m": 0.0501,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": 1.13,
+     "y_m": -0.35,
+     "theta_deg": -34.7
+    },
+    "vs_end_circle_m": 0.007872318651319973,
+    "vs_sim_truth_m": 0.008353831665931384
+   },
+   "3": {
+    "episode": "ep03-a1",
+    "scenario": "S3",
+    "steps": 104,
+    "complete": true,
+    "final_m": 0.05206096484772354,
+    "final_deg": 1.2191775015810151,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.08,
+     "y_m": -0.83,
+     "theta_deg": 159.6
+    },
+    "vs_end_circle_m": 0.05337026097889659,
+    "vs_sim_truth_m": 0.05368986314120269
+   },
+   "4": {
+    "episode": "ep04-a1",
+    "scenario": "S4",
+    "steps": 64,
+    "complete": true,
+    "final_m": 0.01448061250954715,
+    "final_deg": 0.11199330203550062,
+    "truth_sigma_xy_m": 0.054,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.43,
+     "y_m": -1.3,
+     "theta_deg": 22.0
+    },
+    "vs_end_circle_m": 0.016302408616581263,
+    "vs_sim_truth_m": 0.019973957058344025
+   },
+   "5": {
+    "episode": "ep05-a1",
+    "scenario": "S5",
+    "steps": 57,
+    "complete": true,
+    "final_m": 0.025333317916355173,
+    "final_deg": 0.21965209034789268,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.68,
+     "y_m": -0.15,
+     "theta_deg": -92.7
+    },
+    "vs_end_circle_m": 0.02397752004837229,
+    "vs_sim_truth_m": 0.023784636313228875
+   },
+   "6": {
+    "episode": "ep06-a1",
+    "scenario": "S1",
+    "steps": 69,
+    "complete": true,
+    "final_m": 0.04338844991622662,
+    "final_deg": 0.7582224735621992,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.53,
+     "y_m": 0.8,
+     "theta_deg": 63.1
+    },
+    "vs_end_circle_m": 0.04240444463646156,
+    "vs_sim_truth_m": 0.04208281140093106
+   },
+   "7": {
+    "episode": "ep07-a1",
+    "scenario": "S2",
+    "steps": 70,
+    "complete": true,
+    "final_m": 0.029977790419623576,
+    "final_deg": 1.3153691966085717,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": 1.45,
+     "y_m": -0.42,
+     "theta_deg": -119.9
+    },
+    "vs_end_circle_m": 0.02664979172010188,
+    "vs_sim_truth_m": 0.029944407704879644
+   },
+   "8": {
+    "episode": "ep08-a1",
+    "scenario": "S3",
+    "steps": 69,
+    "complete": true,
+    "final_m": 0.021550688262807472,
+    "final_deg": 0.14950640972347173,
+    "truth_sigma_xy_m": 0.0503,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": -0.68,
+     "y_m": 0.69,
+     "theta_deg": 26.5
+    },
+    "vs_end_circle_m": 0.022793078454411125,
+    "vs_sim_truth_m": 0.021859570838735968
+   },
+   "9": {
+    "episode": "ep09-a1",
+    "scenario": "S4",
+    "steps": 150,
+    "complete": true,
+    "final_m": 0.05507159631434086,
+    "final_deg": 0.7658187379133778,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": false,
+    "estimate": {
+     "x_m": -0.36,
+     "y_m": -2.17,
+     "theta_deg": 116.5
+    },
+    "vs_end_circle_m": 0.27197503695482955,
+    "vs_sim_truth_m": 0.05225368433716491
+   },
+   "10": {
+    "episode": "ep10-a1",
+    "scenario": "S5",
+    "steps": 50,
+    "complete": true,
+    "final_m": 0.028753088040644813,
+    "final_deg": 1.3842516304520132,
+    "truth_sigma_xy_m": 0.05,
+    "truth_is_a_fix": true,
+    "estimate": {
+     "x_m": -0.99,
+     "y_m": 0.6,
+     "theta_deg": 121.5
+    },
+    "vs_end_circle_m": 0.03386779770463357,
+    "vs_sim_truth_m": 0.030926243815986406
+   }
+  },
+  "_truth_check": {
+   "1": {
+    "truth_last": {
+     "x_m": -0.5265995566486502,
+     "y_m": -0.08258951523373556,
+     "theta_deg": 116.54354540904717,
+     "source": "tag_fix",
+     "fix": true,
+     "sigma_xy_m": 0.05,
+     "sigma_theta_deg": 3.37,
+     "steps_since_fix": 0
+    },
+    "truth_sim_last": {
+     "x_m": -0.5297161267143236,
+     "y_m": -0.08466034422328074,
+     "theta_deg": 116.26157876875692
+    }
+   },
+   "2": {
+    "truth_last": {
+     "x_m": 1.1379594457395488,
+     "y_m": -0.34790542244817363,
+     "theta_deg": -35.54860747887673,
+     "source": "tracked_since_fix",
+     "fix": false,
+     "sigma_xy_m": 0.0501,
+     "sigma_theta_deg": 3.24,
+     "steps_since_fix": 2
+    },
+    "truth_sim_last": {
+     "x_m": 1.138350821280309,
+     "y_m": -0.3502242486277625,
+     "theta_deg": -35.460976484017436
+    }
+   },
+   "3": {
+    "truth_last": {
+     "x_m": 1.0738086431230047,
+     "y_m": -0.8816914998901907,
+     "theta_deg": 158.38082249841898,
+     "source": "tag_fix",
+     "fix": true,
+     "sigma_xy_m": 0.05,
+     "sigma_theta_deg": 2.55,
+     "steps_since_fix": 0
+    },
+    "truth_sim_last": {
+     "x_m": 1.0730303125623704,
+     "y_m": -0.8832355601186164,
+     "theta_deg": 158.4535581236196
+    }
+   },
+   "4": {
+    "truth_last": {
+     "x_m": 1.4273435987397969,
+     "y_m": -1.28576512483383,
+     "theta_deg": 21.8880066979645,
+     "source": "tag_fix",
+     "fix": true,
+     "sigma_xy_m": 0.054,
+     "sigma_theta_deg": 3.75,
+     "steps_since_fix": 0
+    },
+    "truth_sim_last": {
+     "x_m": 1.4240784391183448,
+     "y_m": -1.2809239921028162,
+     "theta_deg": 21.782721520858047
+    }
+   },
+   "5": {
+    "truth_last": {
+     "x_m": -0.6690602634066048,
+     "y_m": -0.1271505107295972,
+     "theta_deg": -92.4803479096521,
+     "source": "tag_fix",
+     "fix": true,
+     "sigma_xy_m": 0.05,
+     "sigma_theta_deg": 2.57,
+     "steps_since_fix": 0
+    },
+    "truth_sim_last": {
+     "x_m": -0.66708142858419,
+     "y_m": -0.1300295358810272,
+     "theta_deg": -92.52421858028833
+    }
+   },
+   "6": {
+    "truth_last": {
+     "x_m": -0.5670419742972462,
+     "y_m": 0.7774068655053121,
+     "theta_deg": 63.85822247356219,
+     "source": "tag_fix",
+     "fix": true,
+     "sigma_xy_m": 0.05,
+     "sigma_theta_deg": 3.06,
+     "steps_since_fix": 0
+    },
+    "truth_sim_last": {
+     "x_m": -0.5655820860497538,
+     "y_m": 0.7775305058411577,
+     "theta_deg": 63.61272361429047
+    }
+   },
+   "7": {
+    "truth_last": {
+     "x_m": 1.421574470297376,
+     "y_m": -0.4104785936139601,
+     "theta_deg": -118.58463080339143,
+     "source": "tag_fix",
+     "fix": true,
+     "sigma_xy_m": 0.05,
+     "sigma_theta_deg": 3.21,
+     "steps_since_fix": 0
+    },
+    "truth_sim_last": {
+     "x_m": 1.4215266967221967,
+     "y_m": -0.41072969508342405,
+     "theta_deg": -118.68819840898124
+    }
+   },
+   "8": {
+    "truth_last": {
+     "x_m": -0.6711812616423345,
+     "y_m": 0.670336276589116,
+     "theta_deg": 26.64950640972347,
+     "source": "tracked_since_fix",
+     "fix": false,
+     "sigma_xy_m": 0.0503,
+     "sigma_theta_deg": 5.19,
+     "steps_since_fix": 7
+    },
+    "truth_sim_last": {
+     "x_m": -0.6716720667755526,
+     "y_m": 0.6697889543698783,
+     "theta_deg": 26.86400739659689
+    }
+   },
+   "9": {
+    "truth_last": {
+     "x_m": -0.3266429323519815,
+     "y_m": -2.1261800643709368,
+     "theta_deg": 117.26581873791338,
+     "source": "tracked_since_fix",
+     "fix": false,
+     "sigma_xy_m": 0.05,
+     "sigma_theta_deg": 2.81,
+     "steps_since_fix": 1
+    },
+    "truth_sim_last": {
+     "x_m": -0.3288363238656046,
+     "y_m": -2.1280563137457067,
+     "theta_deg": 117.33480126050154
+    }
+   },
+   "10": {
+    "truth_last": {
+     "x_m": -1.0134043411208657,
+     "y_m": 0.5832973987483618,
+     "theta_deg": 120.11574836954799,
+     "source": "tag_fix",
+     "fix": true,
+     "sigma_xy_m": 0.05,
+     "sigma_theta_deg": 2.83,
+     "steps_since_fix": 0
+    },
+    "truth_sim_last": {
+     "x_m": -1.0135369548031685,
+     "y_m": 0.5799389851911864,
+     "theta_deg": 119.96713142643569
+    }
+   }
+  }
+ },
+ "created": "2026-11-25T04:08:13-0600"
+}
