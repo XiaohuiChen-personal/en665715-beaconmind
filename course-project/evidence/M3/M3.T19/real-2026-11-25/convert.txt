@@ -1,0 +1,9 @@
+converted 5 episodes, 338 steps, into data/real-replay/real-2026-11-25/obslogs
+  seed 1001  b2-real-01   ep01-a1  S1    83 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+           completed; batch halted after the end by odometry_scale; end pose from end_fix.pose_now
+  seed 2001  b2-real-02   ep01-a1  S1    56 steps  ended DONE      last truth sigma 0.050 m (tag fix)
+  seed 2002  b2-real-02   ep02-a1  S2    62 steps  ended DONE      last truth sigma 0.058 m (tag fix)
+  seed 3001  b2-real-03   ep01-a1  S1    56 steps  ended DONE      last truth sigma 0.050 m (tracked since the last fix)
+  seed 3002  b2-real-03   ep02-a1  S2    81 steps  ended DONE      last truth sigma 0.056 m (tag fix)
+           completed; end circle interrupted by stall; end pose from last step's truth (no end circle)
+  excluded b2-real-02 ep03-a1: did not end normally: {'code': 'odometry_scale', 'detail': 'tag fixes land -28 % (+-8 %) of the distance from where the odometry puts the car (10.5 m driven, 37 fixes; limit 12 %): the encoder scale is wrong, or the tags are', 'time_utc': '2026-11-25T12:24:02Z', 'safety': True}

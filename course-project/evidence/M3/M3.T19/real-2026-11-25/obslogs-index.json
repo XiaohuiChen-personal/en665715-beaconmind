@@ -1,0 +1,142 @@
+{
+ "schema": "bm.real_obslog_set/1",
+ "batch": "b2-real-01 + b2-real-02 + b2-real-03",
+ "batches": [
+  {
+   "batch": "b2-real-01",
+   "seed_base": 1000,
+   "batch_config": "611d90a41329",
+   "real_car": true,
+   "status": "halted",
+   "halt": {
+    "code": "odometry_scale",
+    "detail": "the episode (start circle to end circle) measures 0.72 m by odometry and 0.91 m by the tags (ratio 1.27, limit 1 +- 0.18): the encoder scale in configs/car.json is wrong, or the tags are",
+    "time_utc": "2026-11-25T11:29:06Z",
+    "safety": true
+   },
+   "world_file": "configs/arenas/real-room.json",
+   "world_sha12": "35572d7656f3",
+   "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
+   "max_range_m": 3.0,
+   "converted": "2026-11-25T08:28:49-0600"
+  },
+  {
+   "batch": "b2-real-02",
+   "seed_base": 2000,
+   "batch_config": "1b3ab20f9758",
+   "real_car": true,
+   "status": "halted",
+   "halt": {
+    "code": "odometry_scale",
+    "detail": "tag fixes land -28 % (+-8 %) of the distance from where the odometry puts the car (10.5 m driven, 37 fixes; limit 12 %): the encoder scale is wrong, or the tags are",
+    "time_utc": "2026-11-25T12:24:02Z",
+    "safety": true
+   },
+   "world_file": "configs/arenas/real-room.json",
+   "world_sha12": "35572d7656f3",
+   "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
+   "max_range_m": 3.0,
+   "converted": "2026-11-25T08:28:49-0600"
+  },
+  {
+   "batch": "b2-real-03",
+   "seed_base": 3000,
+   "batch_config": "af676fc3b9e6",
+   "real_car": true,
+   "status": "halted",
+   "halt": {
+    "code": "stall",
+    "detail": "TURN_LEFT_30: stall_right",
+    "time_utc": "2026-11-25T13:35:23Z",
+    "safety": true
+   },
+   "world_file": "configs/arenas/real-room.json",
+   "world_sha12": "35572d7656f3",
+   "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
+   "max_range_m": 3.0,
+   "converted": "2026-11-25T08:28:49-0600"
+  }
+ ],
+ "batch_config": "611d90a41329, 1b3ab20f9758, af676fc3b9e6",
+ "real_car": true,
+ "world_file": "configs/arenas/real-room.json",
+ "world_sha12": "35572d7656f3",
+ "dv_file": "configs/dv-real.json sha12 ea2cd23f9186 (differs from the frozen file in reject_range_above_m, sigma_bearing_deg, sigma_range_a_m, sigma_range_b_per_m)",
+ "created": "2026-11-25T08:28:49-0600",
+ "episodes": [
+  {
+   "seed": 1001,
+   "batch": "b2-real-01",
+   "episode": "ep01-a1",
+   "scenario": "S1",
+   "steps": 83,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "a0634d20de1a",
+   "note": "completed; batch halted after the end by odometry_scale",
+   "end_pose_source": "end_fix.pose_now"
+  },
+  {
+   "seed": 2001,
+   "batch": "b2-real-02",
+   "episode": "ep01-a1",
+   "scenario": "S1",
+   "steps": 56,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.05,
+   "truth_is_a_fix_last": true,
+   "sha12": "9d9bd32d42ec",
+   "note": null,
+   "end_pose_source": "manifest end_pose_map"
+  },
+  {
+   "seed": 2002,
+   "batch": "b2-real-02",
+   "episode": "ep02-a1",
+   "scenario": "S2",
+   "steps": 62,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.0582,
+   "truth_is_a_fix_last": true,
+   "sha12": "d8923f129248",
+   "note": null,
+   "end_pose_source": "manifest end_pose_map"
+  },
+  {
+   "seed": 3001,
+   "batch": "b2-real-03",
+   "episode": "ep01-a1",
+   "scenario": "S1",
+   "steps": 56,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.0501,
+   "truth_is_a_fix_last": false,
+   "sha12": "b4a943ac9234",
+   "note": null,
+   "end_pose_source": "manifest end_pose_map"
+  },
+  {
+   "seed": 3002,
+   "batch": "b2-real-03",
+   "episode": "ep02-a1",
+   "scenario": "S2",
+   "steps": 81,
+   "ended_by": "DONE",
+   "truth_sigma_xy_m_last": 0.0563,
+   "truth_is_a_fix_last": true,
+   "sha12": "3e528d2e659e",
+   "note": "completed; end circle interrupted by stall",
+   "end_pose_source": "last step's truth (no end circle)"
+  }
+ ],
+ "excluded": [
+  {
+   "episode": "ep03-a1",
+   "status": "halted",
+   "reason": "did not end normally: {'code': 'odometry_scale', 'detail': 'tag fixes land -28 % (+-8 %) of the distance from where the odometry puts the car (10.5 m driven, 37 fixes; limit 12 %): the encoder scale is wrong, or the tags are', 'time_utc': '2026-11-25T12:24:02Z', 'safety': True}",
+   "batch": "b2-real-02"
+  }
+ ],
+ "steps": 338
+}

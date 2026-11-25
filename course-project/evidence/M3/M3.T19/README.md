@@ -4,6 +4,10 @@ AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote the converter, t
 tests, ran the dry rehearsal below and wrote this record. No model was called and nothing was spent; no GPU server was
 started; nothing on the Spark was changed (the dry-run batch folders were copied to the Mac with `tar` over `ssh`).
 
+Update, 2026-11-25 afternoon: the real replays were launched on Xiaohui's approval. The set `real-2026-11-25`
+(b2-real-01, -02, -03: 5 episodes, 338 steps) and its results are in [`real-2026-11-25/`](real-2026-11-25/README.md).
+Opus 5.5 is done (US$23.90); Qwen3.8 and Gemma 4 are running on the Spark.
+
 Plan §3.6 work list 3.6 and report placeholder 5 (`report/PENDING.md`): per arm (B0, B2, Opus 5.5, Qwen3.8, Gemma 4)
 the median final-position error on the real episodes driven by B2, with its uncertainty, the same on the simulated
 rehearsal, and the difference.
