@@ -1,17 +1,21 @@
-"""Part 1 of the video: the simulated closed-loop episode, replayed from its logs.
+"""Part 1 of the video: the simulated closed-loop episode, replayed from its logs, with the car drawn driving.
 
-Sequence (durations from configs/demo_video.json, the time-lapse factor fitted to the part's target length):
-part card -> "how to read the screen" card -> the episode (one time-lapse factor, one step slowed down) ->
-result card -> (optional) the validator clip from the scripted test model, with its own card.
+Sequence (durations from configs/demo_video.json; the thinking time-lapse factor is fitted to the part's target
+length): part card -> "how to read the screen" card -> the episode -> result card -> (optional) the validator clip from
+the scripted test model, with its own card.
 
-Screen layout of the episode (1920 x 1080): header (0, 0, 1920 x 84); the room from above (0, 84, 1130 x 860);
-legend (0, 944, 1130 x 96); the step panel (1130, 84, 790 x 956); provenance line (0, 1040, 1920 x 40).
+The simulator executes a move in no time. To show the robot running, every executed move is drawn at its commanded
+speed limits (bm.move/1 v_max_mps, w_max_dps in the run log: 0.15 m/s, 45 deg/s), the car turning and driving
+smoothly between the logged poses (episode.load_episode draw_motion=True); that drawn motion plays at move_speed,
+the model's thinking at the fitted factor, one step (detail_step) at detail_speed, with pauses on that step's report
+and on the last one. The header shows both speeds and which one is playing; the clock is the harness's own (it stands
+still while a drawn move plays) and ends at the summary's total.
 
-The simulated move takes no time (kinsim): the car is drawn gliding from one logged pose to the next over
-glide_out_s of output time, and the provenance line says so. The clock in the header is the source time (the
-summed step durations the harness logged), so it ends at the summary's total.
+Screen layout (1920 x 1080): header (0, 0, 1920 x 84); the room from above (0, 84, 1130 x 860); legend (0, 944,
+1130 x 96); a close-up that follows the car (1130, 84, 390 x 292) and the simulated camera view (1530, 84, 390 x 292);
+the step panel (1130, 376, 790 x 664); provenance line (0, 1040, 1920 x 40).
 
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: wrote this part.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24/25: wrote this part.
 """
 import json
 import math
@@ -23,6 +27,7 @@ from . import cards as C
 from . import draw as D
 from . import episode as E
 from . import panels as P
+from . import simcam
 from . import timeline as TL
 from .topdown import TopDown
 
@@ -30,8 +35,20 @@ SIZE = (1920, 1080)
 HEADER = (0, 0, 1920, 84)
 TOP = (0, 84, 1130, 860)
 LEGEND = (0, 944, 1130, 96)
-PANEL = (1130, 84, 790, 956)
+CLOSE = (1130, 84, 390, 292)
+SIMCAM = (1530, 84, 390, 292)
+PANEL = (1130, 376, 790, 664)
 PROV = (0, 1040, 1920, 40)
+
+
+def car_wheels(root):
+    """The two drive wheels as rectangles in the car's frame, from configs/car.json (diameter, tyre width, outer
+    track), on the axle (x = 0, the base_link origin)."""
+    with open(os.path.join(root, "configs", "car.json"), encoding="utf-8") as fh:
+        v = json.load(fh)["values"]
+    d, w, track = v["wheel_diameter_m"]["value"], v["wheel_width_m"]["value"], v["track_outer_m"]["value"]
+    yc = (track - w) / 2.0
+    return [(-d / 2, yc - w / 2, d / 2, yc + w / 2), (-d / 2, -yc - w / 2, d / 2, -yc + w / 2)]
 
 
 def load_camera_json(root):
@@ -67,43 +84,64 @@ class SimPart:
         self.specs, self.have_car = card_specs, have_car
         cam = load_camera_json(root)
         rng = float((ep.run.get("env") or {}).get("max_range") or 3.0)
-        self.td = TopDown(ep.scene, ep.tags, TOP[2:], footprint=footprint,
-                          lens_x_m=float(cam["extrinsics"]["x_m"]), hfov_deg=float(cam["hfov_deg"]), range_m=rng,
-                          view_rot_deg=float(cfg.get("view_rot_deg", 180)))
-        ids = [t["id"] for t in ep.tags]
-        self.dup_ids = {i for i in ids if ids.count(i) > 1}
+        self.wheels = car_wheels(root)
+        self.cam_kw = dict(footprint=footprint, lens_x_m=float(cam["extrinsics"]["x_m"]),
+                           hfov_deg=float(cam["hfov_deg"]), range_m=rng, view_rot_deg=float(cfg.get("view_rot_deg", 180)),
+                           wheels=self.wheels)
+        self.td = TopDown(ep.scene, ep.tags, TOP[2:], **self.cam_kw)
+        from beaconmind.camera_model import load_camera
+        self.camera = load_camera(os.path.join(root, "configs", "camera.json"))
         cs = cfg["cards_s"]
         self.val_cfg = cfg.get("validator")
         self.val_seconds = 0.0
         if self.val_cfg:
             self.val_seconds = float(cs["validator"]) + len(self._validator_phases()) * float(self.val_cfg["phase_s"])
         self.fixed_s = float(cs["part"]) + float(cs["legend"]) + float(cs["result"]) + self.val_seconds
+        self.target_s = float(cfg["target_s"] if have_car else cfg.get("target_s_without_car", cfg["target_s"]))
         d = cfg.get("detail_step")
-        self.detail = (ep.steps[d].t0, ep.steps[d].t1) if d is not None else None
-        end_hold = float(cfg.get("end_hold_s", 0.0))
-        self.factor, pieces = TL.fit_sim_factor(ep.total_s, float(cfg["target_s"]) - self.fixed_s - end_hold, fps,
-                                                self.detail, float(cfg.get("detail_speed", 2.0)),
-                                                hold_s=float(cfg.get("detail_hold_s", 0.0)))
-        self.pieces = pieces + ([TL.hold(ep.total_s, end_hold)] if end_hold > 0 else [])
+        st = ep.steps[d] if d is not None else None
+        self.detail = (st.t0, st.t_report) if st else None
+        holds = []
+        if st and float(cfg.get("detail_hold_s", 0)) > 0:
+            holds.append((st.t_report, float(cfg["detail_hold_s"])))
+        if float(cfg.get("end_hold_s", 0)) > 0:
+            holds.append((ep.total_s, float(cfg["end_hold_s"])))
+        self.move_speed = float(cfg.get("move_speed", 1.0))
+        self.factor, self.pieces, fits = TL.fit_mixed(0.0, ep.total_s, ep.move_windows, self.target_s - self.fixed_s, fps,
+                                                     self.move_speed, self.detail, float(cfg.get("detail_speed", 2.0)),
+                                                     holds)
+        if not fits:
+            raise ValueError("the simulation part does not fit %.0f s: the drawn motion at x%g, the slowed step and the "
+                             "pauses alone are longer; raise move_speed or the target" % (self.target_s, self.move_speed))
         self.cues = {}
         self.n_frames = 0
 
+    def badge(self, piece):
+        """The header's speed badge: thinking and driving speeds, the playing one filled."""
+        if piece.hold_s is not None:
+            return [("paused", True, D.BELIEF)]
+        if piece.label == "detail":
+            return [("thinking %s" % TL.speed_badge(piece.speed), True, D.BELIEF),
+                    ("driving %s" % TL.speed_badge(self.move_speed), False, D.OK)]
+        return [("thinking %s" % TL.speed_badge(self.factor), piece.label == "think", D.WARN),
+                ("driving %s" % TL.speed_badge(self.move_speed), piece.label == "move", D.OK)]
+
     # -------------------------------------------------------------- one frame of the episode
-    def frame(self, t, speed, piece_label, badge=None):
+    def frame(self, t, piece):
         ep = self.ep
-        anim = float(self.cfg.get("glide_out_s", 0.3)) * speed
-        v = E.view_at(ep, t, anim_s=anim)
+        v = E.view_at(ep, t)
         step = ep.steps[v.k]
         img = Image.new("RGB", SIZE, D.BG)
+        detected = v.detected if not (v.moving and t > step.move_t0) else ()
         top = self.td.render(truth=v.truth, belief=v.belief, map_entries=v.map_entries, mapped=v.mapped,
-                             detected=v.detected if not (v.moving and t > step.move_t0) else (),
-                             trail_truth=v.trail_truth,
-                             trail_belief=v.trail_belief, start={"x_m": 0.0, "y_m": 0.0})
+                             detected=detected, trail_truth=v.trail_truth, trail_belief=v.trail_belief,
+                             start={"x_m": 0.0, "y_m": 0.0})
         img.paste(top, TOP[:2])
-        if piece_label in ("detail", "hold"):
+        label = piece.label if piece.hold_s is None else "hold"
+        if label in ("detail", "hold"):
             dr = ImageDraw.Draw(img)
-            if piece_label == "detail":
-                msg = "Slowed to %s: each tool call appears when the model made it" % TL.speed_badge(speed)
+            if label == "detail":
+                msg = "One step slowed to %s: each tool call appears when the model made it" % TL.speed_badge(piece.speed)
             elif t >= ep.total_s:
                 msg = "Paused on the last report: the model decided %s" % step.decision
             else:
@@ -113,30 +151,43 @@ class SimPart:
             x0, y0 = TOP[0] + (TOP[2] - w) // 2 - 12, 610
             D.rounded(dr, [x0, y0, x0 + w + 24, y0 + 42], fill=D.BELIEF, radius=8)
             dr.text((x0 + 12, y0 + 6), msg, font=f, fill=(255, 255, 255))
+        if v.truth:
+            img.paste(self._close_up(v, detected), CLOSE[:2])
+            img.paste(simcam.render(SIMCAM[2:], self.camera, v.truth, ep.scene["tags"], ep.scene["walls_polygon"],
+                                    detected, "simulated camera view (camera.json)"), SIMCAM[:2])
         err = None
         ref = step.estimate if v.report_shown else step.prior
         if step.truth and ref:
             err = E.pose_error_m(step.truth, ref) * 100
-        stats = [("real time", _mmss(t)), ("model cost", "US$%.2f" % v.cost),
+        stats = [("real time", _mmss(ep.logged_time(t))), ("model cost", "US$%.2f" % v.cost),
                  ("tags mapped", "%d of %d" % (len(v.mapped), len(ep.tags)))]
         if err is not None:
             stats.append(("pose error", "%.1f cm" % err))
-        slow = piece_label in ("detail", "hold")
-        if piece_label == "hold":
-            badge = "paused"
-        elif piece_label == "detail":
-            badge = "%s slow motion" % TL.speed_badge(speed) if speed >= 1.5 else "real time"
-        else:
-            badge = "%s time-lapse" % TL.speed_badge(speed)
-        hdr = P.header(HEADER[2:], ("SIMULATION", self.cfg.get("label", "")), stats, badge,
-                       D.BELIEF if slow else D.WARN)
+        hdr = P.header(HEADER[2:], ("SIMULATION", self.cfg.get("label", "")), stats, self.badge(piece),
+                       chip_gap=26)
         img.paste(hdr, HEADER[:2])
+        slow = label in ("detail", "hold")
         panel = P.step_panel(PANEL[2:], step, len(ep.steps), v.calls, v.report_shown,
-                             highlight=("PAUSED" if piece_label == "hold" else "SLOWED DOWN") if slow else None)
+                             highlight=("PAUSED" if label == "hold" else "SLOWED DOWN") if slow else None, compact=True)
         img.paste(panel, PANEL[:2])
-        ImageDraw.Draw(img).line([(PANEL[0], PANEL[1]), (PANEL[0], PANEL[1] + PANEL[3])], fill=D.RULE, width=2)
+        dr = ImageDraw.Draw(img)
+        dr.line([(PANEL[0], CLOSE[1]), (PANEL[0], PROV[1])], fill=D.RULE, width=2)
+        dr.line([(PANEL[0], PANEL[1]), (SIZE[0], PANEL[1])], fill=D.RULE, width=2)
         img.paste(self._legend(), LEGEND[:2])
         img.paste(self._prov(), PROV[:2])
+        return img
+
+    def _close_up(self, v, detected):
+        px_per_m = float(self.cfg.get("close_up_px_per_m", 380))
+        td = TopDown(self.ep.scene, self.ep.tags, CLOSE[2:], center=(v.truth["x_m"], v.truth["y_m"]),
+                     px_per_m=px_per_m, tag_labels=False, scale_bar="left", **self.cam_kw)
+        img = td.render(truth=v.truth, belief=v.belief, map_entries=v.map_entries, mapped=v.mapped, detected=detected,
+                        trail_truth=v.trail_truth, trail_belief=v.trail_belief, start={"x_m": 0.0, "y_m": 0.0})
+        dr = ImageDraw.Draw(img)
+        cap = "close-up following the car (to scale)"
+        f = D.sans(16)
+        dr.rectangle([0, 0, D.text_w(dr, cap, f) + 16, 24], fill=(16, 18, 22))
+        dr.text((8, 3), cap, font=f, fill=(235, 235, 235))
         return img
 
     def _legend(self):
@@ -167,7 +218,7 @@ class SimPart:
         ep = self.ep
         k = int(self.cfg.get("legend_step", self.cfg.get("detail_step") or 0))
         s = ep.steps[k]
-        spec["image"] = self.frame(s.t_report + 0.01, float(self.factor), "timelapse")
+        spec["image"] = self.frame(s.t_report, TL.Piece(s.t0, s.t_report, 2.0, "detail"))
         return C.render_card(spec)
 
     def layout(self):
@@ -211,8 +262,7 @@ class SimPart:
                 enc.write(self.legend_card(), n)
             elif kind == "episode":
                 for _i, w, j in TL.frame_times(self.pieces, self.fps):
-                    p = self.pieces[j]
-                    enc.write(self.frame(w, p.speed, p.label, TL.piece_badge(p)))
+                    enc.write(self.frame(w, self.pieces[j]))
             elif kind == "validator":
                 for img, m in self.validator_frames():
                     enc.write(img, m)
@@ -235,6 +285,13 @@ class SimPart:
             if E.mapped_tags(s.report.get("map"), ep.tags) >= final:
                 out["sim.mapped-all"] = s.t_report
                 break
+        fwd = [s for s in ep.steps if s.move and str(s.move.get("action", "")).startswith("FORWARD")]
+        if fwd:
+            out["sim.first-leg"] = fwd[0].move_t0
+            d = self.cfg.get("detail_step")
+            later = [s for s in fwd if d is not None and s.k > d]
+            if later:
+                out["sim.leg"] = later[0].move_t0
         out["sim.done"] = ep.steps[-1].t_report
         return out
 
@@ -262,8 +319,11 @@ class SimPart:
         scene["drive_polygon"] = kr.inset_polygon(scene["walls_polygon"], limit)
         tags = [{"tag": t["tag"], "id": t["id"], "x_m": t["x_m"], "y_m": t["y_m"], "normal_deg": t["normal_deg"]}
                 for t in scene["tags"]]
-        td = TopDown(scene, tags, TOP[2:], footprint=self.td.footprint, view_rot_deg=90.0, margin_px=130)
+        td = TopDown(scene, tags, TOP[2:], footprint=self.td.footprint, view_rot_deg=90.0, margin_px=130,
+                     wheels=self.wheels)
         phase_n = _frames(self.val_cfg["phase_s"], self.fps)
+        # an accepted move is drawn in real time at the commanded limits of the episode (the trace logs no command)
+        v_max, w_max = float(self.nums["sim.v-max"]), float(self.nums["sim.w-max"])
         first = min(self.val_cfg["steps"])
         trail = []
         for s0 in self._trace["steps"]:                    # the path driven before the clip starts
@@ -278,9 +338,13 @@ class SimPart:
             pose = {"x_m": x, "y_m": y, "theta_deg": th}
             nxt = self._next_truth(st)
             accepted = kind == "call" and m["tool_result"] == "done" and m.get("validator_ok")
+            dur = 0.0
+            if accepted and nxt:
+                dur = (math.hypot(nxt["x_m"] - pose["x_m"], nxt["y_m"] - pose["y_m"]) / v_max
+                       + abs(E.wrap_deg(nxt["theta_deg"] - pose["theta_deg"])) / w_max)
             for i in range(phase_n):
-                f = (i + 0.5) / phase_n
-                cur = E.interp_pose(pose, nxt, min(1.0, f / 0.4)) if accepted and nxt else pose
+                el = (i + 0.5) / self.fps
+                cur = E.interp_pose(pose, nxt, min(1.0, el / dur)) if dur > 0 else pose
                 img = Image.new("RGB", SIZE, D.BG)
                 top = td.render(truth=cur, trail_truth=trail + [cur], show_fov=False)
                 if kind == "call" and not accepted:
@@ -288,7 +352,7 @@ class SimPart:
                 img.paste(top, TOP[:2])
                 hdr = P.header(HEADER[2:], ("SCRIPTED TEST", "a scripted test model, not a real model"),
                                [("arena", "study square, seed %d" % seed), ("step", str(st["step"]))],
-                               "no time-lapse", D.BAD)
+                               "real time", D.BAD)
                 img.paste(hdr, HEADER[:2])
                 img.paste(self._validator_panel(st, kind, m, done_before), PANEL[:2])
                 img.paste(self._val_legend(), LEGEND[:2])

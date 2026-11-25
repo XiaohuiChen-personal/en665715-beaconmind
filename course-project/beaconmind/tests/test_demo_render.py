@@ -51,13 +51,14 @@ def test_topdown_draws_the_car_where_the_pose_is():
     img = td.render(truth={"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}, mapped={0}, show_fov=False)
     assert img.size == (400, 400)
     x, y = td.px_out(-0.08, 0.0)                     # inside the body, behind the white heading arrow
-    assert all(abs(a - b) <= 12 for a, b in zip(img.getpixel((int(x), int(y))), D.TRUTH))   # scaled down: near
+    assert all(abs(a - b) <= 12 for a, b in zip(img.getpixel((int(x), int(y))), D.CAR_BODY))   # scaled down: near
     tx, ty = td.px_out(1.25, 0.0)
     assert img.getpixel((int(tx), int(ty))) == D.MAPPED
 
 
 def test_header_drops_chips_that_do_not_fit():
-    img = P.header((1920, 84), ("SIMULATION", "a label"), [("real time", "07:00"), ("cost", "US$1.00")], "\u00d722 time-lapse")
+    img = P.header((1920, 84), ("SIMULATION", "a label"), [("real time", "07:00"), ("cost", "US$1.00")],
+                   [("thinking \u00d722", False, D.WARN), ("driving \u00d72", True, D.OK)])
     assert img.size == (1920, 84)
     small = P.header((700, 84), ("SIMULATION", "a long label for a narrow bar"),
                      [("real time", "07:00"), ("model cost", "US$1.00"), ("tags mapped", "14 of 20")], "\u00d722")
@@ -163,7 +164,9 @@ def test_the_plan_fits_the_simulation_target():
     b = _sim_numbers()
     p = b.plan()
     sim = [s for s in p["sequence"] if s["id"] == "sim"][0]
-    assert sim["dur_s"] <= b.cfg["sim"]["target_s"] + 1e-9
+    assert sim["dur_s"] <= b.cfg["sim"]["target_s_without_car"] + 1e-9           # no car part in this build
+    lo, hi = b.length_bounds()
+    assert (lo, hi) == (180.0, 300.0) and p["length_problem"] is None and lo <= p["total_s"] <= hi
     cues = p["cues"]
     assert cues["title"] == 0.0 and cues["sim.part"] == sim["start_s"]
     assert cues["sim.episode"] < cues["sim.detail"] < cues["sim.detail.end"] < cues["sim.result"]

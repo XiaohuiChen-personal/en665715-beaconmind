@@ -1,15 +1,16 @@
 session          data/real/20261118-015528-calibration-distance-check
 camera_frames    57
 output           data/video/car-test/car-test-10s.mp4
-frames           274
-think_speed      2000
-fits             False
+frames           242
+think_speed      5
+move_speed       2.0
+fits             True
 clock_readings   ['1.0=1794988526.6', '16.6=1794988542.2']
 fitted_offset    1794988525.6
 true_offset      1794988525.6260402
 fitted_rate      1.0
-checked_frames   25
-max_error_s      0.04
-mean_error_s     0.032400000000000005
-max_error_by_piece_s {'move': 0.04, 'think': 0.03}
-pieces           [(1.62, 'think', 2000.0), (1.2, 'move', 1.0), (1.62, 'think', 2000.0), (1.2, 'move', 1.0), (1.62, 'think', 2000.0), (1.2, 'move', 1.0), (1.62, 'think', 2000.0), (1.2, 'move', 1.0)]
+checked_frames   19
+max_error_s      0.05
+mean_error_s     0.028947368421052635
+max_error_by_piece_s {'move': 0.05, 'think': 0.04}
+pieces           [(1.62, 'think', 5.0), (1.2, 'move', 2.0), (1.62, 'think', 5.0), (1.2, 'move', 2.0), (1.62, 'think', 5.0), (1.2, 'move', 2.0), (1.62, 'think', 5.0), (1.2, 'move', 2.0)]

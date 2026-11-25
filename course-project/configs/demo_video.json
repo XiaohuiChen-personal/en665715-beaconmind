@@ -1,5 +1,5 @@
 {
- "$comment": "AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: settings of the demo video (plan M6.T11-T16 as re-scoped in plan/README.md section 3.6: rendered from the experiment harness's logs, no ROSA). Durations are parameters. ASSUMPTION (no course length requirement is known on 2026-11-24): the whole video about 3-4 minutes, the simulation part about 2 minutes, the car part about 1 minute once it exists. Paths are relative to course-project/. Outputs go to out_dir, which is git-ignored (course-project/data/).",
+ "$comment": "AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24/25: settings of the demo video (plan M6.T11-T16 as re-scoped in plan/README.md section 3.6: rendered from the experiment harness's logs, no ROSA). LENGTH: course requirement (Canvas, Presentation Timing), as reported by Xiaohui on 2026-11-24: a pre-recorded demo of 3 to 5 minutes; length_s is a hard check on the assembled video (the assembly refuses anything outside it), aiming at about 4 minutes. With the car part: simulation about 2:00, car about 1:30, cards the rest; without it the simulation part takes target_s_without_car so the video stays inside the bound. Durations are parameters. Paths are relative to course-project/; outputs go to out_dir (git-ignored).",
  "schema": "bm.demo_video/1",
  "fps": 25,
  "width": 1920,
@@ -11,49 +11,96 @@
  "narration_audio": null,
  "words_per_min": 130,
  "sequence": [
-  {"id": "title", "kind": "card", "seconds": 6},
-  {"id": "idea", "kind": "card", "seconds": 14},
-  {"id": "sim", "kind": "part"},
-  {"id": "car", "kind": "part", "optional": true},
-  {"id": "closing", "kind": "card", "seconds": 12},
-  {"id": "disclosure", "kind": "card", "seconds": 10}
+  {
+   "id": "title",
+   "kind": "card",
+   "seconds": 6
+  },
+  {
+   "id": "idea",
+   "kind": "card",
+   "seconds": 14
+  },
+  {
+   "id": "sim",
+   "kind": "part"
+  },
+  {
+   "id": "car",
+   "kind": "part",
+   "optional": true
+  },
+  {
+   "id": "closing",
+   "kind": "card",
+   "seconds": 12
+  },
+  {
+   "id": "disclosure",
+   "kind": "card",
+   "seconds": 10
+  }
  ],
  "sim": {
   "run_dir": "data/closed-loop/20261118-room-final/claude-opus-5-5",
   "evidence_summary": "evidence/M2/M2.T7/closed-loop/runs-final/claude-opus-5-5/seed_3000.summary.json",
-  "label": "Claude Opus 5.5 drives, closed loop",
-  "target_s": 120,
-  "cards_s": {"part": 8, "legend": 12, "result": 14, "validator": 7},
+  "label": "Kinematic simulator (kinsim) · Claude Opus 5.5 drives",
+  "target_s": 130,
+  "cards_s": {
+   "part": 8,
+   "legend": 14,
+   "result": 14,
+   "validator": 7
+  },
   "detail_step": 23,
   "detail_speed": 2,
   "detail_hold_s": 5,
   "end_hold_s": 3,
   "legend_step": 23,
-  "glide_out_s": 0.3,
   "view_rot_deg": 180,
-  "provenance": "Kinematic simulator of the real room · {{sim.tags}} tags at nominal positions · one episode, noise seed {{sim.noise-seed}}, {{sim.date}} · the simulated move takes no time: the car is drawn gliding between logged poses · replayed from the logs",
+  "provenance": "kinsim (kinematic simulator) · {{sim.tags}} nominal tag positions · one episode, noise seed {{sim.noise-seed}}, {{sim.date}} · moves drawn at the commanded {{sim.v-max}} m/s and {{sim.w-max}}°/s (the simulator moves instantly) · replayed from the logs",
   "validator": {
    "trace": "evidence/M2/M2.T7/closed-loop/scripted_validator_trace.json",
    "seed": 1010,
-   "steps": [4, 5, 6],
+   "steps": [
+    4,
+    5,
+    6
+   ],
    "phase_s": 2.6,
    "provenance": "Scripted test model (tests/test_closed_loop.py), no network, study square seed 1010 · the real harness, validator and move checks · not a real model"
-  }
+  },
+  "target_s_without_car": 180,
+  "move_speed": 2,
+  "close_up_px_per_m": 380
  },
  "car": {
-  "target_s": 70,
-  "move_speed": 1.0,
-  "glide_out_s": 0.0,
+  "target_s": 85,
   "inputs": null,
   "$inputs_example": {
    "recorder_session": "data/real/<YYYYmmdd-HHMMSS>-<label>",
    "run_dir": "data/batches/<label>/episodes/<episode id> (or a closed_loop_run.py output folder)",
    "backend_steps": "<run_dir>/backend/steps.jsonl (optional)",
    "phone_video": "data/real/<session>/phone/<clip>.mov",
-   "clock_readings": ["<phone seconds>=<epoch shown by tools/session_clock.py>", "a second reading near the end"],
+   "clock_readings": [
+    "<phone seconds>=<epoch shown by tools/session_clock.py>",
+    "a second reading near the end"
+   ],
    "world": "configs/arenas/<the surveyed world file>.json",
    "start_pose_world": "x,y,theta of the episode's start (the batch's start scan)",
    "label": "Claude Opus 5.5 drives the real car"
-  }
+  },
+  "card_s": 6,
+  "move_speeds": [
+   1,
+   2,
+   3,
+   4
+  ]
+ },
+ "length_s": {
+  "min": 180,
+  "max": 300,
+  "target": 240
  }
 }

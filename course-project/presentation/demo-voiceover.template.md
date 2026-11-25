@@ -24,24 +24,30 @@ map, and a validator checks every move.
 First, a simulation of my room: one episode in which Claude Opus 5.5 chose every move.
 
 @@ sim.legend
-Left: the room from above. Black is the true pose, blue is what the model believes. Right: each step, as the
-harness logged it.
+Left, the room from above: the grey car is the truth, the blue outline what the model believes. Right, a close-up,
+its camera view, and each logged step.
 
 @@ sim.episode
-The model starts by turning in place, scanning for tags.
+The model starts by turning in place, scanning for tags. The simulator moves the car instantly, so each move is drawn
+at its commanded speed. Thinking plays {{sim.factor}} times faster, driving {{sim.move-speed}} times.
 
 @@ sim.mapped-all
-Green squares: tags it has mapped; its blue estimates sit on the tags. This runs {{sim.factor}} times faster than
-real time.
+Green squares are mapped tags, and its blue estimates sit right on them. Yellow marks what the camera sees.
+
+@@ sim.first-leg
+After its first scan it drives a short leg toward open floor, turning and driving smoothly, then scans again.
 
 @@ sim.detail
 Now one step at {{sim.detail-speed}} times real speed. It composes odometry, matches each detection to a known
 beacon, then fixes its position.
 
 @@ sim.detail.end
-It writes its report: the decision, its pose after the position fix, and a one-line note. Both move checks allow the turn, and
-only then is it executed. From here it keeps scanning; after two scans with no new beacon, its own rules end the
-exploration. Notice the blue path staying on the black one.
+It writes its report: the decision, its pose after the position fix, and a one-line note. Both move checks allow the
+turn, and only then is it executed.
+
+@@ sim.leg
+It keeps alternating legs and scans. Notice the blue path staying on the black one: its believed pose follows the
+true pose. After two scans with no new beacon, its own rules end the exploration.
 
 @@ sim.result
 It stopped by itself after {{cl.opus.steps}} steps, with {{cl.opus.tags-found}} of {{cl.n-tags}} tags mapped and no

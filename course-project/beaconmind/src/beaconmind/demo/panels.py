@@ -126,7 +126,7 @@ def validator_lines(step):
 
 # ---------------------------------------------------------------- header
 
-def header(size, left, stats, badge, badge_colour=D.WARN):
+def header(size, left, stats, badge, badge_colour=D.WARN, chip_gap=34):
     """The top bar: a pill and a label on the left, stat chips (small label over a bold value), the speed badge on
     the right. A chip that does not fit is left out, from the last one backwards."""
     img, dr = D.canvas(size, D.HEADER_BG)
@@ -142,17 +142,27 @@ def header(size, left, stats, badge, badge_colour=D.WARN):
     if label:
         dr.text((x, (H - 32) // 2), label, font=f_label, fill=D.HEADER_INK)
         x += D.text_w(dr, label, f_label) + 34
-    f_badge = D.sans(28, "bold")
-    bw = D.text_w(dr, badge, f_badge) + 36
-    D.rounded(dr, [W - 24 - bw, (H - 50) // 2, W - 24, (H + 50) // 2], fill=badge_colour, radius=10)
-    dr.text((W - 24 - bw + 18, (H - 36) // 2), badge, font=f_badge, fill=(255, 255, 255))
-    right_edge = W - 24 - bw - 30
+    # the badge: one text, or segments [(text, active, colour)] with the active one filled
+    segs = [(badge, True, badge_colour)] if isinstance(badge, str) else list(badge)
+    f_badge = D.sans(26, "bold")
+    xr = W - 24
+    for text, active, colour in reversed(segs):
+        bw = D.text_w(dr, text, f_badge) + 30
+        box = [xr - bw, (H - 48) // 2, xr, (H + 48) // 2]
+        if active:
+            D.rounded(dr, box, fill=colour, radius=10)
+            dr.text((xr - bw + 15, (H - 34) // 2), text, font=f_badge, fill=(255, 255, 255))
+        else:
+            D.rounded(dr, box, fill=None, outline=(120, 145, 190), radius=10, width=2)
+            dr.text((xr - bw + 15, (H - 34) // 2), text, font=f_badge, fill=(140, 165, 205))
+        xr -= bw + 10
+    right_edge = xr - 20
     f_small, f_val = D.sans(16, "bold"), D.sans(28, "bold")
     chips = []
     for name, value in stats:
         cw = max(D.text_w(dr, name.upper(), f_small), D.text_w(dr, value, f_val))
         chips.append((name.upper(), value, cw))
-    gap = 34
+    gap = chip_gap
     while chips and sum(c[2] for c in chips) + gap * (len(chips) - 1) > right_edge - x:
         chips.pop()
     total = sum(c[2] for c in chips) + gap * max(0, len(chips) - 1)
@@ -166,16 +176,17 @@ def header(size, left, stats, badge, badge_colour=D.WARN):
 
 # ---------------------------------------------------------------- the step panel
 
-def step_panel(size, step, n_steps, view_calls, report_shown, highlight=False):
+def step_panel(size, step, n_steps, view_calls, report_shown, highlight=False, compact=False):
     W, H = size
     img, dr = D.canvas(size, D.PANEL)
-    pad, y = 26, 20
-    f_title = D.sans(34, "bold")
-    f_sec = D.sans(20, "bold")
-    f = D.sans(24)
-    f_mono = D.mono(22)
-    f_it = D.sans(23, "italic")
-    lh = D.line_h(f, 1.22)
+    pad, y = 26, (12 if compact else 20)
+    f_title = D.sans(30 if compact else 34, "bold")
+    f_sec = D.sans(18 if compact else 20, "bold")
+    f = D.sans(20 if compact else 24)
+    f_mono = D.mono(18 if compact else 22)
+    f_it = D.sans(19 if compact else 23, "italic")
+    lh = D.line_h(f, 1.12 if compact else 1.22)
+    note_max = 3 if compact else 5
     title = "Step %d" % step.k
     dr.text((pad, y), title, font=f_title, fill=D.INK)
     tw = D.text_w(dr, title, f_title)
@@ -187,25 +198,26 @@ def step_panel(size, step, n_steps, view_calls, report_shown, highlight=False):
         hw = D.text_w(dr, highlight, fh) + 28
         D.rounded(dr, [pad + tw + 18, y + 5, pad + tw + 18 + hw, y + 41], fill=D.BELIEF, radius=8)
         dr.text((pad + tw + 32, y + 11), highlight, font=fh, fill=(255, 255, 255))
-    y += 56
+    y += 46 if compact else 56
+    gap = 4 if compact else 10
 
     def section(title):
         nonlocal y
         dr.text((pad, y), title.upper(), font=f_sec, fill=D.MUTED)
-        y += 29
+        y += 26 if compact else 29
         dr.line([(pad, y - 3), (W - pad, y - 3)], fill=D.RULE, width=1)
-        y += 6
+        y += 4 if compact else 6
 
     section("1  Observation given to the model")
     for line in obs_lines(step.observation):
         for w in D.wrap(dr, line, f, W - 2 * pad - 10):
             dr.text((pad + 10, y), w, font=f, fill=D.INK)
             y += lh
-    y += 10
+    y += gap
     section("2  Tool calls the model made")
     name_w = D.text_w(dr, "exploration_summary", f_mono) + 16
     shown = view_calls
-    max_rows = 9
+    max_rows = 8 if compact else 9
     if len(shown) > max_rows:
         dr.text((pad + 10, y), "… %d earlier calls" % (len(shown) - max_rows + 1), font=f, fill=D.MUTED)
         y += lh
@@ -222,7 +234,7 @@ def step_panel(size, step, n_steps, view_calls, report_shown, highlight=False):
     if not view_calls:
         dr.text((pad + 10, y), "thinking …", font=f_it, fill=D.MUTED)
         y += lh
-    y += 10
+    y += gap
     section("3  Report the model wrote")
     if report_shown:
         rep = step.report
@@ -241,8 +253,8 @@ def step_panel(size, step, n_steps, view_calls, report_shown, highlight=False):
         if step.note:
             y += 4
             note = D.wrap(dr, "“" + step.note + "”", f_it, W - 2 * pad - 24)
-            if len(note) > 5:
-                note = note[:5]
+            if len(note) > note_max:
+                note = note[:note_max]
                 note[-1] = D.ellipsize(dr, note[-1] + " …", f_it, W - 2 * pad - 24)
             dr.line([(pad + 10, y + 2), (pad + 10, y + len(note) * lh - 4)], fill=D.BELIEF, width=4)
             for w in note:
@@ -251,7 +263,7 @@ def step_panel(size, step, n_steps, view_calls, report_shown, highlight=False):
     else:
         dr.text((pad + 10, y), "not written yet", font=f_it, fill=D.MUTED)
         y += lh
-    y += 10
+    y += gap
     section("4  Validator and move")
     if report_shown:
         for ok, line in validator_lines(step):
@@ -288,7 +300,7 @@ def legend(size, rows):
 
 def _icon(dr, kind, x, y):
     if kind == "truth":
-        dr.polygon([(x, y + 4), (x + 30, y + 13), (x, y + 22)], fill=D.TRUTH)
+        dr.polygon([(x, y + 4), (x + 30, y + 13), (x, y + 22)], fill=D.CAR_BODY)
     elif kind == "belief":
         dr.polygon([(x, y + 4), (x + 30, y + 13), (x, y + 22)], outline=D.BELIEF, width=3)
     elif kind == "path_truth":

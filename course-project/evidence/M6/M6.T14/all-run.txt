@@ -1,8 +1,9 @@
-sim part: data/video/parts/sim.mp4, 2994 frames, 119.8 s of video, rendered in 193 s
+sim part: data/video/parts/sim.mp4, 4391 frames, 175.6 s of video, rendered in 314 s
 car part: no inputs configured (configs/demo_video.json car.inputs is null): left out
 cards: closing, disclosure, idea, title
-assembled: data/video/BeaconMind-demo-silent.mp4, 161.76 s, 4044 frames (planned 4044)
+assembled: data/video/BeaconMind-demo-silent.mp4, 217.64 s, 5441 frames (planned 5441)
+length check: 217.64 s is inside 180-300 s
 no narration audio configured (narration_audio is null): the silent video is the output
-narration: presentation/demo-voiceover.md, 13 blocks, over budget: none
-stills: 22 in data/video/stills
-python3 tools/demo_video.py all  274.65s user 18.29s system 144% cpu 3:22.05 total
+narration: presentation/demo-voiceover.md, 15 blocks, over budget: none
+stills: 24 in data/video/stills
+python3 tools/demo_video.py all  408.03s user 22.29s system 133% cpu 5:22.91 total

@@ -132,6 +132,11 @@ def episode_numbers(nums, ep, evidence_summary_path, prefix="sim"):
     nums.put(prefix + ".final-pos-cm", "%.1f" % (100 * (s.get("pose") or {}).get("final_pos_m", float("nan"))),
              "seed_%d.summary.json pose final_pos_m (m to cm)" % ep.seed)
     nums.put(prefix + ".turns", str(sum(len(st.turn_ends) for st in ep.steps)), "seed_%d.jsonl turns, counted" % ep.seed)
+    cmds = [(st.move or {}).get("command") or {} for st in ep.steps if st.move]
+    for key, name, fmt in (("v_max_mps", "v-max", "%.2f"), ("w_max_dps", "w-max", "%.0f")):
+        vals = {c.get(key) for c in cmds if c.get(key) is not None}
+        if len(vals) == 1:
+            nums.put(prefix + "." + name, fmt % vals.pop(), "seed_%d.jsonl executed_move command %s" % (ep.seed, key))
     return nums
 
 

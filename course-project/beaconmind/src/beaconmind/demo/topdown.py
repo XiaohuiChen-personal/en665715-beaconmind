@@ -37,7 +37,8 @@ def convex_hull(points):
 
 class TopDown:
     def __init__(self, scene, tags, size, footprint=None, lens_x_m=0.12, hfov_deg=None, range_m=None,
-                 view_rot_deg=180.0, margin_px=58, ss=2, labels=None, scale_bar="left"):
+                 view_rot_deg=180.0, margin_px=58, ss=2, labels=None, scale_bar="left", wheels=None,
+                 center=None, px_per_m=None, tag_labels=True):
         self.scene, self.tags, self.size, self.ss = scene, tags, tuple(size), ss
         self.W, self.H = self.size[0] * ss, self.size[1] * ss
         self.rot = math.radians(view_rot_deg)
@@ -54,6 +55,13 @@ class TopDown:
         self.scale = min((self.W - 2 * m) / (u1 - u0), (self.H - 2 * m) / (v1 - v0))
         self.ox = (self.W - self.scale * (u1 - u0)) / 2 - self.scale * u0
         self.oy = (self.H - self.scale * (v1 - v0)) / 2 + self.scale * v1
+        if px_per_m:                                   # a fixed zoom, centred on `center` (a close-up)
+            self.scale = px_per_m * ss
+            cu, cv = self._rot(*(center or (0.0, 0.0)))
+            self.ox = self.W / 2 - self.scale * cu
+            self.oy = self.H / 2 + self.scale * cv
+        self.wheels = wheels or []                    # [(x0, y0, x1, y1)] rectangles in the car's frame
+        self.tag_labels = tag_labels
         self._bg = None
         self._mask = None
 
@@ -100,15 +108,18 @@ class TopDown:
             name = ob.get("name", "")
             dr.text((cx - D.text_w(dr, name, f) / 2, cy - 11 * ss), name, font=f, fill=D.MUTED)
         dr.line(walls + [walls[0]], fill=D.WALL, width=5 * ss, joint="curve")
-        # scale bar: 1 m
+        # scale bar: the longest of 1 m, 0.5 m, 0.2 m, 0.1 m that takes at most 40 % of the width
+        bar_m = next((m for m in (1.0, 0.5, 0.2, 0.1) if m * self.scale <= 0.4 * self.W), 0.1)
+        bar = bar_m * self.scale
         x0, y0 = 22 * ss, self.H - 24 * ss
         if self.scale_bar == "right":
-            x0 = self.W - self.scale - 80 * ss
-        dr.line([(x0, y0), (x0 + self.scale, y0)], fill=D.INK, width=3 * ss)
-        for xx in (x0, x0 + self.scale):
+            x0 = self.W - bar - 80 * ss
+        dr.line([(x0, y0), (x0 + bar, y0)], fill=D.INK, width=3 * ss)
+        for xx in (x0, x0 + bar):
             dr.line([(xx, y0 - 7 * ss), (xx, y0 + 7 * ss)], fill=D.INK, width=3 * ss)
         f = D.sans(16 * ss)
-        dr.text((x0 + self.scale + 10 * ss, y0 - 11 * ss), "1 m", font=f, fill=D.INK)
+        dr.text((x0 + bar + 10 * ss, y0 - 11 * ss), ("%g m" % bar_m) if bar_m >= 1 else "%d cm" % round(bar_m * 100),
+                font=f, fill=D.INK)
         for text, (x, y) in self.labels.items():
             p = self.px(x, y)
             dr.text((p[0] - D.text_w(dr, text, f) / 2, p[1] - 10 * ss), text, font=f, fill=D.MUTED)
@@ -170,10 +181,11 @@ class TopDown:
             # the label goes outside the wall: against the tag's normal (which points into the room)
             a = math.radians(t.get("normal_deg") or 0.0)
             ox, oy = self.px(t["x_m"] - 0.21 * math.cos(a), t["y_m"] - 0.21 * math.sin(a))
-            label = str(t["id"])
-            w = D.text_w(dr, label, f_id)
-            dr.text((ox - w / 2, oy - 11 * ss), label, font=f_id,
-                    fill=D.MAPPED if t["tag"] in mapped else D.MUTED)
+            if self.tag_labels:
+                label = str(t["id"])
+                w = D.text_w(dr, label, f_id)
+                dr.text((ox - w / 2, oy - 11 * ss), label, font=f_id,
+                        fill=D.MAPPED if t["tag"] in mapped else D.MUTED)
         # the agent's map
         for b in map_entries or []:
             try:
@@ -190,12 +202,17 @@ class TopDown:
             dr.ellipse([x - r, y - r, x + r, y + r], outline=D.INK, width=3 * ss)
             dr.line([(x - 1.6 * r, y), (x + 1.6 * r, y)], fill=D.INK, width=2 * ss)
             dr.line([(x, y - 1.6 * r), (x, y + 1.6 * r)], fill=D.INK, width=2 * ss)
-        # car: truth filled, belief outlined on top of it
+        # car: truth filled (body, wheels, heading arrow, lens), belief outlined on top of it
         if truth:
             poly = self.pose_poly(truth, self.footprint)
-            dr.polygon(poly, fill=D.TRUTH, outline=(255, 255, 255), width=2 * ss)
+            dr.polygon(poly, fill=D.CAR_BODY, outline=(255, 255, 255), width=2 * ss)
+            for x0, y0, x1, y1 in self.wheels:
+                dr.polygon(self.pose_poly(truth, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]), fill=D.CAR_WHEEL)
             arrow = self.pose_poly(truth, [(0.15, 0.0), (-0.04, 0.042), (-0.04, -0.042)])   # slender: clearly a heading
             dr.polygon(arrow, fill=(255, 255, 255))
+            lx = self.lens_x
+            dr.polygon(self.pose_poly(truth, [(lx - 0.012, -0.012), (lx + 0.012, -0.012), (lx + 0.012, 0.012),
+                                              (lx - 0.012, 0.012)]), fill=D.SEEN)
         if belief:
             poly = self.pose_poly(belief, self.footprint)
             dr.polygon(poly, outline=D.BELIEF, width=4 * ss)

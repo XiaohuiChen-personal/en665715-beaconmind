@@ -19,6 +19,10 @@ TAGS = [{"tag": 0, "id": 3, "x_m": 1.0, "y_m": 0.0, "normal_deg": 180.0},
         {"tag": 2, "id": 7, "x_m": 0.0, "y_m": 1.0, "normal_deg": -90.0}]
 
 
+CMD = {"FORWARD_25": {"distance_m": 0.25, "angle_deg": 0.0, "v_max_mps": 0.15, "w_max_dps": 45.0},
+       "TURN_LEFT_30": {"distance_m": 0.0, "angle_deg": 30.0, "v_max_mps": 0.15, "w_max_dps": 45.0}}
+
+
 def _row(k, truth, est, prior, calls, uses, secs, cost, move, mapping, decision=None, end=None):
     turns = [{"seconds": s, "tool_uses": u, "cost_usd": c} for s, u, c in zip(secs, uses, cost)]
     rep = {"step": k, "pose": est, "pose_source": "odometry", "map": mapping, "decision": decision or move,
@@ -28,7 +32,7 @@ def _row(k, truth, est, prior, calls, uses, secs, cost, move, mapping, decision=
                                                                             "bearing_deg": 0.0}]},
             "raw": {"detections": [{"det": 0, "id": 3, "_tag": 0}]}, "report": rep, "next_prev": rep,
             "decision": decision or move, "fallback": False,
-            "executed_move": {"action": move, "result": "done"} if move else None,
+            "executed_move": {"action": move, "result": "done", "command": CMD[move]} if move else None,
             "move_calls": [{"action": move, "tool_result": "done", "validator_ok": True}] if move else [],
             "violations": [], "episode_end": end}
 
@@ -174,3 +178,18 @@ def test_the_simulated_episode_agrees_with_its_summary():
     rows = E.check_against_summary(ep)
     assert [w for w, *_x, ok in rows if not ok] == []
     assert {w for w, *_x in rows} >= {"steps", "tags mapped within 0.30 m", "cost (US$)", "time total (s)"}
+
+
+def test_drawn_motion_takes_the_commanded_time_and_leaves_the_clock(run):
+    assert E.move_seconds({"command": CMD["TURN_LEFT_30"]}) == pytest.approx(30.0 / 45.0)
+    assert E.move_seconds({"command": CMD["FORWARD_25"]}) == pytest.approx(0.25 / 0.15)
+    assert E.move_seconds({"action": "TURN_LEFT_30"}) == 0.0
+    ep = E.load_episode(str(run), draw_motion=True)
+    turn, fwd = 30.0 / 45.0, 0.25 / 0.15
+    assert ep.move_windows == [pytest.approx((10.0, 10.0 + turn)), pytest.approx((18.0 + turn, 18.0 + turn + fwd))]
+    assert ep.total_s == pytest.approx(21.0 + turn + fwd)
+    assert ep.logged_time(ep.total_s) == pytest.approx(21.0)                 # the harness's own clock
+    assert ep.logged_time(10.0 + turn / 2) == pytest.approx(10.0)             # stands still during a drawn move
+    v = E.view_at(ep, 10.0 + turn / 2)                                        # the car is half-way through its turn
+    assert v.k == 0 and v.moving and v.truth["theta_deg"] == pytest.approx(15.0)
+    assert all(ok for *_x, ok in E.check_against_summary(ep))

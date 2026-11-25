@@ -93,6 +93,14 @@ class Episode:
     def total_s(self):
         return self.steps[-1].t1 if self.steps else 0.0
 
+    def logged_time(self, t):
+        """Source time t without the drawn motion before it (simulator: the harness's own clock; the clock stands
+        still while a drawn move plays). On the epoch time base it is the time since the episode's start."""
+        if self.time_base == "epoch":
+            return t - (self.epoch0 or 0.0)
+        drawn = sum(max(0.0, min(t, b) - a) for a, b in self.move_windows if a < t)
+        return t - drawn
+
     def step_at(self, t):
         """Index of the step whose interval holds source time t (clamped to the first and last step)."""
         lo, hi = 0, len(self.steps) - 1
@@ -169,8 +177,23 @@ def place_calls(calls, turns, t0, t_end):
     return out
 
 
-def load_episode(run_dir, seed=None, time_base="steps", backend_steps=None):
-    """Episode of one run folder. time_base "steps" (simulator) or "epoch" (real car; needs the epoch logs)."""
+def move_seconds(move):
+    """How long a move takes at its commanded limits (bm.move/1: distance_m at v_max_mps, angle_deg at w_max_dps).
+    Used to draw a simulated move, which the simulator itself executes in no time. 0 when the command is missing."""
+    cmd = (move or {}).get("command") or {}
+    try:
+        d = abs(float(cmd.get("distance_m") or 0.0)) / float(cmd["v_max_mps"]) if cmd.get("distance_m") else 0.0
+        a = abs(float(cmd.get("angle_deg") or 0.0)) / float(cmd["w_max_dps"]) if cmd.get("angle_deg") else 0.0
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return 0.0
+    return d + a
+
+
+def load_episode(run_dir, seed=None, time_base="steps", backend_steps=None, draw_motion=False):
+    """Episode of one run folder. time_base "steps" (simulator) or "epoch" (real car; needs the epoch logs).
+    draw_motion (steps time base only): give every executed move the duration it takes at its commanded speed limits
+    (move_seconds), inserted after the step's report; Episode.logged_time() then takes those drawn seconds out
+    again, so the clock on screen stays the harness's own."""
     seed = find_seed(run_dir, seed)
     rows = sorted(_jsonl(os.path.join(run_dir, "seed_%d.jsonl" % seed)), key=lambda r: r["step"])
     if [r["step"] for r in rows] != list(range(len(rows))):
@@ -186,13 +209,15 @@ def load_episode(run_dir, seed=None, time_base="steps", backend_steps=None):
     tags = [{k: t.get(k) for k in ("tag", "id", "x_m", "y_m", "normal_deg", "uid", "wall")} for t in tags]
 
     if time_base == "steps":
-        steps, t = [], 0.0
+        steps, t, windows = [], 0.0, []
         for r in rows:
             sec = float(r.get("seconds") or 0.0)
-            steps.append(_step(r, t, t + sec, t + sec, t + sec))
-            t += sec
+            d = move_seconds(r.get("executed_move")) if (draw_motion and r.get("executed_move")) else 0.0
+            steps.append(_step(r, t, t + sec, t + sec, t + sec + d))
+            if d > 0:
+                windows.append((t + sec, t + sec + d))
+            t += sec + d
         epoch0 = None
-        windows = []
     elif time_base == "epoch":
         steps, epoch0, windows = _epoch_steps(rows, moves, spend, backend_steps)
     else:

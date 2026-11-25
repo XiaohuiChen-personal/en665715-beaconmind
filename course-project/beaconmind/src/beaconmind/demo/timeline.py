@@ -190,6 +190,76 @@ def fit_think_speed(t0, t1, move_windows, target_out_s, fps, move_speed=1.0, max
     return max_speed, car_pieces(t0, t1, move_windows, max_speed, move_speed), False
 
 
+# ---------------------------------------------------------------- waits, motion, a slowed step and pauses
+
+def mixed_pieces(t0, t1, move_windows, think_speed, move_speed=1.0, slow=None, slow_speed=2.0, holds=()):
+    """Pieces over [t0, t1]: the move windows at move_speed ("move"), the `slow` interval (s0, s1) outside the moves
+    at slow_speed ("detail"), everything else at think_speed ("think"); `holds` = [(instant, seconds)] pauses
+    inserted at those instants (labelled "hold"). Adjacent pieces of the same kind and speed are merged."""
+    cuts = {t0, t1}
+    wins = [(max(t0, a), min(t1, b)) for a, b in move_windows if b > a and b > t0 and a < t1]
+    for a, b in wins:
+        cuts.update((a, b))
+    if slow:
+        cuts.update((max(t0, slow[0]), min(t1, slow[1])))
+    hold_at = {}
+    for w, sec in holds:
+        if not (t0 <= w <= t1):
+            raise ValueError("hold at %s is outside [%s, %s]" % (w, t0, t1))
+        cuts.add(w)
+        hold_at[w] = hold_at.get(w, 0.0) + float(sec)
+    cuts = sorted(cuts)
+    out = []
+
+    def add(p):
+        if out and out[-1].hold_s is None and p.hold_s is None and out[-1].label == p.label \
+                and out[-1].speed == p.speed and out[-1].w1 == p.w0:
+            out[-1] = Piece(out[-1].w0, p.w1, p.speed, p.label)
+        else:
+            out.append(p)
+    for a, b in zip(cuts, cuts[1:]):
+        if a in hold_at and (not out or out[-1].hold_s is None or out[-1].w0 != a):
+            add(hold(a, hold_at.pop(a)))
+        mid = (a + b) / 2.0
+        if any(x <= mid <= y for x, y in wins):
+            add(Piece(a, b, float(move_speed), "move"))
+        elif slow and slow[0] <= mid <= slow[1]:
+            add(Piece(a, b, float(slow_speed), "detail"))
+        else:
+            add(Piece(a, b, float(think_speed), "think"))
+    for w in sorted(hold_at):                  # a pause at the very end
+        add(hold(w, hold_at[w]))
+    return out
+
+
+def fit_mixed(t0, t1, move_windows, target_out_s, fps, move_speed=1.0, slow=None, slow_speed=2.0, holds=(),
+              max_speed=5000):
+    """(think speed, pieces, fits): the smallest whole think speed whose pieces fit target_out_s; the motion, the slowed
+    interval and the pauses keep their speeds. fits is False when they alone are longer than the target."""
+    fixed = mixed_pieces(t0, t1, move_windows, 1.0, move_speed, slow, slow_speed, holds)
+    fixed_out = sum(p.out_s for p in fixed if p.label != "think")
+    waiting = sum(p.w1 - p.w0 for p in fixed if p.label == "think")
+    if target_out_s <= fixed_out:
+        return max_speed, mixed_pieces(t0, t1, move_windows, max_speed, move_speed, slow, slow_speed, holds), False
+    speed = max(1, int(math.ceil(waiting / (target_out_s - fixed_out)))) if waiting else 1
+    while speed <= max_speed:
+        pieces = mixed_pieces(t0, t1, move_windows, speed, move_speed, slow, slow_speed, holds)
+        if output_duration(pieces, fps) <= target_out_s + 1e-9:
+            return speed, pieces, True
+        speed += 1
+    return max_speed, mixed_pieces(t0, t1, move_windows, max_speed, move_speed, slow, slow_speed, holds), False
+
+
+def check_length(total_s, bounds):
+    """None when total_s is inside bounds = (low, high) seconds, else the reason (the assembly refuses it)."""
+    lo, hi = bounds
+    if total_s < lo - 1e-9:
+        return "the video is %.1f s, shorter than the required %.0f s" % (total_s, lo)
+    if total_s > hi + 1e-9:
+        return "the video is %.1f s, longer than the allowed %.0f s" % (total_s, hi)
+    return None
+
+
 # ---------------------------------------------------------------- phone clock
 
 @dataclass(frozen=True)

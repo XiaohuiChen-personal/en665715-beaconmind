@@ -27,11 +27,12 @@ sim.detail-step | 23 | configs/demo_video.json sim.detail_step
 sim.dup-ids | 0, 2 and 3 | data/closed-loop/20261118-room-final/claude-opus-5-5/seed_3000.world.json (IDs on two tags)
 sim.ended-by | DONE | seed_3000.summary.json ended_by
 sim.estops | 0 | seed_3000.summary.json emergency_stops
-sim.factor | 24 | fitted: the smallest whole factor that fits sim.target_s
+sim.factor | 14 | fitted: the smallest whole thinking factor that fits the simulation part's target
 sim.fallbacks | 0 | seed_3000.summary.json fallbacks
 sim.final-pos-cm | 2.0 | seed_3000.summary.json pose final_pos_m (m to cm)
 sim.inset-m | 0.4 | data/closed-loop/20261118-room-final/claude-opus-5-5/run.json env drive_inset
 sim.map-rmse-cm | 4.6 | seed_3000.summary.json map map_rmse_m (m to cm)
+sim.move-speed | 2 | configs/demo_video.json sim.move_speed
 sim.noise-seed | 3000 | data/closed-loop/20261118-room-final/claude-opus-5-5/run.json seeds
 sim.phantoms | 0 | seed_3000.summary.json map phantoms
 sim.refused | 0 | seed_3000.summary.json refused_move_calls
@@ -44,6 +45,8 @@ sim.time-mmss | 18:50 | data/closed-loop/20261118-room-final/claude-opus-5-5/see
 sim.tool-calls | 280 | seed_3000.summary.json tools calls
 sim.tool-errors | 2 | seed_3000.summary.json violations_by_code invalid_tool_call
 sim.turns | 286 | seed_3000.jsonl turns, counted
+sim.v-max | 0.15 | seed_3000.jsonl executed_move command v_max_mps
+sim.w-max | 45 | seed_3000.jsonl executed_move command w_max_dps
 sim.world | real-room-plus8-160mm-nominal.json | data/closed-loop/20261118-room-final/claude-opus-5-5/run.json world_file
 val.ended-by | latch | evidence/M2/M2.T7/closed-loop/scripted_validator_trace.json result ended_by
 val.refused | 3 | evidence/M2/M2.T7/closed-loop/scripted_validator_trace.json move_calls refused, counted

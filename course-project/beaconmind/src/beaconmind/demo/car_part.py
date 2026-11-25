@@ -16,7 +16,8 @@ Inputs (configs/demo_video.json car.inputs, every path relative to course-projec
 
 Everything is placed on the Spark's epoch clock: harness rows (spend.jsonl, moves.jsonl, backend/steps.jsonl) and
 camera frames (t_resp_ns) are stamped by the Spark; the phone clip is mapped onto it by the clock readings. Motion
-plays at move_speed (real time by default), the waits are sped up to fit target_s (timeline.fit_think_speed).
+plays at the first of move_speeds that lets the part fit (real time when it can), the waits are sped up to fit
+target_s (timeline.fit_mixed); both speeds are on screen.
 
 Layout (1920 x 1080): header (0, 0, 1920 x 84); phone video (0, 84, 1130 x 636); the car's camera with the fused
 detections outlined (0, 720, 427 x 320); the room from above (427, 720, 703 x 320); the step panel (1130, 84,
@@ -129,9 +130,13 @@ class CarPart:
             self.camera = None
         self.t0, self.t1 = self.ep.steps[0].t0, self.ep.steps[-1].t1
         self.card_s = float(cfg.get("card_s", 6))
-        self.think_speed, self.pieces, self.fits = TL.fit_think_speed(
-            self.t0, self.t1, self.ep.move_windows, float(cfg["target_s"]) - self.card_s, fps,
-            move_speed=float(cfg.get("move_speed", 1.0)))
+        # motion plays at the first of move_speeds that lets the part fit (real time if it can); the waits take the rest
+        for ms in cfg.get("move_speeds") or [cfg.get("move_speed", 1.0)]:
+            self.move_speed = float(ms)
+            self.think_speed, self.pieces, self.fits = TL.fit_mixed(
+                self.t0, self.t1, self.ep.move_windows, float(cfg["target_s"]) - self.card_s, fps, self.move_speed)
+            if self.fits:
+                break
         self.test = bool(inputs.get("test"))
 
     # -------------------------------------------------------------- plan
@@ -149,7 +154,8 @@ class CarPart:
         return cues, k
 
     def describe(self):
-        return {"think_speed": self.think_speed, "fits": self.fits, "t0_epoch": self.t0, "t1_epoch": self.t1,
+        return {"think_speed": self.think_speed, "move_speed": self.move_speed, "fits": self.fits,
+                "t0_epoch": self.t0, "t1_epoch": self.t1,
                 "pieces": [{"w0": p.w0, "w1": p.w1, "speed": p.speed, "label": p.label} for p in self.pieces],
                 "clock_sync": None if self.sync is None else {"offset": self.sync.offset, "rate": self.sync.rate,
                                                               "residuals_s": self.sync.residuals()},
@@ -245,10 +251,10 @@ class CarPart:
         dr.line([(TOPV[0], TOPV[1]), (TOPV[0], TOPV[1] + TOPV[3])], fill=D.RULE, width=2)
         stats = [("real time", "%02d:%02d" % divmod(int(t - self.t0), 60)), ("model cost", "US$%.2f" % v.cost),
                  ("tags mapped", "%d of %d" % (len(v.mapped), len(ep.tags)))]
-        badge = TL.piece_badge(piece)
-        badge = badge + (" time-lapse" if badge.startswith("×") else "")
+        badge = [("waiting %s" % TL.speed_badge(self.think_speed), piece.label == "think", D.WARN),
+                 ("driving %s" % TL.speed_badge(self.move_speed), piece.label == "move", D.OK)]
         hdr = P.header(HEADER[2:], ("PIPELINE TEST" if self.test else "REAL CAR", self.inp.get("label", "")), stats,
-                       badge, D.SEEN if piece.label == "think" else D.OK)
+                       badge, chip_gap=26)
         img.paste(hdr, HEADER[:2])
         img.paste(P.step_panel(PANEL[2:], step, len(ep.steps), v.calls, v.report_shown), PANEL[:2])
         ImageDraw.Draw(img).line([(PANEL[0], PANEL[1]), (PANEL[0], PANEL[1] + PANEL[3])], fill=D.RULE, width=2)
@@ -430,7 +436,7 @@ def pipeline_test(build, session, n_steps=4, target_s=24.0):
         k += 1
     proc.wait()
     report = {"session": os.path.relpath(session, root), "camera_frames": len(frames), "output": os.path.relpath(mp4, root),
-              "frames": n_total, "think_speed": car.think_speed, "fits": car.fits,
+              "frames": n_total, "think_speed": car.think_speed, "move_speed": car.move_speed, "fits": car.fits,
               "clock_readings": readings, "fitted_offset": car.sync.offset, "true_offset": phone0,
               "fitted_rate": car.sync.rate, "checked_frames": len(errs),
               "max_error_s": max(e for e, _ in errs) if errs else None,

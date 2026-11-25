@@ -19,11 +19,13 @@ phone clip and the harness trace.
   prints 0.1 s); a rate further than 0.2 % from 1, or readings 0.3 s apart in offset, is refused as a misreading.
 - The surveyed world file and the episode's start pose, so the room is drawn in the episode's map frame.
 
-Everything is placed on the Spark's epoch clock. Motion plays in real time; the waits between moves are sped up to
-the smallest whole factor that fits (`timeline.fit_think_speed`; if the motion alone is longer than the target it
-says `fits False` and never speeds up motion). Layout: phone video (1130 × 636), the car's camera (while a step is
-being decided: the frame its detector used, with the fused detections outlined; while moving: the newest frame), the
-room from above with the detections drawn as rays from the believed pose, and the same step panel as Part 1.
+Everything is placed on the Spark's epoch clock. Motion plays at the first of `move_speeds` (1, 2, 3, 4) that lets the
+part fit its target (real time when it can); the waits between moves take the smallest whole factor that fits the
+rest (`timeline.fit_mixed`). The header shows both speeds ("waiting ×N", "driving ×M"), the playing one filled. Layout:
+phone video (1130 × 636), the car's camera (while a step is being decided: the frame its detector used, with the
+fused detections outlined; while moving: the newest frame), the room from above with the detections drawn as rays
+from the believed pose, and the step panel. The part's target is 85 s, so the whole video with it stays inside the
+course's 3:00 to 5:00 (`evidence/M6/M6.T11/README.md`).
 
 ## Pipeline test (`python3 course-project/tools/demo_video.py car-test --session <session> --car-target-s <s>`)
 
@@ -35,14 +37,15 @@ starting 3.863 s before the first camera frame. The clock is "read" as a person 
 of the clip. The rendered part is decoded again and the stripe in the phone tile is compared with the instant each
 frame should show.
 
-| Target | Waits sped up | Fits | Frames checked | Max error | Mean error |
-| --- | --- | --- | --- | --- | --- |
-| 24 s | ×1 | yes | 57 | 0.05 s | 0.028 s |
-| 14 s | ×3 | yes | 35 | 0.04 s | 0.026 s |
-| 10 s | (×2000) | no: the 4.8 s of motion do not fit in 4 s | 25 | 0.04 s | 0.032 s |
+| Target | Waits | Motion | Fits | Frames checked | Max error | Mean error |
+| --- | --- | --- | --- | --- | --- | --- |
+| 24 s | ×1 | real time | yes | 57 | 0.05 s | 0.028 s |
+| 14 s | ×3 | real time | yes | 35 | 0.04 s | 0.026 s |
+| 10 s | ×5 | ×2 (real time did not fit) | yes | 19 | 0.05 s | 0.029 s |
 
 The fitted offset is 1794988525.6 against the true 1794988525.626 (the 0.1 s reading); the rest is the phone clip's
-frame spacing (1/30 s). Full outputs: `car-test-24s.txt`, `car-test-14s.txt`, `car-test-10s.txt`.
+frame spacing (1/30 s). Full outputs: `car-test-24s.txt`, `car-test-14s.txt`, `car-test-10s.txt` (the stand-in run is
+12 s long, so these targets play the same role as 85 s does for a 20-minute episode).
 
 A first run of the time-lapsed case found an error of 0.83 s: ffmpeg's `fps` filter keeps, for each output frame, the
 last input frame before the next half frame, so starting the decode half a frame late shifted every sped-up frame by

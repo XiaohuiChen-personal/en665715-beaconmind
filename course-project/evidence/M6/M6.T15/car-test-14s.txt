@@ -3,6 +3,7 @@ camera_frames    57
 output           data/video/car-test/car-test-14s.mp4
 frames           325
 think_speed      3
+move_speed       1.0
 fits             True
 clock_readings   ['1.0=1794988526.6', '16.6=1794988542.2']
 fitted_offset    1794988525.6

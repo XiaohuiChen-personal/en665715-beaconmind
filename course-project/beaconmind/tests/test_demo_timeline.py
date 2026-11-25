@@ -132,3 +132,32 @@ def test_plan_sequence_and_budgets():
                                                                   ("end", 106.0, 4.0)]
     assert TL.card_seconds(items) == 10.0
     assert TL.word_budget(12.0) == 26 and TL.word_budget(6.0, 120) == 12
+
+
+def test_mixed_pieces_keep_motion_slow_step_and_pauses():
+    pieces = TL.mixed_pieces(0.0, 100.0, [(20.0, 22.0), (50.0, 54.0)], 10, 2.0, slow=(30.0, 50.0), slow_speed=2.0,
+                             holds=[(50.0, 5.0), (100.0, 3.0)])
+    assert [(p.w0, p.w1, p.speed, p.label, p.hold_s) for p in pieces] == [
+        (0.0, 20.0, 10.0, "think", None), (20.0, 22.0, 2.0, "move", None), (22.0, 30.0, 10.0, "think", None),
+        (30.0, 50.0, 2.0, "detail", None), (50.0, 50.0, 1.0, "hold", 5.0), (50.0, 54.0, 2.0, "move", None),
+        (54.0, 100.0, 10.0, "think", None), (100.0, 100.0, 1.0, "hold", 3.0)]
+    with pytest.raises(ValueError):
+        TL.mixed_pieces(0.0, 10.0, [], 2, holds=[(11.0, 1.0)])
+
+
+def test_fit_mixed_fits_the_thinking_around_the_fixed_pieces():
+    # fixed: motion 6 s at x2 = 3 s, slow step 20 s at x2 = 10 s, pauses 8 s -> 21 s; 74 s of thinking
+    # (0-20, 22-30, 54-100) in 9 s -> x9 (x8 gives 9.25 s)
+    args = (0.0, 100.0, [(20.0, 22.0), (50.0, 54.0)])
+    speed, pieces, fits = TL.fit_mixed(*args, 30.0, 25, 2.0, (30.0, 50.0), 2.0, [(50.0, 5.0), (100.0, 3.0)])
+    assert fits and speed == 9 and TL.output_duration(pieces, 25) <= 30.0
+    assert all(p.speed == 2.0 for p in pieces if p.label == "move")
+    assert TL.output_duration(TL.mixed_pieces(*args, 8, 2.0, (30.0, 50.0), 2.0, [(50.0, 5.0), (100.0, 3.0)]), 25) > 30.0
+    assert TL.fit_mixed(*args, 20.0, 25, 2.0, (30.0, 50.0), 2.0, [(50.0, 5.0), (100.0, 3.0)])[2] is False
+
+
+def test_length_check_is_the_course_bound():
+    assert TL.check_length(240.0, (180.0, 300.0)) is None
+    assert TL.check_length(180.0, (180.0, 300.0)) is None and TL.check_length(300.0, (180.0, 300.0)) is None
+    assert "shorter" in TL.check_length(161.8, (180.0, 300.0))
+    assert "longer" in TL.check_length(300.2, (180.0, 300.0))

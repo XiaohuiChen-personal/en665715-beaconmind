@@ -67,7 +67,7 @@ class Build:
     @property
     def sim_episode(self):
         if not hasattr(self, "_ep"):
-            self._ep = E.load_episode(_rel(self.root, self.cfg["sim"]["run_dir"]))
+            self._ep = E.load_episode(_rel(self.root, self.cfg["sim"]["run_dir"]), draw_motion=True)
         return self._ep
 
     def _base_nums(self):
@@ -91,7 +91,9 @@ class Build:
         n = self._base_nums()
         if not getattr(self, "_fitted_keys", False):
             sim = self.sim
-            n.put("sim.factor", str(sim.factor), "fitted: the smallest whole factor that fits sim.target_s")
+            n.put("sim.factor", str(sim.factor), "fitted: the smallest whole thinking factor that fits the simulation "
+                  "part's target")
+            n.put("sim.move-speed", "%g" % sim.move_speed, "configs/demo_video.json sim.move_speed")
             d = self.cfg["sim"].get("detail_step")
             if d is not None:
                 n.put("sim.detail-step", str(d), "configs/demo_video.json sim.detail_step")
@@ -150,12 +152,21 @@ class Build:
             else:
                 for k, v in part_cues[s["id"]].items():
                     cues[k] = s["start_s"] + v
+        bounds = self.length_bounds()
         return {"sequence": seq, "cues": cues, "total_s": t / float(self.fps), "total_frames": t,
-                "sim": {"factor": self.sim.factor, "detail": self.cfg["sim"].get("detail_step"),
+                "length_bounds_s": bounds, "length_problem": TL.check_length(t / float(self.fps), bounds),
+                "sim": {"factor": self.sim.factor, "move_speed": self.sim.move_speed,
+                        "detail": self.cfg["sim"].get("detail_step"), "target_s": self.sim.target_s,
                         "pieces": [{"w0": p.w0, "w1": p.w1, "speed": p.speed, "label": p.label, "hold_s": p.hold_s}
                                    for p in self.sim.pieces],
                         "source_total_s": self.sim_episode.total_s},
                 "car": self.car.describe() if self.have_car else None}
+
+    def length_bounds(self):
+        """(min, max) seconds of the whole video: the course requirement (Canvas, Presentation Timing), as reported
+        by Xiaohui on 2026-11-24: 3 to 5 minutes."""
+        ls = self.cfg.get("length_s") or {}
+        return (float(ls.get("min", 180)), float(ls.get("max", 300)))
 
     def write_plan(self):
         p = self.plan()
@@ -212,6 +223,9 @@ class Build:
 
     def assemble(self):
         p = self.write_plan()
+        if p["length_problem"]:
+            raise SystemExit("demo_video: refused to assemble: %s (course requirement 3:00-5:00, Canvas "
+                             "\"Presentation Timing\", as reported by Xiaohui on 2026-11-24)" % p["length_problem"])
         files = []
         for s in p["sequence"]:
             f = self.path("parts", ("card-%s.mp4" % s["id"]) if s["kind"] == "card" else ("%s.mp4" % s["id"]))
@@ -227,6 +241,13 @@ class Build:
         print("assembled: %s, %.2f s, %s frames (planned %d)" % (os.path.relpath(silent, self.root),
                                                                 info.get("duration_s", -1), info.get("frames"),
                                                                 p["total_frames"]))
+        problem = TL.check_length(info.get("duration_s", -1), self.length_bounds())
+        if problem or info.get("frames") != p["total_frames"]:
+            bad = silent.replace(".mp4", "-REJECTED.mp4")
+            os.replace(silent, bad)
+            raise SystemExit("demo_video: the assembled file failed its check (%s; %s frames, planned %d); moved to %s"
+                             % (problem or "length ok", info.get("frames"), p["total_frames"], bad))
+        print("length check: %.2f s is inside %.0f-%.0f s" % ((info["duration_s"],) + self.length_bounds()))
         audio = self.cfg.get("narration_audio")
         if audio:
             final = self.path("BeaconMind-demo.mp4")
@@ -281,6 +302,10 @@ class Build:
             for s in p["sequence"]:
                 times["mid-" + s["id"]] = s["start_s"] + s["dur_s"] / 2
             times["last"] = p["total_s"] - 0.1
+        folder = os.path.dirname(self.path("stills", "x.png"))
+        for old in os.listdir(folder):              # this command's own output from an earlier render
+            if old.endswith(".png"):
+                os.remove(os.path.join(folder, old))
         outs = []
         for name, t in sorted(times.items(), key=lambda kv: kv[1]):
             png = self.path("stills", "%07.2f-%s.png" % (t, name))
@@ -314,8 +339,12 @@ def main(argv=None):
         p = b.write_plan()
         for s in p["sequence"]:
             print("%7.2f s  %-11s %-5s %6.2f s" % (s["start_s"], s["id"], s["kind"], s["dur_s"]))
-        print("total %.2f s (%d frames); simulation time-lapse x%d over %.1f s of logged time" % (
-            p["total_s"], p["total_frames"], p["sim"]["factor"], p["sim"]["source_total_s"]))
+        print("total %.2f s (%d frames); simulation: thinking x%d, drawn motion x%g, over %.1f s of logged time "
+              "and drawn motion" % (p["total_s"], p["total_frames"], p["sim"]["factor"], p["sim"]["move_speed"],
+                                    p["sim"]["source_total_s"]))
+        print("length check: %s" % (p["length_problem"] or "inside %.0f-%.0f s" % tuple(p["length_bounds_s"])))
+        if p["length_problem"]:
+            return 1
     elif a.what == "sim":
         b.render_sim()
     elif a.what == "car":

@@ -5,7 +5,10 @@
   "kicker": "EN.665.715 Embodied Agentic AI for Robotic Control · course project demo",
   "title": "BeaconMind",
   "subtitle": "A language model keeps its own pose and landmark map on a small robot car",
-  "lines": ["Xiaohui Chen", "Replayed from the experiment's logs (simulation recorded {{sim.date-long}})"],
+  "lines": [
+   "Xiaohui Chen",
+   "Replayed from the experiment's logs (simulation recorded {{sim.date-long}})"
+  ],
   "footer": "Recorded demo: every number on screen is read from the project's log and evidence files by code."
  },
  "idea": {
@@ -24,39 +27,88 @@
   "kicker": "Part 1 · simulation",
   "title": "One closed-loop episode in a simulated copy of the real room",
   "lines": [
-   "Kinematic simulator of the room, {{sim.tags}} AprilTags at their planned (nominal) positions, camera field of view {{cam.hfov}}°, range limit {{cl.range-m}} m.",
-   "Claude Opus 5.5 ({{cl.opus.model}}, effort {{cl.opus.effort}}) chose every move, live through the Anthropic API, on {{sim.date-long}}.",
-   "Start pose {{sim.start}} in the room; odometry noise seed {{sim.noise-seed}}.",
-   "!This video replays that run's logs: no model was called to make it. Waiting time is sped up, and the speed is always shown."
+   "kinsim, the kinematic simulator of the room: {{sim.tags}} AprilTags at their planned (nominal) positions, camera field of view {{cam.hfov}}°, range limit {{cl.range-m}} m.",
+   "Claude Opus 5.5 ({{cl.opus.model}}, effort {{cl.opus.effort}}) chose every move, live through the Anthropic API, on {{sim.date-long}}. Start pose {{sim.start}}; odometry noise seed {{sim.noise-seed}}.",
+   "!This video replays that run's logs: no model was called to make it. The simulator moves the car instantly; each move is drawn at its commanded speed ({{sim.v-max}} m/s, {{sim.w-max}}°/s). Thinking and driving are sped up, and both speeds are always shown."
   ]
  },
  "sim_legend": {
   "style": "text",
   "kicker": "How to read the screen",
   "title": "What each part of the screen shows",
-  "font": 30,
+  "font": 26,
   "image_w": 1040,
   "image_y": 170,
   "lines": [
-   "=1  Step, real time since the start, model cost so far, tags mapped, the believed pose's error, and the playback speed.",
-   "=2  The room from above. Black car: true pose (simulator). Blue outline: the model's believed pose. Squares: tags (green once the model has mapped them); blue rings: the model's beacon estimates; yellow: tags seen this step.",
-   "=3  The step as the harness logged it: the observation, each tool call with its answer, the model's report and the validator's verdict.",
-   "=4  Legend and the run's provenance."
+   "=1  The header: step, real time since the start, model cost so far, tags mapped, the believed pose's error, and the two speeds (thinking, driving); the one playing is filled.",
+   "=2  The room from above. Grey car, to scale: the simulator's true pose. Blue outline: the model's believed pose. Tags turn green once mapped; blue rings are the model's beacon estimates; yellow marks tags seen this step.",
+   "=3  A close-up that follows the car, and what its camera would see: the tags projected through the calibrated camera (amber: reported to the model).",
+   "=4  The step as the harness logged it: observation, tool calls and answers, the model's report, the validator's verdict."
   ],
-  "callouts": [["1", [0.43, 0.04]], ["2", [0.30, 0.45]], ["3", [0.88, 0.92]], ["4", [-0.035, 0.925]]]
+  "callouts": [
+   [
+    "1",
+    [
+     -0.035,
+     0.04
+    ]
+   ],
+   [
+    "2",
+    [
+     0.3,
+     0.45
+    ]
+   ],
+   [
+    "3",
+    [
+     1.025,
+     0.14
+    ]
+   ],
+   [
+    "4",
+    [
+     1.025,
+     0.62
+    ]
+   ]
+  ]
  },
  "sim_result": {
   "style": "text",
   "kicker": "Part 1 · result",
   "title": "What the simulated episode did",
   "rows": [
-   ["Outcome", "the model ended EXPLORE itself ({{sim.ended-by}}) after {{cl.opus.steps}} steps and {{cl.opus.moves}} moves"],
-   ["Beacons mapped", "{{cl.opus.tags-found}} of {{cl.n-tags}} tags within {{rule.map-radius-m}} m; {{sim.phantoms}} phantom beacons; map error {{sim.map-rmse-cm}} cm"],
-   ["Pose error (ATE)", "{{cl.opus.ate}} cm; dead reckoning alone on the same odometry: {{cl.opus.b0-ate}} cm"],
-   ["Safety", "{{sim.refused}} moves refused by the validator, {{sim.estops}} emergency stops, {{sim.fallbacks}} invalid reports"],
-   ["Tool calls", "{{sim.tool-calls}} in {{sim.turns}} model turns; {{sim.tool-errors}} answered with an error (a position fix asked for without a matched beacon), and the model went on correctly"],
-   ["Followed its procedure", "its decision equals the prompt's procedure run as code (B2) on the same input at {{cl.opus.agree-steps}} of {{cl.opus.steps}} steps"],
-   ["Time and cost", "{{sim.time-min}} min of real time, about {{sim.step-mean-s}} s a step; US${{cl.opus.cost}} of API calls"]
+   [
+    "Outcome",
+    "the model ended EXPLORE itself ({{sim.ended-by}}) after {{cl.opus.steps}} steps and {{cl.opus.moves}} moves"
+   ],
+   [
+    "Beacons mapped",
+    "{{cl.opus.tags-found}} of {{cl.n-tags}} tags within {{rule.map-radius-m}} m; {{sim.phantoms}} phantom beacons; map error {{sim.map-rmse-cm}} cm"
+   ],
+   [
+    "Pose error (ATE)",
+    "{{cl.opus.ate}} cm; dead reckoning alone on the same odometry: {{cl.opus.b0-ate}} cm"
+   ],
+   [
+    "Safety",
+    "{{sim.refused}} moves refused by the validator, {{sim.estops}} emergency stops, {{sim.fallbacks}} invalid reports"
+   ],
+   [
+    "Tool calls",
+    "{{sim.tool-calls}} in {{sim.turns}} model turns; {{sim.tool-errors}} answered with an error (a position fix asked for without a matched beacon), and the model went on correctly"
+   ],
+   [
+    "Followed its procedure",
+    "its decision equals the prompt's procedure run as code (B2) on the same input at {{cl.opus.agree-steps}} of {{cl.opus.steps}} steps"
+   ],
+   [
+    "Time and cost",
+    "{{sim.time-min}} min of real time, about {{sim.step-mean-s}} s a step; US${{cl.opus.cost}} of API calls"
+   ]
   ],
   "lines": [
    "!One episode, one start pose, one noise seed: this shows the loop working, not that one method is better.",
@@ -89,7 +141,10 @@
   "lines": [
    "A language model ran the whole loop: it kept its own pose and beacon map, chose every move, and every move passed a validator first.",
    "In this simulated episode it mapped {{cl.opus.tags-found}} of {{cl.n-tags}} tags with no phantom beacon and stopped by itself.",
-   {"text": "Part 2 shows the same harness driving the real car.", "if": "car"},
+   {
+    "text": "Part 2 shows the same harness driving the real car.",
+    "if": "car"
+   },
    "!One episode is a demonstration, not a result: the pre-registered study and its statistics are in the report.",
    "Code, logs and the report: the project's public GitHub repository."
   ]

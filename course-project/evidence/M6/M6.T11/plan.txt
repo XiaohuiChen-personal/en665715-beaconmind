@@ -1,6 +1,7 @@
    0.00 s  title       card    6.00 s
    6.00 s  idea        card   14.00 s
-  20.00 s  sim         part  119.76 s
- 139.76 s  closing     card   12.00 s
- 151.76 s  disclosure  card   10.00 s
-total 161.76 s (4044 frames); simulation time-lapse x24 over 1129.8 s of logged time
+  20.00 s  sim         part  175.64 s
+ 195.64 s  closing     card   12.00 s
+ 207.64 s  disclosure  card   10.00 s
+total 217.64 s (5441 frames); simulation: thinking x14, drawn motion x2, over 1172.5 s of logged time and drawn motion
+length check: inside 180-300 s
