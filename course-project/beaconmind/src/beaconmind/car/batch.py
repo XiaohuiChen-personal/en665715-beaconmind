@@ -98,6 +98,7 @@ class BatchParams:
     range_bias_b: float = 0.0           # removed before the range check: the tag pilot's, from --detector-noise
     range_min_m: float = 0.3            # the range check uses tags between this and max_range_m (both ranges): the
                                         # pilot's reliable window with --detector-noise
+    range_scale_window: int = 10        # the range rule also over the last this many moves alone (a change mid-batch)
     # guard
     wall_margin_m: float = 0.15
     sigma_block_m: float = 0.25
@@ -228,15 +229,17 @@ class PoseTracker:
         self._leg = [0.0, 0.0]
         self.travel_since_fix_m = 0.0
 
-    def range_scale(self, min_moves=1):
+    def range_scale(self, min_moves=1, last=None):
         """(median over the straight moves of the distance by the tags' ranges over the distance by odometry, moves,
-        range pairs), or None while fewer than min_moves straight moves had a tag in view before and after."""
-        if len(self.range_moves) < max(1, min_moves):
+        range pairs), or None while fewer than min_moves straight moves had a tag in view before and after. last:
+        only the last this many moves."""
+        moves = self.range_moves[-last:] if last else self.range_moves
+        if len(moves) < max(1, min_moves):
             return None
-        scales = sorted(m[0] for m in self.range_moves)
+        scales = sorted(m[0] for m in moves)
         n = len(scales)
         median = scales[n // 2] if n % 2 else 0.5 * (scales[n // 2 - 1] + scales[n // 2])
-        return median, n, sum(m[1] for m in self.range_moves)
+        return median, n, sum(m[1] for m in moves)
 
     def mark_dead_reckoning(self):
         """From here on also keep the pose that odometry alone gives (no fix blended in)."""
@@ -671,8 +674,9 @@ def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10, max_beari
     range measured after. Only ranges enter, which the camera measures to millimetres (the tag pilot); a bearing error
     moves the prediction little for a tag near the line of motion. The pairs of one move are weighted by how much the
     range says about s (d range / d s; below min_info of the move's length the pair is left out). A pair farther off
-    than half the move plus gate_m is not the same tag, and is left out. A turn is not a straight move: callers pass
-    only moves of 5 cm or more by odometry (a 30-degree turn moves the axle about 1.3 cm).
+    than half the move plus gate_m is not the same tag, and is left out. A turn is not a straight move: the batch
+    passes only forward moves of 5 cm or more by odometry (a 30-degree turn moves the axle about 1.3 cm); the
+    geometry here works for a backward move too.
     2026-11-25, after a false odometry_scale halt of the first real practice batch: see odometry_bias()."""
     ux, uy = float(odo["forward_m"]), float(odo["left_m"])
     uu = ux * ux + uy * uy
@@ -720,16 +724,23 @@ def range_scale_halt(tracker, params):
     from two on. It may halt after N = 1 move: in the review's fault injection (8-tag room, 2.5 m, seed 3) only one
     straight move of the episode has a tag in view before and after, and a 25 % error shows there as 1.29; one move
     of the real car scattered 0.94 to 1.05 about its mean (practice-01b, range bias removed), so 15 % is three of its
-    sigmas from a correct odometer."""
-    ranges = tracker.range_scale()
-    if ranges is None:
-        return None
-    limit = max(params.range_scale_tol, 3.0 * params.range_scale_move_sigma / math.sqrt(ranges[1]))
-    if abs(ranges[0] - 1.0) <= limit:
-        return None
-    return ("over %d straight moves the ranges to the tags in view changed %.2f times the distance the odometry "
-            "reports (median, %d range pairs; limit 1 +- %.2f): the encoder scale in configs/car.json is wrong, or the "
-            "tags are" % (ranges[1], ranges[0], ranges[2], limit))
+    sigmas from a correct odometer.
+
+    The same rule is applied to the last range_scale_window moves alone (10: limit 12 %), so a change in the middle of
+    a batch (a wheel that starts to slip, a loose tyre) is not hidden by the moves before it (the review of
+    2026-11-25, its finding 4). Only forward moves are measured (BatchEnv._range_check)."""
+    for last, what in ((None, "straight moves"), (params.range_scale_window, "most recent straight moves")):
+        if last and len(tracker.range_moves) <= last:
+            continue                    # the window is the whole batch so far: judged above
+        ranges = tracker.range_scale(last=last)
+        if ranges is None:
+            return None
+        limit = max(params.range_scale_tol, 3.0 * params.range_scale_move_sigma / math.sqrt(ranges[1]))
+        if abs(ranges[0] - 1.0) > limit:
+            return ("over the %d %s the ranges to the tags in view changed %.2f times the distance the odometry "
+                    "reports (median, %d range pairs; limit 1 +- %.2f): the encoder scale in configs/car.json is "
+                    "wrong, or the tags are" % (ranges[1], what, ranges[0], ranges[2], limit))
+    return None
 
 
 class BatchEnv:
@@ -849,7 +860,10 @@ class BatchEnv:
                 continue
             now.append({"key": near[0][1], "id": int(d["id"]), "range_m": r, "bearing_deg": bearing})
         before, self.range_before = self.range_before, now
-        if first or exact is None or before is None or abs(exact["forward_m"]) < 0.05:
+        # forward moves only: a backward move after a forward one slips on the carpet when the wheels reverse (floor
+        # check F2: the car ends 1.2 to 1.8 cm farther forward per cycle than its counts say), which reads as a
+        # scale of 0.75 to 0.87 (the review of 2026-11-25, its finding 3); an encoder scale shows on forward moves
+        if first or exact is None or before is None or exact["forward_m"] < 0.05:
             return
         est = range_scale_of_move(before, now, exact)
         if est is not None:

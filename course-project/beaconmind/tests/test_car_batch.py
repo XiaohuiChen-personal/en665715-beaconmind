@@ -2134,3 +2134,29 @@ def test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms(tmp_pat
                 assert result["status"] == "halted" and result["halt"]["code"] == "odometry_scale", (factor, r, seed, result)
                 assert "ranges to the tags" in result["halt"]["detail"], result
                 assert depth["min"] > 0.3 and not rig.link.sim.p.blocked_left, (factor, r, seed, depth)
+
+
+def test_the_range_check_skips_backward_moves_and_watches_the_recent_moves_too():
+    """The review of the range check (2026-11-25): a BACKWARD_10 slips when the wheels reverse (floor check F2) and
+    would read 0.75 to 0.87, so backward moves are not measured; and a change in the middle of a batch must not be
+    hidden by the moves before it, so the rule also runs over the last range_scale_window moves alone."""
+    env = B.BatchEnv.__new__(B.BatchEnv)
+    env.params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1), max_range_m=3.0)
+    env.tracker = B.PoseTracker({"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}, 0.05, 2.0)
+    env.tags = [{"id": 4, "uid": "T04", "x_m": 2.0, "y_m": 0.2}]
+    env.range_before = None
+    env._range_check(None, *_sense_and_record([(4, 2.0, 0.2)]), True)
+    back = {"forward_m": -0.10, "left_m": 0.0, "dtheta_deg": -3.0}
+    env.tracker.predict(back)
+    env._range_check(back, *_sense_and_record([(4, 2.08, 0.2)]), False)     # slipped: 8 cm back, odometry 10
+    assert env.tracker.range_moves == []
+    tracker = B.PoseTracker(S1, 0.05, 2.0)
+    params = env.params
+    tracker.range_moves = [(1.0, 3)] * 40                                     # a long good start
+    assert B.range_scale_halt(tracker, params) is None
+    tracker.range_moves += [(1.3, 2)] * 6                                     # then a wheel starts to slip
+    assert tracker.range_scale()[0] == pytest.approx(1.0)                     # the whole batch hides it
+    why = B.range_scale_halt(tracker, params)
+    assert why is not None and "over the 10 most recent straight moves" in why and "1.30" in why
+    tracker.range_moves = [(1.0, 3)] * 5 + [(1.3, 2)] * 2                     # under 10 moves: the whole-batch rule
+    assert B.range_scale_halt(tracker, params) is None
