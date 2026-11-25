@@ -58,6 +58,17 @@ Opus episodes, run automatically in batches); **only one run gets a phone video*
 `AGENTS.md` and plan §3.6; every episode still has the recorder's bag, frames, traces and terminal capture. The
 report's IV-D R2 sentence still says every folder has a phone video (listed in `report/PENDING.md`).
 
+**Tags mounted (2026-11-25), measured world file written.** Xiaohui: "all nominal except T08 = 350" (T08, ID 2,
+window wall, slid from 364 to 350 cm for an outlet: 1 cm below its slide range, its page still 14.4 cm clear of T15's,
+the ID 2 copies 2.28 m apart). The mounting sheet's last column is filled (`evidence/M3/M3.T10/layout-2/mounting.md`,
+with a note: pages centred on tape marks at the nominal distances, not re-measured, 1 cm per reading).
+`configs/arenas/real-room.json` (`real-room-plus8-160mm`, 20 tags, T08 at (3.811, 4.454) m, the other 19 at their
+nominal places) by the batch README's command a with `--error-cm 1.0`. Room, world, batch and resection tests: 213
+passed, 4 skipped; prereg verify OK. **Open: the room model's handedness** (asked Xiaohui: facing T03, is the entrance
+corner on the right and the angled wall on the left?); if mirrored, the world file must be rebuilt before any fix is
+trusted. The tag pilot's placement plan is on the Spark (`evidence/M1/M1.T8/placements.csv`, 32 placements, tag ID 23);
+Xiaohui is laying part A's floor marks; slanted lines on the entrance-corner side (2.37 m of wall against 0.58 m).
+
 **Tags.** Xiaohui checked a printed tag: about 16 × 16 cm (passes the printer-scaling check; the pilot's step A1 takes
 the exact reading). Mounting started 2026-11-25 from a mounting page Claude published (a to-scale plan and a
 wall-by-wall list generated from `layout-2/layout.json`; private claude.ai artifact). Xiaohui asked whether to fold the
@@ -92,7 +103,9 @@ the video agent finished believing the length was still an assumption); all were
   (simulation 2:56; with the car part it shrinks to about 2:09, whole video at most 4:16). Each move is drawn at its
   commanded speed (0.15 m/s, 45°/s) played at ×2, thinking at ×14 (×34 with the car part); car to scale with a
   close-up and a simulated camera view. Checked by the lead: duration, a mid-video frame, the agent's six-frame
-  continuity strips. Adding a 7-frame-per-move test, a fallback mode and keep-last-good-video.
+  continuity strips. Then commit `cf13684`: every move at most ×2 and at least 7 output frames (turns 8, straights
+  21), refused otherwise; `sim.motion: glide` keeps the `6a9c848` style as a fallback; parts and the final video
+  replace the old files only after their checks pass. Whole suite 695 passed. Both agents idle, nothing open.
 - **video:** commit `6a9c848`; `python3 course-project/tools/demo_video.py all` renders `data/video/parts/sim.mp4`
   (1:59.76) and `data/video/BeaconMind-demo-silent.mp4` (2:41.76, without the car part), 1920 × 1080, 25 fps; checked
   by the lead with ffmpeg. The Opus episode plays at ×24 and every move glides over 0.3 s of output (seen frame by
