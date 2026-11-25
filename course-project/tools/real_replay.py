@@ -66,16 +66,20 @@ def prompt_range_limit(text):
 # ---------------------------------------------------------------- convert
 
 def cmd_convert(a):
-    idx = rr.convert_batch(a.batch, a.out, a.world)
+    if len(a.batch) == 1 and not a.set:
+        idx = rr.convert_batch(a.batch[0], a.out, a.world)
+    else:
+        idx = rr.convert_batches(a.batch, a.out, a.world)
     print("converted %d episodes, %d steps, into %s" % (len(idx["episodes"]), idx["steps"], a.out))
     for e in idx["episodes"]:
-        print("  seed %-3d %-8s %-3s %4d steps  ended %-8s  last truth sigma %.3f m (%s)" % (
-            e["seed"], e["episode"], e["scenario"], e["steps"], e["ended_by"], e["truth_sigma_xy_m_last"] or -1,
+        print("  seed %-5d %-12s %-8s %-3s %4d steps  ended %-8s  last truth sigma %.3f m (%s)" % (
+            e["seed"], e.get("batch", ""), e["episode"], e["scenario"], e["steps"], e["ended_by"],
+            e["truth_sigma_xy_m_last"] or -1,
             "tag fix" if e["truth_is_a_fix_last"] else "tracked since the last fix"))
         if e.get("note"):
             print("           %s; end pose from %s" % (e["note"], e.get("end_pose_source")))
     for x in idx["excluded"]:
-        print("  excluded %s: %s" % (x["episode"], x["reason"]))
+        print("  excluded %s %s: %s" % (x.get("batch", ""), x["episode"], x["reason"]))
     return 0
 
 
@@ -246,7 +250,9 @@ def parser():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("convert")
-    c.add_argument("--batch", required=True)
+    c.add_argument("--batch", required=True, action="append", help="batch folder; repeat it for a set of batches")
+    c.add_argument("--set", action="store_true", help="write a set (index of several batches, seed bases 1000, "
+                                                      "2000, ...) even for one batch; a rerun adds to it")
     c.add_argument("--out", required=True)
     c.add_argument("--world", default=None, help="world file (default: the batch manifest's)")
     r = sub.add_parser("run")

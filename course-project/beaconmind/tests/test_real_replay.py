@@ -263,3 +263,26 @@ def test_estimate_from_the_study_rates():
     assert e["claude-opus-5-5"]["usd"] == pytest.approx(150 * 0.0729)
     assert e["qwen38-flash-xhigh"]["hours_throughput"] == pytest.approx(150 * 31.3 / 3600)
     assert e["gemma4-26b"]["hours_longest_episode"] == pytest.approx(100 * 1240.4 / 3600)
+
+
+def test_a_set_of_batches_keeps_its_seeds_and_grows_on_a_rerun(batch, tmp_path):
+    second = tmp_path / "batches" / "b-two"
+    _episode(str(second / "episodes" / "ep01-a1"), 1, 3)
+    man = json.loads((batch / "manifest.json").read_text())
+    man["episodes"] = [dict(man["episodes"][0], result={"complete": True, "ended_by": "budget", "steps": 3})]
+    (second / "manifest.json").write_text(json.dumps(man))
+    out = tmp_path / "set"
+    idx = rr.convert_batches([str(batch)], str(out))
+    assert [(b["batch"], b["seed_base"]) for b in idx["batches"]] == [("b-test", 1000)]
+    assert [e["seed"] for e in idx["episodes"]] == [1001, 1002]
+    first_sha = {e["seed"]: e["sha12"] for e in idx["episodes"]}
+    idx = rr.convert_batches([str(second)], str(out))                 # a later batch: added, the first one kept
+    assert [(b["batch"], b["seed_base"]) for b in idx["batches"]] == [("b-test", 1000), ("b-two", 2000)]
+    assert [e["seed"] for e in idx["episodes"]] == [1001, 1002, 2001] and idx["steps"] == 13
+    idx = rr.convert_batches([str(batch), str(second)], str(out))     # converting again writes the same bytes
+    assert {e["seed"]: e["sha12"] for e in idx["episodes"] if e["seed"] < 2000} == first_sha
+    doc = json.loads((out / "seed_2001.json").read_text())
+    assert doc["seed"] == 2001 and doc["real"]["batch_seed"] == 1 and doc["real"]["batch"] == "b-two"
+    with pytest.raises(ValueError):                                   # a single-batch folder is not a set
+        rr.convert_batch(str(batch), str(tmp_path / "single"))
+        rr.convert_batches([str(batch)], str(tmp_path / "single"))

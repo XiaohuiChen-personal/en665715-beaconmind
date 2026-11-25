@@ -141,8 +141,9 @@ def finished(entry):
     return entry.get("status") == "done" or (entry.get("status") == "halted" and entry.get("end_fix") is not None)
 
 
-def convert_batch(batch_dir, out_dir, world_path=None):
-    """Write <out_dir>/seed_<n>.json for every episode that ended normally and index.json; returns the index."""
+def convert_batch(batch_dir, out_dir, world_path=None, seed_base=0, write_index=True):
+    """Write <out_dir>/seed_<n>.json for every episode that ran to its end and index.json; returns the index. The log's
+    seed is seed_base + the batch's own seed of the episode (convert_batches gives every batch its own base)."""
     with open(os.path.join(batch_dir, "manifest.json"), encoding="utf-8") as fh:
         man = json.load(fh)
     world_path = world_path or man["params"]["world_path"]
@@ -178,6 +179,8 @@ def convert_batch(batch_dir, out_dir, world_path=None):
         e = done[-1]
         try:
             doc = episode_to_obslog(batch_dir, e, world_doc, index["world_file"])
+            doc["seed"] = seed_base + doc["seed"]
+            doc["real"]["batch_seed"] = int(e["seed"])
         except (OSError, ValueError, KeyError) as exc:
             index["excluded"].append({"episode": e["id"], "status": e.get("status"), "reason": str(exc)})
             continue
@@ -191,13 +194,69 @@ def convert_batch(batch_dir, out_dir, world_path=None):
         with open(path, "wb") as fh:
             fh.write(data)
         last = doc["records"][-1]
-        index["episodes"].append({"seed": doc["seed"], "episode": e["id"], "scenario": e.get("scenario"),
+        index["episodes"].append({"seed": doc["seed"], "batch": index["batch"], "episode": e["id"],
+                                  "scenario": e.get("scenario"),
                                   "steps": len(doc["records"]), "ended_by": doc["real"]["ended_by"],
                                   "truth_sigma_xy_m_last": last["truth"].get("sigma_xy_m"),
                                   "truth_is_a_fix_last": last["truth"].get("fix"), "sha12": sha12_bytes(data),
                                   "note": note, "end_pose_source": doc["real"]["end_pose_source"]})
+    for x in index["excluded"]:
+        x["batch"] = index["batch"]
     index["steps"] = sum(e["steps"] for e in index["episodes"])
-    with open(os.path.join(out_dir, "index.json"), "w", encoding="utf-8") as fh:
+    if write_index:
+        with open(os.path.join(out_dir, "index.json"), "w", encoding="utf-8") as fh:
+            json.dump(index, fh, indent=1)
+    return index
+
+
+SET_SCHEMA = "bm.real_obslog_set/1"
+SEED_STRIDE = 1000
+
+
+def convert_batches(batch_dirs, out_dir, world_path=None):
+    """One observation-log set from several batches, built so that a rerun adds to it: each batch keeps the seed base
+    it got the first time (1000, 2000, ... in the order first seen, recorded in index.json `batches`), an episode's
+    log is seed_base + its own seed, and a batch converted before but not named this time keeps its earlier entries.
+    A rerun writes the same bytes for an episode that has not changed, so the replay runner resumes on them."""
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, "index.json")
+    old = None
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as fh:
+            old = json.load(fh)
+        if old.get("schema") != SET_SCHEMA:
+            raise ValueError("%s holds a single-batch index; use a new folder for a set" % out_dir)
+    registry = list((old or {}).get("batches") or [])
+    names = [b["batch"] for b in registry]
+    for bd in batch_dirs:
+        name = os.path.basename(os.path.normpath(bd))
+        if name not in names:
+            registry.append({"batch": name, "seed_base": SEED_STRIDE * (len(registry) + 1)})
+            names.append(name)
+    given = {os.path.basename(os.path.normpath(bd)): bd for bd in batch_dirs}
+    episodes, excluded = [], []
+    for b in registry:
+        if b["batch"] in given:
+            sub = convert_batch(given[b["batch"]], out_dir, world_path, seed_base=b["seed_base"], write_index=False)
+            b.update({k: sub.get(k) for k in ("batch_config", "real_car", "status", "halt", "world_file", "world_sha12",
+                                              "dv_file", "max_range_m")})
+            b["converted"] = sub["created"]
+            episodes += sub["episodes"]
+            excluded += sub["excluded"]
+        else:
+            episodes += [e for e in old["episodes"] if e.get("batch") == b["batch"]]
+            excluded += [x for x in old.get("excluded", []) if x.get("batch") == b["batch"]]
+    worlds = {b.get("world_sha12") for b in registry}
+    index = {"schema": SET_SCHEMA, "batch": " + ".join(names), "batches": registry,
+             "batch_config": ", ".join(str(b.get("batch_config")) for b in registry),
+             "real_car": all(b.get("real_car") for b in registry),
+             "world_file": ", ".join(sorted({str(b.get("world_file")) for b in registry})),
+             "world_sha12": ", ".join(sorted(str(w) for w in worlds)),
+             "dv_file": "; ".join(sorted({str(b.get("dv_file")) for b in registry})),
+             "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+             "episodes": sorted(episodes, key=lambda e: e["seed"]), "excluded": excluded}
+    index["steps"] = sum(e["steps"] for e in index["episodes"])
+    with open(path, "w", encoding="utf-8") as fh:
         json.dump(index, fh, indent=1)
     return index
 
