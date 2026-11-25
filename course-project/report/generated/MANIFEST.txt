@@ -358,7 +358,12 @@ intok.gemma | 25,900 | study_summary.json descriptive, median
 intok.opus | 41,027 | study_summary.json descriptive, median
 intok.qwen | 36,035 | study_summary.json descriptive, median
 judge.errors | 0 | judge_summary.txt
+judge.inter.exact-faithful | 99 | evidence/M4/M4.T11/pilot_summary.json judge inter_exact_faithful (%)
+judge.inter.kappa-faithful | \ensuremath{-}0.01 | evidence/M4/M4.T11/pilot_summary.json judge inter_kappa_faithful
+judge.inter.kappa-uncertainty | 0.21 | evidence/M4/M4.T11/pilot_summary.json judge inter_kappa_uncertainty
+judge.inter.n | 158 | evidence/M4/M4.T11/pilot_summary.json judge inter_judge_n
 judge.items | 900 | judge_summary.txt
+judge.sol.wrong | 0.67 | evidence/M4/M4.T11/pilot_summary.json judge sol kl_exact_by_kind wrong
 judge.spend | 6.27 | judge_summary.txt
 lat.p50.gemma | 1,097 | study_summary.json pooled_latency
 lat.p50.opus | 19.6 | study_summary.json pooled_latency

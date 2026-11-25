@@ -26,6 +26,15 @@ would need: simulated room episodes (the rehearsal's logs, or new ones with the 
 direction-dependent slip) converted like the real logs and replayed through each model arm with the same
 final-position metric. Do not fill it with anything else.
 
+**Decisions for Xiaohui (from the report review, 2026-11-25; not marked in the PDF):**
+- **Length (review finding 27).** The report is 15 pages against the first-draft guide of 6–8
+  (`evidence/M5/requirements.md`); no page limit was found on Canvas. Nothing was cut. The cheapest cuts, if wanted:
+  the note rubric's level anchors in IV-C (keep the criteria and weights, point to the rubric file); the list of the
+  pre-registration's 22 deviations in IV-E (replace by a pointer to `prereg.md` §8); the camera calibration detail in
+  IV-B (keep the field of view and the reprojection error).
+- **Author e-mail (finding 32).** The template's author block shows an e-mail line; the report has none. Add one only
+  if Xiaohui wants it (agents do not add an address).
+
 Also to update when the car's closed loop has run (not marked in the PDF): Table II's footnote and Fig. 1's dotted
 validator (the closed-loop validator has run only in simulation); Section III's "ROSA (1.0.10) is planned as the
 demonstration runtime" if ROSA stays unbuilt (Fig. 1 already marks it planned, not built). The slide deck itself

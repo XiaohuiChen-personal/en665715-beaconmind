@@ -144,6 +144,7 @@ def load():
         "noise": json.loads((ROOT / "configs" / "detector_noise.json").read_text()),
         "world": json.loads((ROOT / "configs" / "arenas" / "real-room.json").read_text()),
         "flags": (ROOT / "evidence" / "M3" / "M3.T12" / "batch-runner" / "safety-flags" / "safety-flags-output.txt").read_text(),
+        "pilot_summary": json.loads((ROOT / "evidence" / "M4" / "M4.T11" / "pilot_summary.json").read_text()),
     }
 
 
@@ -707,6 +708,17 @@ def build_numbers(src):
     put("pilot.berr-max", num(max(berr), 1), pnote + " largest median bearing error over the detected placements")
     put("pilot.berr-min", num(min(berr), 1), pnote + " smallest median bearing error over the detected placements")
 
+    # ---- where the judge's calibration is thin (evidence/M4/M4.T11/pilot_summary.json)
+    J = src["pilot_summary"]["judge"]
+    jnote = "evidence/M4/M4.T11/pilot_summary.json judge"
+    if J["selected"] != "sol":
+        raise SystemExit("report_assets: the selected judge is not Sol; check the report text")
+    put("judge.sol.wrong", "%.2f" % J["sol"]["kl_exact_by_kind"]["wrong"], jnote + " sol kl_exact_by_kind wrong")
+    put("judge.inter.n", J["inter_judge_n"], jnote + " inter_judge_n")
+    put("judge.inter.kappa-faithful", num(J["inter_kappa_faithful"], 2), jnote + " inter_kappa_faithful")
+    put("judge.inter.exact-faithful", "%.0f" % (J["inter_exact_faithful"] * 100), jnote + " inter_exact_faithful (%)")
+    put("judge.inter.kappa-uncertainty", num(J["inter_kappa_uncertainty"], 2), jnote + " inter_kappa_uncertainty")
+
     # ---- the mounted tags (the world file) against the layout
     W = {t["uid"]: t for t in src["world"]["tags"]}
     moved = []
@@ -890,6 +902,67 @@ def figure_room(src, scale=1.2):
     return "\n".join(out)
 
 
+REAL_MARK = {"B0": ("circle", "draw=black!60, fill=white", "B0, dead reckoning"),
+             "B2": ("rectangle", "draw=black, fill=black", "B2, coded procedure"),
+             "claude-opus-5-5": ("diamond", "draw=black, fill=black!35", "Opus 5.5"),
+             "qwen38-flash-xhigh": ("regular polygon, regular polygon sides=3", "draw=black, fill=white", "Qwen3.8"),
+             "gemma4-26b": ("star, star points=5", "draw=black, fill=white", "Gemma 4")}
+
+
+def real_episodes():
+    """The per-episode final errors against the end circle, from result.md's first per-episode table:
+    [(episode label, start, steps, {arm: cm})]. Arms are the table's columns after `logged truth off`."""
+    text = (REAL / "result.md").read_text().split("Listed apart")[0]
+    head = re.search(r"^\| Episode \| Scenario \| Steps \| end circle \| logged truth off \| (.*?) \|$", text, re.M)
+    if not head:
+        raise SystemExit("report_assets: result.md's per-episode table header changed")
+    arms = [a.strip() for a in head.group(1).split("|")]
+    rows = []
+    for m in re.finditer(r"^\| (b2-real-\d+ ep\d+)-a1 \| (S\d) \| (\d+) \| [^|]+ \| [^|]+ \| (.*?) \|$", text, re.M):
+        vals = [float(v) for v in m.group(4).split("|")]
+        rows.append((m.group(1), m.group(2), int(m.group(3)), dict(zip(arms, vals))))
+    return rows
+
+
+def figure_real(src):
+    """Per-episode final-position error against the end circle, every replayed arm, log scale (TikZ)."""
+    rows = real_episodes()
+    arms = [a for a in REAL_MARK if a in rows[0][3]]
+    w, h = 0.86, 3.4                               # cm per episode, plot height in cm
+    lo, hi = 1.0, 150.0
+    def y(v):
+        return h * (math.log10(max(v, lo)) - math.log10(lo)) / (math.log10(hi) - math.log10(lo))
+    out = [HEADER, "\\begin{figure}[t]", "\\centering",
+           "\\begin{tikzpicture}[font=\\scriptsize, x=1cm, y=1cm]",
+           "\\draw[line width=0.4pt] (0,0) -- (0,%.3f);" % h,
+           "\\draw[line width=0.4pt] (0,0) -- (%.3f,0);" % (w * (len(rows) + 0.4))]
+    for t in (1, 3, 10, 30, 100):
+        out.append("\\draw[black!15] (0,%.3f) -- (%.3f,%.3f);" % (y(t), w * (len(rows) + 0.4), y(t)))
+        out.append("\\node[anchor=east] at (-0.05,%.3f) {%d};" % (y(t), t))
+    out.append("\\node[rotate=90, anchor=south] at (-0.55,%.3f) {final-position error (cm)};" % (h / 2))
+    for i, (ep, start, steps, vals) in enumerate(rows):
+        x = w * (i + 0.7)
+        out.append("\\node[anchor=north, align=center] at (%.3f,-0.05) {%s\\\\%d};" % (x, start, steps))
+        for j, a in enumerate(arms):
+            shape, style, _ = REAL_MARK[a]
+            dx = (j - (len(arms) - 1) / 2) * 0.11
+            out.append("\\node[%s, %s, inner sep=0pt, minimum size=4pt, line width=0.5pt] at (%.3f,%.3f) {};"
+                       % (shape, style, x + dx, y(vals[a])))
+    out.append("\\node[anchor=north] at (%.3f,-0.62) {episode: start pose and steps};" % (w * (len(rows) + 0.4) / 2))
+    lx = 0.0
+    for a in arms:
+        shape, style, label = REAL_MARK[a]
+        out.append("\\node[%s, %s, inner sep=0pt, minimum size=4pt, line width=0.5pt] at (%.3f,-1.15) {};" % (shape, style, lx + 0.1))
+        out.append("\\node[anchor=west] at (%.3f,-1.15) {%s};" % (lx + 0.2, label))
+        lx += 0.42 + 0.115 * len(label)
+    out += ["\\end{tikzpicture}",
+            "\\caption{Real-log replay: each arm's final-position error against the end circle in each of the %d episodes "
+            "that have one (log scale; episodes in the order they were driven, labeled by start pose and steps). "
+            "All arms replay the same logs.}" % len(rows),
+            "\\label{fig:real}", "\\end{figure}", ""]
+    return "\n".join(out)
+
+
 # ---------------------------------------------------------------- output
 def render(src):
     n = build_numbers(src)
@@ -905,6 +978,7 @@ def render(src):
         "tab-study.tex": table_study(n),
         "tab-tests.tex": table_tests(n),
         "fig-room.tex": figure_room(src),
+        "fig-real.tex": figure_real(src),
     }
 
 
