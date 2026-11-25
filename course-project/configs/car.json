@@ -240,22 +240,22 @@
       "uncertainty": 0.0058
     },
     "enc_ticks_per_m_left": {
-      "value": 18555.0,
+      "value": 19385.0,
       "unit": "counts/m",
       "status": "measured",
-      "source": "floor check 2026-11-25 (work list 2.8, M3.T8), session 20261125-030214-floor-check: four FORWARD_25 on the room carpet; path 1.0655 m and heading change from wall-tag pose fixes (pilot-calibrated ranges), gyro 13.97 deg left, track 0.1335 m -> left wheel 1.0492 m / 19468 counts, right 1.0818 m / 20658 counts",
+      "source": "floor check 2026-11-25 (work list 2.8, M3.T8), session 20261125-030214-floor-check, tape-measured straight: lens over the tag pilot's 2.75 m tick, four FORWARD_25, lens then 1.83 m from the baseboard and 0.19 m left of the line (Xiaohui's tape); gyro 12.13 deg left; lens 0.12 m ahead of the axle; track 0.1335 m -> axle arc 0.9390 m; left wheel 0.9249 m / 17929 counts, right 0.9532 m / 18876 counts. Replaces the first estimate from wall-tag fixes (18555 / 19096), whose lateral fixes were about 10 cm off",
       "evidence": "evidence/M3/M3.T6/floor-check.md",
       "updated": "2026-11-25",
-      "uncertainty": 278
+      "uncertainty": 194
     },
     "enc_ticks_per_m_right": {
-      "value": 19096.0,
+      "value": 19804.0,
       "unit": "counts/m",
       "status": "measured",
-      "source": "floor check 2026-11-25 (work list 2.8, M3.T8), session 20261125-030214-floor-check: four FORWARD_25 on the room carpet; path 1.0655 m and heading change from wall-tag pose fixes (pilot-calibrated ranges), gyro 13.97 deg left, track 0.1335 m -> left wheel 1.0492 m / 19468 counts, right 1.0818 m / 20658 counts",
+      "source": "floor check 2026-11-25 (work list 2.8, M3.T8), session 20261125-030214-floor-check, tape-measured straight: lens over the tag pilot's 2.75 m tick, four FORWARD_25, lens then 1.83 m from the baseboard and 0.19 m left of the line (Xiaohui's tape); gyro 12.13 deg left; lens 0.12 m ahead of the axle; track 0.1335 m -> axle arc 0.9390 m; left wheel 0.9249 m / 17929 counts, right 0.9532 m / 18876 counts. Replaces the first estimate from wall-tag fixes (18555 / 19096), whose lateral fixes were about 10 cm off",
       "evidence": "evidence/M3/M3.T6/floor-check.md",
       "updated": "2026-11-25",
-      "uncertainty": 286
+      "uncertainty": 198
     }
   },
   "measured": {

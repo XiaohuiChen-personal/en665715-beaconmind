@@ -88,6 +88,27 @@ with tag centres at 0.215 m. The pilot supports the 3.0 m range limit (Xiaohui d
 `bm-micro-ros-agent` still up, recorder stopped, clone at `6fa8b0e`; scratch wrapper `~/bm-scratch/pilot_mark3.py` on the
 Spark (outside the repo) can be deleted.
 
+**Stand test (M3.T6 §5.1, M3.T7) and STOP check (M3.T13) PASSED, 2026-11-25 ≈ 02:53–03:00 CST** (session
+`20261125-025313-stand-test`, fresh 4 × AA). All motor-off checks passed (telemetry 0.007 s, armed, IMU, clock, latch
+clear, STOP program alive; `/pico/cmd_vel` subscribers are the car and the rosbag, the STOP program the only
+publisher); drive map 0.25 / 0.33; refusal without `--i-am-at-the-car`. S1 0.091 m, S2 0.246/0.247/0.244 m, S3
+−0.096 m, S4/S5 `timeout` at 5.3 s with opposite wheel counts; the left wheel counts about half the right on the stand
+(free wheels; on the floor they are within 4–7 %). STOP key (sent through tmux by Claude, not typed by Xiaohui): zero
+duty 0.037 s, wheels still 0.129 s (`estop_max_s` 0.2); latch refuses a move; clear-latch then runs. Ctrl+C mid-move:
+0.043 / 0.153 s, executor latch. Container killed mid-move (no zeros sent): wheels still 0.570 s (firmware timeout).
+
+**Floor check (M3.T8, work list 2.8) DONE, measured with the wall tags and one tape reading instead of tape per step
+(Xiaohui agreed), 2026-11-25 ≈ 03:02–03:30 CST** (session `20261125-030214-floor-check`; scratch runners
+`~/bm-scratch/{tagmeas,floor,verify,scale4}.sh|py` on the Spark, logs beside them). Straights turn the car **about 3°
+left per 25 cm** (gyro and tags agree; under the 6° limit; the odometry reports it). Turns: 3 × 30° = 89.0° / −89.3° by
+tags, gyro within 2° (pass). STOP on the floor: 0.5 cm after the key, still at 0.104 s (pass). F2 (10 cm out and back)
+ends 2–3 cm ahead each time by 2-tag fixes (marginal; the backward leg stops about 5 mm short). **Encoder scale:** the
+nominal 20,524 counts/m under-reported travel by several percent; a first estimate from tag fixes (18,555 / 19,096,
+commit `75be6fa`) over-corrected because the fixes' sideways position at 2–3 m is only good to about ±10 cm; the
+tape-measured straight (lens from the 2.75 m tick to 1.83 m from the baseboard, 0.19 m left of the line, gyro 12.13°)
+gives **left 19,385, right 19,804 counts/m (±1 %)**, now in `configs/car.json`. Lesson: tag fixes are good along the
+line of sight (ranges), weak across it; measure distance with a tape or with ranges to a tag straight ahead.
+
 **Range limit 3.0 m (Xiaohui, 2026-11-25: "I would say 3.0 will be better")**, inside the pilot's reliable range (to 3.135 m). `configs/dv-real.json` written by the batch README's command a2 (sha12 `ea2cd23f9186`): the frozen file with `sigma_range_a_m` 0.05 → 0.0063, `sigma_range_b_per_m` 0.05 → 0.017, `sigma_bearing_deg` 2.0 → 1.937, `reject_range_above_m` 2.0 → 3.0; frozen `dv.json` unchanged. Real batches run with `--max-range 3.0 --detector-noise course-project/configs/detector_noise.json --dv course-project/configs/dv-real.json`. Motor pack: 4 × AA alkaline (6.67 V fresh on 2026-09-20, 5.7–5.9 V by mid-October; `pack_min_v` 5.5 V); Claude advised a fresh set before the stand test, kept for the floor check and the first batches; there is no battery signal on the car.
 
 **Tags.** Xiaohui checked a printed tag: about 16 × 16 cm (passes the printer-scaling check; the pilot's step A1 takes
