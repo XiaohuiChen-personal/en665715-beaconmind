@@ -238,6 +238,24 @@
       "evidence": "evidence/M1/M1.T9/derived.txt",
       "updated": "2026-10-29",
       "uncertainty": 0.0058
+    },
+    "enc_ticks_per_m_left": {
+      "value": 18555.0,
+      "unit": "counts/m",
+      "status": "measured",
+      "source": "floor check 2026-11-25 (work list 2.8, M3.T8), session 20261125-030214-floor-check: four FORWARD_25 on the room carpet; path 1.0655 m and heading change from wall-tag pose fixes (pilot-calibrated ranges), gyro 13.97 deg left, track 0.1335 m -> left wheel 1.0492 m / 19468 counts, right 1.0818 m / 20658 counts",
+      "evidence": "evidence/M3/M3.T6/floor-check.md",
+      "updated": "2026-11-25",
+      "uncertainty": 278
+    },
+    "enc_ticks_per_m_right": {
+      "value": 19096.0,
+      "unit": "counts/m",
+      "status": "measured",
+      "source": "floor check 2026-11-25 (work list 2.8, M3.T8), session 20261125-030214-floor-check: four FORWARD_25 on the room carpet; path 1.0655 m and heading change from wall-tag pose fixes (pilot-calibrated ranges), gyro 13.97 deg left, track 0.1335 m -> left wheel 1.0492 m / 19468 counts, right 1.0818 m / 20658 counts",
+      "evidence": "evidence/M3/M3.T6/floor-check.md",
+      "updated": "2026-11-25",
+      "uncertainty": 286
     }
   },
   "measured": {
