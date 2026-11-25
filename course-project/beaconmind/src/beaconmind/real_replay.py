@@ -369,10 +369,56 @@ def load_obslogs(obslog_dir):
     return index, docs
 
 
+# A later batch added to a set can need a sibling run folder per arm (runs/<arm>+<batch>): the runner refuses to
+# resume a folder once its config tag changed, and the tag holds the hashes of tools/real_replay.py and this file.
+# The parts of one arm may differ only in those two hashes; everything that shapes the agent's input must match.
+CODE_SHAS = ("runner_sha12", "real_replay_sha12")
+SAME_ACROSS_PARTS = ("provider_key", "provider_entry", "agent", "arm", "repeat", "max_steps", "sha12", "dv",
+                     "observation_overlay", "obslog_schema", "runner", "prompt_file")
+
+
+def _folders(spec):
+    return [spec] if isinstance(spec, str) else list(spec)
+
+
+def check_parts(folders):
+    """[{folder, config, git_commit, runner_sha12, real_replay_sha12, seeds}] for one arm's run folders (run.json);
+    ValueError when they differ in anything but the code hashes, or when a seed is in more than one of them."""
+    parts, seen = [], {}
+    for f in _folders(folders):
+        with open(os.path.join(f, "run.json"), encoding="utf-8") as fh:
+            head = json.load(fh)
+        for seed in sorted(int(n[5:-6]) for n in os.listdir(f) if n.startswith("seed_") and n.endswith(".jsonl")):
+            if seed in seen:
+                raise ValueError("seed %d is in two run folders of one arm: %s and %s" % (seed, seen[seed], f))
+            seen[seed] = f
+        parts.append(dict({k: head.get(k) for k in ("config", "git_commit") + CODE_SHAS}, folder=f, head=head,
+                          seeds=sorted(s for s, g in seen.items() if g == f)))
+    for p in parts[1:]:
+        diff = [k for k in SAME_ACROSS_PARTS if p["head"].get(k) != parts[0]["head"].get(k)]
+        if diff:
+            raise ValueError("%s and %s differ in %s (only %s may)" % (parts[0]["folder"], p["folder"], diff,
+                                                                       ", ".join(CODE_SHAS)))
+    for p in parts:
+        del p["head"]
+    return parts
+
+
+def _arm_rows(folders, seed):
+    rows = []
+    for f in _folders(folders):
+        path = os.path.join(f, "seed_%d.jsonl" % seed)
+        if os.path.exists(path):
+            if rows:
+                raise ValueError("seed %d is in more than one run folder of %s" % (seed, folders))
+            rows = _jsonl(path)
+    return rows
+
+
 def final_errors(docs, runs):
     """{arm: {seed: row}} with the final-position and heading error of each episode against the batch's truth at the
     last step (and the end-of-episode circle's position, and the simulator's truth when the log has it).
-    `runs` = {arm label: run folder}. B0 and B2 come from the logs themselves. An arm's episode counts only when every
+    `runs` = {arm label: run folder, or a list of an arm's run folders}. B0 and B2 come from the logs themselves. An arm's episode counts only when every
     step of it was replayed."""
     out = {"B0": {}, "B2": {}}
     for arm in runs:
@@ -382,9 +428,8 @@ def final_errors(docs, runs):
         last = recs[-1]
         truth = last["truth"]
         ests = {"B0": ks.dead_reckoning(recs)[-1], "B2": last.get("b2_estimate") or (last.get("report") or {}).get("pose")}
-        for arm, folder in runs.items():
-            path = os.path.join(folder, "seed_%d.jsonl" % seed)
-            rows = _jsonl(path) if os.path.exists(path) else []
+        for arm, folders in runs.items():
+            rows = _arm_rows(folders, seed)
             ests[arm] = rows[-1]["estimate_pose"] if len(rows) == len(recs) else None
         if last.get("truth_sim"):
             out.setdefault("_truth_check", {})[seed] = {"truth_last": truth, "truth_sim_last": last["truth_sim"]}
@@ -411,12 +456,10 @@ def run_stats(docs, runs):
     """{arm: {steps, expected_steps, valid, fallbacks, repaired, errors, move_calls, cost_usd, mean_s, p95_s}} from
     the run folders' rows."""
     out = {}
-    for arm, folder in runs.items():
+    for arm, folders in runs.items():
         rows = []
         for seed in docs:
-            path = os.path.join(folder, "seed_%d.jsonl" % seed)
-            if os.path.exists(path):
-                rows += _jsonl(path)
+            rows += _arm_rows(folders, seed)
         secs = sorted(float(r.get("seconds") or 0.0) for r in rows)
         out[arm] = {"steps": len(rows), "expected_steps": sum(len(d["records"]) for d in docs.values()),
                     "valid": sum(1 for r in rows if (r.get("checks") or {}).get("valid")),

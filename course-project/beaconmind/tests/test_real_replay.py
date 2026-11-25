@@ -318,3 +318,38 @@ def test_an_episode_whose_end_circle_was_interrupted_is_converted(batch, tmp_pat
     err = rr.final_errors({1: doc}, {})
     assert "vs_end_circle_m" not in err["B2"][1] and err["B2"][1]["complete"]       # no end circle: no such column
     assert rr.summarize(err)["B2"]["median_vs_end_circle_m"] is None
+
+
+def test_an_arm_in_sibling_run_folders_is_analysed_as_one(batch, tmp_path):
+    """A batch added later runs into runs/<arm>+<batch> when the replay code changed (the runner refuses to resume the
+    first folder then); analyze merges an arm's folders, refuses a seed in two of them, and refuses folders that
+    differ in more than the code hashes."""
+    rr.convert_batch(str(batch), str(tmp_path / "o"))
+    o, runs = str(tmp_path / "o"), tmp_path / "runs"
+    seeds = sorted(rr.load_obslogs(o)[1])
+    assert len(seeds) >= 2
+    for name, part in (("procedure", seeds[:1]), ("procedure+later", seeds[1:])):
+        assert tool.cmd_run(_args(provider="procedure", obslogs=o, out=str(runs / name),
+                                  extra=["--seeds", ",".join(map(str, part))])) == 0
+
+    def analyze(*folders, out="r"):
+        argv = ["analyze", "--obslogs", o, "--out", str(tmp_path / out)]
+        for f in folders:
+            argv += ["--run", "proc=%s" % (runs / f)]
+        return tool.cmd_analyze(tool.parser().parse_args(argv))
+
+    assert analyze("procedure", "procedure+later") == 0
+    res = json.loads((tmp_path / "r.json").read_text())
+    assert all(res["errors"]["proc"][str(s)]["complete"] for s in seeds)
+    assert res["errors"]["proc"] == res["errors"]["B2"]                 # the stand-in is B2 at every step
+    assert [p["seeds"] for p in res["run_parts"]["proc"]] == [seeds[:1], seeds[1:]]
+    assert res["run_stats"]["proc"]["steps"] == res["run_stats"]["proc"]["expected_steps"]
+    assert "Arms run in several folders" in (tmp_path / "r.md").read_text()
+    with pytest.raises(SystemExit):                                     # one seed in two folders of an arm
+        analyze("procedure", "procedure+later", "procedure")
+    head = json.loads((runs / "procedure+later" / "run.json").read_text())
+    (runs / "procedure+later" / "run.json").write_text(json.dumps(dict(head, max_steps=10)))
+    with pytest.raises(SystemExit):                                     # differs in more than the code hashes
+        analyze("procedure", "procedure+later")
+    (runs / "procedure+later" / "run.json").write_text(json.dumps(dict(head, real_replay_sha12="0" * 12)))
+    assert analyze("procedure", "procedure+later") == 0                 # the code hashes may differ

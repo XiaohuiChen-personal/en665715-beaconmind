@@ -7,6 +7,7 @@
         [--dv course-project/configs/dv-real.json] [--prompt course-project/prompts/robot_system_prompt_v3.3-room.txt]
     python3 course-project/tools/real_replay.py run --provider procedure ...      # free stand-in, no container needed
     python3 course-project/tools/real_replay.py analyze --obslogs <dir> --run <arm>=<run dir> ... --out <file stem>
+        (give one arm label twice for its sibling run folders, e.g. runs/<arm> and runs/<arm>+b2-real-03)
         [--compare <rehearsal analysis.json>]
 
 convert   one observation log per finished episode (beaconmind/real_replay.py: truth from truth.jsonl, B2's own
@@ -213,7 +214,12 @@ def cmd_analyze(a):
         label, _, folder = spec.partition("=")
         if not folder:
             sys.exit("--run takes <arm label>=<run folder>")
-        runs[label] = folder
+        runs.setdefault(label, []).append(folder)       # a label given twice: one arm's sibling folders
+    try:
+        parts = {label: rr.check_parts(folders) for label, folders in runs.items()}
+    except (ValueError, OSError) as exc:
+        sys.exit("run folders: %s" % exc)
+    runs = {label: folders[0] if len(folders) == 1 else folders for label, folders in runs.items()}
     errors = rr.final_errors(docs, runs)
     summary = rr.summarize(errors)
     order = ["B0", "B2"] + list(runs)
@@ -228,7 +234,15 @@ def cmd_analyze(a):
         for arm in order:
             h, t = summary.get(arm, {}).get("median_m"), other["summary"].get(arm, {}).get("median_m")
             md += "| %s | %s | %s | %s |\n" % (arm, rr._cm(h), rr._cm(t), rr._cm(h - t) if h is not None and t is not None else "")
-    doc = {"schema": "bm.real_replay_result/1", "index": index, "runs": runs, "summary": summary, "run_stats": stats,
+    several = {label: p for label, p in parts.items() if len(p) > 1}
+    if several:
+        md += "\nArms run in several folders (they differ only in the hashes of the replay code, %s):\n\n" % (
+            ", ".join(rr.CODE_SHAS))
+        for label, p in several.items():
+            md += "- %s: %s\n" % (label, "; ".join("`%s` seeds %s, config %s" % (
+                x["folder"], ", ".join(map(str, x["seeds"])), x["config"]) for x in p))
+    doc = {"schema": "bm.real_replay_result/1", "index": index, "runs": runs, "run_parts": parts, "summary": summary,
+           "run_stats": stats,
            "errors": {arm: {str(k): v for k, v in by.items()} for arm, by in errors.items()},
            "created": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
     pathlib.Path(a.out + ".json").write_text(json.dumps(doc, indent=1))
