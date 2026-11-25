@@ -19,11 +19,12 @@ the detector on real frames, the confirmed 3.0 m range limit, `evidence/M1/M1.T8
 item 5's episodes, steps and the B0, B2 and Opus 5.5 results with their uncertainty (Table VI); item 1's and item
 7's parts for those arms. Filled on 2026-11-18: item 3 (coverage) and the simulator part of item 6.
 
-**Not a placeholder, an open point stated in V-G:** row 5 also asked for each arm's result "in each simulated
-rehearsal" and the difference (the sim-to-real gap). The room rehearsal ran only B2 and B0 (their gap is in V-G). For
-the model arms no simulated room set has been replayed; it would need simulated room episodes (the rehearsal's logs,
-or new ones with the pilot's noise model and a direction-dependent slip) converted like the real logs and replayed
-through each model arm with the same final-position metric. Do not fill it with anything else.
+**Not a placeholder: not run (decided 2026-11-25; Xiaohui did not object to dropping it).** Row 5 also asked for each
+arm's result "in each simulated rehearsal" and the difference (the sim-to-real gap). The room rehearsal ran only B2
+and B0 (their gap is in V-G). The model arms' comparison on a simulated room set was not run; V-G says so and what it
+would need: simulated room episodes (the rehearsal's logs, or new ones with the pilot's noise model and a
+direction-dependent slip) converted like the real logs and replayed through each model arm with the same
+final-position metric. Do not fill it with anything else.
 
 Also to update when the car's closed loop has run (not marked in the PDF): Table II's footnote and Fig. 1's dotted
 validator (the closed-loop validator has run only in simulation); Section III's "ROSA (1.0.10) is planned as the
