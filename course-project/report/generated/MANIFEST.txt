@@ -514,6 +514,10 @@ room.tags | 20 | layout.json tags
 room.tags-per-m | 1.15 | layout-2/layout.json: tags / length of the walls
 room.tags.added | 8 | layout-2/layout.json (added)
 room.tags.printed | 12 | layout-2/layout.json (tags not marked added)
+rstat.ate.opus-b2.est | 0.08 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, Opus - B2, estimate (m to cm)
+rstat.ate.opus-b2.estimand | median | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, Opus - B2, estimand
+rstat.ate.opus-b2.hi | 0.63 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, Opus - B2, ci95 high
+rstat.ate.opus-b2.lo | \ensuremath{-}0.01 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, Opus - B2, ci95 low
 rstat.b2-b0.below | 8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 episodes below zero
 rstat.b2-b0.est | \ensuremath{-}40.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 estimate (m to cm)
 rstat.b2-b0.hi | \ensuremath{-}16.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 ci95 high
@@ -527,6 +531,14 @@ rstat.opus-b2.below | 4 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circ
 rstat.opus-b2.est | \ensuremath{-}0.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 estimate (m to cm)
 rstat.opus-b2.hi | 1.0 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 ci95 high
 rstat.opus-b2.lo | \ensuremath{-}0.8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 ci95 low
+rtrace.max-beyond | 7 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: steps beyond 5 cm in that episode
+rtrace.max-cm | 25.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: largest Opus - B2 estimate gap
+rtrace.max-final-cm | 1.0 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: the gap at that episode's end
+rtrace.max-seed | 3001 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: the episode with the largest gap
+rtrace.max-step | 41 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: the step of the largest gap
+rtrace.max-steps | 56 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: steps of that episode
+rtrace.n | 9 | evidence/M3/M3.T19/real-2026-11-25/stats.json main_seeds
+rtrace.parted | 6 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: main episodes where Opus's estimate parts from B2's by > 5 cm
 rubric.gemma | 0.407 | judge_summary.txt
 rubric.gemma.concise | 1.89 | judge_summary.txt mean_levels
 rubric.gemma.coverage | 1.61 | judge_summary.txt mean_levels

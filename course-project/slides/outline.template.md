@@ -237,7 +237,8 @@ Layout: One Column
 replayed through the arms. The truth is a full turn at each episode's end, fitted to the surveyed tags: its
 residuals are {{real.circle.rms.min}} to {{real.circle.rms.max}} centimeters, and no tape reading checks it. Against
 it, dead reckoning ended a median {{real.b0.median}} centimeters off, the coded procedure {{real.b2.median}} and Opus
-{{real.opus.median}}; Opus and the procedure differed by at most {{real.opus-b2.maxdiff}} centimeters on every episode.
+{{real.opus.median}}; their final errors differed by at most {{real.opus-b2.maxdiff}} centimeters on every episode, though
+along the way Opus's estimate left the procedure's for a few steps in {{rtrace.parted}} of {{rtrace.n}} episodes.
 [PENDING 5: Qwen3.8 and Gemma 4.] The biggest surprise was the floor: going one way the car covered only
 {{slip.north.down}} of the distance it counted, going the other way about all of it. These numbers describe the gap;
 they test no hypothesis.
@@ -267,7 +268,7 @@ Layout: One Column
 - They did it by executing the procedure, which a short program also does at negligible cost
 - The model that skipped its tools failed (post hoc)
 - Not measured: what an LLM adds when the rules do not fit, such as close duplicates or operator requests
-- On the car: Opus and the coded procedure tied; both far ahead of dead reckoning
+- On the car: Opus and the coded procedure tied in final error; both far ahead of dead reckoning
 - [PENDING 7: Qwen3.8, Gemma 4 and the closed loop on the car]
 ### Notes
 (60 s) To conclude. In this study two capable models kept a pose estimate that beats dead reckoning by
@@ -275,7 +276,7 @@ Layout: One Column
 executing the prescribed procedure, and a short program does the same at negligible cost. The model that
 skipped its tools failed. What the study did not measure is what a language model adds when the procedure's
 rules do not fit: close duplicates, hidden IDs, operator requests. That is the next test. On the real car, Opus
-and the coded procedure tied, and both ended far closer to the truth than dead reckoning. [PENDING 7: Qwen3.8,
+and the coded procedure tied in final error, and both ended far closer to the truth than dead reckoning. [PENDING 7: Qwen3.8,
 Gemma 4 and the closed loop on the car.]
 
 ## Slide 14 — References

@@ -4,7 +4,7 @@ Every `\pending{...}` in `Chen-Project-Report.tex` prints in red as **[PENDING: 
 `python3 course-project/tools/report_assets.py --pending` (4 today, one per row below). To fill one: add the numbers to
 `tools/report_assets.py` from the evidence file (so they stay generated), replace the `\pending{}` with prose that
 uses `\bmnum{...}`, rebuild, and delete the row here. Xiaohui found no page limit on Canvas (2026-11-24); the report
-is 15 pages. Keep it tight anyway: every page is read by a grader.
+is 16 pages. Keep it tight anyway: every page is read by a grader.
 
 | # | Where | What goes there | Evidence that will supply it | Work-list item |
 | --- | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ direction-dependent slip) converted like the real logs and replayed through each
 final-position metric. Do not fill it with anything else.
 
 **Decisions for Xiaohui (from the report review, 2026-11-25; not marked in the PDF):**
-- **Length (review finding 27).** The report is 15 pages against the first-draft guide of 6–8
+- **Length (review finding 27).** The report is 16 pages against the first-draft guide of 6–8
   (`evidence/M5/requirements.md`); no page limit was found on Canvas. Nothing was cut. The cheapest cuts, if wanted:
   the note rubric's level anchors in IV-C (keep the criteria and weights, point to the rubric file); the list of the
   pre-registration's 22 deviations in IV-E (replace by a pointer to `prereg.md` §8); the camera calibration detail in

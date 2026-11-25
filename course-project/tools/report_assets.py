@@ -644,6 +644,27 @@ def build_numbers(src):
         put("rstat.%s.hi" % k, num(d["ci95"][1] * 100, 1), snote + " end circle %s %s ci95 high" % (grp, arm))
         put("rstat.%s.below" % k, d["n_below"], snote + " end circle %s %s episodes below zero" % (grp, arm))
     put("rstat.n", t0["n"], snote + " end circle n")
+    ate = [t for t in RS["tests"] if t["label"].startswith("ATE over all steps")]
+    if len(ate) != 1:
+        raise SystemExit("report_assets: stats.json has no single whole-episode ATE comparison")
+    d = ate[0]["vs_B2"]["claude-opus-5-5"]
+    put("rstat.ate.opus-b2.estimand", "median" if d["estimand"] == "median" else "Hodges--Lehmann estimate",
+        snote + " ATE vs logged truth, Opus - B2, estimand")
+    put("rstat.ate.opus-b2.est", num(d["estimate"] * 100, 2), snote + " ATE vs logged truth, Opus - B2, estimate (m to cm)")
+    put("rstat.ate.opus-b2.lo", num(d["ci95"][0] * 100, 2), snote + " ATE vs logged truth, Opus - B2, ci95 low")
+    put("rstat.ate.opus-b2.hi", num(d["ci95"][1] * 100, 2), snote + " ATE vs logged truth, Opus - B2, ci95 high")
+    main = [str(x) for x in RS["main_seeds"]]
+    gaps = {sd: RS["traces"][sd]["arms"]["claude-opus-5-5"]["vs_B2"] for sd in main}
+    parted = {sd: g for sd, g in gaps.items() if g and g.get("first_step_beyond") is not None}
+    put("rtrace.parted", len(parted), snote + " traces: main episodes where Opus's estimate parts from B2's by > 5 cm")
+    put("rtrace.n", len(main), snote + " main_seeds")
+    worst = max(parted.items(), key=lambda kv: kv[1]["max_gap_m"])
+    put("rtrace.max-cm", num(worst[1]["max_gap_m"] * 100, 1), snote + " traces: largest Opus - B2 estimate gap")
+    put("rtrace.max-seed", worst[0], snote + " traces: the episode with the largest gap")
+    put("rtrace.max-step", worst[1]["max_gap_step"], snote + " traces: the step of the largest gap")
+    put("rtrace.max-beyond", worst[1]["steps_beyond"], snote + " traces: steps beyond 5 cm in that episode")
+    put("rtrace.max-steps", RS["traces"][worst[0]]["steps"], snote + " traces: steps of that episode")
+    put("rtrace.max-final-cm", num(worst[1]["final_gap_m"] * 100, 1), snote + " traces: the gap at that episode's end")
 
     # ---- the room rehearsal in simulation (B2 and B0 only; table 1c, the real layout and range, carpet odometry)
     row = grab(src["rehearsal"], r"\*\*Table 1c\.[^\n]*\n.*?\n\| C20, 3\.0 m \|([^\n]*)", "rehearsal table 1c C20 3.0 m row")
@@ -950,7 +971,7 @@ def figure_real(src):
     """Per-episode final-position error against the end circle, every replayed arm, log scale (TikZ)."""
     rows = real_episodes()
     arms = [a for a in REAL_MARK if a in rows[0][3]]
-    w, h = 0.86, 3.4                               # cm per episode, plot height in cm
+    w, h = 0.86, 3.1                               # cm per episode, plot height in cm
     lo, hi = 1.0, 150.0
     def y(v):
         return h * (math.log10(max(v, lo)) - math.log10(lo)) / (math.log10(hi) - math.log10(lo))

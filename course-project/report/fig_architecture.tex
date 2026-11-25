@@ -82,7 +82,7 @@
    \texttt{map\_point}\\ \texttt{update\_beacon}\\ \texttt{predict\_observation}\\
    \texttt{exploration\_summary}\\ \texttt{move}\\ \texttt{emergency\_stop}};
 \node[plan=2.85cm, below=0.25cm of tl] (rosa)
-  {\textbf{ROSA demo}, same tools: dropped (the video uses the harness logs)};
+  {\textbf{ROSA demo} (dropped)};
 \node[unused=2.85cm] (gt) at (16.455,3.75) {tag-resection ground truth\\ (real room)};
 \node[comp=2.9cm] (rp) at (12.98,6.2)
   {\textbf{JSON belief report}\\ pose, associations, map, memory, decision, note};
@@ -151,9 +151,8 @@
 \node[lbl, right=2pt of lg2] {planned, then dropped (border and dashed arrow)};
 \end{tikzpicture}
 \caption{BeaconMind architecture as designed. Solid borders mark the components the simulated study used;
-dotted borders and arrows mark components built since and not used in it: the car and its host-side path, the
-validator, the room simulator of the closed-loop episodes and the tag-resection ground truth of the real-car
-replay (Section~\ref{sec:real}). The dashed border marks the demonstration runtime, planned and then dropped. The
+dotted ones mark parts built since and not used in it (the car and its host path, the validator, the room
+simulator, the resection ground truth; Section~\ref{sec:real}); dashed, the dropped demonstration runtime. The
 language model owns the pose belief and the
 beacon map, while deterministic single-timestep tools compute every geometric quantity; in closed loop a
 validator below the model checks every move. Arrows show the designed data flow.}

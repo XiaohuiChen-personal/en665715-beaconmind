@@ -637,8 +637,8 @@ tool now builds the room procedure.
 \item \emph{A firmware change.} On 2026-11-25, after the real B2 episodes, the Pico was reflashed with a build that
 sets a static network address instead of asking the access point for one, to stop the dropouts of
 Section~\ref{sec:sim2real}; nothing else in the firmware changed (\path{course-project/CONTEXT.md}, entry
-``2026-11-24 and 2026-11-25''). It was written by an AI agent and checked by a build and by reading the code, then
-ran on the car for 13 minutes before the motor failed; the closed-loop car episodes will run on it.
+``2026-11-24 and 2026-11-25''). It was written by an AI agent and checked by a build and by reading the code; its
+longest run on the car so far is 13 minutes. The closed-loop car episodes will run on it.
 \item \emph{\bmnum{real.n} episodes instead of the plan's at least 10} (plan \S3.6, work-list item 3.4). The right
 motor began to stall and then failed on the stand the same day; it is being replaced, and the author closed the set
 at \bmnum{real.n} episodes that ended normally, plus the one listed apart (same entry;
@@ -794,8 +794,13 @@ replayed procedure reproduces the car's live estimate at every step, which check
 (\path{evidence/M3/M3.T19/real-2026-11-25/}). Table~\ref{tab:real} gives the final-position error against the end
 circle for the \bmnum{real.n-circle} episodes that have one (in the ninth, a stall halted the batch inside the end
 circle), and Fig.~\ref{fig:real} shows each episode. On each of them the final errors of Opus and the procedure differed by at most
-\bmnum{real.opus-b2.maxdiff}\,cm, so the two cannot be told apart here (their paths were not compared); both ended
-far closer to the truth than dead reckoning, whose error grew to \bmnum{real.b0.max}\,cm on the longest episodes,
+\bmnum{real.opus-b2.maxdiff}\,cm, so the two cannot be told apart at the end. Along the way they do part: Opus's
+estimate left the procedure's by more than 5\,cm in \bmnum{rtrace.parted} of the \bmnum{rtrace.n} episodes, by up to
+\bmnum{rtrace.max-cm}\,cm (episode \bmnum{rtrace.max-seed}, \bmnum{rtrace.max-beyond} steps from step
+\bmnum{rtrace.max-step} of \bmnum{rtrace.max-steps}), and came back (\bmnum{rtrace.max-final-cm}\,cm at that episode's
+end); over whole episodes the \bmnum{rstat.ate.opus-b2.estimand} difference in trajectory error against the tracked
+truth, Opus minus the procedure, is \bmnum{rstat.ate.opus-b2.est}\,cm (\bmnum{rstat.ate.opus-b2.lo} to
+\bmnum{rstat.ate.opus-b2.hi}; exploratory). Both ended far closer to the truth than dead reckoning, whose error grew to \bmnum{real.b0.max}\,cm on the longest episodes,
 where theirs also grew. As paired differences (exploratory and not pre-registered: the pre-registration keeps the
 real logs descriptive, and this endpoint was chosen after the data; Hodges--Lehmann estimates with exact 95\,\%
 intervals, no tests; \path{evidence/M3/M3.T19/real-2026-11-25/stats.md}), the coded procedure minus dead
@@ -910,14 +915,15 @@ network when its address lease from the host's access point ran out, 60 minutes 
 accepted (at 04:31, 08:05 and 11:43 local time); it did not come back until power-cycled. One batch ended on such a
 dropout. Not explained: why it ignored most lease renewals, why it did not return after its own soft reboot, and two
 other losses (one before about 03:26 and one between 10:39 and 10:43). A longer lease set on the access point made
-the Pico fail to join and was removed; the static address of deviation~7 avoids the lease but has run only 13 minutes
-on the car (same entry).
+the Pico fail to join and was removed; the static address of deviation~7 avoids the lease, but its longest run on
+the car so far is 13 minutes (same entry).
 
 \textbf{What carries over.} On real frames straight ahead the detector's ranges were within
 \bmnum{pilot.rel-max-pct}\,\% of the distance; its bearings were off by up to \bmnum{pilot.berr-max}$^\circ$, and
 angled views were not measured (Section~\ref{sec:setup}). The simulator's largest error was the odometry. The study's
-finding that the stronger models reproduce the procedure held on the real logs for Opus, over the
-\bmnum{real.n-circle} of \bmnum{real.n} episodes with an end circle; whether a model adds anything when the odometry
+finding that the stronger models reproduce the procedure held on the real logs for Opus in final error (over the
+\bmnum{real.n-circle} of \bmnum{real.n} episodes with an end circle) and in whole-episode error, though step by step
+its estimate left the procedure's for a few steps in \bmnum{rtrace.parted} of the \bmnum{rtrace.n} episodes; whether a model adds anything when the odometry
 is this poor is not answered by episodes in which it did not.
 
 \subsection{Discussion and Limitations}\label{sec:limits}
@@ -990,7 +996,7 @@ test, as is Claude Fable~5.2 in the closed-loop episode, and GPT-6.1 Sol was the
 Opus~5.5 and Claude Fable~5.2 (through Claude Code) wrote the batch runner and its safety checks, ran the batches,
 the tag pilot's analysis and the real-log replay, diagnosed the halts, and wrote the real-car parts of this report;
 Claude Fable~5.2 wrote the car firmware's static-address change of 2026-11-25, checked by a build and by reading
-the code and then on the car for 13 minutes. The STOP timings and the encoder scale were computed by agents from
+the code; its longest run on the car so far is 13 minutes. The STOP timings and the encoder scale were computed by agents from
 the logs and the tags. Xiaohui Chen tended the car, removed the tape and decided where to stop. The author chose the
 question, the models, the scope and the arena, took the tape and scale readings (the room, the tags, the tag pilot's
 placements, the car's dimensions), accepted the recorded deviations, reviews the AI-assisted content against the
