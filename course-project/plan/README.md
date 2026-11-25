@@ -724,7 +724,7 @@ the session of 2026-11-09.
 | 5.1–5.3 | Report: requirements, rewrite of Experiments, Results, Conclusion and Abstract (real setup and sim-to-real included), review, disclosure, build | M5 | Claude; Xiaohui reads | M |
 | 6.1 | Slides on the JHU template, talk track, validator | M6.T5 | Claude | M |
 | 6.2 | Public repo for the instructor (README, video link, branches, disclosure audit) | M6.T6 | Claude | S |
-| 6.3 | Rehearse the 15-minute talk | M6.T17 | Xiaohui | S |
+| 6.3 | Rehearse the talk: slides 5–10 minutes plus the 3–5 minute demo video, 15 minutes in all (Canvas, sent by Xiaohui 2026-11-24) | M6.T17 | Xiaohui | S |
 
 **Dropped** (status `dropped (cut line)`, one-line reason in each status row): the Isaac twin (M2.T4–T6,
 M2.T15–T17, M4.T15, M6.T9); the project Pico firmware and its tuning (M3.T2–T5, M3.T14, M3.T20–T26); the overhead

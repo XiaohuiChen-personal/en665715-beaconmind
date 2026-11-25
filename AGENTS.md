@@ -22,7 +22,9 @@ It is not the due date of the class-project code-repository link.
 **Xiaohui presents on Tuesday 2026-12-01 (Group 1), and all four project deliverables are
 due then, 10 points each:** the slides, a demo **recording** (a video, not a live demo),
 the report, and this repository's link (EN.665.715 lecture of 2026-10-27; confirmed by
-Xiaohui on 2026-11-09). The target is to finish by **2026-11-25**. The plan was re-scoped
+Xiaohui on 2026-11-09). **Timing** (Canvas, "Presentation Timing", sent by Xiaohui on
+2026-11-24): slides 5–10 minutes, the pre-recorded demo video 3–5 minutes, 15 minutes in all
+per project. The report's page limit is still unknown. The target is to finish by **2026-11-25**. The plan was re-scoped
 for this on 2026-11-09: `course-project/plan/README.md` §3.6 is the authority for what
 remains, and it overrides older scope text in the plan.
 

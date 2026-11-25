@@ -1,6 +1,6 @@
 # Course Project Context
 
-Last updated: 2026-11-18
+Last updated: 2026-11-24
 
 **Project name: BeaconMind** (chosen 2026-09-28). "Beacon" for the AprilTags on the walls, "Mind" for
 the language model that owns the pose belief, the beacon map and the SLAM decisions. Use this name in
@@ -9,6 +9,40 @@ technical terms in the design documents. ("TagSLAM" was avoided: it is an existi
 
 This is the canonical handoff document for the EN.665.715 course project. Read it before
 doing any course-project work and update it at the end of every course-project session.
+
+## 2026-11-24 — presentation timing from Canvas; agents started on the demo video and the batch runner (entry in progress)
+
+**Presentation timing (Canvas, "Presentation Timing", screenshot sent by Xiaohui on 2026-11-24):** slides 5–10
+minutes; demo 3–5 minutes as a pre-recorded video; 15 minutes in all per project (20 for a group of two, which does
+not apply). This settles the open question "presentation requirements (assumed 15 minutes)" of 2026-11-18: the talk
+itself gets at most 10 minutes, not 15. **The deck must be cut:** it has 15 slides written for a 15-minute talk
+(`slides/outline.template.md`, private `presentation/`). The report's page limit is still unknown (assumed 12 pages).
+
+**State checked at the start (about 23:20 CST on the Spark).** Spark clone at `65173fe` (same as the Mac), stale
+untracked `report/generated/tab-kinds.tex` only; no container running; GPU free; access point up; `bm-cam-relay` up;
+micro-ROS agent stopped (start with `car_net.sh agent-start` before car work); camera not found (car off). Mac tests
+606 passed, 10 skipped; `prereg_freeze.py --verify` OK. Dry run of the measured-world path: the 20-tag mounting
+sheet (`evidence/M3/M3.T10/layout-2/mounting.md`) with its last column filled with the nominal numbers, through
+`tools/room_world.py --variant plus8 --measured-md`, gives 20 tags identical to
+`configs/arenas/real-room-plus8-160mm-nominal.json`, so Xiaohui's measured centres go into a world file in one command.
+
+**Agents started (Xiaohui: "spin up subagents to work on demo video and batch runner … in parallel").** Both on
+disjoint files, no API spend, nothing that commands the car, no edits to this file, the report or the slides:
+- **video** (work list 4.3–4.4; M6.T4, T11, T12, T14, T15 input path): renders the simulation half from the existing
+  Opus 5.5 episode of 2026-11-18 (`data/closed-loop/20261118-room-final/claude-opus-5-5/`), built from the experiment
+  harness's logs, not ROSA (plan §3.6 cut 4; Claude's recommendation, Xiaohui did not object but has not confirmed);
+  the car part's input path, tested on an existing recorder session; a narration script for Xiaohui's voice-over;
+  whole video 3:00–5:00 as a hard check, target about 4:00. No ffmpeg on the Mac or the Spark host: a venv with
+  `imageio-ffmpeg` or a container, no system-wide install.
+- **batch** (M3.T12, plan §3.6 "Unattended batches"): dry run at 3.0 m with the 20-tag world; first real execution of
+  `car_batch.sh` on the Spark against the simulated car; README note for `353d49f`; tests for `usd_cap` between
+  episodes and two halts in one scan; a guard for a mis-surveyed tag; an argument to take the tag pilot's
+  `configs/detector_noise.json` sigmas; paste-ready first-batch commands. Must not start the micro-ROS agent, publish to
+  `/pico/*`, or write `ATTENDED_PASS.json`.
+
+**Still open for Xiaohui:** a real-run DV file with the tag pilot's sigmas (recommended: yes); the report's page
+limit; confirm the harness-based demo video. **Needs Xiaohui next (unchanged):** measure one printed square
+(160 ± 1 mm); mount the 20 tags from the new sheet and record the centres; tag pilot; stand test and floor check.
 
 ## 2026-11-18 (later) — delegation, unattended batches, spend approvals; parallel agents, room rehearsal, tag layout C20 decided
 
