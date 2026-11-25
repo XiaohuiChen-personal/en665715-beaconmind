@@ -27,12 +27,34 @@ Spark; no frames) and wrote this note and the two scripts.
    −18 % over the same 1.23 m and 7 fixes; the batch's own −23 % used its internal pose before each fix, which the
    logs do not hold exactly.) Weighted by each fix's own noise the same fixes say −10 % ± 22 %: nothing.
 
-**What changed in the batch runner** (`beaconmind/src/beaconmind/car/batch.py`, 2026-11-25): the encoder scale is
-now judged by the ranges along each straight move (`range_scale_of_move`, `range_scale_halt`: the median over the
-moves so far must stay within 12 %, 15 % on the first move alone), besides the transit and, new, each episode
-between its start and end circles. The per-step position statistic stays, weighted by the fixes' noise and halting
-only beyond three standard errors. The review's fault injection (an odometer reading 25 % short, 8-tag room at 2.5 m)
-is unchanged and halts in every seed; 25 % short, 25 % long and 15 % short halt in every one of five seeds in both
-the 8-tag and the 20-tag room, on the ranges, the car at least 0.47 m from any wall; a correct odometer completes
-(tests named in `../README.md`, the `odometry_scale` row). The practice batch's six moves replayed through the new
-check: no halt at any move.
+**What changed in the batch runner** (`beaconmind/src/beaconmind/car/batch.py`, 2026-11-25, commits `5086391`,
+`cfa3948` and the one after it): the encoder scale is now judged by the ranges along each straight move
+(`range_scale_of_move`, `range_scale_halt`, `BatchEnv._range_check`):
+
+- **Straight moves only:** a move counts when the odometry moved the axle 5 cm or more (a 30° turn moves it about
+  1.3 cm, so turns add nothing).
+- **Which tags:** seen once before and once after the move, within 30° of straight ahead both times (the camera sees
+  ±23.5°, so on the car this is every tag in view), with both ranges inside the pilot's reliable window (0.785 m to
+  `--max-range` 3.0 m; the pilot's 3.135 m is farther), weighted by how much the range says about the scale.
+- **Repeated ids:** each detection is resolved to one surveyed tag by where the tracked pose puts it (the nearest
+  surveyed tag of that id within 1 m, any other at least 1 m farther; the real room's repeated ids hang 2.28 to
+  5.52 m apart); otherwise it is not used.
+- **Range bias:** the tag pilot's model (measured − true = 0.00492 − 0.01658 r, `configs/detector_noise.json`) is
+  removed first when the batch runs with `--detector-noise`, as every real batch must.
+- **Halt:** the median over the straight moves so far, each move one estimate, off 1 by more than 12 %, and at least
+  3 × 5 % / √moves: 15 % for the first move, 12 % from the second. N = 1: in the review's fault injection (8-tag
+  room, 2.5 m, seed 3) only one straight move of the whole episode has a tag in view before and after, and the
+  injected 25 % error shows there as 1.29; one move of the real car scatters 0.94 to 1.05 (practice-01b, range bias
+  removed; SD 0.04), so 15 % is three of its sigmas from a correct odometer.
+
+**practice-01b through the new check** (the batch's own code, `test_the_practice_batch_ranges_say_its_odometer_was_right`):
+per move 0.989, 1.049, 1.003, 0.965, 0.955, 0.935 with the range bias removed, median **0.977**; no halt at any move.
+The same batch's transit check read 1.008: 0.031 apart, 1.2 standard errors of the median (1.25 × 5 % / √6 =
+0.026), and well inside the transit's own uncertainty (two circle fixes of about 5 cm over 0.69 m, about ±0.10).
+Raw ranges (what `cfa3948` used) give median 0.961.
+
+Kept: the transit check; the same check over each episode between its start and end circles; the per-step position
+statistic, weighted by each fix's noise and halting only beyond 12 % and three standard errors. The review's fault
+injection (an odometer reading 25 % short, 8-tag room at 2.5 m) is unchanged since `05f64c4` and halts 3 of 3; 25 %
+short and 25 % long halt 3 of 3 in both the 8-tag and the 20-tag room, on the ranges; a correct odometer completes
+(tests named in `../README.md`, the `odometry_scale` row).

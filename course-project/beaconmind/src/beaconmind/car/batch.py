@@ -91,8 +91,13 @@ class BatchParams:
     transit_scale_min_m: float = 0.30   # odometry and by the tags within this share, when it is at least this long
     range_scale_tol: float = 0.12       # the ranges to the tags seen before and after each straight move must change
                                         # by what the odometry says within this share (median over the moves so far)
-    range_scale_move_sigma: float = 0.05    # one move's scatter (the real car: 0.92 to 1.03 over six moves): with n
-                                        # moves the limit is at least 3 x this / sqrt(n), so one move alone needs 15 %
+    range_scale_move_sigma: float = 0.05    # one move's scatter (the real car: 0.94 to 1.05 over six moves, range bias
+                                        # removed): with n moves the limit is at least 3 x this / sqrt(n), so one
+                                        # move alone needs 15 % (N = 1: see range_scale_halt)
+    range_bias_a_m: float = 0.0         # the detector's range bias, measured - true = a + b x range (axle midpoint),
+    range_bias_b: float = 0.0           # removed before the range check: the tag pilot's, from --detector-noise
+    range_min_m: float = 0.3            # the range check uses tags between this and max_range_m (both ranges): the
+                                        # pilot's reliable window with --detector-noise
     # guard
     wall_margin_m: float = 0.15
     sigma_block_m: float = 0.25
@@ -655,15 +660,19 @@ class Monitor:
 
 # ---------------------------------------------------------------- the environment the harness drives
 
-def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10):
+def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10, max_bearing_deg=30.0):
     """The encoder scale from one straight move: (distance by the tags over distance by odometry, range pairs) or None.
 
-    For every tag id seen exactly once before the move and once after it: its position before, in the car frame
-    (range from the axle midpoint, bearing), and the odometry's displacement u predict the range after it; the scale
-    s solves |tag - s u| = the range measured after. Only ranges enter, which the camera measures to millimetres (the
-    tag pilot); a bearing error moves the prediction little for a tag near the line of motion. The pairs of one move
-    are weighted by how much the range says about s (d range / d s; a tag abeam says nothing and is left out below
-    min_info of it). A pair farther off than half the move plus gate_m is another tag of the same id, not a scale.
+    before, after: the detections of the sensing before and after the move, [{"key", "id", "range_m",
+    "bearing_deg"}], ranges from the axle midpoint with the detector's range bias already removed; "key" is the
+    surveyed tag a detection was resolved to (BatchEnv._range_check), else its id. For every key seen exactly once
+    before the move and once after it, within max_bearing_deg of straight ahead both times: its position before, in
+    the car frame, and the odometry's displacement u predict the range after it; the scale s solves |tag - s u| = the
+    range measured after. Only ranges enter, which the camera measures to millimetres (the tag pilot); a bearing error
+    moves the prediction little for a tag near the line of motion. The pairs of one move are weighted by how much the
+    range says about s (d range / d s; below min_info of the move's length the pair is left out). A pair farther off
+    than half the move plus gate_m is not the same tag, and is left out. A turn is not a straight move: callers pass
+    only moves of 5 cm or more by odometry (a 30-degree turn moves the axle about 1.3 cm).
     2026-11-25, after a false odometry_scale halt of the first real practice batch: see odometry_bias()."""
     ux, uy = float(odo["forward_m"]), float(odo["left_m"])
     uu = ux * ux + uy * uy
@@ -674,16 +683,18 @@ def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10):
     def once(dets):
         seen = {}
         for d in dets:
-            if d.get("id") is not None and usable_detection(d):
-                seen.setdefault(int(d["id"]), []).append((float(d["range_m"]), math.radians(float(d["bearing_deg"]))))
+            if d.get("id") is None or not usable_detection(d) or abs(float(d["bearing_deg"])) > max_bearing_deg:
+                continue
+            key = d.get("key", int(d["id"]))
+            seen.setdefault(key, []).append((float(d["range_m"]), math.radians(float(d["bearing_deg"]))))
         return {k: v[0] for k, v in seen.items() if len(v) == 1}
     a, b = once(before), once(after)
     num = den = 0.0
     pairs = 0
-    for tid, (r1, b1) in a.items():
-        if tid not in b:
+    for key, (r1, b1) in a.items():
+        if key not in b:
             continue
-        r2 = b[tid][0]
+        r2 = b[key][0]
         tx, ty = r1 * math.cos(b1), r1 * math.sin(b1)
         tu = tx * ux + ty * uy
         predicted = math.hypot(tx - ux, ty - uy)
@@ -694,8 +705,8 @@ def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10):
         if disc < 0.0:
             continue
         root = math.sqrt(disc)
-        s = min(((tu - root) / uu, (tu + root) / uu), key=lambda v: abs(v - 1.0))
-        num += info * info * s
+        s_ = min(((tu - root) / uu, (tu + root) / uu), key=lambda v: abs(v - 1.0))
+        num += info * info * s_
         den += info * info
         pairs += 1
     return None if pairs == 0 else (num / den, pairs)
@@ -703,7 +714,13 @@ def range_scale_of_move(before, after, odo, min_info=0.5, gate_m=0.10):
 
 def range_scale_halt(tracker, params):
     """Why the ranges along the straight moves so far say the encoder scale is wrong (the halt's detail), or None.
-    The limit is range_scale_tol, and at least three times one move's scatter over the root of the moves."""
+
+    The median over the straight moves so far (each move one estimate, its tags weighted) against a limit of
+    range_scale_tol, and at least three times one move's scatter over the root of the moves: 15 % for one move, 12 %
+    from two on. It may halt after N = 1 move: in the review's fault injection (8-tag room, 2.5 m, seed 3) only one
+    straight move of the episode has a tag in view before and after, and a 25 % error shows there as 1.29; one move
+    of the real car scattered 0.94 to 1.05 about its mean (practice-01b, range bias removed), so 15 % is three of its
+    sigmas from a correct odometer."""
     ranges = tracker.range_scale()
     if ranges is None:
         return None
@@ -796,25 +813,41 @@ class BatchEnv:
                 self.monitor.halt("camera", "no frame before the move: %s" % exc)
 
     def _range_check(self, exact, sense, record, first):
-        """Note the encoder scale the ranges give over a straight move (range_scale_of_move) with the tracker. The
-        observation's ranges are rounded to the centimetre; where the detector's own record has the tag's position
-        to the millimetre (detections_internal, the real camera), that is taken for the same tag."""
-        now = []
+        """Note the encoder scale the ranges give over a straight move (range_scale_of_move) with the tracker.
+
+        Each detection is prepared for it here: the millimetre position from the detector's own record where it has
+        one (detections_internal, the real camera; the observation's ranges are rounded to the centimetre); the
+        detector's range bias removed (range_bias_a_m, range_bias_b: the tag pilot's model); tags outside the window
+        range_min_m to max_range_m left out; and the tag resolved to one surveyed tag by where the tracked pose puts
+        it (the layout repeats ids: the nearest surveyed tag of that id within 1 m, with any other at least 1 m
+        farther; otherwise left out)."""
+        p = self.params
         precise = {}
         for d in record.get("detections_internal") or []:
             xyz = d.get("base_xyz_m")
             if d.get("id") is not None and xyz and len(xyz) >= 2:
                 precise.setdefault(int(d["id"]), []).append((float(xyz[0]), float(xyz[1])))
+        pose = self.tracker.pose
+        th = math.radians(pose["theta_deg"])
+        now = []
         for d in sense.get("detections") or []:
             if d.get("id") is None or not usable_detection(d):
                 continue
+            r, bearing = float(d["range_m"]), float(d["bearing_deg"])
             exact_xy = precise.get(int(d["id"])) or []
-            if len(exact_xy) == 1:
+            if len(exact_xy) == 1 and abs(math.hypot(*exact_xy[0]) - r) < 0.05:
                 r = math.hypot(*exact_xy[0])
-                if abs(r - float(d["range_m"])) < 0.05:
-                    d = {"id": d["id"], "range_m": r,
-                         "bearing_deg": math.degrees(math.atan2(exact_xy[0][1], exact_xy[0][0]))}
-            now.append(d)
+                bearing = math.degrees(math.atan2(exact_xy[0][1], exact_xy[0][0]))
+            if not (p.range_min_m <= r <= p.max_range_m):
+                continue
+            r -= p.range_bias_a_m + p.range_bias_b * r
+            a = th + math.radians(bearing)
+            wx, wy = pose["x_m"] + r * math.cos(a), pose["y_m"] + r * math.sin(a)
+            near = sorted((math.hypot(t["x_m"] - wx, t["y_m"] - wy), t.get("uid") or str(i))
+                          for i, t in enumerate(self.tags) if t["id"] == int(d["id"]))
+            if not near or near[0][0] > 1.0 or (len(near) > 1 and near[1][0] - near[0][0] < 1.0):
+                continue
+            now.append({"key": near[0][1], "id": int(d["id"]), "range_m": r, "bearing_deg": bearing})
         before, self.range_before = self.range_before, now
         if first or exact is None or before is None or abs(exact["forward_m"]) < 0.05:
             return

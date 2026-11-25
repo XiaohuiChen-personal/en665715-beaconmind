@@ -35,6 +35,7 @@ manifest records params.dv_file (file, sha12) and params.sigma_sources (whether 
 Exit status: 0 the batch is complete; 3 it halted; 2 it refused to start.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this tool.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: the range check's bias and window from --detector-noise.
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-24: --detector-noise; only the first of several stop signals
 counts; --dv.
 """
@@ -280,6 +281,20 @@ def fix_sigma(args):
     return a, b, "%s sha256:%s: %s" % (rel, hashlib.sha256(raw).hexdigest()[:12], text)
 
 
+def range_model(args):
+    """{range_bias_a_m, range_bias_b, range_min_m} for the batch's range check from --detector-noise (the tag pilot's
+    range bias, measured - true = a + b x range, and the near end of its reliable window), or {} for the defaults
+    (no bias, 0.3 m). The file was read and checked by fix_sigma already."""
+    if not args.detector_noise:
+        return {}
+    model = json.loads(pathlib.Path(args.detector_noise).read_text(encoding="utf-8"))
+    bias = model.get("range_bias_m") or {}
+    out = {"range_bias_a_m": float(bias.get("a", 0.0)), "range_bias_b": float(bias.get("b", 0.0))}
+    if model.get("min_range_m") is not None:
+        out["range_min_m"] = float(model["min_range_m"])
+    return out
+
+
 def params_from(args, world_path, agreement=""):
     duty, speed = (float(v) for v in args.drive_map.split(","))
     sigma_a, sigma_b, source = fix_sigma(args)
@@ -294,7 +309,7 @@ def params_from(args, world_path, agreement=""):
         min_vsys_mv=args.min_vsys_mv, min_forward_speed_mps=args.min_forward_speed,
         episode_wall_s=args.episode_minutes * 60.0, batch_wall_s=args.batch_hours * 3600.0,
         batch_steps=args.batch_steps, cap_usd=args.cap_usd, drive_map=(duty, speed), fix_sigma_a_m=sigma_a,
-        fix_sigma_b=sigma_b, fix_sigma_source=source, dv_file=dv_text, sigma_sources=agreement)
+        fix_sigma_b=sigma_b, fix_sigma_source=source, dv_file=dv_text, sigma_sources=agreement, **range_model(args))
 
 
 def cmd_run(args):
@@ -386,6 +401,8 @@ def cmd_run(args):
         runner.config, params.episodes, params.policy, "the simulated car (dry run)" if args.dry_run else "THE REAL CAR",
         world.get("world_id"), out))
     log("fix sigma %.4f + %.4f x range m: %s" % (params.fix_sigma_a_m, params.fix_sigma_b, params.fix_sigma_source))
+    log("range check: tags %.2f to %.2f m, range bias %+.4f %+.4f x range m removed" % (
+        params.range_min_m, params.max_range_m, params.range_bias_a_m, params.range_bias_b))
     log("design values: %s" % params.dv_file)
     try:
         with dv_real.use_dv(dv_real.resolve_arg(args.dv)):     # what the agent's tools and the car code read

@@ -11,8 +11,8 @@ AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: recomputed the numbers
 The check was run by Xiaohui Chen with the lead agent; the tape readings are Xiaohui's.
 
 **Result: F1, F3, F5 pass; F2 marginal (the return leg); F4 replaced the encoder scales in `configs/car.json` (left
-19,385, right 19,804 counts per metre); since checked once by tags (the first practice batch's transit: ratio
-1.008), not yet by tape.** Straight moves turn the car
+19,385, right 19,804 counts per metre); since checked by the camera in the first practice batch (transit 1.008,
+ranges along its straights 0.98 to 1.00), not yet by tape.** Straight moves turn the car
 about 3.4° left each.
 
 ## Method: the wall tags instead of tape per step (Xiaohui agreed)
@@ -115,8 +115,10 @@ short per 25 cm, which is why the tape straight was driven.
 09:33:34 UTC, with these scales: its pass marker of 09:23:46 UTC fingerprints car.json) measured its transit between
 two full-circle fixes as 0.688 m by odometry and 0.694 m by the tags, ratio **1.008** (limit 10 % plus the fixes'
 uncertainty). No taped straight has been driven with them. The same batch then halted `odometry_scale` at −23 %: a
-false alarm of the batch runner's per-step statistic (one noisy single-tag fix after a 5 cm leg), fixed in commit
-`5086391` (`../M3.T12/batch-runner/rehearsal-2026-11-25.md`).
+false alarm of the batch runner's per-step statistic (one noisy single-tag fix after a 5 cm leg); the ranges to the
+tags along its six straight moves give tags over odometry 0.98 (1.00 with the pilot's range bias removed), the
+second check of these scales by the camera (`../M3.T12/batch-runner/practice-01b/`; fixed in commits `5086391` and
+`cfa3948`).
 
 ## F5: STOP on the floor
 
@@ -135,6 +137,7 @@ added to the simulated car (`../M3.T12/batch-runner/rehearsal-2026-11-25.md`).
 
 ## Open
 
-- The final encoder scales have no taped check yet; one transit of the practice batch checked them by tags (1.008).
+- The final encoder scales have no taped check yet; the practice batch checked them by the camera (transit 1.008, ranges
+  0.98 to 1.00).
 - F2's return leg overshoots by 2 to 3 cm per cycle by the camera.
 - The left/right asymmetry (turns and straights) and the turn rate above 45°/s stay as they are (README section 6).

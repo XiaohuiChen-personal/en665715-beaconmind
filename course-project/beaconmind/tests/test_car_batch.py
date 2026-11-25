@@ -1975,37 +1975,102 @@ def _sense_and_record(tags_xy):
     return {"detections": dets}, {"detections_internal": [{"id": i, "base_xyz_m": [x, y, 0.23]} for i, x, y in tags_xy]}
 
 
-def _range_replay(straights, odometry_factor=1.0):
+PILOT_RANGE = {"range_bias_a_m": 0.00492, "range_bias_b": -0.01658, "range_min_m": 0.785}    # configs/detector_noise.json
+
+
+def _range_replay(straights, odometry_factor=1.0, **params):
+    """The straights through BatchEnv._range_check as _post runs it: the tracked pose at the origin before each move
+    (surveyed tags where the car saw them), advanced by the odometry before the sensing after it."""
     env = B.BatchEnv.__new__(B.BatchEnv)
-    env.range_before = None
-    env.tracker = B.PoseTracker(S1, 0.05, 2.0)
-    params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1))
+    env.params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1), max_range_m=3.0, **params)
+    env.tracker = B.PoseTracker({"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}, 0.05, 2.0)
     halts = []
-    for (fwd, left), before, after in straights:
-        sense, record = _sense_and_record(before)
+    for k, ((fwd, left), before, after) in enumerate(straights):
+        env.tags = [{"id": i, "uid": "M%d-%d" % (k, i), "x_m": x, "y_m": y} for i, x, y in before]
+        env.tracker.pose = {"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}
         env.range_before = None
+        sense, record = _sense_and_record(before)
         env._range_check(None, sense, record, True)
+        odo = {"forward_m": fwd * odometry_factor, "left_m": left * odometry_factor, "dtheta_deg": 3.0}
+        env.tracker.predict(odo)
         sense, record = _sense_and_record(after)
-        env._range_check({"forward_m": fwd * odometry_factor, "left_m": left * odometry_factor, "dtheta_deg": 3.0},
-                         sense, record, False)
-        halts.append(B.range_scale_halt(env.tracker, params))
+        env._range_check(odo, sense, record, False)
+        halts.append(B.range_scale_halt(env.tracker, env.params))
     return env.tracker, halts
 
 
 def test_the_practice_batch_ranges_say_its_odometer_was_right():
     """Replayed through the batch's own range check, the six straight moves of the practice batch that halted
-    `odometry_scale` (-23 %, from position fixes) say tags over odometry 0.92 to 1.03 per move, median 0.96: no halt
-    at any move. The same moves with an odometer reading 25 % short (or long) halt at the first move."""
-    tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS)
-    per_move = [round(m[0], 2) for m in tracker.range_moves]
-    assert per_move == [0.97, 1.03, 0.99, 0.95, 0.94, 0.92], per_move
+    `odometry_scale` (-23 %, from position fixes): with the tag pilot's range bias removed (as a real batch does with
+    --detector-noise) tags over odometry 0.94 to 1.05 per move, median 0.98, which agrees with the same batch's
+    transit check (1.008): 0.031 apart, 1.2 standard errors of the median (1.25 x 5 % / sqrt(6) = 0.026), before
+    the transit's own uncertainty (two circle fixes over 0.69 m) is counted; without the bias removed 0.92 to 1.03,
+    median 0.96. No halt at any move either way. The same moves with an odometer
+    reading 25 % short (or long) halt at the first move."""
+    tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS, **PILOT_RANGE)
+    per_move = [m[0] for m in tracker.range_moves]
+    assert per_move == pytest.approx([0.989, 1.049, 1.003, 0.965, 0.955, 0.935], abs=0.0015), per_move
     assert [m[1] for m in tracker.range_moves] == [4, 3, 3, 2, 1, 1]
-    assert tracker.range_scale()[0] == pytest.approx(0.961, abs=0.002)
+    median = tracker.range_scale()[0]
+    assert median == pytest.approx(0.977, abs=0.002)
+    assert abs(median - 1.008) < 2.0 * 1.25 * 0.05 / math.sqrt(6)           # within two standard errors
     assert halts == [None] * 6
-    for factor, expect in ((0.75, 1.29), (1.25, 0.77)):
-        tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS, odometry_factor=factor)
+    tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS)                     # raw ranges, as cfa3948 read them
+    assert [round(m[0], 2) for m in tracker.range_moves] == [0.97, 1.03, 0.99, 0.95, 0.94, 0.92]
+    assert tracker.range_scale()[0] == pytest.approx(0.961, abs=0.002) and halts == [None] * 6
+    for factor, expect in ((0.75, 1.30), (1.25, 0.78)):
+        tracker, halts = _range_replay(PRACTICE_01B_STRAIGHTS, odometry_factor=factor, **PILOT_RANGE)
         assert halts[0] is not None and "configs/car.json is wrong" in halts[0], halts
         assert tracker.range_scale()[0] == pytest.approx(expect, abs=0.02)
+
+
+def test_the_range_check_resolves_repeated_ids_by_the_tracked_pose_and_keeps_to_the_window():
+    """Two surveyed tags carry id 3, 2.8 m apart (as T02 and T05 of the real room): seen both before and after a
+    straight move, each is resolved to its own surveyed tag and paired with itself. Where the tracked pose cannot tell
+    two tags of one id apart (under 1 m between their distances), neither is used. Tags nearer than range_min_m or
+    farther than max_range_m are not used, and turns (under 5 cm) are not straight moves."""
+    env = B.BatchEnv.__new__(B.BatchEnv)
+    env.params = B.BatchParams(world_path="x", start_poses=[S1], initial_pose=dict(S1), max_range_m=3.0, range_min_m=0.785)
+    env.tracker = B.PoseTracker({"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}, 0.05, 2.0)
+    env.tags = [{"id": 3, "uid": "T02", "x_m": 2.0, "y_m": 0.5}, {"id": 3, "uid": "T05", "x_m": 2.2, "y_m": -0.6},
+                {"id": 7, "uid": "T07", "x_m": 0.6, "y_m": 0.0}, {"id": 9, "uid": "T09", "x_m": 3.2, "y_m": 0.0}]
+    seen = [(3, 2.0, 0.5), (3, 2.2, -0.6), (7, 0.6, 0.0), (9, 3.2, 0.0)]
+
+    def view(odo_x):
+        return [(i, x - odo_x, y) for i, x, y in seen]
+    env.range_before = None
+    env._range_check(None, *_sense_and_record(view(0.0)), True)
+    assert sorted(d["key"] for d in env.range_before) == ["T02", "T05"]   # T07 too near, T09 too far
+    odo = {"forward_m": 0.25, "left_m": 0.0, "dtheta_deg": 0.0}
+    env.tracker.predict(odo)
+    env._range_check(odo, *_sense_and_record(view(0.25)), False)
+    assert len(env.tracker.range_moves) == 1
+    scale, pairs = env.tracker.range_moves[0]
+    assert pairs == 2 and scale == pytest.approx(1.0, abs=0.01)
+    turn = {"forward_m": 0.013, "left_m": 0.003, "dtheta_deg": 30.0}
+    env._range_check(turn, *_sense_and_record(view(0.25)), False)
+    assert len(env.tracker.range_moves) == 1                               # a turn adds nothing
+    env.tags[1] = {"id": 3, "uid": "T05", "x_m": 2.0, "y_m": 0.0}          # now 0.5 m from T02: not told apart
+    env.tracker.pose = {"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}
+    env.range_before = None
+    env._range_check(None, *_sense_and_record([(3, 2.0, 0.5)]), True)
+    assert env.range_before == []
+
+
+def test_the_range_check_takes_the_pilots_range_bias_and_window(tmp_path):
+    """--detector-noise gives the range check the pilot's range bias (removed before comparing) and the near end of
+    its reliable window; without it no bias and 0.3 m."""
+    tool = load_batch_tool()
+    noise = tmp_path / "detector_noise.json"
+    noise.write_text(json.dumps(pilot_model()))
+    base = ["run", "--world", str(WORLD20_PATH), "--start", "S1:2.5,1.5,90", "--initial-pose", "2.4,1.6,70",
+            "--max-steps", "3", "--max-range", "3.0", "--dry-run"]
+    assert tool.main(base + ["--out", str(tmp_path / "a"), "--detector-noise", str(noise)]) == 0
+    p = json.loads((tmp_path / "a" / "manifest.json").read_text())["params"]
+    assert (p["range_bias_a_m"], p["range_bias_b"], p["range_min_m"]) == (0.004, -0.006, 0.75)
+    assert tool.main(base + ["--out", str(tmp_path / "b")]) == 0
+    p = json.loads((tmp_path / "b" / "manifest.json").read_text())["params"]
+    assert (p["range_bias_a_m"], p["range_bias_b"], p["range_min_m"]) == (0.0, 0.0, 0.3)
 
 
 def test_the_range_of_a_tag_along_a_straight_move_measures_the_scale():
@@ -2027,6 +2092,13 @@ def test_the_range_of_a_tag_along_a_straight_move_measures_the_scale():
     assert twice is None
     other = B.range_scale_of_move([det(5, 2.0, 0.4)], [det(5, 2.6, 0.4)], {"forward_m": 0.25, "left_m": 0.0})
     assert other is None
+    wide = B.range_scale_of_move([det(5, 1.5, 1.0)], [det(5, 1.25, 1.0)], {"forward_m": 0.25, "left_m": 0.0})
+    assert wide is None                                     # 33.7 degrees off the line of motion: beyond 30
+    keyed = B.range_scale_of_move([dict(det(5, 2.0, 0.4), key="T02"), dict(det(5, 2.0, -1.0), key="T05")],
+                                  [dict(det(5, 1.75, 0.4), key="T02"), dict(det(5, 1.75, -1.0), key="T05")],
+                                  {"forward_m": 0.25, "left_m": 0.0})
+    assert keyed is not None and keyed[1] == 2              # one id, two surveyed tags told apart: both count
+    assert keyed[0] == pytest.approx(1.0, abs=1e-9)
 
 
 def test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms(tmp_path):
@@ -2041,7 +2113,7 @@ def test_the_ranges_catch_a_wrong_encoder_scale_either_way_in_both_rooms(tmp_pat
     for factor in (0.75, 1.25, 1.0):
         wrong = cfg.replace(ticks_per_m_left=cfg.ticks_per_m_left / factor, ticks_per_m_right=cfg.ticks_per_m_right / factor)
         for r, (world, place, start, initial, max_range) in enumerate(rooms):
-            for seed in (1, 2):
+            for seed in (1, 2, 3):
                 out = tmp_path / ("f%s-r%d-s%d" % (factor, r, seed))
                 params = B.BatchParams(world_path="x", start_poses=[start], initial_pose=dict(initial), episodes=1,
                                        max_steps=80, max_range_m=max_range)
