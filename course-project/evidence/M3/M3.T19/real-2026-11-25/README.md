@@ -157,25 +157,29 @@ as the sim-to-real gap (prereg.md §6). The end-circle value was chosen after th
 - **Why exploratory:** the pre-registration reports the real logs descriptively (prereg.md §6), the end-circle value
   was chosen after the data, and there is no significance claim from a handful of episodes
   (`evidence/M5/requirements.md`).
-- **What it gives:** paired differences only, as the study's estimator (Hodges–Lehmann, or the median when the
-  pre-registered skewness switch applies) with its exact 95 % interval, and the episodes below and above zero. No
-  p-values and no verdicts.
+- **What it gives:** paired differences only, as the study's estimator with its exact 95 % interval, and the episodes
+  below and above zero. No p-values and no verdicts.
+- **Which estimator:**
+  - Arm − B0 uses family 1's estimator: Hodges–Lehmann, or the median when the adjusted skewness exceeds 1.
+    prereg.md §5 sets that switch for families 1 and 2 only (against B0 and against B1); it did not fire here.
+  - Model − B2 and the comparisons between models use Hodges–Lehmann without the switch, as the study's own pairwise
+    comparisons do. The median and its interval are given as a note.
 - **H2** (against B1) is not run: B1 needs oracle association, which the real logs do not have.
 
 Against the end circle (n = 8):
 
-| Difference | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
+| Difference | Hodges–Lehmann estimate (cm) | 95 % interval (cm) | episodes below / above zero | median (interval), a note |
 | --- | --- | --- | --- | --- |
-| B2 − B0 | −40.1 | −68.4 to −16.1 | Hodges–Lehmann | 8 / 0 |
-| Opus 5.5 − B0 | −40.7 | −68.7 to −15.5 | Hodges–Lehmann | 8 / 0 |
-| Qwen3.8 − B0 | −37.9 | −62.9 to −15.5 | Hodges–Lehmann | 8 / 0 |
-| Opus 5.5 − B2 | −0.1 | −0.8 to +1.0 | Hodges–Lehmann | 4 / 3 |
-| Qwen3.8 − B2 | −0.4 | −5.0 to +33.0 | median | 4 / 2 |
-| Opus 5.5 − Qwen3.8 | +0.4 | −30.9 to +4.4 | median | 2 / 5 |
+| B2 − B0 | −40.1 | −68.4 to −16.1 | 8 / 0 | |
+| Opus 5.5 − B0 | −40.7 | −68.7 to −15.5 | 8 / 0 | |
+| Qwen3.8 − B0 | −37.9 | −62.9 to −15.5 | 8 / 0 | |
+| Opus 5.5 − B2 | −0.1 | −0.8 to +1.0 | 4 / 3 | −0.1 (−1.3 to +2.1) |
+| Qwen3.8 − B2 | −0.4 | −2.9 to +16.5 | 4 / 2 | −0.4 (−5.0 to +33.0) |
+| Opus 5.5 − Qwen3.8 | +0.4 | −15.3 to +2.4 | 2 / 5 | +0.4 (−30.9 to +4.4) |
 
 **The gain over dead reckoning is the procedure's, not the models':** B2 shows the same gain, and a model that
 follows the procedure inherits it. Neither model is within 1 cm of B2 on every episode. Eight episodes cannot order
-the two models: their intervals straddle zero by tens of centimetres.
+the two models: their intervals straddle zero by many centimetres.
 
 **What the per-step traces show** (the traces table in [`stats.md`](stats.md)):
 - **A prompt rule that the coded procedure does not have.**
@@ -183,11 +187,20 @@ the two models: their intervals straddle zero by tens of centimetres.
     `slip_suspected` (`prompts/robot_system_prompt_v3.3-room.txt`, line 32). The frozen procedure has no such rule:
     `kinsim_lite` does not simulate slips, and its `estimate_step` ignores the quality flag.
   - On the real logs the flag fired at four steps: 1001/24, 3001/41, 3002/78 and 4001/81, each a forward move of
-    0.24–0.25 m. Both models zeroed that move, as told; B2 composed it.
-  - At 3001/41 the move was real: both models then sat 25 cm behind B2 for seven steps, until a beacon fix at step 48
-    brought them back.
-  - So several of the places where the models part from B2 are this rule, not a model error. The study's simulation
-    never exercised it.
+    0.24–0.25 m by odometry. Both models zeroed that move, as told; B2 composed it.
+  - **Whether the move happened** shows at the next tag fix, not in the batch's tracked truth, which composes the same
+    odometry. See the table "The steps flagged slip_suspected" in [`stats.md`](stats.md); the `slip_suspected`
+    field of [`stats.json`](stats.json) has the data.
+    - **1001/24, 3002/78 and 4001/81: the move was real.** A tag fix at the flagged step itself put the car 20–24 cm
+      from every arm's estimate of the step before. B2 and the models took that fix at once, so the rule changed
+      nothing there. The exception is Opus at 4001/81, which kept its zeroed prior, 22.5 cm from B2, until the beacon
+      fix at step 82.
+    - **3001/41: the move was mostly slip.** No fix followed for six steps. When one came (the models at 47, B2 at
+      48), the models' zeroed track was 5.4 cm from B2's fix and B2's full composition was 20.4 cm away. The rule was
+      right there, and B2 overshot by about 20 cm, as did the tracked truth.
+  - So several of the places where the models part from B2 are this rule, not a model error. The rule was right
+    once, and at the other three its effect was removed by a fix at the same step. The study's simulation never
+    exercised it.
 - **Qwen3.8's miss on 4002** (56.2 cm, against B2's 23.2):
   - From step 67, where it took a beacon fix and the procedure a position fix, Qwen3.8 carried a 10–20 cm offset.
   - At steps 130–131 it kept its prior where the procedure accepted a beacon fix and then a position fix.

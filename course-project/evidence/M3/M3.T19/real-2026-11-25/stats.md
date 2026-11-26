@@ -2,7 +2,7 @@
 
 Set `b2-real-01 + b2-real-02 + b2-real-03 + b2-real-05 + b2-real-06`: 9 episodes in the main analysis, 1 flagged and kept apart; cm.
 
-**Exploratory, not pre-registered.** The pre-registration reports the real logs descriptively (prereg.md section 6), the value compared here was chosen after the data, and there is no significance claim from a handful of episodes (evidence/M5/requirements.md). Each line is a paired difference: the study's estimator (Hodges-Lehmann with its exact 95 % interval, or the median with its exact interval when the skewness switch applies) and the episodes below and above zero. No p-values, no multiplicity correction, no verdicts. H2 (against B1) is not run: B1 needs oracle association, which the real logs do not have.
+**Exploratory, not pre-registered.** The pre-registration reports the real logs descriptively (prereg.md section 6), the value compared here was chosen after the data, and there is no significance claim from a handful of episodes (evidence/M5/requirements.md). Each line is a paired difference: the study's estimator and the episodes below and above zero. Arm - B0 uses family 1's estimator: Hodges-Lehmann with its exact 95 % interval, or the median with its exact interval when the adjusted skewness exceeds 1 (the switch the pre-registration sets for families 1 and 2 only). Model - B2 and the comparisons between models use Hodges-Lehmann without the switch, as the study's pairwise comparisons do, with the median as a note. No p-values, no multiplicity correction, no verdicts. H2 (against B1) is not run: B1 needs oracle association, which the real logs do not have.
 
 ## Final-position error against the end circle (n = 8; exploratory, not pre-registered)
 
@@ -16,19 +16,19 @@ Arm - B0. B2 - B0 is the procedure's own gain over dead reckoning; a model that 
 
 Model - B2 (what the model adds to or loses against the procedure it was given):
 
-| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
-| --- | --- | --- | --- | --- | --- |
-| Opus 5.5 - B2 | 8 | -0.1 | -0.8 to 1.0 | Hodges-Lehmann | 4 / 3 |
-| Qwen3.8 - B2 | 8 | -0.4 | -5.0 to 33.0 | median | 4 / 2 |
+| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero | median (interval), a note |
+| --- | --- | --- | --- | --- | --- | --- |
+| Opus 5.5 - B2 | 8 | -0.1 | -0.8 to 1.0 | Hodges-Lehmann | 4 / 3 | -0.1 (-1.3 to 2.1) |
+| Qwen3.8 - B2 | 8 | -0.4 | -2.9 to 16.5 | Hodges-Lehmann | 4 / 2 | -0.4 (-5.0 to 33.0) |
 
 - Opus 5.5 within 1 cm of B2 on every episode: no
 - Qwen3.8 within 1 cm of B2 on every episode: no
 
 Between the models (mean rank, 1 = smallest error: Opus 5.5 1.69, Qwen3.8 1.31):
 
-| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
-| --- | --- | --- | --- | --- | --- |
-| Opus 5.5 - Qwen3.8 | 8 | 0.4 | -30.9 to 4.4 | median | 2 / 5 |
+| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero | median (interval), a note |
+| --- | --- | --- | --- | --- | --- | --- |
+| Opus 5.5 - Qwen3.8 | 8 | 0.4 | -15.3 to 2.4 | Hodges-Lehmann | 2 / 5 | 0.4 (-30.9 to 4.4) |
 
 ## Final-position error against the last step's logged truth (tracker-dependent) (n = 9; exploratory, not pre-registered)
 
@@ -42,19 +42,19 @@ Arm - B0. B2 - B0 is the procedure's own gain over dead reckoning; a model that 
 
 Model - B2 (what the model adds to or loses against the procedure it was given):
 
-| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
-| --- | --- | --- | --- | --- | --- |
-| Opus 5.5 - B2 | 9 | -0.0 | -0.9 to 1.1 | Hodges-Lehmann | 4 / 4 |
-| Qwen3.8 - B2 | 9 | -0.4 | -1.6 to 2.1 | median | 5 / 2 |
+| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero | median (interval), a note |
+| --- | --- | --- | --- | --- | --- | --- |
+| Opus 5.5 - B2 | 9 | -0.0 | -0.9 to 1.1 | Hodges-Lehmann | 4 / 4 | 0.0 (-1.0 to 0.5) |
+| Qwen3.8 - B2 | 9 | -0.4 | -1.5 to 15.5 | Hodges-Lehmann | 5 / 2 | -0.4 (-1.6 to 2.1) |
 
 - Opus 5.5 within 1 cm of B2 on every episode: no
 - Qwen3.8 within 1 cm of B2 on every episode: no
 
 Between the models (mean rank, 1 = smallest error: Opus 5.5 1.61, Qwen3.8 1.39):
 
-| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
-| --- | --- | --- | --- | --- | --- |
-| Opus 5.5 - Qwen3.8 | 9 | 0.4 | -2.2 to 1.5 | median | 3 / 5 |
+| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero | median (interval), a note |
+| --- | --- | --- | --- | --- | --- | --- |
+| Opus 5.5 - Qwen3.8 | 9 | 0.1 | -14.7 to 1.3 | Hodges-Lehmann | 3 / 5 | 0.4 (-2.2 to 1.5) |
 
 ## Final-position error against the recomputed truth (tracker-dependent) (n = 9; exploratory, not pre-registered)
 
@@ -68,19 +68,19 @@ Arm - B0. B2 - B0 is the procedure's own gain over dead reckoning; a model that 
 
 Model - B2 (what the model adds to or loses against the procedure it was given):
 
-| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
-| --- | --- | --- | --- | --- | --- |
-| Opus 5.5 - B2 | 9 | 0.2 | -0.8 to 1.3 | Hodges-Lehmann | 3 / 5 |
-| Qwen3.8 - B2 | 9 | 0.0 | -1.7 to 2.0 | median | 4 / 3 |
+| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero | median (interval), a note |
+| --- | --- | --- | --- | --- | --- | --- |
+| Opus 5.5 - B2 | 9 | 0.2 | -0.8 to 1.3 | Hodges-Lehmann | 3 / 5 | 0.3 (-0.8 to 1.6) |
+| Qwen3.8 - B2 | 9 | -0.0 | -1.2 to 15.8 | Hodges-Lehmann | 4 / 3 | 0.0 (-1.7 to 2.0) |
 
 - Opus 5.5 within 1 cm of B2 on every episode: no
 - Qwen3.8 within 1 cm of B2 on every episode: no
 
 Between the models (mean rank, 1 = smallest error: Opus 5.5 1.61, Qwen3.8 1.39):
 
-| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
-| --- | --- | --- | --- | --- | --- |
-| Opus 5.5 - Qwen3.8 | 9 | 0.4 | -2.8 to 1.5 | median | 3 / 5 |
+| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero | median (interval), a note |
+| --- | --- | --- | --- | --- | --- | --- |
+| Opus 5.5 - Qwen3.8 | 9 | 0.2 | -14.5 to 1.5 | Hodges-Lehmann | 3 / 5 | 0.4 (-2.8 to 1.5) |
 
 ## ATE over all steps against the logged truth (tracker-dependent) (n = 9; exploratory, not pre-registered)
 
@@ -94,19 +94,30 @@ Arm - B0. B2 - B0 is the procedure's own gain over dead reckoning; a model that 
 
 Model - B2 (what the model adds to or loses against the procedure it was given):
 
-| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
-| --- | --- | --- | --- | --- | --- |
-| Opus 5.5 - B2 | 9 | 0.1 | -0.0 to 0.6 | median | 2 / 7 |
-| Qwen3.8 - B2 | 9 | -0.0 | -0.5 to 3.5 | median | 5 / 4 |
+| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero | median (interval), a note |
+| --- | --- | --- | --- | --- | --- | --- |
+| Opus 5.5 - B2 | 9 | 0.3 | -0.5 to 3.0 | Hodges-Lehmann | 2 / 7 | 0.1 (-0.0 to 0.6) |
+| Qwen3.8 - B2 | 9 | 0.0 | -0.6 to 3.0 | Hodges-Lehmann | 5 / 4 | -0.0 (-0.5 to 3.5) |
 
 - Opus 5.5 within 1 cm of B2 on every episode: no
 - Qwen3.8 within 1 cm of B2 on every episode: no
 
 Between the models (mean rank, 1 = smallest error: Opus 5.5 1.61, Qwen3.8 1.39):
 
-| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero |
-| --- | --- | --- | --- | --- | --- |
-| Opus 5.5 - Qwen3.8 | 9 | 0.0 | -0.2 to 0.3 | median | 3 / 5 |
+| Difference | n | estimate (cm) | 95 % interval (cm) | estimator | episodes below / above zero | median (interval), a note |
+| --- | --- | --- | --- | --- | --- | --- |
+| Opus 5.5 - Qwen3.8 | 9 | 0.1 | -1.4 to 0.5 | Hodges-Lehmann | 3 / 5 | 0.0 (-0.2 to 0.3) |
+
+## The steps flagged slip_suspected (4)
+
+The room prompt's rule 2 composes such a step with forward and left set to 0; the coded procedure (B2) has no such rule. Whether the flagged move happened shows at the next tag fix: each arm's estimate from the step before any arm's fix, against the fix B2 then takes (cm). The batch's tracked truth composes the same odometry, so it cannot tell.
+
+| Seed/step | odometry forward (m) | B2 composed | Opus 5.5 composed | Qwen3.8 composed | first tag fix (step: by) | B2's fix at step | distance to it from the step before: B2 / Opus 5.5 / Qwen3.8 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1001/24 | 0.24 | 0.24 | 0.00 | 0.00 | 24: B2, Opus 5.5, Qwen3.8 | 24 | 20.2 / 22.5 / 23.4 |
+| 3001/41 | 0.25 | 0.25 | 0.00 | 0.00 | 47: Opus 5.5, Qwen3.8 | 48 | 20.4 / 5.4 / 5.4 |
+| 3002/78 | 0.25 | 0.25 | 0.00 | 0.00 | 78: B2, Opus 5.5, Qwen3.8 | 78 | 24.2 / 24.5 / 23.3 |
+| 4001/81 | 0.24 | 0.24 | 0.00 | 0.00 | 81: B2, Qwen3.8 | 81 | 21.8 / 22.5 / 17.0 |
 
 ## Run behaviour (the main episodes)
 

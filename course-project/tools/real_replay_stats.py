@@ -12,9 +12,12 @@ report.pose_source, checks, fallback, error, seconds, cost_usd per row), for the
 real logs descriptively, as the sim-to-real gap; the report's Metrics section says they test no hypothesis; the
 value used here (the final-position error against the end circle) was chosen after the data; and
 evidence/M5/requirements.md records "no significance claim from a handful of trials". So this tool reports paired
-differences only: per comparison the study's estimator (`metrics/stats.py`: the Hodges-Lehmann estimate with its exact
-95 % interval, or the sample median with its exact order-statistic interval when the adjusted skewness exceeds 1, the
-pre-registered switch) and the number of episodes below and above zero. No p-value, no multiplicity correction, no
+differences only: per comparison the study's estimator (`metrics/stats.py`) and the number of episodes below and
+above zero. For arm - B0 that is the estimator of the study's family 1: the Hodges-Lehmann estimate with its exact 95 %
+interval, or the sample median with its exact order-statistic interval when the adjusted skewness exceeds 1 (prereg.md
+section 5 pre-registers that switch for families 1 and 2 only: arm against B0 and against B1). Model - B2 and the
+comparisons between models use the Hodges-Lehmann estimate without the switch, as the study's own pairwise comparisons
+do, with the median and its interval as a note. No p-value, no multiplicity correction, no
 rejection, no practical-significance verdict. Every model - B0 difference is shown beside B2 - B0, because a model
 that follows the procedure inherits the procedure's gain over dead reckoning. H2 (against B1) is not run: B1 needs
 oracle association, which the real logs do not have (their detections carry no true tag, and the room repeats tag
@@ -104,15 +107,23 @@ def ate_all_steps(docs, runs, seeds):
 
 # ---------------------------------------------------------------- paired differences (exploratory)
 
-def paired(d):
-    """The study's estimator on paired differences d (no test): Hodges-Lehmann with its exact 95 % interval, or the
-    median with its exact interval when |adjusted skewness| > 1 (the pre-registered switch); counts below/above 0."""
+def paired(d, switch):
+    """The study's estimator on paired differences d (no test): the Hodges-Lehmann estimate with its exact 95 %
+    interval; with `switch` (arm - B0, the study's family 1), the median with its exact interval instead when
+    |adjusted skewness| > 1. Without it, the median and its interval are kept as a note. Counts below/above 0."""
     d = np.asarray(d, dtype=float)
     skew = st.adjusted_skewness(d) if len(d) > 2 else 0.0
-    est, estimand = (st.median_ci(d), "median") if abs(skew) > sa.SKEW_LIMIT else (st.hodges_lehmann(d), "Hodges-Lehmann")
-    return {"n": int(len(d)), "estimand": estimand, "estimate": est["estimate"], "ci95": est["ci"],
-            "n_below": int((d < 0).sum()), "n_above": int((d > 0).sum()), "n_zero": int((d == 0).sum()),
-            "mean": float(d.mean()), "skewness_G1": float(skew), "d": d.tolist()}
+    med = st.median_ci(d)
+    if switch and abs(skew) > sa.SKEW_LIMIT:
+        est, estimand = med, "median"
+    else:
+        est, estimand = st.hodges_lehmann(d), "Hodges-Lehmann"
+    out = {"n": int(len(d)), "estimand": estimand, "estimate": est["estimate"], "ci95": est["ci"],
+           "n_below": int((d < 0).sum()), "n_above": int((d > 0).sum()), "n_zero": int((d == 0).sum()),
+           "mean": float(d.mean()), "skewness_G1": float(skew), "skew_switch": bool(switch), "d": d.tolist()}
+    if estimand != "median":
+        out["median_note"] = {"estimate": med["estimate"], "ci95": med["ci"]}
+    return out
 
 
 def differences(per, arms, label):
@@ -124,14 +135,14 @@ def differences(per, arms, label):
            "h2": "not run: B1 needs oracle association, which the real logs do not have",
            "vs_B0": {}, "vs_B2": {}, "llm_pairs": {}, "mean_rank": None}
     for a in ["B2"] + llm:
-        out["vs_B0"][a] = paired([per[s][a]["ate_m"] - per[s]["B0"]["ate_m"] for s in seeds])
+        out["vs_B0"][a] = paired([per[s][a]["ate_m"] - per[s]["B0"]["ate_m"] for s in seeds], True)
     for a in llm:
         d = [per[s][a]["ate_m"] - per[s]["B2"]["ate_m"] for s in seeds]
-        out["vs_B2"][a] = dict(paired(d), within_1cm_every_episode=bool(all(abs(x) <= 0.01 for x in d)))
+        out["vs_B2"][a] = dict(paired(d, False), within_1cm_every_episode=bool(all(abs(x) <= 0.01 for x in d)))
     for i in range(len(llm)):
         for j in range(i + 1, len(llm)):
             out["llm_pairs"]["%s minus %s" % (llm[i], llm[j])] = paired(
-                [per[s][llm[i]]["ate_m"] - per[s][llm[j]]["ate_m"] for s in seeds])
+                [per[s][llm[i]]["ate_m"] - per[s][llm[j]]["ate_m"] for s in seeds], False)
     if len(llm) >= 2:
         mat = np.array([[per[s][a]["ate_m"] for a in llm] for s in seeds])
         ranks = np.apply_along_axis(sps.rankdata, 1, mat)
@@ -206,14 +217,70 @@ def traces(docs, ate, seeds, arms):
     return out
 
 
+FIXES = ("beacon_fix", "position_fix")
+
+
+def slip_steps(docs, runs, seeds, arms):
+    """The steps whose odometry the car flagged slip_suspected. The room prompt's rule 2 sets forward and left to 0
+    there; the coded procedure (B2) has no such rule. Per step: the odometry; the forward/left each arm composed (B2
+    from the log's calls, the models from their compose_odometry arguments); and the tag-fix check, which is how one can
+    tell whether the flagged move happened: the first step (from the flagged one on) where any arm reports a tag fix,
+    the first where B2 does, and each arm's distance, from the step before any fix, to B2's fix. The batch's tracked
+    truth's displacement over the step is kept too, but it composes the same odometry, so it is no evidence."""
+    def composed(calls):
+        c = [x for x in calls or [] if x.get("tool") == "compose_odometry" and isinstance(x.get("args"), dict)]
+        return {"forward_m": c[0]["args"].get("forward_m"), "left_m": c[0]["args"].get("left_m")} if c else None
+
+    out = []
+    for s in seeds:
+        recs = docs[s]["records"]
+        rows = {a: _rows(runs[a], s) for a in arms if a in runs}
+        rows = {a: rs for a, rs in rows.items() if len(rs) == len(recs)}
+        est = dict({"B2": [r["b2_estimate"] for r in recs]}, **{a: [r["estimate_pose"] for r in rs] for a, rs in rows.items()})
+        src = dict({"B2": [(r.get("report") or {}).get("pose_source") for r in recs]},
+                   **{a: [(r.get("report") or {}).get("pose_source") for r in rs] for a, rs in rows.items()})
+        for k, rec in enumerate(recs):
+            if (rec.get("observation_real") or {}).get("odometry_quality") != "slip_suspected":
+                continue
+            odo = rec["raw"].get("odometry") or {}
+            prev, now = recs[k - 1]["truth"] if k else None, rec["truth"]
+            row = {"seed": s, "step": k, "odometry": {key: odo.get(key) for key in ("forward_m", "left_m", "dtheta_deg")},
+                   "composed": dict({"B2": composed(rec.get("calls"))},
+                                    **{a: composed(rs[k].get("calls")) for a, rs in rows.items()}),
+                   "source_at_step": {a: src[a][k] for a in src},
+                   "tracked_truth_displacement_m": math.hypot(now["x_m"] - prev["x_m"], now["y_m"] - prev["y_m"])
+                   if prev else None}
+            j0 = next((i for i in range(k, len(recs)) if any(src[a][i] in FIXES for a in src)), None)
+            jb = next((i for i in range(k, len(recs)) if src["B2"][i] in FIXES), None)
+            if j0 is not None and jb is not None and j0 > 0:
+                ref = est["B2"][jb]
+                row["tag_fix_check"] = {
+                    "first_fix_step": j0, "first_fix_by": [a for a in src if src[a][j0] in FIXES], "b2_fix_step": jb,
+                    "forward_between_m": sum(((recs[i]["raw"].get("odometry") or {}).get("forward_m") or 0.0)
+                                             for i in range(j0, jb + 1)),
+                    "from_step": j0 - 1,
+                    "distance_to_b2_fix_m": {a: math.hypot(est[a][j0 - 1]["x_m"] - ref["x_m"],
+                                                           est[a][j0 - 1]["y_m"] - ref["y_m"]) for a in est}}
+            out.append(row)
+    return {"count": len(out), "steps": out,
+            "rule": "prompts/robot_system_prompt_v3.3-room.txt rule 2: compose_odometry with forward_m = left_m = 0 if "
+                    "the odometry quality is slip_suspected; the coded procedure (kinsim_lite) has no such rule"}
+
+
 # ---------------------------------------------------------------- markdown
 
 def _diff_md(rows, display, what):
-    lines = ["| %s | n | estimate (cm) | 95 %% interval (cm) | estimator | episodes below / above zero |" % what,
-             "| --- | --- | --- | --- | --- | --- |"]
+    note = any("median_note" in v and not v.get("skew_switch") for _, v in rows)
+    lines = ["| %s | n | estimate (cm) | 95 %% interval (cm) | estimator | episodes below / above zero |%s" % (
+        what, " median (interval), a note |" if note else ""),
+             "| --- | --- | --- | --- | --- | --- |%s" % (" --- |" if note else "")]
     for name, v in rows:
-        lines.append("| %s | %d | %s | %s | %s | %d / %d |" % (name, v["n"], _cm(v["estimate"]), _ci(v["ci95"]),
-                                                             v["estimand"], v["n_below"], v["n_above"]))
+        extra = ""
+        if note:
+            m = v.get("median_note")
+            extra = " %s (%s) |" % (_cm(m["estimate"]), _ci(m["ci95"])) if m else " |"
+        lines.append("| %s | %d | %s | %s | %s | %d / %d |%s" % (name, v["n"], _cm(v["estimate"]), _ci(v["ci95"]),
+                                                               v["estimand"], v["n_below"], v["n_above"], extra))
     return lines
 
 
@@ -225,9 +292,12 @@ def markdown(res):
          "**Exploratory, not pre-registered.** The pre-registration reports the real logs descriptively (prereg.md "
          "section 6), the value compared here was chosen after the data, and there is no significance claim from a "
          "handful of episodes (evidence/M5/requirements.md). Each line is a paired difference: the study's estimator "
-         "(Hodges-Lehmann with its exact 95 % interval, or the median with its exact interval when the skewness switch "
-         "applies) and the episodes below and above zero. No p-values, no multiplicity correction, no verdicts. "
-         "H2 (against B1) is not run: B1 needs oracle association, which the real logs do not have.", ""]
+         "and the episodes below and above zero. Arm - B0 uses family 1's estimator: Hodges-Lehmann with its exact "
+         "95 % interval, or the median with its exact interval when the adjusted skewness exceeds 1 (the switch the "
+         "pre-registration sets for families 1 and 2 only). Model - B2 and the comparisons between models use "
+         "Hodges-Lehmann without the switch, as the study's pairwise comparisons do, with the median as a note. No "
+         "p-values, no multiplicity correction, no verdicts. H2 (against B1) is not run: B1 needs oracle association, "
+         "which the real logs do not have.", ""]
     for t in res["tests"]:
         L += ["## %s (n = %d; exploratory, not pre-registered)" % (t["label"], t["n"]), "",
               "Arm - B0. B2 - B0 is the procedure's own gain over dead reckoning; a model that follows the procedure "
@@ -243,6 +313,28 @@ def markdown(res):
                 "%s %.2f" % (display(a), r) for a, r in t["mean_rank"].items()), ""]
             L += _diff_md([(" - ".join(display(x) for x in k.split(" minus ")), v) for k, v in t["llm_pairs"].items()],
                           display, "Difference")
+        L.append("")
+    sl = res.get("slip_suspected")
+    if sl:
+        models = [a for a in res["trace_arms"] if a not in ("B0", "B2")]
+        L += ["## The steps flagged slip_suspected (%d)" % sl["count"], "",
+              "The room prompt's rule 2 composes such a step with forward and left set to 0; the coded procedure (B2) "
+              "has no such rule. Whether the flagged move happened shows at the next tag fix: each arm's estimate "
+              "from the step before any arm's fix, against the fix B2 then takes (cm). The batch's tracked truth "
+              "composes the same odometry, so it cannot tell.", "",
+              "| Seed/step | odometry forward (m) | B2 composed | " + " | ".join("%s composed" % display(a) for a in models) +
+              " | first tag fix (step: by) | B2's fix at step | distance to it from the step before: " +
+              " / ".join(["B2"] + [display(a) for a in models]) + " |",
+              "| --- | --- | --- | " + " | ".join("---" for _ in models) + " | --- | --- | --- |"]
+        for r in sl["steps"]:
+            def f(c):
+                return "" if not c else "%.2f" % (c["forward_m"] or 0.0)
+            t = r.get("tag_fix_check")
+            fix = ("%d: %s" % (t["first_fix_step"], ", ".join(display(a) for a in t["first_fix_by"])), str(t["b2_fix_step"]),
+                   " / ".join(_cm(t["distance_to_b2_fix_m"].get(a)) for a in ["B2"] + models)) if t else ("none", "", "")
+            L.append("| %d/%d | %.2f | %s | %s | %s | %s | %s |" % (
+                r["seed"], r["step"], r["odometry"]["forward_m"] or 0.0, f(r["composed"].get("B2")),
+                " | ".join(f(r["composed"].get(a)) for a in models), fix[0], fix[1], fix[2]))
         L.append("")
     L += ["## Run behaviour (the main episodes)", "",
           "| Arm | steps | valid | fallbacks | repaired | step errors | calls per step | tool names as the procedure's | mean / median / p95 s per step | cost (US$) |",
@@ -325,7 +417,8 @@ def main(argv=None):
            "behaviour": behaviour(docs, runs, main_seeds),
            "behaviour_flagged": behaviour(docs, runs, flagged) if flagged else None,
            "trace_arms": complete, "traces": {str(s): v for s, v in traces(docs, ate, seeds, complete).items()},
-           "ate_per_seed_m": {str(s): {x: ate[s][x]["ate_m"] for x in ate[s]} for s in seeds}}
+           "ate_per_seed_m": {str(s): {x: ate[s][x]["ate_m"] for x in ate[s]} for s in seeds},
+           "slip_suspected": slip_steps(docs, runs, seeds, [x for x in complete if x not in ("B0", "B2")])}
     md = markdown(res)
     pathlib.Path(a.out + ".json").write_text(json.dumps(res, indent=1, default=float))
     pathlib.Path(a.out + ".md").write_text(md)
