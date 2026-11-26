@@ -640,7 +640,7 @@ def build_numbers(src):
     apart = [s for s, t in R["truths"].items() if t.get("flag")]
     if len(apart) != 1:
         raise SystemExit("report_assets: result.json does not flag exactly one episode; check the report text")
-    for arm, k in (("B0", "b0"), ("B2", "b2"), ("claude-opus-5-5", "opus")):
+    for arm, k in (("B0", "b0"), ("B2", "b2"), ("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen")):
         put("real.flagged.%s" % k, "%.1f" % cm1(arm, apart[0]),
             rnote + " errors vs_end_circle_m, the episode listed apart (cm)")
 
@@ -656,7 +656,7 @@ def build_numbers(src):
     pair = t0["llm_pairs"]["claude-opus-5-5 minus qwen38-flash-xhigh"]
     for (grp, arm), k, est in ((("vs_B0", "B2"), "b2-b0", "HL"), (("vs_B0", "claude-opus-5-5"), "opus-b0", "HL"),
                                (("vs_B2", "claude-opus-5-5"), "opus-b2", "HL"), (("vs_B0", "qwen38-flash-xhigh"), "qwen-b0", "HL"),
-                               (("vs_B2", "qwen38-flash-xhigh"), "qwen-b2", "median"), ((None, None), "opus-qwen", "median")):
+                               (("vs_B2", "qwen38-flash-xhigh"), "qwen-b2", "HL"), ((None, None), "opus-qwen", "HL")):
         d = pair if grp is None else t0[grp][arm]
         if d["estimand"] != {"HL": "Hodges-Lehmann", "median": "median"}[est]:
             raise SystemExit("report_assets: %s %s's estimator changed; check the report text" % (grp, arm))
@@ -696,12 +696,53 @@ def build_numbers(src):
     q = gq[worst[0]]
     if not q or abs(q["max_gap_m"] - worst[1]["max_gap_m"]) > 0.0005 or q["max_gap_step"] != worst[1]["max_gap_step"]:
         raise SystemExit("report_assets: Qwen3.8 no longer shares Opus's largest departure; check the slip-rule text")
-    readme = (REAL / "README.md").read_text()
-    fired = re.search(r"the flag fired at (\w+) steps: ((?:\d+/\d+(?:, | and )?)+)", readme)
-    if not fired:
-        raise SystemExit("report_assets: the README's slip-rule paragraph changed; check the report text")
-    put("real.sliprule.n", len(re.findall(r"\d+/\d+", fired.group(2))), "evidence/M3/M3.T19/real-2026-11-25/README.md: "
-        "the steps where the slip flag fired")
+    qworst = max(((sd, g) for sd, g in gq.items() if g and g.get("first_step_beyond") is not None),
+                 key=lambda kv: kv[1]["max_gap_m"])
+    if qworst[0] == worst[0]:
+        raise SystemExit("report_assets: Qwen3.8's largest departure is now the shared one; check the report text")
+    put("rtrace.qwen.max-cm", num(qworst[1]["max_gap_m"] * 100, 1), snote + " traces: Qwen3.8's largest gap to B2's estimate")
+    put("rtrace.qwen.max-seed", qworst[0], snote + " traces: the episode of Qwen3.8's largest gap")
+    put("rtrace.qwen.max-step", qworst[1]["max_gap_step"], snote + " traces: the step of Qwen3.8's largest gap")
+    put("rtrace.qwen.max-steps", RS["traces"][qworst[0]]["steps"], snote + " traces: that episode's steps")
+    # 40: the other departures, named by episode (Opus: 4001, 4003, 4002; Qwen3.8: 4001)
+    for who, gd, sd, k in (("opus", gaps, "4001", "o4001"), ("opus", gaps, "4003", "o4003"), ("opus", gaps, "4002", "o4002"),
+                           ("qwen", gq, "4001", "q4001")):
+        g = gd[sd]
+        put("rtrace.%s.cm" % k, num(g["max_gap_m"] * 100, 1), snote + " traces %s %s max gap" % (who, sd))
+        put("rtrace.%s.first" % k, g["first_step_beyond"], snote + " traces %s %s first step beyond 5 cm" % (who, sd))
+        put("rtrace.%s.beyond" % k, g["steps_beyond"], snote + " traces %s %s steps beyond 5 cm" % (who, sd))
+        put("rtrace.%s.at" % k, g["max_gap_step"], snote + " traces %s %s step of the max gap" % (who, sd))
+    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen"), ("procedure", "proc")):
+        b = RS["behaviour"][arm]
+        put("rbeh.%s.calls" % k, "%.2f" % b["calls_per_step"], snote + " behaviour %s calls_per_step" % arm)
+        if k != "proc":
+            put("rbeh.%s.toolnames" % k, "%.0f" % (b["tool_name_agreement_with_procedure"] * 100),
+                snote + " behaviour %s tool_name_agreement_with_procedure (%%)" % arm)
+            put("rbeh.%s.source" % k, "%.1f" % (b["pose_source_agreement_with_procedure"] * 100),
+                snote + " behaviour %s pose_source_agreement_with_procedure (%%)" % arm)
+    # the steps flagged slip_suspected, where the prompt's rule 2 zeroes the move and the procedure composes it; whether
+    # the move happened shows at the next tag fix (stats.json slip_suspected tag_fix_check), not in the tracked truth
+    SL = RS["slip_suspected"]
+    put("real.sliprule.n", SL["count"], snote + " slip_suspected count")
+    real = [x for x in SL["steps"] if x["tag_fix_check"]["first_fix_step"] == x["step"]]
+    slip = [x for x in SL["steps"] if x not in real]
+    if len(slip) != 1:
+        raise SystemExit("report_assets: the slip-flagged steps no longer split three real and one slip; check the text")
+    sl = slip[0]
+    t = sl["tag_fix_check"]
+    dm = t["distance_to_b2_fix_m"]
+    if not dm["B2"] > max(dm["claude-opus-5-5"], dm["qwen38-flash-xhigh"]):
+        raise SystemExit("report_assets: at the slipped step the procedure is no longer the farther from the fix")
+    put("real.sliprule.real", len(real), snote + " slip_suspected steps with a tag fix at the flagged step (the move was real)")
+    put("real.sliprule.slip.seed", sl["seed"], snote + " slip_suspected: the step whose move was mostly slip (seed)")
+    put("real.sliprule.slip.step", sl["step"], snote + " slip_suspected: that step")
+    put("real.sliprule.slip.after", t["first_fix_step"] - sl["step"], snote + " steps until the first fix after it")
+    put("real.sliprule.slip.b2", num(dm["B2"] * 100, 1), snote + " B2's composition to its fix (cm)")
+    put("real.sliprule.slip.models", num(max(dm["claude-opus-5-5"], dm["qwen38-flash-xhigh"]) * 100, 1),
+        snote + " the models' zeroed track to B2's fix (cm)")
+    dist = [v for x in real for v in x["tag_fix_check"]["distance_to_b2_fix_m"].values()]
+    put("real.sliprule.real.min", num(min(dist) * 100, 0), snote + " real moves: fix to every arm's prior estimate, min (cm)")
+    put("real.sliprule.real.max", num(max(dist) * 100, 0), snote + " real moves: fix to every arm's prior estimate, max (cm)")
 
     # ---- the room rehearsal in simulation (B2 and B0 only; table 1c, the real layout and range, carpet odometry)
     row = grab(src["rehearsal"], r"\*\*Table 1c\.[^\n]*\n.*?\n\| C20, 3\.0 m \|([^\n]*)", "rehearsal table 1c C20 3.0 m row")

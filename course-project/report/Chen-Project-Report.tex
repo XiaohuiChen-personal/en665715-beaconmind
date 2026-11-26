@@ -257,7 +257,9 @@ confirmed beacons; add new beacons as tentative and confirm them after two sight
 accept a loop closure only inside a full beacon fix; and choose the next move. The tools return every number
 and flag; the agent decides which results to accept and writes the state. When two physical tags share an ID,
 a detection far from the existing beacon of that ID becomes a second beacon labeled \texttt{B<id>b}. The same
-procedure written as Python code is the baseline B2, the \emph{coded procedure}.
+procedure written as Python code is the baseline B2, the \emph{coded procedure}, except one clause: rule~2's
+zeroing of a move whose odometry is flagged as slipping (Section~\ref{sec:real}). The clause is in the study's prompt
+too, but the simulator never sets the flag, so the study's fidelity numbers are unaffected.
 
 \textbf{Safety.} The design has three layers: an out-of-band STOP that aborts any move and sets a persistent
 latch; the validator of Table~\ref{tab:tools} together with the Pico's watchdog and stall detection; and the
@@ -367,7 +369,8 @@ Arm & Configuration \\
 B0 & Dead reckoning: logged odometry composed from the start pose, rounded like a report at every step \\
 B1 & Planar factor graph (GTSAM, iSAM2~\cite{kaess2012isam2}) on the same odometry and detections, given the
 true association (oracle), odometry scale calibrated online; its causal estimate at each step is scored \\
-B2 & The coded procedure: the prompt's procedure as Python code with the same tools; it drove every log \\
+B2 & The coded procedure: the prompt's procedure as Python code with the same tools, except rule~2's slip clause
+(never triggered in simulation); it drove every log \\
 Opus & \texttt{claude-opus-5-5} (API): adaptive thinking, effort medium, $\leq$64,000 output tokens, prompt
 caching, default sampling \\
 Qwen3.8 & \path{nvidia/Qwen3.8-Flash-Next-NVFP4} (vLLM): thinking at effort \texttt{xhigh}, temperature
@@ -804,14 +807,30 @@ on seven of them; on the eighth, episode \bmnum{real.qwen.worst.seed} (\bmnum{re
 \bmnum{real.qwen.worst.qwen}\,cm off against the procedure's \bmnum{real.qwen.worst.b2}\,cm: it carried an offset
 after taking a different fix from the procedure's partway through, and near the end kept its prior where the
 procedure accepted two fixes. Along the way each model's estimate left the procedure's by more than 5\,cm in
-\bmnum{rtrace.parted} (Opus) and \bmnum{rtrace.qwen.parted} (Qwen3.8) of the \bmnum{rtrace.n} episodes. The largest
-departure, \bmnum{rtrace.max-cm}\,cm for both models (episode \bmnum{rtrace.max-seed}, \bmnum{rtrace.max-beyond} steps
-from step \bmnum{rtrace.max-step} of \bmnum{rtrace.max-steps}), is a prompt rule, not a model error: the room
-prompt's rule~2 tells the model to compose a move with zero forward travel when the odometry's quality is
-\texttt{slip\_suspected}, and the frozen procedure has no such rule. The flag fired at \bmnum{real.sliprule.n} forward
-moves of the real logs; both models zeroed them as told and the procedure composed them. In episode
-\bmnum{rtrace.max-seed} the move was real, so both sat behind the procedure until a beacon fix brought them back (Opus
-ended \bmnum{rtrace.max-final-cm}\,cm from the procedure's estimate). The simulated study never exercised this rule. Opus's final estimate ended within
+\bmnum{rtrace.parted} (Opus) and \bmnum{rtrace.qwen.parted} (Qwen3.8) of the \bmnum{rtrace.n} episodes. The largest departure the two models share,
+and Opus's largest, \bmnum{rtrace.max-cm}\,cm (episode \bmnum{rtrace.max-seed}, \bmnum{rtrace.max-beyond} steps from
+step \bmnum{rtrace.max-step} of \bmnum{rtrace.max-steps}), comes from a prompt rule: the prompt's rule~2 tells the model
+to compose a move with zero forward travel when the odometry's quality is \texttt{slip\_suspected}, and the coded
+procedure has no such clause. The flag fired at \bmnum{real.sliprule.n} forward moves of the real logs; both models
+zeroed them as told and the procedure composed them. Whether a flagged move happened shows at the next tag fix, not
+in the batch's tracked truth, which composes the same odometry
+(\path{evidence/M3/M3.T19/real-2026-11-25/stats.md}, ``The steps flagged slip\_suspected''). At \bmnum{real.sliprule.real} of them the move was real: a tag fix at that very step put the car
+\bmnum{real.sliprule.real.min}--\bmnum{real.sliprule.real.max}\,cm from every arm's estimate of the step before, and
+every arm took it at once, except Opus in episode 4001, which kept its zeroed prior (its \bmnum{rtrace.o4001.cm}\,cm
+departure at step \bmnum{rtrace.o4001.at}) until a beacon fix one step later. At the fourth, step
+\bmnum{real.sliprule.slip.step} of episode \bmnum{real.sliprule.slip.seed}, the move was mostly slip: when fixes came
+\bmnum{real.sliprule.slip.after} steps later, the models' zeroed track was \bmnum{real.sliprule.slip.models}\,cm from
+the procedure's fix and the procedure's full composition \bmnum{real.sliprule.slip.b2}\,cm. There the rule was right,
+and the procedure, and the tracked truth with it, overshot; that is the shared departure. It does not explain Opus's
+\bmnum{rtrace.o4003.cm}\,cm over \bmnum{rtrace.o4003.beyond} steps from step \bmnum{rtrace.o4003.first} of episode
+4003 (opposite accept-or-keep choices on single-tag fixes) or its \bmnum{rtrace.o4002.cm}\,cm from step
+\bmnum{rtrace.o4002.first} of episode 4002, nor Qwen3.8's \bmnum{rtrace.q4001.cm}\,cm over \bmnum{rtrace.q4001.beyond}
+steps from step \bmnum{rtrace.q4001.first} of episode 4001 or its largest departure, \bmnum{rtrace.qwen.max-cm}\,cm at
+step \bmnum{rtrace.qwen.max-step} of \bmnum{rtrace.qwen.max-steps} in episode \bmnum{rtrace.qwen.max-seed}. The simulated
+study never exercised the rule. The models' tool calls matched the procedure's by name on \bmnum{rbeh.opus.toolnames}\,\%
+(Opus) and \bmnum{rbeh.qwen.toolnames}\,\% (Qwen3.8) of calls, with \bmnum{rbeh.opus.calls} and \bmnum{rbeh.qwen.calls}
+calls per step against the procedure's \bmnum{rbeh.proc.calls}, and their pose source matched the procedure's on
+\bmnum{rbeh.opus.source}\,\% and \bmnum{rbeh.qwen.source}\,\% of steps. Opus's final estimate ended within
 \bmnum{rtrace.opus.final-max}\,cm of the procedure's on all \bmnum{rtrace.n} episodes. Over whole episodes the median
 difference in trajectory error against the tracked truth, model minus procedure, is \bmnum{rstat.ate.opus-b2.est}\,cm
 for Opus (\bmnum{rstat.ate.opus-b2.lo} to \bmnum{rstat.ate.opus-b2.hi}) and \bmnum{rstat.ate.qwen-b2.est}\,cm for
@@ -823,23 +842,25 @@ descriptive, and this endpoint was chosen after the data; estimates with exact 9
 \bmnum{rstat.b2-b0.est}\,cm (\bmnum{rstat.b2-b0.lo} to \bmnum{rstat.b2-b0.hi}), Opus \bmnum{rstat.opus-b0.est}\,cm
 (\bmnum{rstat.opus-b0.lo} to \bmnum{rstat.opus-b0.hi}) and Qwen3.8 \bmnum{rstat.qwen-b0.est}\,cm
 (\bmnum{rstat.qwen-b0.lo} to \bmnum{rstat.qwen-b0.hi}). A model that follows the procedure inherits its gain, so a
-model's gain over dead reckoning is the procedure's, not the model's. Against the procedure: Opus
-\bmnum{rstat.opus-b2.est}\,cm (\bmnum{rstat.opus-b2.lo} to \bmnum{rstat.opus-b2.hi}; Hodges--Lehmann) and Qwen3.8
-\bmnum{rstat.qwen-b2.est}\,cm (\bmnum{rstat.qwen-b2.lo} to \bmnum{rstat.qwen-b2.hi}), a median with its exact interval
-because episode \bmnum{real.qwen.worst.seed} makes the differences too skewed for the Hodges--Lehmann estimate. Opus
-minus Qwen3.8 is \bmnum{rstat.opus-qwen.est}\,cm (median; \bmnum{rstat.opus-qwen.lo} to \bmnum{rstat.opus-qwen.hi}):
-eight episodes cannot order the two models.
+model's gain over dead reckoning is the procedure's, not the model's. Against the procedure (Hodges--Lehmann, as the study's
+comparisons with B2): Opus \bmnum{rstat.opus-b2.est}\,cm (\bmnum{rstat.opus-b2.lo} to \bmnum{rstat.opus-b2.hi}) and
+Qwen3.8 \bmnum{rstat.qwen-b2.est}\,cm (\bmnum{rstat.qwen-b2.lo} to \bmnum{rstat.qwen-b2.hi}), whose wide upper end is
+episode \bmnum{real.qwen.worst.seed}. Opus minus Qwen3.8 is \bmnum{rstat.opus-qwen.est}\,cm (\bmnum{rstat.opus-qwen.lo}
+to \bmnum{rstat.opus-qwen.hi}): eight episodes cannot order the two models.
 
 \textbf{Other truths and runs.} Against the tracker-dependent truth at the last step ($n=\bmnum{real.n-last}$) the
 medians were \bmnum{real.b0.last}, \bmnum{real.b2.last}, \bmnum{real.opus.last} and \bmnum{real.qwen.last}\,cm (B0,
 procedure, Opus, Qwen3.8), and \bmnum{real.b0.recomputed}, \bmnum{real.b2.recomputed}, \bmnum{real.opus.recomputed}
-and \bmnum{real.qwen.recomputed}\,cm with that truth recomputed with the slip term. On the episode listed apart, Opus
-and the procedure part: \bmnum{real.flagged.opus} against \bmnum{real.flagged.b2}\,cm (B0 \bmnum{real.flagged.b0}).
+and \bmnum{real.qwen.recomputed}\,cm with that truth recomputed with the slip term. On the episode listed apart both models
+took fixes where the procedure, stopped, fell back to dead reckoning, and both ended farther from the circle:
+\bmnum{real.flagged.opus} (Opus) and \bmnum{real.flagged.qwen}\,cm (Qwen3.8) against \bmnum{real.flagged.b2}\,cm (B0
+\bmnum{real.flagged.b0}).
 Opus returned a valid report at all \bmnum{real.steps-all} steps of the ten logs, with \bmnum{real.opus.fallbacks}
 fallbacks, in \bmnum{real.opus.mean-s}\,s per step on average (95th percentile \bmnum{real.opus.p95-s}\,s), for
 US\$\bmnum{real.opus.cost}; Qwen3.8 at \bmnum{real.qwen.valid} of them (\bmnum{real.qwen.fallbacks} fallbacks,
 \bmnum{real.qwen.repaired} reports repaired) in \bmnum{real.qwen.mean-s}\,s per step (95th percentile
-\bmnum{real.qwen.p95-s}\,s).
+\bmnum{real.qwen.p95-s}\,s). These times are under shared-server load, not closed-loop latencies: Opus ran three
+episodes at a time, Qwen3.8 three and then three plus two side by side on one server.
 
 \begin{table}[t]
 \caption{Real-Log Replay: Final-Position Error Against the End Circle}
@@ -946,9 +967,9 @@ the car so far is 13 minutes (same entry).
 
 \textbf{A prompt rule met on the car (established).} The room prompt tells the model to zero a move whose odometry the
 car flags as slipping; the coded procedure has no such rule, and the simulator never set the flag. On the real logs it
-fired \bmnum{real.sliprule.n} times and caused the largest departure of both models from the procedure
-(Section~\ref{sec:real}). Whether the rule helps depends on whether the flagged move happened, which the flag alone
-does not tell.
+fired \bmnum{real.sliprule.n} times: \bmnum{real.sliprule.real} moves were real, and a tag fix at the same step removed
+the rule's effect; one was mostly slip, the rule was right, and the procedure overshot, which made the largest
+departure the two models share (Section~\ref{sec:real}). The flag alone does not tell which case it is.
 
 \textbf{What carries over.} On real frames straight ahead the detector's ranges were within
 \bmnum{pilot.rel-max-pct}\,\% of the distance; its bearings were off by up to \bmnum{pilot.berr-max}$^\circ$, and
@@ -956,8 +977,7 @@ angled views were not measured (Section~\ref{sec:setup}). The simulator's larges
 finding that the stronger models reproduce the procedure held on the real logs, over the \bmnum{real.n-circle} of
 \bmnum{real.n} episodes with an end circle: for Opus in final and whole-episode error, for Qwen3.8 in all but one
 episode; step by step they left the procedure's estimate for a few steps in \bmnum{rtrace.parted} and
-\bmnum{rtrace.qwen.parted} of the \bmnum{rtrace.n} episodes, the largest departure being a prompt rule the simulated
-study never exercised; whether a model adds anything when the odometry
+\bmnum{rtrace.qwen.parted} of the \bmnum{rtrace.n} episodes, the largest shared departure coming from a prompt clause the procedure lacks, which was right there; whether a model adds anything when the odometry
 is this poor is not answered by episodes in which it did not.
 
 \subsection{Discussion and Limitations}\label{sec:limits}
@@ -994,8 +1014,9 @@ model could add when the procedure's rules do not fit was not measured; close du
 operator requests are the next test.
 On the \bmnum{real.n-circle} of \bmnum{real.n} real episodes that have an end circle the ordering measured so far
 held: the final errors of Opus~5.5 and the coded procedure differed by at most \bmnum{real.opus-b2.maxdiff}\,cm,
-Qwen3.8's matched the procedure's but for one long episode, and all three ended far closer to the truth than dead
-reckoning (medians \bmnum{real.opus.median}, \bmnum{real.qwen.median}, \bmnum{real.b2.median} and
+Qwen3.8's were within \bmnum{real.qwen.rest-maxdiff}\,cm of the procedure's on seven episodes and
+\bmnum{real.qwen.worst.qwen} against \bmnum{real.qwen.worst.b2}\,cm on the eighth, and all three ended far closer to
+the truth than dead reckoning (medians \bmnum{real.opus.median}, \bmnum{real.qwen.median}, \bmnum{real.b2.median} and
 \bmnum{real.b0.median}\,cm); eight episodes cannot order the two models. The largest gap from the
 simulator was in the odometry: dead reckoning ended far farther off than in simulation, and on this carpet the car
 covered less than it counted in one direction of travel, which no simulator here modeled. \pending{Gemma~4 on the real logs, and what the three closed-loop Opus episodes
