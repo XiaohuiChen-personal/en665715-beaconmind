@@ -727,14 +727,14 @@ def build_numbers(src):
     real = [x for x in SL["steps"] if x["tag_fix_check"]["first_fix_step"] == x["step"]]
     slip = [x for x in SL["steps"] if x not in real]
     if len(slip) != 1:
-        raise SystemExit("report_assets: the slip-flagged steps no longer split three real and one slip; check the text")
+        raise SystemExit("report_assets: the slip-flagged steps no longer split three fixed at once and one not; check the text")
     sl = slip[0]
     t = sl["tag_fix_check"]
     dm = t["distance_to_b2_fix_m"]
     if not dm["B2"] > max(dm["claude-opus-5-5"], dm["qwen38-flash-xhigh"]):
-        raise SystemExit("report_assets: at the slipped step the procedure is no longer the farther from the fix")
+        raise SystemExit("report_assets: at the step without a fix the procedure is no longer the farther from the next fix")
     put("real.sliprule.real", len(real), snote + " slip_suspected steps with a tag fix at the flagged step (the move was real)")
-    put("real.sliprule.slip.seed", sl["seed"], snote + " slip_suspected: the step whose move was mostly slip (seed)")
+    put("real.sliprule.slip.seed", sl["seed"], snote + " slip_suspected: the step with no fix at once (seed)")
     put("real.sliprule.slip.step", sl["step"], snote + " slip_suspected: that step")
     put("real.sliprule.slip.after", t["first_fix_step"] - sl["step"], snote + " steps until the first fix after it")
     put("real.sliprule.slip.b2", num(dm["B2"] * 100, 1), snote + " B2's composition to its fix (cm)")

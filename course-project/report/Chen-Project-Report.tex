@@ -259,7 +259,8 @@ and flag; the agent decides which results to accept and writes the state. When t
 a detection far from the existing beacon of that ID becomes a second beacon labeled \texttt{B<id>b}. The same
 procedure written as Python code is the baseline B2, the \emph{coded procedure}, except one clause: rule~2's
 zeroing of a move whose odometry is flagged as slipping (Section~\ref{sec:real}). The clause is in the study's prompt
-too, but the simulator never sets the flag, so the study's fidelity numbers are unaffected.
+too, but the simulator never sets the flag, so the study's fidelity numbers are unaffected; on the car it helped in
+the one case where no fix followed at once.
 
 \textbf{Safety.} The design has three layers: an out-of-band STOP that aborts any move and sets a persistent
 latch; the validator of Table~\ref{tab:tools} together with the Pico's watchdog and stall detection; and the
@@ -617,7 +618,9 @@ batches''; \path{evidence/M3/M3.T19/real-2026-11-25/README.md}).
 \item \emph{The end circle as the primary truth.} The batch's tracked pose was to serve as the step truth, but
 on this carpet it was overconfident: in one direction of travel the car covered less than its count
 (Section~\ref{sec:sim2real}), and in a simulation of that slip the tracked pose's errors ran well beyond its stated sigma
-(\path{evidence/M3/M3.T12/batch-runner/truth-under-slip/}). It is reported as a secondary truth.
+(\path{evidence/M3/M3.T12/batch-runner/truth-under-slip/}). It composes the same odometry as the coded procedure,
+so between fixes it carries the procedure's odometry errors, such as the slip-flagged move of
+Section~\ref{sec:real} that the procedure composed in full. It is reported as a secondary truth.
 \item \emph{A slip term in the batch's tracker.} From the fifth batch on, the tracker added 0.3\,m of position
 sigma per meter of forward travel, so the guard's margin and the tracked truth widen with distance driven; the
 first batches ran without it. It reaches the agents' input only through the safety flags the guard sets: no
@@ -818,10 +821,14 @@ in the batch's tracked truth, which composes the same odometry
 \bmnum{real.sliprule.real.min}--\bmnum{real.sliprule.real.max}\,cm from every arm's estimate of the step before, and
 every arm took it at once, except Opus in episode 4001, which kept its zeroed prior (its \bmnum{rtrace.o4001.cm}\,cm
 departure at step \bmnum{rtrace.o4001.at}) until a beacon fix one step later. At the fourth, step
-\bmnum{real.sliprule.slip.step} of episode \bmnum{real.sliprule.slip.seed}, the move was mostly slip: when fixes came
-\bmnum{real.sliprule.slip.after} steps later, the models' zeroed track was \bmnum{real.sliprule.slip.models}\,cm from
-the procedure's fix and the procedure's full composition \bmnum{real.sliprule.slip.b2}\,cm. There the rule was right,
-and the procedure, and the tracked truth with it, overshot; that is the shared departure. It does not explain Opus's
+\bmnum{real.sliprule.slip.step} of episode \bmnum{real.sliprule.slip.seed}, no fix followed for
+\bmnum{real.sliprule.slip.after} steps; at the next fix the procedure's composed track ran
+\bmnum{real.sliprule.slip.b2}\,cm ahead of its own fix, and the models' zeroed tracks were
+\bmnum{real.sliprule.slip.models}\,cm from it, so the models ended nearer that fix. That is the shared departure. It
+cannot separate the rule from the floor's direction-dependent slip (Section~\ref{sec:sim2real}): three forward moves of
+0.25\,m lie between the flag and the fix, and on this floor the car covered less than its count on such moves without
+any flag. So the rule helped in the one case where no fix followed at once, changed nothing at two of the other
+three, and held Opus back for one step at the third. It does not explain Opus's
 \bmnum{rtrace.o4003.cm}\,cm over \bmnum{rtrace.o4003.beyond} steps from step \bmnum{rtrace.o4003.first} of episode
 4003 (opposite accept-or-keep choices on single-tag fixes) or its \bmnum{rtrace.o4002.cm}\,cm from step
 \bmnum{rtrace.o4002.first} of episode 4002, nor Qwen3.8's \bmnum{rtrace.q4001.cm}\,cm over \bmnum{rtrace.q4001.beyond}
@@ -967,9 +974,11 @@ the car so far is 13 minutes (same entry).
 
 \textbf{A prompt rule met on the car (established).} The room prompt tells the model to zero a move whose odometry the
 car flags as slipping; the coded procedure has no such rule, and the simulator never set the flag. On the real logs it
-fired \bmnum{real.sliprule.n} times: \bmnum{real.sliprule.real} moves were real, and a tag fix at the same step removed
-the rule's effect; one was mostly slip, the rule was right, and the procedure overshot, which made the largest
-departure the two models share (Section~\ref{sec:real}). The flag alone does not tell which case it is.
+fired \bmnum{real.sliprule.n} times. At \bmnum{real.sliprule.real} a tag fix at the same step showed a real move and
+removed the rule's effect. At the fourth no fix came at once, and at the next one the models' zeroed tracks were
+nearer it than the procedure's composed track; that made the largest departure the two models share
+(Section~\ref{sec:real}), and it cannot separate the rule from the floor's slip. The flag alone does not tell which
+case it is.
 
 \textbf{What carries over.} On real frames straight ahead the detector's ranges were within
 \bmnum{pilot.rel-max-pct}\,\% of the distance; its bearings were off by up to \bmnum{pilot.berr-max}$^\circ$, and
@@ -977,7 +986,8 @@ angled views were not measured (Section~\ref{sec:setup}). The simulator's larges
 finding that the stronger models reproduce the procedure held on the real logs, over the \bmnum{real.n-circle} of
 \bmnum{real.n} episodes with an end circle: for Opus in final and whole-episode error, for Qwen3.8 in all but one
 episode; step by step they left the procedure's estimate for a few steps in \bmnum{rtrace.parted} and
-\bmnum{rtrace.qwen.parted} of the \bmnum{rtrace.n} episodes, the largest shared departure coming from a prompt clause the procedure lacks, which was right there; whether a model adds anything when the odometry
+\bmnum{rtrace.qwen.parted} of the \bmnum{rtrace.n} episodes, the largest shared departure coming from a prompt clause the procedure lacks, after which the models ended nearer
+the next fix; whether a model adds anything when the odometry
 is this poor is not answered by episodes in which it did not.
 
 \subsection{Discussion and Limitations}\label{sec:limits}

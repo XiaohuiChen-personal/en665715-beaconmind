@@ -518,7 +518,7 @@ real.sliprule.real.min | 17 | evidence/M3/M3.T19/real-2026-11-25/stats.json real
 real.sliprule.slip.after | 6 | evidence/M3/M3.T19/real-2026-11-25/stats.json steps until the first fix after it
 real.sliprule.slip.b2 | 20.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json B2's composition to its fix (cm)
 real.sliprule.slip.models | 5.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json the models' zeroed track to B2's fix (cm)
-real.sliprule.slip.seed | 3001 | evidence/M3/M3.T19/real-2026-11-25/stats.json slip_suspected: the step whose move was mostly slip (seed)
+real.sliprule.slip.seed | 3001 | evidence/M3/M3.T19/real-2026-11-25/stats.json slip_suspected: the step with no fix at once (seed)
 real.sliprule.slip.step | 41 | evidence/M3/M3.T19/real-2026-11-25/stats.json slip_suspected: that step
 real.start.s1 | 3 | evidence/M3/M3.T19/real-2026-11-25/result.json DONE episodes from start pose S1
 real.start.s2 | 2 | evidence/M3/M3.T19/real-2026-11-25/result.json DONE episodes from start pose S2
