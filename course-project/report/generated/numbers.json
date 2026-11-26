@@ -515,6 +515,7 @@
  "real.sliprule.real": "3",
  "real.sliprule.real.max": "25",
  "real.sliprule.real.min": "17",
+ "real.sliprule.shortfall-cm": "13",
  "real.sliprule.slip.after": "6",
  "real.sliprule.slip.b2": "20.4",
  "real.sliprule.slip.models": "5.4",

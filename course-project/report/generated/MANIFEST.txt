@@ -515,6 +515,7 @@ real.sliprule.n | 4 | evidence/M3/M3.T19/real-2026-11-25/stats.json slip_suspect
 real.sliprule.real | 3 | evidence/M3/M3.T19/real-2026-11-25/stats.json slip_suspected steps with a tag fix at the flagged step (the move was real)
 real.sliprule.real.max | 25 | evidence/M3/M3.T19/real-2026-11-25/stats.json real moves: fix to every arm's prior estimate, max (cm)
 real.sliprule.real.min | 17 | evidence/M3/M3.T19/real-2026-11-25/stats.json real moves: fix to every arm's prior estimate, min (cm)
+real.sliprule.shortfall-cm | 13 | 3 x 0.25 m (three FORWARD_25) x (1 - slip.north.down, the northward ratio off the tape line), in cm
 real.sliprule.slip.after | 6 | evidence/M3/M3.T19/real-2026-11-25/stats.json steps until the first fix after it
 real.sliprule.slip.b2 | 20.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json B2's composition to its fix (cm)
 real.sliprule.slip.models | 5.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json the models' zeroed track to B2's fix (cm)

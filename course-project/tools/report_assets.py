@@ -855,6 +855,10 @@ def build_numbers(src):
     put("room.moved.uid", moved[0][0], "configs/arenas/real-room.json against layout-2/layout.json")
     put("room.moved.id", moved[0][1], "configs/arenas/real-room.json against layout-2/layout.json")
     put("room.moved.cm", "%.0f" % (moved[0][2] * 100), "configs/arenas/real-room.json against layout-2/layout.json")
+    # the ordinary northward shortfall over the three FORWARD_25 moves between the flag and the next fix (steps 41-43,
+    # roughly northward), at the measured northward ratio off the tape line: 3 x 0.25 m x (1 - ratio)
+    put("real.sliprule.shortfall-cm", "%.0f" % (3 * 0.25 * (1 - float(out["slip.north.down"][0])) * 100),
+        "3 x 0.25 m (three FORWARD_25) x (1 - slip.north.down, the northward ratio off the tape line), in cm")
     return out
 
 

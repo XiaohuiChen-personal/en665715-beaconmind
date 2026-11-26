@@ -824,11 +824,12 @@ departure at step \bmnum{rtrace.o4001.at}) until a beacon fix one step later. At
 \bmnum{real.sliprule.slip.step} of episode \bmnum{real.sliprule.slip.seed}, no fix followed for
 \bmnum{real.sliprule.slip.after} steps; at the next fix the procedure's composed track ran
 \bmnum{real.sliprule.slip.b2}\,cm ahead of its own fix, and the models' zeroed tracks were
-\bmnum{real.sliprule.slip.models}\,cm from it, so the models ended nearer that fix. That is the shared departure. It
-cannot separate the rule from the floor's direction-dependent slip (Section~\ref{sec:sim2real}): three forward moves of
-0.25\,m lie between the flag and the fix, and on this floor the car covered less than its count on such moves without
-any flag. So the rule helped in the one case where no fix followed at once, changed nothing at two of the other
-three, and held Opus back for one step at the third. It does not explain Opus's
+\bmnum{real.sliprule.slip.models}\,cm from it: the models ended nearer the next fix than the procedure did. That is
+the shared departure. It cannot separate the rule from the floor's direction-dependent slip
+(Section~\ref{sec:sim2real}): three forward moves of 0.25\,m, roughly northward and only the first of them flagged, lie
+between the flag and the fix, and the northward travel ratio of \bmnum{slip.north.down} alone predicts a shortfall of
+about \bmnum{real.sliprule.shortfall-cm}\,cm over them. So the rule helped in the one case where no fix followed at
+once, changed nothing at two of the other three, and held Opus back for one step at the third. It does not explain Opus's
 \bmnum{rtrace.o4003.cm}\,cm over \bmnum{rtrace.o4003.beyond} steps from step \bmnum{rtrace.o4003.first} of episode
 4003 (opposite accept-or-keep choices on single-tag fixes) or its \bmnum{rtrace.o4002.cm}\,cm from step
 \bmnum{rtrace.o4002.first} of episode 4002, nor Qwen3.8's \bmnum{rtrace.q4001.cm}\,cm over \bmnum{rtrace.q4001.beyond}
