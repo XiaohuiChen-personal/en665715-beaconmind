@@ -3,8 +3,8 @@
 %
 % Class Project Report -- EN.665.715 Embodied Agentic AI for Robotic Control
 % Built from the instructor's "Class Project Template" (conference_101719.tex, IEEEtran).
-% STATUS (2026-11-25): the main simulated study and the real-log replay of B0, B2 and Opus 5.5 are reported;
-% Qwen3.8 and Gemma 4 on the real logs and the closed-loop episodes on the car are marked with \pending{...} and
+% STATUS (2026-11-25): the main simulated study and the real-log replay of B0, B2, Opus 5.5 and Qwen3.8 are
+% reported; Gemma 4 on the real logs and the closed-loop episodes on the car are marked with \pending{...} and
 % listed in PENDING.md.
 % Study numbers are \bmnum{<key>} from generated/numbers.tex, and the study tables and the room figure are
 % generated/*.tex; course-project/tools/report_assets.py writes them from the evidence files. Pilot numbers
@@ -70,8 +70,8 @@ matters, and both largely reproduced the coded procedure. Gemma~4 26B was worse 
 \bmnum{h1.gemma.worse} seeds, mostly on steps answered without a tool (post hoc). On a real car the coded procedure
 drove \bmnum{real.n} episodes in a carpeted room; replayed on their logs and scored against a tag resection at the end
 of \bmnum{real.n-circle} of them, the median final-position error was \bmnum{real.b0.median}\,cm for dead reckoning,
-\bmnum{real.b2.median}\,cm for the coded procedure and \bmnum{real.opus.median}\,cm for Opus~5.5 \pending{Qwen3.8
-and Gemma~4 on the real logs (replays running)}. The car's odometry drifted far more than the simulator's.
+\bmnum{real.b2.median}\,cm for the coded procedure, \bmnum{real.opus.median}\,cm for Opus~5.5 and
+\bmnum{real.qwen.median}\,cm for Qwen3.8 \pending{Gemma~4 on the real logs (replay running)}. The car's odometry drifted far more than the simulator's.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -788,33 +788,58 @@ S3~$\times$\bmnum{real.start.s3}, S4~$\times$\bmnum{real.start.s4}, S5~$\times$\
 apart. Episodes that a batch halt cut short (a stall, a Pico dropout, an encoder-scale check) are not replayed.
 
 \textbf{Real-log replay (descriptive).} Each episode's log was converted to the study's observation format and
-replayed through dead reckoning, the coded procedure and Opus~5.5 with the study's tools, the room variant of its
+replayed through dead reckoning, the coded procedure, Opus~5.5 and Qwen3.8-Flash-Next (NVFP4, served by vLLM on the
+DGX Spark as in the study; Gemma~4, also on vLLM, is still running) with the study's tools, the room variant of its
 prompt (a \bmnum{cl.range-m}\,m range limit, as in the simulated closed loop) and the real runs' design values; the
 replayed procedure reproduces the car's live estimate at every step, which checks the conversion
 (\path{evidence/M3/M3.T19/real-2026-11-25/}). Table~\ref{tab:real} gives the final-position error against the end
 circle for the \bmnum{real.n-circle} episodes that have one (in the ninth, a stall halted the batch inside the end
-circle), and Fig.~\ref{fig:real} shows each episode. On each of them the final errors of Opus and the procedure differed by at most
-\bmnum{real.opus-b2.maxdiff}\,cm, so the two cannot be told apart at the end. Along the way they do part: Opus's
-estimate left the procedure's by more than 5\,cm in \bmnum{rtrace.parted} of the \bmnum{rtrace.n} episodes, by up to
-\bmnum{rtrace.max-cm}\,cm (episode \bmnum{rtrace.max-seed}, \bmnum{rtrace.max-beyond} steps from step
-\bmnum{rtrace.max-step} of \bmnum{rtrace.max-steps}), and came back (\bmnum{rtrace.max-final-cm}\,cm at that episode's
-end); over whole episodes the \bmnum{rstat.ate.opus-b2.estimand} difference in trajectory error against the tracked
-truth, Opus minus the procedure, is \bmnum{rstat.ate.opus-b2.est}\,cm (\bmnum{rstat.ate.opus-b2.lo} to
-\bmnum{rstat.ate.opus-b2.hi}; exploratory). Both ended far closer to the truth than dead reckoning, whose error grew to \bmnum{real.b0.max}\,cm on the longest episodes,
-where theirs also grew. As paired differences (exploratory and not pre-registered: the pre-registration keeps the
-real logs descriptive, and this endpoint was chosen after the data; Hodges--Lehmann estimates with exact 95\,\%
-intervals, no tests; \path{evidence/M3/M3.T19/real-2026-11-25/stats.md}), the coded procedure minus dead
-reckoning is \bmnum{rstat.b2-b0.est}\,cm (\bmnum{rstat.b2-b0.lo} to \bmnum{rstat.b2-b0.hi}), Opus minus dead reckoning
-\bmnum{rstat.opus-b0.est}\,cm (\bmnum{rstat.opus-b0.lo} to \bmnum{rstat.opus-b0.hi}), and Opus minus the procedure
-\bmnum{rstat.opus-b2.est}\,cm (\bmnum{rstat.opus-b2.lo} to \bmnum{rstat.opus-b2.hi}). A model that follows the procedure
-inherits its gain, so Opus's gain over dead reckoning is the procedure's, not the model's. Against the tracker-dependent truth at the
-last step ($n=\bmnum{real.n-last}$) the medians were \bmnum{real.b0.last}, \bmnum{real.b2.last} and
-\bmnum{real.opus.last}\,cm (B0, procedure, Opus), and \bmnum{real.b0.recomputed}, \bmnum{real.b2.recomputed} and
-\bmnum{real.opus.recomputed}\,cm with that truth recomputed with the slip term. On the episode listed apart, Opus and
-the procedure part: \bmnum{real.flagged.opus} against \bmnum{real.flagged.b2}\,cm (B0 \bmnum{real.flagged.b0}). Opus
-returned a valid report at all \bmnum{real.steps-all} steps of the ten logs, with \bmnum{real.opus.fallbacks}
+circle), and Fig.~\ref{fig:real} shows each episode. Every arm ended far closer to the truth than dead reckoning,
+and for every arm the two largest errors are on the two longest episodes (\bmnum{real.longest.steps.a} and
+\bmnum{real.longest.steps.b} steps), where dead reckoning reached \bmnum{real.b0.max}\,cm.
+
+\textbf{The models against the procedure.} Opus's final error differed from the procedure's by at most
+\bmnum{real.opus-b2.maxdiff}\,cm on every episode. Qwen3.8's differed by at most \bmnum{real.qwen.rest-maxdiff}\,cm
+on seven of them; on the eighth, episode \bmnum{real.qwen.worst.seed} (\bmnum{real.qwen.worst.steps} steps), it ended
+\bmnum{real.qwen.worst.qwen}\,cm off against the procedure's \bmnum{real.qwen.worst.b2}\,cm: it carried an offset
+after taking a different fix from the procedure's partway through, and near the end kept its prior where the
+procedure accepted two fixes. Along the way each model's estimate left the procedure's by more than 5\,cm in
+\bmnum{rtrace.parted} (Opus) and \bmnum{rtrace.qwen.parted} (Qwen3.8) of the \bmnum{rtrace.n} episodes. The largest
+departure, \bmnum{rtrace.max-cm}\,cm for both models (episode \bmnum{rtrace.max-seed}, \bmnum{rtrace.max-beyond} steps
+from step \bmnum{rtrace.max-step} of \bmnum{rtrace.max-steps}), is a prompt rule, not a model error: the room
+prompt's rule~2 tells the model to compose a move with zero forward travel when the odometry's quality is
+\texttt{slip\_suspected}, and the frozen procedure has no such rule. The flag fired at \bmnum{real.sliprule.n} forward
+moves of the real logs; both models zeroed them as told and the procedure composed them. In episode
+\bmnum{rtrace.max-seed} the move was real, so both sat behind the procedure until a beacon fix brought them back (Opus
+ended \bmnum{rtrace.max-final-cm}\,cm from the procedure's estimate). The simulated study never exercised this rule. Opus's final estimate ended within
+\bmnum{rtrace.opus.final-max}\,cm of the procedure's on all \bmnum{rtrace.n} episodes. Over whole episodes the median
+difference in trajectory error against the tracked truth, model minus procedure, is \bmnum{rstat.ate.opus-b2.est}\,cm
+for Opus (\bmnum{rstat.ate.opus-b2.lo} to \bmnum{rstat.ate.opus-b2.hi}) and \bmnum{rstat.ate.qwen-b2.est}\,cm for
+Qwen3.8 (\bmnum{rstat.ate.qwen-b2.lo} to \bmnum{rstat.ate.qwen-b2.hi}).
+
+\textbf{Paired differences} (exploratory and not pre-registered: the pre-registration keeps the real logs
+descriptive, and this endpoint was chosen after the data; estimates with exact 95\,\% intervals, no tests;
+\path{evidence/M3/M3.T19/real-2026-11-25/stats.md}). Against dead reckoning (Hodges--Lehmann): the coded procedure
+\bmnum{rstat.b2-b0.est}\,cm (\bmnum{rstat.b2-b0.lo} to \bmnum{rstat.b2-b0.hi}), Opus \bmnum{rstat.opus-b0.est}\,cm
+(\bmnum{rstat.opus-b0.lo} to \bmnum{rstat.opus-b0.hi}) and Qwen3.8 \bmnum{rstat.qwen-b0.est}\,cm
+(\bmnum{rstat.qwen-b0.lo} to \bmnum{rstat.qwen-b0.hi}). A model that follows the procedure inherits its gain, so a
+model's gain over dead reckoning is the procedure's, not the model's. Against the procedure: Opus
+\bmnum{rstat.opus-b2.est}\,cm (\bmnum{rstat.opus-b2.lo} to \bmnum{rstat.opus-b2.hi}; Hodges--Lehmann) and Qwen3.8
+\bmnum{rstat.qwen-b2.est}\,cm (\bmnum{rstat.qwen-b2.lo} to \bmnum{rstat.qwen-b2.hi}), a median with its exact interval
+because episode \bmnum{real.qwen.worst.seed} makes the differences too skewed for the Hodges--Lehmann estimate. Opus
+minus Qwen3.8 is \bmnum{rstat.opus-qwen.est}\,cm (median; \bmnum{rstat.opus-qwen.lo} to \bmnum{rstat.opus-qwen.hi}):
+eight episodes cannot order the two models.
+
+\textbf{Other truths and runs.} Against the tracker-dependent truth at the last step ($n=\bmnum{real.n-last}$) the
+medians were \bmnum{real.b0.last}, \bmnum{real.b2.last}, \bmnum{real.opus.last} and \bmnum{real.qwen.last}\,cm (B0,
+procedure, Opus, Qwen3.8), and \bmnum{real.b0.recomputed}, \bmnum{real.b2.recomputed}, \bmnum{real.opus.recomputed}
+and \bmnum{real.qwen.recomputed}\,cm with that truth recomputed with the slip term. On the episode listed apart, Opus
+and the procedure part: \bmnum{real.flagged.opus} against \bmnum{real.flagged.b2}\,cm (B0 \bmnum{real.flagged.b0}).
+Opus returned a valid report at all \bmnum{real.steps-all} steps of the ten logs, with \bmnum{real.opus.fallbacks}
 fallbacks, in \bmnum{real.opus.mean-s}\,s per step on average (95th percentile \bmnum{real.opus.p95-s}\,s), for
-US\$\bmnum{real.opus.cost}.
+US\$\bmnum{real.opus.cost}; Qwen3.8 at \bmnum{real.qwen.valid} of them (\bmnum{real.qwen.fallbacks} fallbacks,
+\bmnum{real.qwen.repaired} reports repaired) in \bmnum{real.qwen.mean-s}\,s per step (95th percentile
+\bmnum{real.qwen.p95-s}\,s).
 
 \begin{table}[t]
 \caption{Real-Log Replay: Final-Position Error Against the End Circle}
@@ -829,7 +854,8 @@ Arm & Median (cm) & IQR (cm) & Range (cm) \\
 B0, dead reckoning & \bmnum{real.b0.median} & \bmnum{real.b0.q1}--\bmnum{real.b0.q3} & \bmnum{real.b0.min}--\bmnum{real.b0.max} \\
 B2, coded procedure & \bmnum{real.b2.median} & \bmnum{real.b2.q1}--\bmnum{real.b2.q3} & \bmnum{real.b2.min}--\bmnum{real.b2.max} \\
 Opus~5.5 & \bmnum{real.opus.median} & \bmnum{real.opus.q1}--\bmnum{real.opus.q3} & \bmnum{real.opus.min}--\bmnum{real.opus.max} \\
-Qwen3.8, Gemma~4 & \multicolumn{3}{c}{\pending{both replays running}} \\
+Qwen3.8 & \bmnum{real.qwen.median} & \bmnum{real.qwen.q1}--\bmnum{real.qwen.q3} & \bmnum{real.qwen.min}--\bmnum{real.qwen.max} \\
+Gemma~4 & \multicolumn{3}{c}{\pending{replay running}} \\
 \hline
 \multicolumn{4}{@{}p{0.95\columnwidth}@{}}{\scriptsize $n=\bmnum{real.n-circle}$ episodes driven by the coded
 procedure on the car (8 of the 9 have an end circle), the same logs for every arm. The end circle: a full-turn
@@ -918,12 +944,20 @@ other losses (one before about 03:26 and one between 10:39 and 10:43). A longer 
 the Pico fail to join and was removed; the static address of deviation~7 avoids the lease, but its longest run on
 the car so far is 13 minutes (same entry).
 
+\textbf{A prompt rule met on the car (established).} The room prompt tells the model to zero a move whose odometry the
+car flags as slipping; the coded procedure has no such rule, and the simulator never set the flag. On the real logs it
+fired \bmnum{real.sliprule.n} times and caused the largest departure of both models from the procedure
+(Section~\ref{sec:real}). Whether the rule helps depends on whether the flagged move happened, which the flag alone
+does not tell.
+
 \textbf{What carries over.} On real frames straight ahead the detector's ranges were within
 \bmnum{pilot.rel-max-pct}\,\% of the distance; its bearings were off by up to \bmnum{pilot.berr-max}$^\circ$, and
 angled views were not measured (Section~\ref{sec:setup}). The simulator's largest error was the odometry. The study's
-finding that the stronger models reproduce the procedure held on the real logs for Opus in final error (over the
-\bmnum{real.n-circle} of \bmnum{real.n} episodes with an end circle) and in whole-episode error, though step by step
-its estimate left the procedure's for a few steps in \bmnum{rtrace.parted} of the \bmnum{rtrace.n} episodes; whether a model adds anything when the odometry
+finding that the stronger models reproduce the procedure held on the real logs, over the \bmnum{real.n-circle} of
+\bmnum{real.n} episodes with an end circle: for Opus in final and whole-episode error, for Qwen3.8 in all but one
+episode; step by step they left the procedure's estimate for a few steps in \bmnum{rtrace.parted} and
+\bmnum{rtrace.qwen.parted} of the \bmnum{rtrace.n} episodes, the largest departure being a prompt rule the simulated
+study never exercised; whether a model adds anything when the odometry
 is this poor is not answered by episodes in which it did not.
 
 \subsection{Discussion and Limitations}\label{sec:limits}
@@ -959,11 +993,12 @@ two Claude models also made the procedure's decisions. What they added beyond th
 model could add when the procedure's rules do not fit was not measured; close duplicates, hidden IDs and
 operator requests are the next test.
 On the \bmnum{real.n-circle} of \bmnum{real.n} real episodes that have an end circle the ordering measured so far
-held: the final errors of Opus~5.5 and the coded procedure differed by at most \bmnum{real.opus-b2.maxdiff}\,cm, and
-both ended far closer to the truth than dead reckoning (medians \bmnum{real.opus.median}, \bmnum{real.b2.median} and
-\bmnum{real.b0.median}\,cm). The largest gap from the
+held: the final errors of Opus~5.5 and the coded procedure differed by at most \bmnum{real.opus-b2.maxdiff}\,cm,
+Qwen3.8's matched the procedure's but for one long episode, and all three ended far closer to the truth than dead
+reckoning (medians \bmnum{real.opus.median}, \bmnum{real.qwen.median}, \bmnum{real.b2.median} and
+\bmnum{real.b0.median}\,cm); eight episodes cannot order the two models. The largest gap from the
 simulator was in the odometry: dead reckoning ended far farther off than in simulation, and on this carpet the car
-covered less than it counted in one direction of travel, which no simulator here modeled. \pending{Qwen3.8 and Gemma~4 on the real logs, and what the three closed-loop Opus episodes
+covered less than it counted in one direction of travel, which no simulator here modeled. \pending{Gemma~4 on the real logs, and what the three closed-loop Opus episodes
 on the car showed}
 
 \textbf{Lessons and future work.} Three lessons carry beyond this project. A prompt that spells out a procedure

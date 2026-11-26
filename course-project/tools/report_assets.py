@@ -62,7 +62,7 @@ SLIDES = ROOT / "slides"
 CLOSED = ROOT / "evidence" / "M2" / "M2.T7" / "closed-loop"
 CLOSED_ARMS = {"b2": "b2", "claude-opus-5-5": "opus", "claude-fable-5-2": "fable"}
 REAL = ROOT / "evidence" / "M3" / "M3.T19" / "real-2026-11-25"
-REAL_ARMS = {"B0": "b0", "B2": "b2", "claude-opus-5-5": "opus"}      # Qwen3.8 and Gemma 4: still running
+REAL_ARMS = {"B0": "b0", "B2": "b2", "claude-opus-5-5": "opus", "qwen38-flash-xhigh": "qwen"}   # Gemma 4: running
 
 ARMS = ["claude-opus-5-5", "qwen38-flash-xhigh", "gemma4-26b"]
 KEY = {"claude-opus-5-5": "opus", "qwen38-flash-xhigh": "qwen", "gemma4-26b": "gemma", "B0": "b0", "B1": "b1",
@@ -607,10 +607,13 @@ def build_numbers(src):
         rnote + " truths end_circle logged_truth_off_m")
     o = R["run_stats"]["claude-opus-5-5"]
     put("real.opus.cost", "%.2f" % o["cost_usd"], rnote + " run_stats claude-opus-5-5 cost_usd (all ten episodes)")
-    put("real.opus.mean-s", "%.1f" % o["mean_s"], rnote + " run_stats mean_s")
-    put("real.opus.p95-s", "%.1f" % o["p95_s"], rnote + " run_stats p95_s")
-    put("real.opus.valid", o["valid"], rnote + " run_stats valid")
-    put("real.opus.fallbacks", o["fallbacks"], rnote + " run_stats fallbacks")
+    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen")):
+        o = R["run_stats"][arm]
+        put("real.%s.mean-s" % k, "%.1f" % o["mean_s"], rnote + " run_stats %s mean_s" % arm)
+        put("real.%s.p95-s" % k, "%.1f" % o["p95_s"], rnote + " run_stats %s p95_s" % arm)
+        put("real.%s.valid" % k, o["valid"], rnote + " run_stats %s valid" % arm)
+        put("real.%s.fallbacks" % k, o["fallbacks"], rnote + " run_stats %s fallbacks" % arm)
+        put("real.%s.repaired" % k, o["repaired"], rnote + " run_stats %s repaired" % arm)
     # the largest Opus - B2 difference against the end circle, over the eight episodes with a circle, and the flagged
     # episode's values: from result.json (its columns grow with each arm), each rounded to 0.1 cm as result.md shows it
     def cm1(arm, seed):
@@ -619,13 +622,27 @@ def build_numbers(src):
     if len(main_c) != len(circles) - 1:
         raise SystemExit("report_assets: result.json's end-circle episodes changed; check the report text")
     put("real.opus-b2.maxdiff", num(max(abs(cm1("claude-opus-5-5", s) - cm1("B2", s)) for s in main_c), 1),
-        "evidence/M3/M3.T19/real-2026-11-25/result.md per-episode end-circle table: max |Opus - B2|")
+        rnote + " errors vs_end_circle_m: max |Opus - B2| over the end-circle episodes (cm, 0.1 cm as result.md)")
+    worst_q = max(main_c, key=lambda s: cm1("qwen38-flash-xhigh", s) - cm1("B2", s))
+    put("real.qwen.worst.seed", worst_q, rnote + " errors: the episode where Qwen3.8 is farthest above B2")
+    put("real.qwen.worst.steps", R["errors"]["B2"][worst_q]["steps"], rnote + " errors: its steps")
+    put("real.qwen.worst.qwen", "%.1f" % cm1("qwen38-flash-xhigh", worst_q), rnote + " errors: Qwen3.8 there (cm)")
+    put("real.qwen.worst.b2", "%.1f" % cm1("B2", worst_q), rnote + " errors: B2 there (cm)")
+    put("real.qwen.rest-maxdiff", num(max(abs(cm1("qwen38-flash-xhigh", s) - cm1("B2", s)) for s in main_c if s != worst_q), 1),
+        rnote + " errors: max |Qwen3.8 - B2| over the other end-circle episodes")
+    longest = sorted(main_c, key=lambda s: R["errors"]["B2"][s]["steps"])[-2:]
+    for arm in REAL_ARMS:
+        top2 = sorted(main_c, key=lambda s: cm1(arm, s))[-2:]
+        if set(top2) != set(longest):
+            raise SystemExit("report_assets: %s's two largest errors are not on the two longest episodes; check the text" % arm)
+    put("real.longest.steps.a", R["errors"]["B2"][longest[0]]["steps"], rnote + " the second-longest end-circle episode's steps")
+    put("real.longest.steps.b", R["errors"]["B2"][longest[1]]["steps"], rnote + " the longest end-circle episode's steps")
     apart = [s for s, t in R["truths"].items() if t.get("flag")]
     if len(apart) != 1:
         raise SystemExit("report_assets: result.json does not flag exactly one episode; check the report text")
     for arm, k in (("B0", "b0"), ("B2", "b2"), ("claude-opus-5-5", "opus")):
         put("real.flagged.%s" % k, "%.1f" % cm1(arm, apart[0]),
-            "evidence/M3/M3.T19/real-2026-11-25/result.md, the episode listed apart (cm)")
+            rnote + " errors vs_end_circle_m, the episode listed apart (cm)")
 
     # ---- exploratory paired differences on the real logs (not pre-registered; evidence/M3/M3.T19/.../stats.json)
     RS = src["real_stats"]
@@ -636,27 +653,36 @@ def build_numbers(src):
     if len(t0) != 1:
         raise SystemExit("report_assets: stats.json has no single end-circle comparison")
     t0 = t0[0]
-    for (grp, arm), k in ((("vs_B0", "B2"), "b2-b0"), (("vs_B0", "claude-opus-5-5"), "opus-b0"),
-                          (("vs_B2", "claude-opus-5-5"), "opus-b2")):
-        d = t0[grp][arm]
-        if d["estimand"] != "Hodges-Lehmann":
-            raise SystemExit("report_assets: %s %s is not a Hodges-Lehmann estimate; check the report text" % (grp, arm))
+    pair = t0["llm_pairs"]["claude-opus-5-5 minus qwen38-flash-xhigh"]
+    for (grp, arm), k, est in ((("vs_B0", "B2"), "b2-b0", "HL"), (("vs_B0", "claude-opus-5-5"), "opus-b0", "HL"),
+                               (("vs_B2", "claude-opus-5-5"), "opus-b2", "HL"), (("vs_B0", "qwen38-flash-xhigh"), "qwen-b0", "HL"),
+                               (("vs_B2", "qwen38-flash-xhigh"), "qwen-b2", "median"), ((None, None), "opus-qwen", "median")):
+        d = pair if grp is None else t0[grp][arm]
+        if d["estimand"] != {"HL": "Hodges-Lehmann", "median": "median"}[est]:
+            raise SystemExit("report_assets: %s %s's estimator changed; check the report text" % (grp, arm))
         put("rstat.%s.est" % k, num(d["estimate"] * 100, 1), snote + " end circle %s %s estimate (m to cm)" % (grp, arm))
         put("rstat.%s.lo" % k, num(d["ci95"][0] * 100, 1), snote + " end circle %s %s ci95 low" % (grp, arm))
         put("rstat.%s.hi" % k, num(d["ci95"][1] * 100, 1), snote + " end circle %s %s ci95 high" % (grp, arm))
         put("rstat.%s.below" % k, d["n_below"], snote + " end circle %s %s episodes below zero" % (grp, arm))
+        put("rstat.%s.above" % k, d["n_above"], snote + " end circle %s %s episodes above zero" % (grp, arm))
     put("rstat.n", t0["n"], snote + " end circle n")
     ate = [t for t in RS["tests"] if t["label"].startswith("ATE over all steps")]
     if len(ate) != 1:
         raise SystemExit("report_assets: stats.json has no single whole-episode ATE comparison")
-    d = ate[0]["vs_B2"]["claude-opus-5-5"]
-    put("rstat.ate.opus-b2.estimand", "median" if d["estimand"] == "median" else "Hodges--Lehmann estimate",
-        snote + " ATE vs logged truth, Opus - B2, estimand")
-    put("rstat.ate.opus-b2.est", num(d["estimate"] * 100, 2), snote + " ATE vs logged truth, Opus - B2, estimate (m to cm)")
-    put("rstat.ate.opus-b2.lo", num(d["ci95"][0] * 100, 2), snote + " ATE vs logged truth, Opus - B2, ci95 low")
-    put("rstat.ate.opus-b2.hi", num(d["ci95"][1] * 100, 2), snote + " ATE vs logged truth, Opus - B2, ci95 high")
+    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen")):
+        d = ate[0]["vs_B2"][arm]
+        put("rstat.ate.%s-b2.estimand" % k, "median" if d["estimand"] == "median" else "Hodges--Lehmann estimate",
+            snote + " ATE vs logged truth, %s - B2, estimand" % arm)
+        put("rstat.ate.%s-b2.est" % k, num(d["estimate"] * 100, 2), snote + " ATE vs logged truth, %s - B2 (m to cm)" % arm)
+        put("rstat.ate.%s-b2.lo" % k, num(d["ci95"][0] * 100, 2), snote + " ATE vs logged truth, %s - B2, ci95 low" % arm)
+        put("rstat.ate.%s-b2.hi" % k, num(d["ci95"][1] * 100, 2), snote + " ATE vs logged truth, %s - B2, ci95 high" % arm)
     main = [str(x) for x in RS["main_seeds"]]
+    gq = {sd: RS["traces"][sd]["arms"]["qwen38-flash-xhigh"]["vs_B2"] for sd in main}
+    put("rtrace.qwen.parted", sum(1 for g in gq.values() if g and g.get("first_step_beyond") is not None),
+        snote + " traces: main episodes where Qwen3.8's estimate parts from B2's by > 5 cm")
     gaps = {sd: RS["traces"][sd]["arms"]["claude-opus-5-5"]["vs_B2"] for sd in main}
+    put("rtrace.opus.final-max", num(max(g["final_gap_m"] for g in gaps.values() if g) * 100, 1),
+        snote + " traces: Opus's largest final gap to B2's estimate over the main episodes")
     parted = {sd: g for sd, g in gaps.items() if g and g.get("first_step_beyond") is not None}
     put("rtrace.parted", len(parted), snote + " traces: main episodes where Opus's estimate parts from B2's by > 5 cm")
     put("rtrace.n", len(main), snote + " main_seeds")
@@ -667,6 +693,15 @@ def build_numbers(src):
     put("rtrace.max-beyond", worst[1]["steps_beyond"], snote + " traces: steps beyond 5 cm in that episode")
     put("rtrace.max-steps", RS["traces"][worst[0]]["steps"], snote + " traces: steps of that episode")
     put("rtrace.max-final-cm", num(worst[1]["final_gap_m"] * 100, 1), snote + " traces: the gap at that episode's end")
+    q = gq[worst[0]]
+    if not q or abs(q["max_gap_m"] - worst[1]["max_gap_m"]) > 0.0005 or q["max_gap_step"] != worst[1]["max_gap_step"]:
+        raise SystemExit("report_assets: Qwen3.8 no longer shares Opus's largest departure; check the slip-rule text")
+    readme = (REAL / "README.md").read_text()
+    fired = re.search(r"the flag fired at (\w+) steps: ((?:\d+/\d+(?:, | and )?)+)", readme)
+    if not fired:
+        raise SystemExit("report_assets: the README's slip-rule paragraph changed; check the report text")
+    put("real.sliprule.n", len(re.findall(r"\d+/\d+", fired.group(2))), "evidence/M3/M3.T19/real-2026-11-25/README.md: "
+        "the steps where the slip flag fired")
 
     # ---- the room rehearsal in simulation (B2 and B0 only; table 1c, the real layout and range, carpet odometry)
     row = grab(src["rehearsal"], r"\*\*Table 1c\.[^\n]*\n.*?\n\| C20, 3\.0 m \|([^\n]*)", "rehearsal table 1c C20 3.0 m row")
@@ -995,11 +1030,14 @@ def figure_real(src):
                        % (shape, style, x + dx, y(vals[a])))
     out.append("\\node[anchor=north] at (%.3f,-0.62) {episode: start pose and steps};" % (w * (len(rows) + 0.4) / 2))
     lx = 0.0
-    for a in arms:
+    for i, a in enumerate(arms):                    # the legend, three entries to a row
         shape, style, label = REAL_MARK[a]
-        out.append("\\node[%s, %s, inner sep=0pt, minimum size=4pt, line width=0.5pt] at (%.3f,-1.15) {};" % (shape, style, lx + 0.1))
-        out.append("\\node[anchor=west] at (%.3f,-1.15) {%s};" % (lx + 0.2, label))
-        lx += 0.42 + 0.115 * len(label)
+        if i % 3 == 0:
+            lx = 0.0
+        ly = -1.15 - 0.35 * (i // 3)
+        out.append("\\node[%s, %s, inner sep=0pt, minimum size=4pt, line width=0.5pt] at (%.3f,%.3f) {};" % (shape, style, lx + 0.1, ly))
+        out.append("\\node[anchor=west] at (%.3f,%.3f) {%s};" % (lx + 0.2, ly, label))
+        lx += 0.45 + 0.118 * len(label)
     out += ["\\end{tikzpicture}",
             "\\caption{Real-log replay: each arm's final-position error against the end circle in each of the %d episodes "
             "that have one (log scale; episodes in the order they were driven, labeled by start pose and steps). "

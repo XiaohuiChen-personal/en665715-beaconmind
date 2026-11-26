@@ -461,28 +461,49 @@ real.circle.rms.max | 4.9 | evidence/M3/M3.T19/real-2026-11-25/result.json truth
 real.circle.rms.min | 2.2 | evidence/M3/M3.T19/real-2026-11-25/result.json truths end_circle rms_m
 real.circle.tags.max | 15 | evidence/M3/M3.T19/real-2026-11-25/result.json truths end_circle n_tags
 real.circle.tags.min | 5 | evidence/M3/M3.T19/real-2026-11-25/result.json truths end_circle n_tags
-real.flagged.b0 | 12.2 | evidence/M3/M3.T19/real-2026-11-25/result.md, the episode listed apart (cm)
-real.flagged.b2 | 7.6 | evidence/M3/M3.T19/real-2026-11-25/result.md, the episode listed apart (cm)
-real.flagged.opus | 18.2 | evidence/M3/M3.T19/real-2026-11-25/result.md, the episode listed apart (cm)
+real.flagged.b0 | 12.2 | evidence/M3/M3.T19/real-2026-11-25/result.json errors vs_end_circle_m, the episode listed apart (cm)
+real.flagged.b2 | 7.6 | evidence/M3/M3.T19/real-2026-11-25/result.json errors vs_end_circle_m, the episode listed apart (cm)
+real.flagged.opus | 18.2 | evidence/M3/M3.T19/real-2026-11-25/result.json errors vs_end_circle_m, the episode listed apart (cm)
 real.flagged.steps | 45 | evidence/M3/M3.T19/real-2026-11-25/result.json steps of the flagged episode
+real.longest.steps.a | 132 | evidence/M3/M3.T19/real-2026-11-25/result.json the second-longest end-circle episode's steps
+real.longest.steps.b | 141 | evidence/M3/M3.T19/real-2026-11-25/result.json the longest end-circle episode's steps
 real.n | 9 | evidence/M3/M3.T19/real-2026-11-25/result.json index episodes ended_by DONE
 real.n-circle | 8 | evidence/M3/M3.T19/real-2026-11-25/result.json summary end_circle n
 real.n-flagged | 1 | evidence/M3/M3.T19/real-2026-11-25/result.json index episodes not ended by DONE (the procedure stopped itself)
 real.n-last | 9 | evidence/M3/M3.T19/real-2026-11-25/result.json summary last_step n
 real.n-starts | 5 | evidence/M3/M3.T19/real-2026-11-25/result.json distinct start poses
-real.opus-b2.maxdiff | 2.1 | evidence/M3/M3.T19/real-2026-11-25/result.md per-episode end-circle table: max |Opus - B2|
+real.opus-b2.maxdiff | 2.1 | evidence/M3/M3.T19/real-2026-11-25/result.json errors vs_end_circle_m: max |Opus - B2| over the end-circle episodes (cm, 0.1 cm as result.md)
 real.opus.cost | 63.02 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats claude-opus-5-5 cost_usd (all ten episodes)
-real.opus.fallbacks | 0 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats fallbacks
+real.opus.fallbacks | 0 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats claude-opus-5-5 fallbacks
 real.opus.last | 10.6 | evidence/M3/M3.T19/real-2026-11-25/result.json summary claude-opus-5-5 last_step median_m
 real.opus.max | 25.3 | evidence/M3/M3.T19/real-2026-11-25/result.json summary claude-opus-5-5 end_circle max_m (m to cm)
-real.opus.mean-s | 18.0 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats mean_s
+real.opus.mean-s | 18.0 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats claude-opus-5-5 mean_s
 real.opus.median | 7.7 | evidence/M3/M3.T19/real-2026-11-25/result.json summary claude-opus-5-5 end_circle median_m (m to cm)
 real.opus.min | 2.3 | evidence/M3/M3.T19/real-2026-11-25/result.json summary claude-opus-5-5 end_circle min_m (m to cm)
-real.opus.p95-s | 24.5 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats p95_s
+real.opus.p95-s | 24.5 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats claude-opus-5-5 p95_s
 real.opus.q1 | 5.2 | evidence/M3/M3.T19/real-2026-11-25/result.json summary claude-opus-5-5 end_circle q1_m (m to cm)
 real.opus.q3 | 14.1 | evidence/M3/M3.T19/real-2026-11-25/result.json summary claude-opus-5-5 end_circle q3_m (m to cm)
 real.opus.recomputed | 8.2 | evidence/M3/M3.T19/real-2026-11-25/result.json summary claude-opus-5-5 recomputed median_m
-real.opus.valid | 850 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats valid
+real.opus.repaired | 0 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats claude-opus-5-5 repaired
+real.opus.valid | 850 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats claude-opus-5-5 valid
+real.qwen.fallbacks | 2 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats qwen38-flash-xhigh fallbacks
+real.qwen.last | 9.0 | evidence/M3/M3.T19/real-2026-11-25/result.json summary qwen38-flash-xhigh last_step median_m
+real.qwen.max | 56.2 | evidence/M3/M3.T19/real-2026-11-25/result.json summary qwen38-flash-xhigh end_circle max_m (m to cm)
+real.qwen.mean-s | 128.7 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats qwen38-flash-xhigh mean_s
+real.qwen.median | 7.5 | evidence/M3/M3.T19/real-2026-11-25/result.json summary qwen38-flash-xhigh end_circle median_m (m to cm)
+real.qwen.min | 1.2 | evidence/M3/M3.T19/real-2026-11-25/result.json summary qwen38-flash-xhigh end_circle min_m (m to cm)
+real.qwen.p95-s | 230.4 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats qwen38-flash-xhigh p95_s
+real.qwen.q1 | 4.0 | evidence/M3/M3.T19/real-2026-11-25/result.json summary qwen38-flash-xhigh end_circle q1_m (m to cm)
+real.qwen.q3 | 13.4 | evidence/M3/M3.T19/real-2026-11-25/result.json summary qwen38-flash-xhigh end_circle q3_m (m to cm)
+real.qwen.recomputed | 7.8 | evidence/M3/M3.T19/real-2026-11-25/result.json summary qwen38-flash-xhigh recomputed median_m
+real.qwen.repaired | 61 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats qwen38-flash-xhigh repaired
+real.qwen.rest-maxdiff | 5.0 | evidence/M3/M3.T19/real-2026-11-25/result.json errors: max |Qwen3.8 - B2| over the other end-circle episodes
+real.qwen.valid | 848 | evidence/M3/M3.T19/real-2026-11-25/result.json run_stats qwen38-flash-xhigh valid
+real.qwen.worst.b2 | 23.2 | evidence/M3/M3.T19/real-2026-11-25/result.json errors: B2 there (cm)
+real.qwen.worst.qwen | 56.2 | evidence/M3/M3.T19/real-2026-11-25/result.json errors: Qwen3.8 there (cm)
+real.qwen.worst.seed | 4002 | evidence/M3/M3.T19/real-2026-11-25/result.json errors: the episode where Qwen3.8 is farthest above B2
+real.qwen.worst.steps | 132 | evidence/M3/M3.T19/real-2026-11-25/result.json errors: its steps
+real.sliprule.n | 4 | evidence/M3/M3.T19/real-2026-11-25/README.md: the steps where the slip flag fired
 real.start.s1 | 3 | evidence/M3/M3.T19/real-2026-11-25/result.json DONE episodes from start pose S1
 real.start.s2 | 2 | evidence/M3/M3.T19/real-2026-11-25/result.json DONE episodes from start pose S2
 real.start.s3 | 1 | evidence/M3/M3.T19/real-2026-11-25/result.json DONE episodes from start pose S3
@@ -514,23 +535,45 @@ room.tags | 20 | layout.json tags
 room.tags-per-m | 1.15 | layout-2/layout.json: tags / length of the walls
 room.tags.added | 8 | layout-2/layout.json (added)
 room.tags.printed | 12 | layout-2/layout.json (tags not marked added)
-rstat.ate.opus-b2.est | 0.08 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, Opus - B2, estimate (m to cm)
-rstat.ate.opus-b2.estimand | median | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, Opus - B2, estimand
-rstat.ate.opus-b2.hi | 0.63 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, Opus - B2, ci95 high
-rstat.ate.opus-b2.lo | \ensuremath{-}0.01 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, Opus - B2, ci95 low
+rstat.ate.opus-b2.est | 0.08 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, claude-opus-5-5 - B2 (m to cm)
+rstat.ate.opus-b2.estimand | median | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, claude-opus-5-5 - B2, estimand
+rstat.ate.opus-b2.hi | 0.63 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, claude-opus-5-5 - B2, ci95 high
+rstat.ate.opus-b2.lo | \ensuremath{-}0.01 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, claude-opus-5-5 - B2, ci95 low
+rstat.ate.qwen-b2.est | \ensuremath{-}0.01 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, qwen38-flash-xhigh - B2 (m to cm)
+rstat.ate.qwen-b2.estimand | median | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, qwen38-flash-xhigh - B2, estimand
+rstat.ate.qwen-b2.hi | 3.53 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, qwen38-flash-xhigh - B2, ci95 high
+rstat.ate.qwen-b2.lo | \ensuremath{-}0.46 | evidence/M3/M3.T19/real-2026-11-25/stats.json ATE vs logged truth, qwen38-flash-xhigh - B2, ci95 low
+rstat.b2-b0.above | 0 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 episodes above zero
 rstat.b2-b0.below | 8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 episodes below zero
 rstat.b2-b0.est | \ensuremath{-}40.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 estimate (m to cm)
 rstat.b2-b0.hi | \ensuremath{-}16.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 ci95 high
 rstat.b2-b0.lo | \ensuremath{-}68.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 B2 ci95 low
 rstat.n | 8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle n
+rstat.opus-b0.above | 0 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 claude-opus-5-5 episodes above zero
 rstat.opus-b0.below | 8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 claude-opus-5-5 episodes below zero
 rstat.opus-b0.est | \ensuremath{-}40.7 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 claude-opus-5-5 estimate (m to cm)
 rstat.opus-b0.hi | \ensuremath{-}15.5 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 claude-opus-5-5 ci95 high
 rstat.opus-b0.lo | \ensuremath{-}68.7 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 claude-opus-5-5 ci95 low
+rstat.opus-b2.above | 3 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 episodes above zero
 rstat.opus-b2.below | 4 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 episodes below zero
 rstat.opus-b2.est | \ensuremath{-}0.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 estimate (m to cm)
 rstat.opus-b2.hi | 1.0 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 ci95 high
 rstat.opus-b2.lo | \ensuremath{-}0.8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 claude-opus-5-5 ci95 low
+rstat.opus-qwen.above | 5 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle None None episodes above zero
+rstat.opus-qwen.below | 2 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle None None episodes below zero
+rstat.opus-qwen.est | 0.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle None None estimate (m to cm)
+rstat.opus-qwen.hi | 4.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle None None ci95 high
+rstat.opus-qwen.lo | \ensuremath{-}30.9 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle None None ci95 low
+rstat.qwen-b0.above | 0 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 qwen38-flash-xhigh episodes above zero
+rstat.qwen-b0.below | 8 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 qwen38-flash-xhigh episodes below zero
+rstat.qwen-b0.est | \ensuremath{-}37.9 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 qwen38-flash-xhigh estimate (m to cm)
+rstat.qwen-b0.hi | \ensuremath{-}15.5 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 qwen38-flash-xhigh ci95 high
+rstat.qwen-b0.lo | \ensuremath{-}62.9 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B0 qwen38-flash-xhigh ci95 low
+rstat.qwen-b2.above | 2 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 qwen38-flash-xhigh episodes above zero
+rstat.qwen-b2.below | 4 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 qwen38-flash-xhigh episodes below zero
+rstat.qwen-b2.est | \ensuremath{-}0.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 qwen38-flash-xhigh estimate (m to cm)
+rstat.qwen-b2.hi | 33.0 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 qwen38-flash-xhigh ci95 high
+rstat.qwen-b2.lo | \ensuremath{-}5.0 | evidence/M3/M3.T19/real-2026-11-25/stats.json end circle vs_B2 qwen38-flash-xhigh ci95 low
 rtrace.max-beyond | 7 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: steps beyond 5 cm in that episode
 rtrace.max-cm | 25.1 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: largest Opus - B2 estimate gap
 rtrace.max-final-cm | 1.0 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: the gap at that episode's end
@@ -538,7 +581,9 @@ rtrace.max-seed | 3001 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: t
 rtrace.max-step | 41 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: the step of the largest gap
 rtrace.max-steps | 56 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: steps of that episode
 rtrace.n | 9 | evidence/M3/M3.T19/real-2026-11-25/stats.json main_seeds
+rtrace.opus.final-max | 2.2 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: Opus's largest final gap to B2's estimate over the main episodes
 rtrace.parted | 6 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: main episodes where Opus's estimate parts from B2's by > 5 cm
+rtrace.qwen.parted | 6 | evidence/M3/M3.T19/real-2026-11-25/stats.json traces: main episodes where Qwen3.8's estimate parts from B2's by > 5 cm
 rubric.gemma | 0.407 | judge_summary.txt
 rubric.gemma.concise | 1.89 | judge_summary.txt mean_levels
 rubric.gemma.coverage | 1.61 | judge_summary.txt mean_levels
