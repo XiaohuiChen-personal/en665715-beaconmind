@@ -62,7 +62,7 @@ SLIDES = ROOT / "slides"
 CLOSED = ROOT / "evidence" / "M2" / "M2.T7" / "closed-loop"
 CLOSED_ARMS = {"b2": "b2", "claude-opus-5-5": "opus", "claude-fable-5-2": "fable"}
 REAL = ROOT / "evidence" / "M3" / "M3.T19" / "real-2026-11-25"
-REAL_ARMS = {"B0": "b0", "B2": "b2", "claude-opus-5-5": "opus", "qwen38-flash-xhigh": "qwen"}   # Gemma 4: running
+REAL_ARMS = {"B0": "b0", "B2": "b2", "claude-opus-5-5": "opus", "qwen38-flash-xhigh": "qwen", "gemma4-26b": "gemma"}
 
 ARMS = ["claude-opus-5-5", "qwen38-flash-xhigh", "gemma4-26b"]
 KEY = {"claude-opus-5-5": "opus", "qwen38-flash-xhigh": "qwen", "gemma4-26b": "gemma", "B0": "b0", "B1": "b1",
@@ -607,8 +607,10 @@ def build_numbers(src):
         rnote + " truths end_circle logged_truth_off_m")
     o = R["run_stats"]["claude-opus-5-5"]
     put("real.opus.cost", "%.2f" % o["cost_usd"], rnote + " run_stats claude-opus-5-5 cost_usd (all ten episodes)")
-    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen")):
+    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen"), ("gemma4-26b", "gemma")):
         o = R["run_stats"][arm]
+        put("real.%s.errors" % k, o["errors"], rnote + " run_stats %s errors (steps that hit a limit)" % arm)
+        put("real.%s.moves" % k, o["move_calls"], rnote + " run_stats %s move_calls" % arm)
         put("real.%s.mean-s" % k, "%.1f" % o["mean_s"], rnote + " run_stats %s mean_s" % arm)
         put("real.%s.p95-s" % k, "%.1f" % o["p95_s"], rnote + " run_stats %s p95_s" % arm)
         put("real.%s.valid" % k, o["valid"], rnote + " run_stats %s valid" % arm)
@@ -640,7 +642,8 @@ def build_numbers(src):
     apart = [s for s, t in R["truths"].items() if t.get("flag")]
     if len(apart) != 1:
         raise SystemExit("report_assets: result.json does not flag exactly one episode; check the report text")
-    for arm, k in (("B0", "b0"), ("B2", "b2"), ("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen")):
+    for arm, k in (("B0", "b0"), ("B2", "b2"), ("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen"),
+                   ("gemma4-26b", "gemma")):
         put("real.flagged.%s" % k, "%.1f" % cm1(arm, apart[0]),
             rnote + " errors vs_end_circle_m, the episode listed apart (cm)")
 
@@ -656,8 +659,11 @@ def build_numbers(src):
     pair = t0["llm_pairs"]["claude-opus-5-5 minus qwen38-flash-xhigh"]
     for (grp, arm), k, est in ((("vs_B0", "B2"), "b2-b0", "HL"), (("vs_B0", "claude-opus-5-5"), "opus-b0", "HL"),
                                (("vs_B2", "claude-opus-5-5"), "opus-b2", "HL"), (("vs_B0", "qwen38-flash-xhigh"), "qwen-b0", "HL"),
-                               (("vs_B2", "qwen38-flash-xhigh"), "qwen-b2", "HL"), ((None, None), "opus-qwen", "HL")):
-        d = pair if grp is None else t0[grp][arm]
+                               (("vs_B2", "qwen38-flash-xhigh"), "qwen-b2", "HL"), ((None, None), "opus-qwen", "HL"),
+                               (("vs_B0", "gemma4-26b"), "gemma-b0", "median"), (("vs_B2", "gemma4-26b"), "gemma-b2", "HL"),
+                               (("pair", "claude-opus-5-5 minus gemma4-26b"), "opus-gemma", "HL"),
+                               (("pair", "qwen38-flash-xhigh minus gemma4-26b"), "qwen-gemma", "HL")):
+        d = pair if grp is None else t0["llm_pairs"][arm] if grp == "pair" else t0[grp][arm]
         if d["estimand"] != {"HL": "Hodges-Lehmann", "median": "median"}[est]:
             raise SystemExit("report_assets: %s %s's estimator changed; check the report text" % (grp, arm))
         put("rstat.%s.est" % k, num(d["estimate"] * 100, 1), snote + " end circle %s %s estimate (m to cm)" % (grp, arm))
@@ -669,7 +675,7 @@ def build_numbers(src):
     ate = [t for t in RS["tests"] if t["label"].startswith("ATE over all steps")]
     if len(ate) != 1:
         raise SystemExit("report_assets: stats.json has no single whole-episode ATE comparison")
-    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen")):
+    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen"), ("gemma4-26b", "gemma")):
         d = ate[0]["vs_B2"][arm]
         put("rstat.ate.%s-b2.estimand" % k, "median" if d["estimand"] == "median" else "Hodges--Lehmann estimate",
             snote + " ATE vs logged truth, %s - B2, estimand" % arm)
@@ -712,7 +718,25 @@ def build_numbers(src):
         put("rtrace.%s.first" % k, g["first_step_beyond"], snote + " traces %s %s first step beyond 5 cm" % (who, sd))
         put("rtrace.%s.beyond" % k, g["steps_beyond"], snote + " traces %s %s steps beyond 5 cm" % (who, sd))
         put("rtrace.%s.at" % k, g["max_gap_step"], snote + " traces %s %s step of the max gap" % (who, sd))
-    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen"), ("procedure", "proc")):
+    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen"), ("gemma4-26b", "gemma")):
+        b = RS["behaviour"][arm]
+        put("rbeh.%s.claims" % k, b["fix_claims"], snote + " behaviour %s fix_claims" % arm)
+        put("rbeh.%s.claims-nofix" % k, b["fix_claims_without_fix_pose"], snote + " behaviour %s fix_claims_without_fix_pose" % arm)
+    gg = {sd: RS["traces"][sd]["arms"]["gemma4-26b"]["vs_B2"] for sd in main}
+    gpart = [g for g in gg.values() if g and g.get("first_step_beyond") is not None]
+    put("rtrace.gemma.parted", len(gpart), snote + " traces: main episodes where Gemma 4's estimate parts from B2's by > 5 cm")
+    put("rtrace.gemma.first.min", min(g["first_step_beyond"] for g in gpart), snote + " traces: Gemma 4's earliest first step beyond 5 cm")
+    put("rtrace.gemma.first.max", max(g["first_step_beyond"] for g in gpart), snote + " traces: Gemma 4's latest first step beyond 5 cm")
+    put("rtrace.gemma.gap.min", "%.0f" % (min(g["max_gap_m"] for g in gpart) * 100), snote + " traces: Gemma 4's smallest largest gap (cm)")
+    put("rtrace.gemma.gap.max", "%.0f" % (max(g["max_gap_m"] for g in gpart) * 100), snote + " traces: Gemma 4's largest gap (cm)")
+    gcomp = [x["composed"].get("gemma4-26b") for x in RS["slip_suspected"]["steps"]]
+    put("real.sliprule.gemma.zeroed", sum(1 for c in gcomp if c is not None and c["forward_m"] == 0),
+        snote + " slip_suspected: steps where Gemma 4 composed a zero move")
+    put("real.sliprule.gemma.full", sum(1 for c in gcomp if c is not None and c["forward_m"] != 0),
+        snote + " slip_suspected: steps where Gemma 4 composed the full move")
+    put("real.sliprule.gemma.nocall", sum(1 for c in gcomp if c is None),
+        snote + " slip_suspected: steps where Gemma 4 made no compose_odometry call")
+    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen"), ("gemma4-26b", "gemma"), ("procedure", "proc")):
         b = RS["behaviour"][arm]
         put("rbeh.%s.calls" % k, "%.2f" % b["calls_per_step"], snote + " behaviour %s calls_per_step" % arm)
         if k != "proc":
@@ -740,9 +764,10 @@ def build_numbers(src):
     put("real.sliprule.slip.b2", num(dm["B2"] * 100, 1), snote + " B2's composition to its fix (cm)")
     put("real.sliprule.slip.models", num(max(dm["claude-opus-5-5"], dm["qwen38-flash-xhigh"]) * 100, 1),
         snote + " the models' zeroed track to B2's fix (cm)")
-    dist = [v for x in real for v in x["tag_fix_check"]["distance_to_b2_fix_m"].values()]
-    put("real.sliprule.real.min", num(min(dist) * 100, 0), snote + " real moves: fix to every arm's prior estimate, min (cm)")
-    put("real.sliprule.real.max", num(max(dist) * 100, 0), snote + " real moves: fix to every arm's prior estimate, max (cm)")
+    dist = [v for x in real for a, v in x["tag_fix_check"]["distance_to_b2_fix_m"].items()
+            if a in ("B2", "claude-opus-5-5", "qwen38-flash-xhigh")]
+    put("real.sliprule.real.min", num(min(dist) * 100, 0), snote + " real moves: fix to B2's, Opus's and Qwen3.8's prior estimate, min (cm)")
+    put("real.sliprule.real.max", num(max(dist) * 100, 0), snote + " real moves: fix to B2's, Opus's and Qwen3.8's prior estimate, max (cm)")
 
     # ---- the room rehearsal in simulation (B2 and B0 only; table 1c, the real layout and range, carpet odometry)
     row = grab(src["rehearsal"], r"\*\*Table 1c\.[^\n]*\n.*?\n\| C20, 3\.0 m \|([^\n]*)", "rehearsal table 1c C20 3.0 m row")
@@ -1053,15 +1078,16 @@ def figure_real(src):
     """Per-episode final-position error against the end circle, every replayed arm, log scale (TikZ)."""
     rows = real_episodes()
     arms = [a for a in REAL_MARK if a in rows[0][3]]
-    w, h = 0.86, 3.1                               # cm per episode, plot height in cm
-    lo, hi = 1.0, 150.0
+    w, h = 0.86, 3.4                               # cm per episode, plot height in cm
+    top = max(v for _e, _s, _n, vals in rows for a, v in vals.items() if a in arms)
+    lo, hi = 1.0, next(t for t in (150.0, 600.0, 1500.0, 6000.0) if t >= top * 1.1)
     def y(v):
         return h * (math.log10(max(v, lo)) - math.log10(lo)) / (math.log10(hi) - math.log10(lo))
     out = [HEADER, "\\begin{figure}[t]", "\\centering",
            "\\begin{tikzpicture}[font=\\scriptsize, x=1cm, y=1cm]",
            "\\draw[line width=0.4pt] (0,0) -- (0,%.3f);" % h,
            "\\draw[line width=0.4pt] (0,0) -- (%.3f,0);" % (w * (len(rows) + 0.4))]
-    for t in (1, 3, 10, 30, 100):
+    for t in [t for t in (1, 3, 10, 30, 100, 300, 1000, 3000) if t <= hi]:
         out.append("\\draw[black!15] (0,%.3f) -- (%.3f,%.3f);" % (y(t), w * (len(rows) + 0.4), y(t)))
         out.append("\\node[anchor=east] at (-0.05,%.3f) {%d};" % (y(t), t))
     out.append("\\node[rotate=90, anchor=south] at (-0.55,%.3f) {final-position error (cm)};" % (h / 2))

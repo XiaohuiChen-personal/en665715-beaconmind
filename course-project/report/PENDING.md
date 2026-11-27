@@ -1,23 +1,22 @@
-# Placeholders in the report (2026-11-18; updated 2026-11-25)
+# Placeholders in the report (2026-11-18; updated 2026-11-27)
 
 Every `\pending{...}` in `Chen-Project-Report.tex` prints in red as **[PENDING: ...]**. List them with
-`python3 course-project/tools/report_assets.py --pending` (4 today, one per row below). To fill one: add the numbers to
+`python3 course-project/tools/report_assets.py --pending` (2 today, one per row below). To fill one: add the numbers to
 `tools/report_assets.py` from the evidence file (so they stay generated), replace the `\pending{}` with prose that
 uses `\bmnum{...}`, rebuild, and delete the row here. Xiaohui found no page limit on Canvas (2026-11-24); the report
 is 17 pages. Keep it tight anyway: every page is read by a grader.
 
 | # | Where | What goes there | Evidence that will supply it | Work-list item |
 | --- | --- | --- | --- | --- |
-| 1 | Abstract, last sentence but one | Gemma 4's median final-position error on the real logs against the end circle (Qwen3.8 filled 2026-11-25) | `evidence/M3/M3.T19/real-2026-11-25/result.json` when their replays finish (add their keys to `REAL_ARMS` in `tools/report_assets.py`) | 3.6 |
-| 5 | V-G, Table VI | The Gemma 4 row (median, IQR, range; n = 8), and Gemma 4 in the paragraphs "The models against the procedure", "Paired differences" and "Other truths and runs" (Qwen3.8 filled 2026-11-25) | the same `result.json` | 3.6 |
 | 6 | V-G, "Closed loop on the car" | The three closed-loop Opus 5.5 episodes on the car, in a later session after the right motor is replaced (one filmed): missions completed, steps, moves refused, emergency stops, final-position error against the end circle, step latency, cost | the recorded car sessions and their batch folders | 3.5 |
-| 7 | VI, end | Whether Gemma 4 keeps the simulated ordering on the real logs, and what the closed-loop car episodes showed | rows 1, 5 and 6 | — |
+| 7 | VI, end | What the closed-loop car episodes showed | row 6 | — |
 
 Filled on 2026-11-25 and removed from the table: item 2 (III, Safety: the STOP and the host-side moves as checked on
 the car, `evidence/M3/M3.T13/smoke.md`, `evidence/M3/M3.T6/`); item 4 (IV-B: the mounted tags, the tag centre height,
 the detector on real frames, the confirmed 3.0 m range limit, `evidence/M1/M1.T8/`, `evidence/M3/M3.T10/layout-2/mounting.md`);
 item 5's episodes, steps and the B0, B2 and Opus 5.5 results with their uncertainty (Table VI); item 1's and item
-7's parts for those arms. Filled on 2026-11-18: item 3 (coverage) and the simulator part of item 6.
+7's parts for those arms. Qwen3.8 filled on 2026-11-25 and Gemma 4 on 2026-11-27 (items 1, 5 and 7's model parts,
+from `evidence/M3/M3.T19/real-2026-11-25/result.json` and `stats.json`), and items 1 and 5 removed. Filled on 2026-11-18: item 3 (coverage) and the simulator part of item 6.
 
 **Not a placeholder: not run (decided 2026-11-25; Xiaohui did not object to dropping it).** Row 5 also asked for each
 arm's result "in each simulated rehearsal" and the difference (the sim-to-real gap). The room rehearsal ran only B2
@@ -48,4 +47,5 @@ built nodes (camera relay and detector, bounded moves, STOP, room simulator, tag
 built.
 
 AI-assisted: Claude Fable 5.2 via Claude Code, 2026-11-18: wrote this list with the report rewrite.
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: updated it after filling the real-car parts and the first review.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: updated it after filling the real-car parts and the first review;
+2026-11-27: after filling Gemma 4.

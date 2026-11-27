@@ -14,7 +14,7 @@ each key is in `course-project/report/generated/MANIFEST.txt`. Design values (th
 `evidence/M4/M4.T1/prereg.md`.
 
 **Placeholders.** Text in square brackets that starts with PENDING marks a result that is not measured yet. The
-numbers are those of `course-project/report/PENDING.md`: 1 and 5 (Gemma 4 on the real logs), 6
+numbers are those of `course-project/report/PENDING.md`: 6
 (closed-loop episodes on the car, a later session after the motor is replaced), 7 (the conclusion's sentences on
 those). Nothing on a pending line is a result.
 
@@ -231,7 +231,7 @@ Layout: One Column
 - 9 episodes driven by the coded procedure, 805 steps, all five start poses
 - Truth: a full-turn tag resection at each episode's end (8 of 9); residuals 2.2–4.9 cm, not checked by tape
 - Median final-position error: dead reckoning 38.2 cm, coded procedure 7.9 cm, Opus 5.5 7.7 cm, Qwen3.8 7.5 cm
-- [PENDING 5: Gemma 4 on the real logs]
+- Gemma 4: median 83.5 cm, worse than dead reckoning on 6 of 8 episodes; it claimed tag fixes it did not compute
 - Sim-to-real: odometry slipped by direction (0.827 one way, 1.018 the other); descriptive, no hypothesis
 ### Notes
 (60 s) On the car the coded procedure drove 9 episodes in the room, from all five start poses. Each log was
@@ -242,7 +242,8 @@ it, dead reckoning ended a median 38.2 centimeters off, the coded procedure 7.9 
 along the way Opus's estimate left the procedure's for a few steps in 6 of 9 episodes,
 the largest time because of a prompt rule the simulator never triggered. Qwen3.8 ended a median 7.5
 centimeters off and matched the procedure but for one long episode, 56.2 against
-23.2; eight episodes cannot order the two models. [PENDING 5: Gemma 4.] The biggest surprise was the floor: going one way the car covered only
+23.2; eight episodes cannot order the two models. Gemma 4 ended a median 83.5 centimeters off, worse than
+dead reckoning on 6 of 8 episodes: it claimed 74 tag fixes without computing them. The biggest surprise was the floor: going one way the car covered only
 0.827 of the distance it counted, going the other way about all of it. These numbers describe the gap;
 they test no hypothesis.
 
@@ -272,7 +273,7 @@ Layout: One Column
 - The model that skipped its tools failed (post hoc)
 - Not measured: what an LLM adds when the rules do not fit, such as close duplicates or operator requests
 - On the car: Opus, Qwen3.8 and the coded procedure close in final error; all far ahead of dead reckoning
-- [PENDING 7: Gemma 4 and the closed loop on the car]
+- [PENDING 7: the closed loop on the car]
 ### Notes
 (60 s) To conclude. In this study two capable models kept a pose estimate that beats dead reckoning by
 2.83 and 4.00 centimeters, which is statistically supported and not practically supported. They did it by
@@ -280,7 +281,7 @@ executing the prescribed procedure, and a short program does the same at negligi
 skipped its tools failed. What the study did not measure is what a language model adds when the procedure's
 rules do not fit: close duplicates, hidden IDs, operator requests. That is the next test. On the real car, Opus
 and the coded procedure tied in final error, Qwen3.8 matched them but for one long episode, and all ended far closer
-to the truth than dead reckoning. [PENDING 7: Gemma 4 and the closed loop on the car.]
+to the truth than dead reckoning. Gemma 4 fell behind again, as in simulation. [PENDING 7: the closed loop on the car.]
 
 ## Slide 14 — References
 Layout: One Column
