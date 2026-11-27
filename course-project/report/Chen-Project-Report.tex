@@ -853,8 +853,8 @@ Qwen3.8 (\bmnum{rstat.ate.qwen-b2.lo} to \bmnum{rstat.ate.qwen-b2.hi}).
 episodes, its largest gap in an episode ranging from \bmnum{rtrace.gemma.gap.min} to \bmnum{rtrace.gemma.gap.max}\,cm. Its largest jumps from its dead-reckoned prior were tag fixes
 it reported without computing them: of its \bmnum{rjump.gemma.top.n} largest (\bmnum{rjump.gemma.top.min}--\bmnum{rjump.gemma.top.max}\,m),
 \bmnum{rjump.gemma.top.notool} were position fixes reported with no tool call at all, and beyond
-\bmnum{rjump.beyond-m}\,m it has \bmnum{rjump.gemma.beyond.claimed} such jumps and \bmnum{rjump.gemma.beyond.other} of
-another kind, where the largest of Opus and Qwen3.8 are \bmnum{rjump.opus.max} and \bmnum{rjump.qwen.max}\,m. Over the
+\bmnum{rjump.beyond-m}\,m it has \bmnum{rjump.gemma.beyond.claimed} jumps at tag fixes claimed without
+\texttt{fix\_pose} and \bmnum{rjump.gemma.beyond.other} of another kind, where the largest of Opus and Qwen3.8 are \bmnum{rjump.opus.max} and \bmnum{rjump.qwen.max}\,m. Over the
 nine episodes it claimed \bmnum{rbeh.gemma.claims} fixes, \bmnum{rbeh.gemma.claims-nofix} of them without a
 \texttt{fix\_pose} call, which Opus (\bmnum{rbeh.opus.claims-nofix} of \bmnum{rbeh.opus.claims}) and Qwen3.8
 (\bmnum{rbeh.qwen.claims-nofix} of \bmnum{rbeh.qwen.claims}) never did; that count checks that \texttt{fix\_pose} was
