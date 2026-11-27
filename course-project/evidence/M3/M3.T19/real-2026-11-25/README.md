@@ -193,7 +193,8 @@ Mean ranks among the models (1 = smallest error): Qwen3.8 1.44, Opus 5.5 1.81, G
 **The gain over dead reckoning is the procedure's, not Opus's or Qwen3.8's:** B2 shows the same gain, and a model
 that follows the procedure inherits it. Neither of the two is within 1 cm of B2 on every episode, and eight episodes
 cannot order them: their intervals straddle zero by many centimetres. Gemma 4 ends worse than B2 on six of eight
-episodes, by 77 to 464 cm, and 0.8 and 2.2 cm better on the other two (2002 and 3001).
+episodes, by 77 to 464 cm, and 0.7 and 2.1 cm better on the other two (2002 and 3001; unrounded differences, as in
+the paired-difference table).
 
 ## What the per-step traces show ([`stats.md`](stats.md), [`stats.json`](stats.json))
 
