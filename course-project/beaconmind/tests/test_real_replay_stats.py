@@ -1,6 +1,6 @@
 """tools/real_replay_stats.py: the pre-registered tests on the real-log replay's values, and the per-step traces.
 
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote these tests.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote these tests; 2026-11-27: the fix-claim count.
 """
 import importlib.util
 import json
@@ -115,3 +115,18 @@ def test_ate_and_traces_on_a_small_set(tmp_path):
     tr = rs.traces(docs, ate, [7], ["B0", "B2", "claude-opus-5-5"])[7]["arms"]["claude-opus-5-5"]
     assert tr["vs_B2"]["first_step_beyond"] == 2 and tr["vs_B2"]["steps_beyond"] == 1      # 7 cm from B2 at step 2
     assert tr["vs_B2"]["max_gap_m"] == pytest.approx(0.07) and tr["error_at_pct_m"]["100"] == pytest.approx(0.02)
+
+
+def test_a_claimed_tag_fix_without_a_fix_pose_call_is_counted(tmp_path):
+    """Gemma 4 on the real logs reported tag fixes without computing them (no fix_pose call that step)."""
+    recs = [{"step": k, "truth": {"x_m": 0.0, "y_m": 0.0, "theta_deg": 0.0}, "b2_estimate": {"x_m": 0.0, "y_m": 0.0,
+             "theta_deg": 0.0}, "raw": {"odometry": None}} for k in range(3)]
+    run = tmp_path / "gemma"
+    run.mkdir()
+    rows = [{"step": 0, "report": {"pose_source": "odometry"}, "calls": [{"tool": "compose_odometry"}]},
+            {"step": 1, "report": {"pose_source": "position_fix"}, "calls": [{"tool": "gate_detection"}, {"tool": "fix_pose"}]},
+            {"step": 2, "report": {"pose_source": "beacon_fix"}, "calls": []}]
+    (run / "seed_1.jsonl").write_text("".join(json.dumps(dict(r, estimate_pose=recs[0]["truth"], checks={"valid": True}))
+                                              + "\n" for r in rows))
+    b = rs.behaviour({1: {"records": recs}}, {"gemma4-26b": str(run)}, [1])["gemma4-26b"]
+    assert b["fix_claims"] == 2 and b["fix_claims_without_fix_pose"] == 1

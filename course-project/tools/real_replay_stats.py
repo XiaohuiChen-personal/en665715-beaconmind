@@ -23,7 +23,8 @@ that follows the procedure inherits the procedure's gain over dead reckoning. H2
 oracle association, which the real logs do not have (their detections carry no true tag, and the room repeats tag
 IDs).
 
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this tool.
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this tool; 2026-11-27: added the count of tag
+fixes claimed without a fix_pose call.
 """
 import argparse
 import collections
@@ -50,6 +51,7 @@ _spec.loader.exec_module(sa)
 
 LLM_ARMS = ("claude-opus-5-5", "qwen38-flash-xhigh", "gemma4-26b")     # the study's three model arms
 DIVERGE_M = 0.05                                                       # an arm "parts from B2" beyond this
+FIXES = ("beacon_fix", "position_fix")                                 # a report's tag-fix pose sources
 
 
 def _rows(folders, seed):
@@ -184,6 +186,10 @@ def behaviour(docs, runs, seeds, procedure="procedure"):
                     "errors": sum(1 for r in rows if r.get("error")),
                     "calls_per_step": sum(tools.values()) / len(rows), "tools": dict(tools.most_common()),
                     "tool_name_agreement_with_procedure": (agree / tot) if tot else None,
+                    "fix_claims": sum(1 for r in rows if (r.get("report") or {}).get("pose_source") in FIXES + ("relocalised",)),
+                    "fix_claims_without_fix_pose": sum(
+                        1 for r in rows if (r.get("report") or {}).get("pose_source") in FIXES + ("relocalised",)
+                        and not any(c.get("tool") == "fix_pose" for c in r.get("calls") or [])),
                     "pose_source_agreement_with_procedure": (src_same / src_n) if src_n else None,
                     "pose_source_steps_compared": src_n, "pose_source_differences": dict(src_diff.most_common()),
                     "mean_s": statistics.fmean(secs), "median_s": statistics.median(secs),
@@ -215,9 +221,6 @@ def traces(docs, ate, seeds, arms):
             row["arms"][a] = {"error_at_pct_m": q, "vs_B2": d}
         out[s] = row
     return out
-
-
-FIXES = ("beacon_fix", "position_fix")
 
 
 def slip_steps(docs, runs, seeds, arms):
@@ -348,7 +351,12 @@ def markdown(res):
     L += ["", "`tool names as the procedure's`: per step, the share of tool calls (by name, `move` left out) the arm "
           "has in common with the coded procedure on the same input; the study's call precision and recall also "
           "match the arguments, which the trimmed rows here do not keep.", "",
-          "Pose source as the procedure's (the steps where both reported one; the study's pose-source agreement), and "
+          "Tag fixes claimed (pose source beacon_fix, position_fix or relocalised) and how many of them came without "
+          "a `fix_pose` call that step (a fix the arm did not compute with the tools):", ""]
+    for a, b in res["behaviour"].items():
+        if a != "procedure":
+            L.append("- %s: %d claimed, %d without `fix_pose`" % (display(a), b["fix_claims"], b["fix_claims_without_fix_pose"]))
+    L += ["", "Pose source as the procedure's (the steps where both reported one; the study's pose-source agreement), and "
           "the arm's differences from the procedure:", ""]
     for a, b in res["behaviour"].items():
         if b.get("pose_source_agreement_with_procedure") is not None:

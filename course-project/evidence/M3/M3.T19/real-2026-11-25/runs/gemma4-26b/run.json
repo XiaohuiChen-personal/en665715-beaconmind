@@ -1,0 +1,181 @@
+{
+ "provider_key": "gemma4-26b",
+ "provider_entry": {
+  "provider": "vllm",
+  "base_url": "http://127.0.0.1:8001/v1",
+  "model": "google/gemma-4-26B-A4B-it",
+  "api_key_env": null,
+  "thinking": true,
+  "sampling": {
+   "temperature": 1.0,
+   "top_p": 0.95,
+   "top_k": 64
+  },
+  "price_usd_per_mtok": {
+   "input": 0,
+   "cached_input": 0,
+   "output": 0
+  },
+  "price_checked": null,
+  "max_turns_per_step": 30,
+  "request_timeout_s": 3600,
+  "options": {
+   "max_tokens": 32768,
+   "chat_template_kwargs": {
+    "enable_thinking": true
+   },
+   "reasoning_replay_field": "reasoning",
+   "server": "tools/serve_gemma4_vllm.sh (container bm-gemma4-vllm, image qwen38-flash-dgx:v0.30 = vLLM 0.30.0, google/gemma-4-26B-A4B-it snapshot 4d7ae498, --tool-call-parser gemma4 --reasoning-parser gemma4)",
+   "sampling_source": "the checkpoint's generation_config.json (temperature 1.0, top_k 64, top_p 0.95), sent explicitly",
+   "reasoning_replay_check": "2026-11-10 /tokenize+/detokenize: the field `reasoning` renders as <|channel>thought ... <channel|> in the replayed model turn; `reasoning_content` is dropped",
+   "max_tokens_reason": "as the Qwen arm: a runaway generation ends as a counted fallback before the client timeout",
+   "parser_note": "the gemma4 tool parser returns numbers inside untyped object arguments as strings; the harness coerces numeric strings for every arm (tools_d5.coerce_numeric_strings)"
+  }
+ },
+ "agent": {
+  "provider": "vllm",
+  "model": "google/gemma-4-26B-A4B-it",
+  "base_url": "http://127.0.0.1:8001/v1",
+  "thinking": true,
+  "sampling": {
+   "temperature": 1.0,
+   "top_p": 0.95,
+   "top_k": 64
+  },
+  "options": {
+   "max_tokens": 32768,
+   "chat_template_kwargs": {
+    "enable_thinking": true
+   },
+   "reasoning_replay_field": "reasoning",
+   "server": "tools/serve_gemma4_vllm.sh (container bm-gemma4-vllm, image qwen38-flash-dgx:v0.30 = vLLM 0.30.0, google/gemma-4-26B-A4B-it snapshot 4d7ae498, --tool-call-parser gemma4 --reasoning-parser gemma4)",
+   "sampling_source": "the checkpoint's generation_config.json (temperature 1.0, top_k 64, top_p 0.95), sent explicitly",
+   "reasoning_replay_check": "2026-11-10 /tokenize+/detokenize: the field `reasoning` renders as <|channel>thought ... <channel|> in the replayed model turn; `reasoning_content` is dropped",
+   "max_tokens_reason": "as the Qwen arm: a runaway generation ends as a counted fallback before the client timeout",
+   "parser_note": "the gemma4 tool parser returns numbers inside untyped object arguments as strings; the harness coerces numeric strings for every arm (tools_d5.coerce_numeric_strings)"
+  },
+  "max_turns": 30,
+  "repeat": 0,
+  "request_timeout_s": 3600
+ },
+ "arm": "L2:gemma4-26b",
+ "repeat": 0,
+ "max_steps": 150,
+ "sha12": {
+  "prompt": "807e29927b2b",
+  "dv.json": "be20213dd9c9",
+  "providers.json": "60ada1c463ff",
+  "geometry.py": "f7fc3d27c000",
+  "dv.py": "692a77bfad86",
+  "envs/kinsim_lite.py": "4fe853bf47ac",
+  "harness/tools_d5.py": "61305f0008df",
+  "harness/replay.py": "27a210633184",
+  "harness/providers/anthropic_messages.py": "705c14614a2d",
+  "harness/providers/openai_chat.py": "2d2ae6fbc178"
+ },
+ "dv": {
+  "file": "configs/dv-real.json",
+  "sha12": "ea2cd23f9186",
+  "canonical_sha12": "6cb73ad812cc",
+  "frozen": false,
+  "differs_from_frozen": {
+   "sigma_range_a_m": [
+    0.05,
+    0.0063
+   ],
+   "sigma_range_b_per_m": [
+    0.05,
+    0.017
+   ],
+   "sigma_bearing_deg": [
+    2.0,
+    1.937
+   ],
+   "reject_range_above_m": [
+    2.0,
+    3.0
+   ]
+  }
+ },
+ "observation_overlay": [
+  "source",
+  "status",
+  "error",
+  "sensors",
+  "odometry.quality",
+  "counters.latched",
+  "counters.consecutive_contacts",
+  "counters.consecutive_slips",
+  "counters.consecutive_errors"
+ ],
+ "obslog_schema": "bm.real_obslog/1",
+ "runner": "tools/real_replay.py",
+ "runner_sha12": "c2ea1ba4d685",
+ "real_replay_sha12": "b0f90580b5da",
+ "config": "538d6ad4ab97",
+ "prompt_file": "robot_system_prompt_v3.3-room.txt",
+ "obslogs": "/workspace/course-project/data/real-replay/real-2026-11-25/obslogs",
+ "batch": "b2-real-01 + b2-real-02 + b2-real-03 + b2-real-05 + b2-real-06",
+ "batch_config": "611d90a41329, 1b3ab20f9758, af676fc3b9e6, 41867c0ec8b2, 2ba442d815b9",
+ "real_car": true,
+ "seeds": [
+  1001,
+  2001,
+  2002,
+  3001,
+  3002,
+  4001,
+  4002,
+  4003,
+  5001,
+  5002
+ ],
+ "order": [
+  2002,
+  5001,
+  4002,
+  3001,
+  5002,
+  2001,
+  3002,
+  4003,
+  4001,
+  1001
+ ],
+ "order_seed": 20261125,
+ "cap_usd": 0.0,
+ "workers": 10,
+ "git_commit": "a6addf0b4dab",
+ "git_dirty": "0",
+ "server": {
+  "version": {
+   "version": "0.30.0"
+  },
+  "host_side": {
+   "gemma_vllm_container": "bm-gemma4-vllm",
+   "gemma_image_id": "sha256:468c9db528d9691b729d8ee391fd22c55b814d1a2b1b3f1db9eef21879d38e00",
+   "gemma_snapshot": "4d7ae4984b7db7de8f8457170b3f1a419ee76d52"
+  }
+ },
+ "host": "spark-2a60",
+ "python": "3.10.12",
+ "openai_sdk": "3.26.0",
+ "served_models": [
+  "google/gemma-4-26B-A4B-it"
+ ],
+ "resume_reason": null,
+ "earlier_resumes": 0,
+ "started": "2026-11-25T23:09:36+0000",
+ "obslog_sha12": {
+  "1001": "a0634d20de1a",
+  "2001": "9d9bd32d42ec",
+  "2002": "d8923f129248",
+  "3001": "b4a943ac9234",
+  "3002": "3e528d2e659e",
+  "4001": "dcce72795a87",
+  "4002": "bc2857c72b99",
+  "4003": "d6673e735e43",
+  "5001": "43c209c878ac",
+  "5002": "fa5b5e44f549"
+ }
+}
