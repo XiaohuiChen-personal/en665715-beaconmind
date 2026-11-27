@@ -1,6 +1,6 @@
 # Course Project Context
 
-Last updated: 2026-11-25
+Last updated: 2026-11-27
 
 **Project name: BeaconMind** (chosen 2026-09-28). "Beacon" for the AprilTags on the walls, "Mind" for
 the language model that owns the pose belief, the beacon map and the SLAM decisions. Use this name in
@@ -11,6 +11,50 @@ This is the canonical handoff document for the EN.665.715 course project. Read i
 doing any course-project work and update it at the end of every course-project session.
 
 ## 2026-11-24 and 2026-11-25 — real-car day: tags mounted, pilot, nine real B2 episodes, real-log replays, firmware and motor (newest paragraph first; each paragraph names its own date and time)
+
+**END OF THE REAL-LOG SESSION, and what the next session does (2026-11-27, about 05:00 CST; written by Claude).**
+*State.* All three model arms are replayed on the real B2 logs, analysed, written up, in the report and reviewed.
+Gemma 4 (bf16 26B-A4B on vLLM, ten episodes at once) ran from 17:09 CST 2026-11-25 to 03:24 CST 2026-11-27, 850 of
+850 steps, no failed seed. Results and the findings for all three models:
+`evidence/M3/M3.T19/real-2026-11-25/` (`README.md`, `result.md/json`, `stats.md/json`; commits 83fc0a9, 5c1e1b3,
+82a0573, a381c97, f7141a5). Report fill and review fixes: a61fff0, 1ae2110, f57e549, 00e21d2 (17 pages, 2
+placeholders left, both the closed loop on the car). Review findings 46–59 were all answered and the reviewer's final
+re-check recomputed the new `stats.json` fields from the run files with exact matches (it worked from the trimmed
+run copies and did not check the slide deck). Checked by Claude: full suite 749 passed, 10 skipped at f57e549; at
+00e21d2 (two wording-only commits later) the report-asset and replay-stats tests pass, `report_assets.py --check`
+says up to date, and prereg verify says "OK, all 29 files and 30 logs match".
+*The result in one line (exploratory, not pre-registered, n = 8 episodes with an end circle).* Median final-position
+error: B0 38.2 cm, B2 7.9, Opus 5.5 7.7, Qwen3.8 7.5, Gemma 4 83.5 (max 486.8 on seed 4002). Opus and Qwen3.8 cannot
+be told apart from each other or from B2. Gemma 4 ended farther than dead reckoning on 6 of 8 episodes; 1,188 of the
+1,275 cm of its summed final error (tracked truth, nine episodes) grew on the 74 steps where it reported a tag fix
+without calling `fix_pose` (Opus and Qwen3.8: none). Do not write verdict language on these intervals; every arm saw
+B2's own moves, and the end circle shares tags, camera and world file with the estimates.
+*The Spark is idle (Xiaohui wanted the GPU for another project, 2026-11-27 about 03:45 CST).* Claude stopped the
+project's last containers and tmux sessions: the micro-ROS agent (`bm-micro-ros-agent`), the STOP-key listener
+(tmux `bm-stop`), the camera relay (tmux `bm-cam-relay`); the model servers had exited. **Before the car is powered
+again, start the micro-ROS agent, the camera relay and the STOP key again and check the STOP key first.** Another
+project may be using the GPU: look before starting any model server, and stop nothing that is not `bm-*`.
+*Next session, when the new right motor has arrived (in this order).* (1) `python3 tools/session_clock.py` first.
+(2) Xiaohui fits the motor; wiring as before; never invent a pin or voltage; USB and `VSYS` never live together.
+(3) Start the agent, relay and STOP key; `car.sh set-map 0.25 0.33 --i-am-at-the-car` after every Pico restart
+(the map defaults to 0.46/0.215 and moves are refused or wrong without it). (4) Stand test, wheels up: both wheels
+start from rest on every command, several times. (5) Floor check: the new motor changes the right wheel's encoder
+scale and the straight-line trim; measure forward distance and turn angle against the tape and the tags before any
+episode, and do not reuse the old slip ratio without checking it. (6) `record-pass`. (7) Three closed-loop Opus 5.5
+episodes on the car (budget approved; the dry run is a hard gate joined with `&&`), one filmed on the phone for the
+demo video. Stalls with no sign of contact are cleared and retried; contact, wall-guard and unexplained halts stop.
+(8) Fill report rows 6 and 7, Table II's footnote, Fig. 1's dotted validator, then one review pass.
+The firmware on the Pico is `buildK2s_b5ab4159` (static address); the motor fault appeared after that flash and the
+firmware was never tested as its cause (Xiaohui declined the rollback test: the same fault had happened before and
+needed new motors). If the new motor also fails to start, roll back to `buildK2a_d485d7ab.uf2` before anything else.
+The longest Pico run on K2s so far is 13 minutes; the 60-minute lease test is still open.
+*Open decisions for Xiaohui.* Report length (17 pages; first-draft guide 6–8; no limit found); the author e-mail
+line; the disclosure sentence on the real-car work; whether `AGENTS.md` should say vLLM instead of Ollama for
+Gemma 4; `sudo rm /etc/sudoers.d/bm-lease` on the Spark (the narrow rule is no longer used); archiving the
+static-address firmware patch (`~/fw_builds_m8/static-ip/static-ip.patch` on the Spark, in no repo); the deck
+(15 slides for a 10-minute talk), the voice-over and the submission checklist for 2026-12-01.
+*Mac.* On 2026-11-26 the disk fell to 4.3 GiB free from swap growth (Chrome); closing Chrome restored 12 GiB.
+`caffeinate` is still running from this session and ends with it.
 
 **Presentation timing (Canvas, "Presentation Timing", screenshot sent by Xiaohui on 2026-11-24):** slides 5–10
 minutes; demo 3–5 minutes as a pre-recorded video; 15 minutes in all per project (20 for a group of two, which does
