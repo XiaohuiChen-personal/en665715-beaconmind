@@ -106,7 +106,7 @@ calibrated without hand labels
 (Section~\ref{sec:experiments}). (3)~Results for three models on \bmnum{n.seeds} held-out simulated episodes: two
 models beat dead reckoning by a statistically supported but practically small margin and add little beyond the
 coded procedure, and one fails for a reason a post hoc check identifies (Section~\ref{sec:results}). (4)~A replay of dead
-reckoning, the coded procedure and Opus~5.5 (the other two models still running) on \bmnum{real.n} episodes recorded
+reckoning, the coded procedure, Opus~5.5, Qwen3.8 and Gemma~4 on \bmnum{real.n} episodes recorded
 on the real car in a surveyed room, scored against a tag resection at the end of \bmnum{real.n-circle} of them, and
 what the car showed that the simulator did not (Sections~\ref{sec:real} and~\ref{sec:sim2real}).
 
@@ -839,21 +839,26 @@ steps from step \bmnum{rtrace.q4001.first} of episode 4001 or its largest depart
 step \bmnum{rtrace.qwen.max-step} of \bmnum{rtrace.qwen.max-steps} in episode \bmnum{rtrace.qwen.max-seed}. The simulated
 study never exercised the rule. The models' tool calls matched the procedure's by name on \bmnum{rbeh.opus.toolnames}\,\%
 (Opus) and \bmnum{rbeh.qwen.toolnames}\,\% (Qwen3.8) of calls, with \bmnum{rbeh.opus.calls} and \bmnum{rbeh.qwen.calls}
-calls per step against the procedure's \bmnum{rbeh.proc.calls}, and their pose source matched the procedure's on
+calls per step against the procedure's \bmnum{rbeh.proc.calls} (every count includes the refused \texttt{move} calls), and their pose source matched the procedure's on
 \bmnum{rbeh.opus.source}\,\% and \bmnum{rbeh.qwen.source}\,\% of steps (Gemma~4: \bmnum{rbeh.gemma.toolnames}\,\%,
 \bmnum{rbeh.gemma.calls} calls per step and \bmnum{rbeh.gemma.source}\,\%). Opus's final estimate ended within
 \bmnum{rtrace.opus.final-max}\,cm of the procedure's on all \bmnum{rtrace.n} episodes. Over whole episodes the median
-difference in trajectory error against the tracked truth, model minus procedure, is \bmnum{rstat.ate.opus-b2.est}\,cm
+difference in trajectory error against the tracked truth, model minus procedure (exploratory, like the paired
+differences below), is \bmnum{rstat.ate.opus-b2.est}\,cm
 for Opus (\bmnum{rstat.ate.opus-b2.lo} to \bmnum{rstat.ate.opus-b2.hi}) and \bmnum{rstat.ate.qwen-b2.est}\,cm for
 Qwen3.8 (\bmnum{rstat.ate.qwen-b2.lo} to \bmnum{rstat.ate.qwen-b2.hi}).
 
 \textbf{Gemma~4 departs from the procedure early and stays away.} Its estimate left the procedure's by more than
 5\,cm within \bmnum{rtrace.gemma.first.min}--\bmnum{rtrace.gemma.first.max} steps in all \bmnum{rtrace.gemma.parted}
-episodes, its largest gap in an episode ranging from \bmnum{rtrace.gemma.gap.min} to \bmnum{rtrace.gemma.gap.max}\,cm. Its largest jumps came at steps
-where it reported a tag fix without computing it: over the nine episodes it claimed \bmnum{rbeh.gemma.claims} fixes,
-\bmnum{rbeh.gemma.claims-nofix} of them without a \texttt{fix\_pose} call, which Opus (\bmnum{rbeh.opus.claims-nofix}
-of \bmnum{rbeh.opus.claims}) and Qwen3.8 (\bmnum{rbeh.qwen.claims-nofix} of \bmnum{rbeh.qwen.claims}) never did
-(\path{evidence/M3/M3.T19/real-2026-11-25/README.md}). It also tried to drive: its \bmnum{real.gemma.moves}
+episodes, its largest gap in an episode ranging from \bmnum{rtrace.gemma.gap.min} to \bmnum{rtrace.gemma.gap.max}\,cm. Its largest jumps from its dead-reckoned prior were tag fixes
+it reported without computing them: of its \bmnum{rjump.gemma.top.n} largest (\bmnum{rjump.gemma.top.min}--\bmnum{rjump.gemma.top.max}\,m),
+\bmnum{rjump.gemma.top.notool} were position fixes reported with no tool call at all, and beyond
+\bmnum{rjump.beyond-m}\,m it has \bmnum{rjump.gemma.beyond.claimed} such jumps and \bmnum{rjump.gemma.beyond.other} of
+another kind, where the largest of Opus and Qwen3.8 are \bmnum{rjump.opus.max} and \bmnum{rjump.qwen.max}\,m. Over the
+nine episodes it claimed \bmnum{rbeh.gemma.claims} fixes, \bmnum{rbeh.gemma.claims-nofix} of them without a
+\texttt{fix\_pose} call, which Opus (\bmnum{rbeh.opus.claims-nofix} of \bmnum{rbeh.opus.claims}) and Qwen3.8
+(\bmnum{rbeh.qwen.claims-nofix} of \bmnum{rbeh.qwen.claims}) never did; that count checks that \texttt{fix\_pose} was
+called, not that it succeeded (\path{evidence/M3/M3.T19/real-2026-11-25/stats.md}). It also tried to drive: its \bmnum{real.gemma.moves}
 \texttt{move} calls were real moves, all refused by the replay. Over whole episodes its trajectory error exceeds the
 procedure's by \bmnum{rstat.ate.gemma-b2.est}\,cm (\bmnum{rstat.ate.gemma-b2.lo} to \bmnum{rstat.ate.gemma-b2.hi},
 Hodges--Lehmann, against the tracked truth). This resembles its failure in the simulated study
@@ -872,7 +877,9 @@ reckoning is the procedure's, not the model's. Against the procedure (Hodges--Le
 comparisons with B2): Opus \bmnum{rstat.opus-b2.est}\,cm (\bmnum{rstat.opus-b2.lo} to \bmnum{rstat.opus-b2.hi}) and
 Qwen3.8 \bmnum{rstat.qwen-b2.est}\,cm (\bmnum{rstat.qwen-b2.lo} to \bmnum{rstat.qwen-b2.hi}), whose wide upper end is
 episode \bmnum{real.qwen.worst.seed}; Gemma~4 \bmnum{rstat.gemma-b2.est}\,cm (\bmnum{rstat.gemma-b2.lo} to
-\bmnum{rstat.gemma-b2.hi}), worse on \bmnum{rstat.gemma-b2.above} of \bmnum{rstat.n}. Opus minus Qwen3.8 is
+\bmnum{rstat.gemma-b2.hi}): it ended farther from the circle than the procedure on \bmnum{real.gemma.worse.n} of the
+\bmnum{rstat.n} episodes, by \bmnum{real.gemma.worse.min} to \bmnum{real.gemma.worse.max}\,cm, and within
+\bmnum{real.gemma.near.max}\,cm of it on the other \bmnum{real.gemma.near.n}. Opus minus Qwen3.8 is
 \bmnum{rstat.opus-qwen.est}\,cm (\bmnum{rstat.opus-qwen.lo} to \bmnum{rstat.opus-qwen.hi}): eight episodes cannot order
 the two. Opus minus Gemma~4 is \bmnum{rstat.opus-gemma.est}\,cm (\bmnum{rstat.opus-gemma.lo} to
 \bmnum{rstat.opus-gemma.hi}) and Qwen3.8 minus Gemma~4 \bmnum{rstat.qwen-gemma.est}\,cm (\bmnum{rstat.qwen-gemma.lo} to
@@ -892,7 +899,9 @@ US\$\bmnum{real.opus.cost}; Qwen3.8 at \bmnum{real.qwen.valid} of them (\bmnum{r
 \bmnum{real.qwen.repaired} reports repaired) in \bmnum{real.qwen.mean-s}\,s per step (95th percentile
 \bmnum{real.qwen.p95-s}\,s); Gemma~4 at \bmnum{real.gemma.valid} (\bmnum{real.gemma.fallbacks} fallbacks,
 \bmnum{real.gemma.errors} of them replies that hit the output or context limit; none repaired) in
-\bmnum{real.gemma.mean-s}\,s per step (95th percentile \bmnum{real.gemma.p95-s}\,s). These times are under
+\bmnum{real.gemma.mean-s}\,s per step (95th percentile \bmnum{real.gemma.p95-s}\,s). As in the study, a request that
+hit the client time-out was retried, and a retry is a fresh draw that can only help Gemma~4, so its fallback count is
+a lower bound. These times are under
 shared-server load, not closed-loop latencies: Opus ran three episodes at a time, Qwen3.8 three and then three plus
 two side by side, and Gemma~4 all ten at once on one server.
 
@@ -1002,7 +1011,7 @@ the car so far is 13 minutes (same entry).
 \textbf{A prompt rule met on the car (established).} The room prompt tells the model to zero a move whose odometry the
 car flags as slipping; the coded procedure has no such rule, and the simulator never set the flag. On the real logs it
 fired \bmnum{real.sliprule.n} times. At \bmnum{real.sliprule.real} a tag fix at the same step showed a real move and
-removed the rule's effect. At the fourth no fix came at once, and at the next one the models' zeroed tracks were
+removed the rule's effect. At the fourth no fix came at once, and at the next one Opus's and Qwen3.8's zeroed tracks were
 nearer it than the procedure's composed track; that made the largest departure Opus and Qwen3.8 share
 (Section~\ref{sec:real}), and it cannot separate the rule from the floor's slip. The flag alone does not tell which
 case it is.
@@ -1013,7 +1022,7 @@ angled views were not measured (Section~\ref{sec:setup}). The simulator's larges
 finding that the stronger models reproduce the procedure held on the real logs, over the \bmnum{real.n-circle} of
 \bmnum{real.n} episodes with an end circle: for Opus in final and whole-episode error, for Qwen3.8 in all but one
 episode; step by step they left the procedure's estimate for a few steps in \bmnum{rtrace.parted} and
-\bmnum{rtrace.qwen.parted} of the \bmnum{rtrace.n} episodes, the largest shared departure coming from a prompt clause the procedure lacks, after which the models ended nearer
+\bmnum{rtrace.qwen.parted} of the \bmnum{rtrace.n} episodes, the largest shared departure coming from a prompt clause the procedure lacks, after which Opus and Qwen3.8 ended nearer
 the next fix; whether a model adds anything when the odometry
 is this poor is not answered by episodes in which it did not. So did the study's finding on Gemma~4: it again fell
 behind dead reckoning, on \bmnum{rstat.gemma-b0.above} of the \bmnum{rstat.n} episodes, this time through tag fixes it
@@ -1029,8 +1038,7 @@ Section~\ref{sec:confounders}, three limits matter most.
 no wheel slip and no image formation. The real-car part replays \bmnum{real.n} episodes on the coded procedure's
 paths in one room, against a final-position truth estimated only from its residuals (\bmnum{real.circle.rms.min}--\bmnum{real.circle.rms.max}\,cm),
 not checked independently and sharing its sensors with the coded procedure and the models, with no truth for the
-path between;
-two of the three model arms are still being replayed, and no model has yet chosen a move on the car.
+path between; and no model has yet chosen a move on the car.
 
 (2)~\emph{One prompt, thirty seeds, one run each, one drift level:} enough to detect the advantage over dead
 reckoning, not to show a practically large one; the prompt was not adapted to Gemma~4, and the study does not

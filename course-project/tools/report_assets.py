@@ -625,6 +625,15 @@ def build_numbers(src):
         raise SystemExit("report_assets: result.json's end-circle episodes changed; check the report text")
     put("real.opus-b2.maxdiff", num(max(abs(cm1("claude-opus-5-5", s) - cm1("B2", s)) for s in main_c), 1),
         rnote + " errors vs_end_circle_m: max |Opus - B2| over the end-circle episodes (cm, 0.1 cm as result.md)")
+    gd = {sd: (R["errors"]["gemma4-26b"][sd]["vs_end_circle_m"] - R["errors"]["B2"][sd]["vs_end_circle_m"]) * 100
+          for sd in main_c}
+    worse = [v for v in gd.values() if v > 5.0]
+    near = [v for v in gd.values() if v <= 5.0]
+    put("real.gemma.worse.n", len(worse), rnote + " errors: episodes where Gemma 4 ends more than 5 cm farther than B2")
+    put("real.gemma.worse.min", "%.0f" % min(worse), rnote + " errors: the smallest such excess (cm)")
+    put("real.gemma.worse.max", "%.0f" % max(worse), rnote + " errors: the largest such excess (cm)")
+    put("real.gemma.near.n", len(near), rnote + " errors: the other episodes")
+    put("real.gemma.near.max", num(max(abs(v) for v in near), 1), rnote + " errors: |Gemma 4 - B2| on the other episodes (cm)")
     worst_q = max(main_c, key=lambda s: cm1("qwen38-flash-xhigh", s) - cm1("B2", s))
     put("real.qwen.worst.seed", worst_q, rnote + " errors: the episode where Qwen3.8 is farthest above B2")
     put("real.qwen.worst.steps", R["errors"]["B2"][worst_q]["steps"], rnote + " errors: its steps")
@@ -722,6 +731,22 @@ def build_numbers(src):
         b = RS["behaviour"][arm]
         put("rbeh.%s.claims" % k, b["fix_claims"], snote + " behaviour %s fix_claims" % arm)
         put("rbeh.%s.claims-nofix" % k, b["fix_claims_without_fix_pose"], snote + " behaviour %s fix_claims_without_fix_pose" % arm)
+    J = RS["jumps"]
+    gl = J["gemma4-26b"]["largest"]
+    put("rjump.gemma.top.n", len(gl), snote + " jumps gemma4-26b largest (count)")
+    put("rjump.gemma.top.min", "%.2f" % min(x["jump_m"] for x in gl), snote + " jumps: the smallest of Gemma 4's largest (m)")
+    put("rjump.gemma.top.max", "%.2f" % max(x["jump_m"] for x in gl), snote + " jumps: Gemma 4's largest (m)")
+    put("rjump.gemma.top.notool", sum(1 for x in gl if x["kind"] == "claimed fix without fix_pose" and not x["tools"]),
+        snote + " jumps: of Gemma 4's largest, fixes claimed with no tool call at all")
+    bk = J["gemma4-26b"]["beyond_by_kind"]
+    put("rjump.beyond-m", "%.1f" % J["gemma4-26b"]["beyond_m"], snote + " jumps beyond_m")
+    put("rjump.gemma.beyond.claimed", bk.get("claimed fix without fix_pose", 0), snote + " jumps: Gemma 4 beyond, claimed without fix_pose")
+    put("rjump.gemma.beyond.other", sum(v for k, v in bk.items() if k != "claimed fix without fix_pose"),
+        snote + " jumps: Gemma 4 beyond, other kinds")
+    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen")):
+        if sum(J[arm]["beyond_by_kind"].values()):
+            raise SystemExit("report_assets: %s now has jumps beyond the limit; check the report text" % arm)
+        put("rjump.%s.max" % k, "%.2f" % max(x["jump_m"] for x in J[arm]["largest"]), snote + " jumps: %s's largest (m)" % arm)
     gg = {sd: RS["traces"][sd]["arms"]["gemma4-26b"]["vs_B2"] for sd in main}
     gpart = [g for g in gg.values() if g and g.get("first_step_beyond") is not None]
     put("rtrace.gemma.parted", len(gpart), snote + " traces: main episodes where Gemma 4's estimate parts from B2's by > 5 cm")
@@ -1109,10 +1134,18 @@ def figure_real(src):
         out.append("\\node[%s, %s, inner sep=0pt, minimum size=4pt, line width=0.5pt] at (%.3f,%.3f) {};" % (shape, style, lx + 0.1, ly))
         out.append("\\node[anchor=west] at (%.3f,%.3f) {%s};" % (lx + 0.2, ly, label))
         lx += 0.45 + 0.118 * len(label)
+    last_tick = max(t for t in (1, 3, 10, 30, 100, 300, 1000, 3000) if t <= hi)
+    extra = ""
+    if top > last_tick:
+        arm_top, ep_top = max(((a, e) for e, _s, _n, vals in rows for a in arms), key=lambda ae: next(
+            v[ae[0]] for e2, _s2, _n2, v in rows if e2 == ae[1]))
+        label = REAL_MARK[arm_top][2].split(",")[0]
+        seed = {"%s %s" % (e["batch"], e["episode"][:4]): e["seed"] for e in src["real"]["index"]["episodes"]}[ep_top]
+        extra = " The highest point, above the last tick, is %s's %.1f\\,cm in episode %s." % (label, top, seed)
     out += ["\\end{tikzpicture}",
             "\\caption{Real-log replay: each arm's final-position error against the end circle in each of the %d episodes "
             "that have one (log scale; episodes in the order they were driven, labeled by start pose and steps). "
-            "All arms replay the same logs.}" % len(rows),
+            "All arms replay the same logs.%s}" % (len(rows), extra),
             "\\label{fig:real}", "\\end{figure}", ""]
     return "\n".join(out)
 
