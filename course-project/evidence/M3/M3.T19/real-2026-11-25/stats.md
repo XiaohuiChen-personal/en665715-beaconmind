@@ -152,9 +152,17 @@ The room prompt's rule 2 composes such a step with forward and left set to 0; th
 
 Tag fixes claimed (pose source beacon_fix, position_fix or relocalised) and how many of them came without a `fix_pose` call that step (a fix the arm did not compute with the tools):
 
-- Opus 5.5: 329 claimed, 0 without `fix_pose`
-- Qwen3.8: 326 claimed, 0 without `fix_pose`
-- Gemma 4: 179 claimed, 74 without `fix_pose`
+- Opus 5.5: 329 claimed (0 labelled relocalised), 0 without `fix_pose`, 0 of them with no tool call at all
+- Qwen3.8: 326 claimed (0 labelled relocalised), 0 without `fix_pose`, 0 of them with no tool call at all
+- Gemma 4: 179 claimed (2 labelled relocalised), 74 without `fix_pose`, 72 of them with no tool call at all
+
+The count checks that `fix_pose` was called that step, not that it succeeded; the harness verifies full (beacon) fixes only. `calls per step` above counts every call, the refused `move` calls included; without them: procedure 3.20, Opus 5.5 3.30, Qwen3.8 3.92, Gemma 4 2.50.
+
+Largest jumps from the dead-reckoned prior (the harness's `harness_prior`: the arm's previous report composed with the step's odometry), main episodes:
+
+- Opus 5.5: beyond 0.5 m by kind: none; largest: 4003/120 0.30 m (beacon_fix, 7 calls); 4001/82 0.29 m (beacon_fix, 4 calls); 3001/41 0.25 m (odometry, 1 calls); 4001/81 0.24 m (prior_kept, 4 calls); 4003/76 0.21 m (beacon_fix, 6 calls); 4002/107 0.17 m (beacon_fix, 5 calls); 4003/138 0.16 m (beacon_fix, 5 calls); 4001/104 0.16 m (position_fix, 3 calls)
+- Qwen3.8: beyond 0.5 m by kind: none; largest: 3001/41 0.25 m (odometry, 1 calls); 4001/105 0.20 m (position_fix, 3 calls); 4003/76 0.20 m (beacon_fix, 7 calls); 4002/125 0.20 m (odometry, no tool call); 4002/107 0.18 m (beacon_fix, 5 calls); 4002/67 0.15 m (beacon_fix, 4 calls); 4001/60 0.15 m (position_fix, 7 calls); 4003/79 0.14 m (beacon_fix, 4 calls)
+- Gemma 4: beyond 0.5 m by kind: claimed fix without fix_pose 11, other report 1; largest: 4002/65 2.35 m (position_fix, no tool call); 4002/66 2.32 m (position_fix, no tool call); 4003/98 2.29 m (position_fix, no tool call); 3002/57 1.62 m (position_fix, no tool call); 4001/75 1.56 m (position_fix, no tool call); 4002/117 1.47 m (position_fix, no tool call); 4002/32 1.14 m (prior_kept, 4 calls); 1001/43 1.11 m (position_fix, no tool call)
 
 Pose source as the procedure's (the steps where both reported one; the study's pose-source agreement), and the arm's differences from the procedure:
 

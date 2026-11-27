@@ -130,3 +130,20 @@ def test_a_claimed_tag_fix_without_a_fix_pose_call_is_counted(tmp_path):
                                               + "\n" for r in rows))
     b = rs.behaviour({1: {"records": recs}}, {"gemma4-26b": str(run)}, [1])["gemma4-26b"]
     assert b["fix_claims"] == 2 and b["fix_claims_without_fix_pose"] == 1
+
+
+def test_jumps_are_measured_from_the_harness_prior_and_sorted_by_kind(tmp_path):
+    p = lambda x: {"x_m": x, "y_m": 0.0, "theta_deg": 0.0}  # noqa: E731
+    run = tmp_path / "gemma"
+    run.mkdir()
+    rows = [{"step": 0, "estimate_pose": p(0.0), "harness_prior": None, "report": {"pose_source": "odometry"}, "calls": []},
+            {"step": 1, "estimate_pose": p(1.2), "harness_prior": p(0.0), "report": {"pose_source": "position_fix"}, "calls": []},
+            {"step": 2, "estimate_pose": p(1.3), "harness_prior": p(1.25), "report": {"pose_source": "odometry"},
+             "calls": [{"tool": "compose_odometry"}]},
+            {"step": 3, "estimate_pose": p(0.5), "harness_prior": p(1.3), "report": {"pose_source": "prior_kept"},
+             "calls": [{"tool": "gate_detection"}, {"tool": "fix_pose"}]}]
+    (run / "seed_1.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    j = rs.jumps({1: {"records": []}}, {"gemma4-26b": str(run)}, [1], ["gemma4-26b"])["gemma4-26b"]
+    assert [x["step"] for x in j["largest"]] == [1, 3, 2]
+    assert j["largest"][0]["jump_m"] == pytest.approx(1.2) and j["largest"][0]["kind"] == "claimed fix without fix_pose"
+    assert j["beyond_by_kind"] == {"claimed fix without fix_pose": 1, "other report": 1}

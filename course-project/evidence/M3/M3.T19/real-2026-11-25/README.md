@@ -177,16 +177,23 @@ Mean ranks among the models (1 = smallest error): Qwen3.8 1.44, Opus 5.5 1.81, G
 
 - **Pose source as the procedure's** (nine main episodes): Opus 98.5 %, Qwen3.8 98.5 %, Gemma 4 56.8 % of steps.
 - **Tool names as the procedure's:** 97 %, 81 % and 49 % of calls.
-- **Calls per step:** 3.33, 3.92 and 2.60, against the procedure's 3.20.
+- **Calls per step**, the refused `move` calls included: 3.33, 3.92 and 2.60, against the procedure's 3.20. Without
+  the `move` calls: 3.30, 3.92 and 2.50.
 - **Tag fixes claimed without a `fix_pose` call that step:** Opus 0 of 329, Qwen3.8 0 of 326, Gemma 4 74 of 179 (76
   over all ten episodes).
-- **Gemma's wall time:** 34.25 h, from 23:09:36 UTC on 11-25 to 09:24:36 on 11-27. 20 requests hit the client
-  timeout and were retried under the pre-registered rule; every step completed.
+  - Gemma's 179 include 2 claims under its own label "relocalised". 72 of its 74 had no tool call at all.
+  - All 37 of its beacon-fix and "relocalised" claims without a call carry `fix_verified: false` in the run files.
+  - **The limit of this count:** it checks that `fix_pose` was called that step, not that the call succeeded, and the
+    harness verifies full (beacon) fixes only.
+- **Gemma's wall time:** 34.25 h, from 23:09:36 UTC on 11-25 to 09:24:36 on 11-27.
+  - 20 requests hit the client timeout (3,600 s) and were retried under the pre-registered rule, at most twice on one
+    step (1001 step 9). Every step completed.
+  - A retry is a fresh draw that can only help Gemma, so its fallback count is a lower bound, as in the study.
 
 **The gain over dead reckoning is the procedure's, not Opus's or Qwen3.8's:** B2 shows the same gain, and a model
 that follows the procedure inherits it. Neither of the two is within 1 cm of B2 on every episode, and eight episodes
-cannot order them: their intervals straddle zero by many centimetres. Gemma 4 is worse than B2 on six of eight
-episodes, and its interval against B2 lies wholly above zero.
+cannot order them: their intervals straddle zero by many centimetres. Gemma 4 ends worse than B2 on six of eight
+episodes, by 77 to 464 cm, and 0.8 and 2.2 cm better on the other two (2002 and 3001).
 
 ## What the per-step traces show ([`stats.md`](stats.md), [`stats.json`](stats.json))
 
@@ -204,11 +211,17 @@ episodes, and its interval against B2 lies wholly above zero.
     from B2's, Opus's and Qwen3.8's estimate of the step before. They took that fix at once, so the rule changed
     nothing there, except for Opus at 4001/81, which kept its zeroed prior (22.5 cm from B2) until the beacon fix at
     step 82.
-  - **3001/41: the move was mostly slip.** No fix followed for six steps. When one came (the models at 47, B2 at 48),
-    Opus's and Qwen3.8's zeroed track was 5.4 cm from B2's fix, and B2's full composition 20.4 cm. The rule was right
-    there, and B2 overshot by about 20 cm, as did the tracked truth.
-- **Reading:** so several of the places where Opus and Qwen3.8 part from B2 are this rule, not a model error. The
-  study's simulation never exercised it.
+  - **3001/41: no fix followed at once, and this case cannot separate the rule from the floor's ordinary shortfall.**
+    - No fix followed for six steps. When one came (the models at 47, B2 at 48), Opus's and Qwen3.8's zeroed track was
+      5.4 cm from B2's fix, and B2's full composition 20.4 cm. So the models ended nearer the next fix.
+    - But three forward moves lie between the flag and the fix: steps 41, 42 and 43, 0.75 m by odometry, roughly
+      northward. Only the first was flagged.
+    - The northward travel ratio measured on this carpet, 0.827 (`evidence/M3/M3.T12/batch-runner/tape/split-output.txt`,
+      pooled, tape down, north), alone predicts about 13 cm of shortfall over the three.
+- **Reading:** so several of the places where Opus and Qwen3.8 part from B2 are this rule, not a model error. The rule
+  changed nothing at two of the four flagged steps, held Opus back for one step at the third, and at the fourth left
+  the models nearer the next fix, for a reason the data cannot separate from the floor's slip. The study's simulation
+  never exercised it.
 
 **Opus 5.5.**
 - Its departures from B2 were transient: the slip rule above, and opposite accept-or-keep decisions on single-tag
@@ -225,9 +238,16 @@ episodes, and its interval against B2 lies wholly above zero.
 - **Early departure:** it parts from B2's estimate by more than 5 cm within 13–36 steps in every episode. Its largest
   gaps range from 26 cm (3001) to 487 cm (4002).
 - **The largest errors come from claimed tag fixes it did not compute.**
-  - Each of its eight largest single-step jumps, 0.96–2.33 m beyond the odometry, is a step where it reported a
-    position fix with no tool call at all.
-  - They are 4002 steps 65, 66 and 117; 4003 step 98; 3002 step 57; 4001 step 75; 2001 step 39; and 1001 step 35.
+  - **The measure:** a jump is the distance from the estimate to the dead-reckoned prior the harness logs for that
+    step (`harness_prior`, the previous report composed with the step's odometry). The `jumps` field of
+    [`stats.json`](stats.json) has it.
+  - **The eight largest, main episodes:** 4002/65 (2.35 m), 4002/66 (2.32), 4003/98 (2.29), 3002/57 (1.62), 4001/75
+    (1.56), 4002/117 (1.47), 4002/32 (1.14) and 1001/43 (1.11).
+  - **Seven of the eight are position fixes it reported with no tool call at all.**
+  - **4002/32 is a second kind of error:** a `prior_kept` report with four tool calls, `fix_pose` among them, whose
+    pose is 1.14 m from its prior.
+  - **Beyond 0.5 m:** Gemma has 11 jumps that are fixes claimed without `fix_pose` and 1 of the other kind. Opus and
+    Qwen3.8 have none; their largest are 0.30 and 0.25 m.
   - Over the nine main episodes it claimed 179 tag fixes, 74 of them without `fix_pose`. Opus and Qwen3.8 never did.
 - **Its pose source differs from the procedure's on 43 % of steps.** It often keeps its prior, or composes odometry
   only, where the procedure takes a fix, and sometimes the reverse.
@@ -262,7 +282,8 @@ two largest are on the same two (486.8 and 243.3 cm).
 - Gemma 4 ends far from B2 on six of eight episodes (median 83.5 cm against B2's 7.9). It claims tag fixes it did not
   compute, which the other two models never do.
 - The models carry out a prompt rule (zero a slip-flagged move) that the coded procedure lacks. On the real logs it
-  fired four times, and was right once.
+  fired four times. At three of them a tag fix at the same step put the car 20–24 cm from the estimates of the step
+  before, so the move was real. The fourth cannot separate the rule from the floor's ordinary northward shortfall.
 
 **Not established.**
 - Any ordering between Opus 5.5 and Qwen3.8: their difference's interval runs from −15.3 to +2.4 cm.
@@ -352,5 +373,5 @@ Spark. The Mac's analysis uses copies trimmed to what `analyze` reads ([`trim_ru
 folder keeps the run headers, logs, scripts and results, as text and JSON only.
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the replays and the chains, repaired the crash's ledger,
-wrote the analysis, this summary and the scripts in this folder. 2026-11-27: scored Gemma 4 and wrote
-the findings for all three models.
+wrote the analysis, this summary and the scripts in this folder. 2026-11-27: scored Gemma 4, wrote
+the findings for all three models and answered review findings 46 to 51.

@@ -1433,7 +1433,10 @@
     "map_point": 144
    },
    "tool_name_agreement_with_procedure": null,
+   "calls_per_step_without_move": 3.2049689440993787,
    "fix_claims": 329,
+   "fix_claims_relocalised": 0,
+   "fix_claims_without_any_call": 0,
    "fix_claims_without_fix_pose": 0,
    "pose_source_agreement_with_procedure": null,
    "pose_source_steps_compared": 0,
@@ -1463,7 +1466,10 @@
     "predict_observation": 1
    },
    "tool_name_agreement_with_procedure": 0.9717514124293786,
+   "calls_per_step_without_move": 3.298136645962733,
    "fix_claims": 329,
+   "fix_claims_relocalised": 0,
+   "fix_claims_without_any_call": 0,
    "fix_claims_without_fix_pose": 0,
    "pose_source_agreement_with_procedure": 0.9850931677018634,
    "pose_source_steps_compared": 805,
@@ -1497,7 +1503,10 @@
     "exploration_summary": 4
    },
    "tool_name_agreement_with_procedure": 0.8091772151898734,
+   "calls_per_step_without_move": 3.9167701863354036,
    "fix_claims": 326,
+   "fix_claims_relocalised": 0,
+   "fix_claims_without_any_call": 0,
    "fix_claims_without_fix_pose": 0,
    "pose_source_agreement_with_procedure": 0.9850560398505604,
    "pose_source_steps_compared": 803,
@@ -1531,7 +1540,10 @@
     "move": 73
    },
    "tool_name_agreement_with_procedure": 0.4893262174783189,
+   "calls_per_step_without_move": 2.5043478260869567,
    "fix_claims": 179,
+   "fix_claims_relocalised": 2,
+   "fix_claims_without_any_call": 72,
    "fix_claims_without_fix_pose": 74,
    "pose_source_agreement_with_procedure": 0.5677083333333334,
    "pose_source_steps_compared": 768,
@@ -1577,7 +1589,10 @@
     "fix_pose": 5
    },
    "tool_name_agreement_with_procedure": null,
+   "calls_per_step_without_move": 2.3777777777777778,
    "fix_claims": 4,
+   "fix_claims_relocalised": 0,
+   "fix_claims_without_any_call": 0,
    "fix_claims_without_fix_pose": 0,
    "pose_source_agreement_with_procedure": null,
    "pose_source_steps_compared": 0,
@@ -1604,7 +1619,10 @@
     "move": 1
    },
    "tool_name_agreement_with_procedure": 0.963963963963964,
+   "calls_per_step_without_move": 2.466666666666667,
    "fix_claims": 5,
+   "fix_claims_relocalised": 0,
+   "fix_claims_without_any_call": 0,
    "fix_claims_without_fix_pose": 0,
    "pose_source_agreement_with_procedure": 1.0,
    "pose_source_steps_compared": 44,
@@ -1632,7 +1650,10 @@
     "move": 1
    },
    "tool_name_agreement_with_procedure": 0.7210884353741497,
+   "calls_per_step_without_move": 3.2444444444444445,
    "fix_claims": 6,
+   "fix_claims_relocalised": 0,
+   "fix_claims_without_any_call": 0,
    "fix_claims_without_fix_pose": 0,
    "pose_source_agreement_with_procedure": 0.9772727272727273,
    "pose_source_steps_compared": 44,
@@ -1662,7 +1683,10 @@
     "move": 6
    },
    "tool_name_agreement_with_procedure": 0.5196850393700787,
+   "calls_per_step_without_move": 2.022222222222222,
    "fix_claims": 3,
+   "fix_claims_relocalised": 0,
+   "fix_claims_without_any_call": 2,
    "fix_claims_without_fix_pose": 2,
    "pose_source_agreement_with_procedure": 0.7560975609756098,
    "pose_source_steps_compared": 41,
@@ -2643,5 +2667,333 @@
    }
   ],
   "rule": "prompts/robot_system_prompt_v3.3-room.txt rule 2: compose_odometry with forward_m = left_m = 0 if the odometry quality is slip_suspected; the coded procedure (kinsim_lite) has no such rule"
+ },
+ "jumps": {
+  "claude-opus-5-5": {
+   "measure": "|estimate_pose - harness_prior| (the previous report dead-reckoned through the step)",
+   "largest": [
+    {
+     "seed": 4003,
+     "step": 120,
+     "jump_m": 0.2967624033616525,
+     "pose_source": "beacon_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose",
+      "map_point"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4001,
+     "step": 82,
+     "jump_m": 0.29153080549810295,
+     "pose_source": "beacon_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 3001,
+     "step": 41,
+     "jump_m": 0.2501999200639361,
+     "pose_source": "odometry",
+     "tools": [
+      "compose_odometry"
+     ],
+     "kind": "other report",
+     "fallback": false
+    },
+    {
+     "seed": 4001,
+     "step": 81,
+     "jump_m": 0.24020824298928625,
+     "pose_source": "prior_kept",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "fix_pose",
+      "move"
+     ],
+     "kind": "other report",
+     "fallback": false
+    },
+    {
+     "seed": 4003,
+     "step": 76,
+     "jump_m": 0.21480341971556827,
+     "pose_source": "beacon_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4002,
+     "step": 107,
+     "jump_m": 0.16665560877385513,
+     "pose_source": "beacon_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose",
+      "move"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4003,
+     "step": 138,
+     "jump_m": 0.1645912928531704,
+     "pose_source": "beacon_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4001,
+     "step": 104,
+     "jump_m": 0.1610937157460714,
+     "pose_source": "position_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "fix_pose"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    }
+   ],
+   "beyond_m": 0.5,
+   "beyond_by_kind": {}
+  },
+  "qwen38-flash-xhigh": {
+   "measure": "|estimate_pose - harness_prior| (the previous report dead-reckoned through the step)",
+   "largest": [
+    {
+     "seed": 3001,
+     "step": 41,
+     "jump_m": 0.2501999200639361,
+     "pose_source": "odometry",
+     "tools": [
+      "compose_odometry"
+     ],
+     "kind": "other report",
+     "fallback": false
+    },
+    {
+     "seed": 4001,
+     "step": 105,
+     "jump_m": 0.20058125691892903,
+     "pose_source": "position_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "fix_pose"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4003,
+     "step": 76,
+     "jump_m": 0.19527026679626688,
+     "pose_source": "beacon_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose",
+      "predict_observation"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4002,
+     "step": 125,
+     "jump_m": 0.19505392899920396,
+     "pose_source": "odometry",
+     "tools": [],
+     "kind": "other report",
+     "fallback": false
+    },
+    {
+     "seed": 4002,
+     "step": 107,
+     "jump_m": 0.1764594559381173,
+     "pose_source": "beacon_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4002,
+     "step": 67,
+     "jump_m": 0.15380581637806715,
+     "pose_source": "beacon_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4001,
+     "step": 60,
+     "jump_m": 0.14871228260663477,
+     "pose_source": "position_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose",
+      "update_beacon",
+      "update_beacon"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4003,
+     "step": 79,
+     "jump_m": 0.1362441844408927,
+     "pose_source": "beacon_fix",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "gate_detection",
+      "fix_pose"
+     ],
+     "kind": "claimed fix with fix_pose",
+     "fallback": false
+    }
+   ],
+   "beyond_m": 0.5,
+   "beyond_by_kind": {}
+  },
+  "gemma4-26b": {
+   "measure": "|estimate_pose - harness_prior| (the previous report dead-reckoned through the step)",
+   "largest": [
+    {
+     "seed": 4002,
+     "step": 65,
+     "jump_m": 2.3489767183686734,
+     "pose_source": "position_fix",
+     "tools": [],
+     "kind": "claimed fix without fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4002,
+     "step": 66,
+     "jump_m": 2.317141279193731,
+     "pose_source": "position_fix",
+     "tools": [],
+     "kind": "claimed fix without fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4003,
+     "step": 98,
+     "jump_m": 2.2945081925895563,
+     "pose_source": "position_fix",
+     "tools": [],
+     "kind": "claimed fix without fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 3002,
+     "step": 57,
+     "jump_m": 1.6193962501558894,
+     "pose_source": "position_fix",
+     "tools": [],
+     "kind": "claimed fix without fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4001,
+     "step": 75,
+     "jump_m": 1.5638980042586668,
+     "pose_source": "position_fix",
+     "tools": [],
+     "kind": "claimed fix without fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4002,
+     "step": 117,
+     "jump_m": 1.4666465074372534,
+     "pose_source": "position_fix",
+     "tools": [],
+     "kind": "claimed fix without fix_pose",
+     "fallback": false
+    },
+    {
+     "seed": 4002,
+     "step": 32,
+     "jump_m": 1.1443928115799662,
+     "pose_source": "prior_kept",
+     "tools": [
+      "compose_odometry",
+      "gate_detection",
+      "fix_pose",
+      "exploration_summary"
+     ],
+     "kind": "other report",
+     "fallback": false
+    },
+    {
+     "seed": 1001,
+     "step": 43,
+     "jump_m": 1.1112248507428544,
+     "pose_source": "position_fix",
+     "tools": [],
+     "kind": "claimed fix without fix_pose",
+     "fallback": false
+    }
+   ],
+   "beyond_m": 0.5,
+   "beyond_by_kind": {
+    "claimed fix without fix_pose": 11,
+    "other report": 1
+   }
+  }
  }
 }

@@ -1,13 +1,15 @@
 """Copy run folders keeping only what tools/real_replay.py analyze reads: run headers, the spend ledger, and per row
-step, seed, estimate_pose, seconds, fallback, error, cost_usd, config, fix_verified, checks.valid/repaired_chars,
+step, seed, estimate_pose, seconds, fallback, error, cost_usd, config, fix_verified, harness_prior, checks.valid/repaired_chars,
 report.pose_source, the calls' tool names and compose_odometry's forward/left/turn arguments. Usage: python3 trim_runs.py SRC_RUNS DST_RUNS FOLDER [FOLDER ...]
-AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: helper for the M3.T19 real-log replay analysis."""
+AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: helper for the M3.T19 real-log replay analysis; 2026-11-27:
+keeps harness_prior."""
 import json
 import os
 import shutil
 import sys
 
-KEEP = ("step", "seed", "estimate_pose", "seconds", "fallback", "error", "cost_usd", "config", "fix_verified")
+KEEP = ("step", "seed", "estimate_pose", "seconds", "fallback", "error", "cost_usd", "config", "fix_verified",
+        "harness_prior")
 
 
 def main():

@@ -24,7 +24,7 @@ oracle association, which the real logs do not have (their detections carry no t
 IDs).
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this tool; 2026-11-27: added the count of tag
-fixes claimed without a fix_pose call.
+fixes claimed without a fix_pose call, the jumps from the dead-reckoned prior and calls per step without `move`.
 """
 import argparse
 import collections
@@ -186,7 +186,12 @@ def behaviour(docs, runs, seeds, procedure="procedure"):
                     "errors": sum(1 for r in rows if r.get("error")),
                     "calls_per_step": sum(tools.values()) / len(rows), "tools": dict(tools.most_common()),
                     "tool_name_agreement_with_procedure": (agree / tot) if tot else None,
+                    "calls_per_step_without_move": sum(v for k, v in tools.items() if k != "move") / len(rows),
                     "fix_claims": sum(1 for r in rows if (r.get("report") or {}).get("pose_source") in FIXES + ("relocalised",)),
+                    "fix_claims_relocalised": sum(1 for r in rows if (r.get("report") or {}).get("pose_source") == "relocalised"),
+                    "fix_claims_without_any_call": sum(
+                        1 for r in rows if (r.get("report") or {}).get("pose_source") in FIXES + ("relocalised",)
+                        and not r.get("calls")),
                     "fix_claims_without_fix_pose": sum(
                         1 for r in rows if (r.get("report") or {}).get("pose_source") in FIXES + ("relocalised",)
                         and not any(c.get("tool") == "fix_pose" for c in r.get("calls") or [])),
@@ -268,6 +273,33 @@ def slip_steps(docs, runs, seeds, arms):
     return {"count": len(out), "steps": out,
             "rule": "prompts/robot_system_prompt_v3.3-room.txt rule 2: compose_odometry with forward_m = left_m = 0 if "
                     "the odometry quality is slip_suspected; the coded procedure (kinsim_lite) has no such rule"}
+
+
+def jumps(docs, runs, seeds, arms, top=8, big_m=0.5):
+    """Per model, the steps where its estimate lands farthest from the dead-reckoned prior the harness logs for that
+    step (`harness_prior`: the arm's previous report composed with the step's odometry), largest first, and the
+    jumps beyond big_m by kind: a tag fix claimed without a fix_pose call that step, a claimed fix with fix_pose, any
+    other report."""
+    out = {}
+    for a in arms:
+        rows = []
+        for s in seeds:
+            for r in _rows(runs[a], s):
+                hp, e = r.get("harness_prior"), r.get("estimate_pose")
+                if not hp or not e:
+                    continue
+                src = (r.get("report") or {}).get("pose_source")
+                tools = [c.get("tool") for c in r.get("calls") or []]
+                claim = src in FIXES + ("relocalised",)
+                kind = ("claimed fix without fix_pose" if claim and "fix_pose" not in tools else
+                        "claimed fix with fix_pose" if claim else "other report")
+                rows.append({"seed": s, "step": r["step"], "jump_m": math.hypot(e["x_m"] - hp["x_m"], e["y_m"] - hp["y_m"]),
+                             "pose_source": src, "tools": tools, "kind": kind, "fallback": bool(r.get("fallback"))})
+        rows.sort(key=lambda x: -x["jump_m"])
+        out[a] = {"measure": "|estimate_pose - harness_prior| (the previous report dead-reckoned through the step)",
+                  "largest": rows[:top], "beyond_m": big_m,
+                  "beyond_by_kind": dict(collections.Counter(x["kind"] for x in rows if x["jump_m"] > big_m))}
+    return out
 
 
 # ---------------------------------------------------------------- markdown
@@ -355,7 +387,23 @@ def markdown(res):
           "a `fix_pose` call that step (a fix the arm did not compute with the tools):", ""]
     for a, b in res["behaviour"].items():
         if a != "procedure":
-            L.append("- %s: %d claimed, %d without `fix_pose`" % (display(a), b["fix_claims"], b["fix_claims_without_fix_pose"]))
+            L.append("- %s: %d claimed (%d labelled relocalised), %d without `fix_pose`, %d of them with no tool call at all" % (
+                display(a), b["fix_claims"], b["fix_claims_relocalised"], b["fix_claims_without_fix_pose"],
+                b["fix_claims_without_any_call"]))
+    L += ["", "The count checks that `fix_pose` was called that step, not that it succeeded; the harness verifies full "
+          "(beacon) fixes only. `calls per step` above counts every call, the refused `move` calls included; without "
+          "them: " + ", ".join("%s %.2f" % (display(a), b["calls_per_step_without_move"])
+                               for a, b in res["behaviour"].items()) + "."]
+    jm = res.get("jumps") or {}
+    if jm:
+        L += ["", "Largest jumps from the dead-reckoned prior (the harness's `harness_prior`: the arm's previous report "
+              "composed with the step's odometry), main episodes:", ""]
+        for a, j in jm.items():
+            L.append("- %s: beyond %.1f m by kind: %s; largest: %s" % (
+                display(a), j["beyond_m"], ", ".join("%s %d" % kv for kv in sorted(j["beyond_by_kind"].items())) or "none",
+                "; ".join("%d/%d %.2f m (%s, %s)" % (x["seed"], x["step"], x["jump_m"], x["pose_source"],
+                                                    "no tool call" if not x["tools"] else "%d calls" % len(x["tools"]))
+                          for x in j["largest"])))
     L += ["", "Pose source as the procedure's (the steps where both reported one; the study's pose-source agreement), and "
           "the arm's differences from the procedure:", ""]
     for a, b in res["behaviour"].items():
@@ -426,7 +474,8 @@ def main(argv=None):
            "behaviour_flagged": behaviour(docs, runs, flagged) if flagged else None,
            "trace_arms": complete, "traces": {str(s): v for s, v in traces(docs, ate, seeds, complete).items()},
            "ate_per_seed_m": {str(s): {x: ate[s][x]["ate_m"] for x in ate[s]} for s in seeds},
-           "slip_suspected": slip_steps(docs, runs, seeds, [x for x in complete if x not in ("B0", "B2")])}
+           "slip_suspected": slip_steps(docs, runs, seeds, [x for x in complete if x not in ("B0", "B2")]),
+           "jumps": jumps(docs, runs, main_seeds, [x for x in complete if x not in ("B0", "B2")])}
     md = markdown(res)
     pathlib.Path(a.out + ".json").write_text(json.dumps(res, indent=1, default=float))
     pathlib.Path(a.out + ".md").write_text(md)
