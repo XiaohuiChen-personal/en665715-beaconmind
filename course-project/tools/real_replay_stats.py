@@ -24,7 +24,8 @@ oracle association, which the real logs do not have (their detections carry no t
 IDs).
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: wrote this tool; 2026-11-27: added the count of tag
-fixes claimed without a fix_pose call, the jumps from the dead-reckoned prior and calls per step without `move`.
+fixes claimed without a fix_pose call, the jumps from the dead-reckoned prior, calls per step without `move` and
+the error growth by kind of step.
 """
 import argparse
 import collections
@@ -302,6 +303,47 @@ def jumps(docs, runs, seeds, arms, top=8, big_m=0.5):
     return out
 
 
+GROWTH_KINDS = ("tag fix claimed without fix_pose", "fallback", "no tool call and no fix claimed", "everything else")
+
+
+def error_growth_by_step_kind(docs, runs, seeds, arms):
+    """Per model, over `seeds`: each step's growth of the position error against the batch's tracked (logged) truth
+    (this step's error minus the previous step's, from zero before step 0), summed by the kind of step, taken in the
+    order of GROWTH_KINDS: a tag fix claimed (beacon_fix, position_fix or relocalised) without a fix_pose call that
+    step; a fallback; a step with no tool call at all and no fix claimed; everything else. The parts add up to the
+    summed final error. The tracked truth carries the car's odometry between tag fixes, the same odometry B2 composes,
+    so growth on a step reflects disagreement with that track as well as with the car."""
+    out = {}
+    for a in arms:
+        steps, growth, total = collections.Counter(), collections.Counter(), 0.0
+        for s in seeds:
+            recs = docs[s]["records"]
+            rows = _rows(runs[a], s)
+            if len(rows) != len(recs):
+                continue
+            prev = 0.0
+            for r, rec in zip(rows, recs):
+                e = math.hypot(r["estimate_pose"]["x_m"] - rec["truth"]["x_m"], r["estimate_pose"]["y_m"] - rec["truth"]["y_m"])
+                src = (r.get("report") or {}).get("pose_source")
+                tools = [c.get("tool") for c in r.get("calls") or []]
+                if src in FIXES + ("relocalised",) and "fix_pose" not in tools:
+                    kind = GROWTH_KINDS[0]
+                elif r.get("fallback"):
+                    kind = GROWTH_KINDS[1]
+                elif not tools:
+                    kind = GROWTH_KINDS[2]
+                else:
+                    kind = GROWTH_KINDS[3]
+                steps[kind] += 1
+                growth[kind] += e - prev
+                prev = e
+            total += prev
+        out[a] = {"truth": "the batch's tracked (logged) truth", "kinds": {k: {"steps": steps[k], "growth_m": growth[k]}
+                                                                          for k in GROWTH_KINDS},
+                  "total_final_m": total, "steps": sum(steps.values())}
+    return out
+
+
 # ---------------------------------------------------------------- markdown
 
 def _diff_md(rows, display, what):
@@ -394,6 +436,17 @@ def markdown(res):
           "(beacon) fixes only. `calls per step` above counts every call, the refused `move` calls included; without "
           "them: " + ", ".join("%s %.2f" % (display(a), b["calls_per_step_without_move"])
                                for a, b in res["behaviour"].items()) + "."]
+    eg = res.get("error_growth_by_step_kind") or {}
+    if eg:
+        L += ["", "Growth of the position error against the tracked truth, by kind of step (nine main episodes; each "
+              "step's error minus the previous step's, so the parts add up to the summed final error). The tracked "
+              "truth carries the car's odometry between tag fixes, the same odometry B2 composes:", "",
+              "| Arm | " + " | ".join("%s: steps, cm" % k for k in GROWTH_KINDS) + " | summed final error (cm) |",
+              "| --- | " + " | ".join("---" for _ in GROWTH_KINDS) + " | --- |"]
+        for a, v in eg.items():
+            L.append("| %s | %s | %s |" % (display(a), " | ".join(
+                "%d, %+.0f" % (v["kinds"][k]["steps"], 100 * v["kinds"][k]["growth_m"]) for k in GROWTH_KINDS),
+                "%.0f" % (100 * v["total_final_m"]) if v["total_final_m"] is not None else ""))
     jm = res.get("jumps") or {}
     if jm:
         L += ["", "Largest jumps from the dead-reckoned prior (the harness's `harness_prior`: the arm's previous report "
@@ -475,7 +528,9 @@ def main(argv=None):
            "trace_arms": complete, "traces": {str(s): v for s, v in traces(docs, ate, seeds, complete).items()},
            "ate_per_seed_m": {str(s): {x: ate[s][x]["ate_m"] for x in ate[s]} for s in seeds},
            "slip_suspected": slip_steps(docs, runs, seeds, [x for x in complete if x not in ("B0", "B2")]),
-           "jumps": jumps(docs, runs, main_seeds, [x for x in complete if x not in ("B0", "B2")])}
+           "jumps": jumps(docs, runs, main_seeds, [x for x in complete if x not in ("B0", "B2")]),
+           "error_growth_by_step_kind": error_growth_by_step_kind(docs, runs, main_seeds,
+                                                                  [x for x in complete if x not in ("B0", "B2")])}
     md = markdown(res)
     pathlib.Path(a.out + ".json").write_text(json.dumps(res, indent=1, default=float))
     pathlib.Path(a.out + ".md").write_text(md)

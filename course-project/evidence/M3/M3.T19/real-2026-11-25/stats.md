@@ -158,6 +158,14 @@ Tag fixes claimed (pose source beacon_fix, position_fix or relocalised) and how 
 
 The count checks that `fix_pose` was called that step, not that it succeeded; the harness verifies full (beacon) fixes only. `calls per step` above counts every call, the refused `move` calls included; without them: procedure 3.20, Opus 5.5 3.30, Qwen3.8 3.92, Gemma 4 2.50.
 
+Growth of the position error against the tracked truth, by kind of step (nine main episodes; each step's error minus the previous step's, so the parts add up to the summed final error). The tracked truth carries the car's odometry between tag fixes, the same odometry B2 composes:
+
+| Arm | tag fix claimed without fix_pose: steps, cm | fallback: steps, cm | no tool call and no fix claimed: steps, cm | everything else: steps, cm | summed final error (cm) |
+| --- | --- | --- | --- | --- | --- |
+| Opus 5.5 | 0, +0 | 0, +0 | 4, +0 | 801, +113 | 113 |
+| Qwen3.8 | 0, +0 | 2, +2 | 10, +20 | 793, +119 | 141 |
+| Gemma 4 | 74, +1188 | 37, +33 | 182, +33 | 512, +21 | 1275 |
+
 Largest jumps from the dead-reckoned prior (the harness's `harness_prior`: the arm's previous report composed with the step's odometry), main episodes:
 
 - Opus 5.5: beyond 0.5 m by kind: none; largest: 4003/120 0.30 m (beacon_fix, 7 calls); 4001/82 0.29 m (beacon_fix, 4 calls); 3001/41 0.25 m (odometry, 1 calls); 4001/81 0.24 m (prior_kept, 4 calls); 4003/76 0.21 m (beacon_fix, 6 calls); 4002/107 0.17 m (beacon_fix, 5 calls); 4003/138 0.16 m (beacon_fix, 5 calls); 4001/104 0.16 m (position_fix, 3 calls)

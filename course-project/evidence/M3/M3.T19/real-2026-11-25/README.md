@@ -249,6 +249,20 @@ episodes, by 77 to 464 cm, and 0.8 and 2.2 cm better on the other two (2002 and 
   - **Beyond 0.5 m:** Gemma has 11 jumps that are fixes claimed without `fix_pose` and 1 of the other kind. Opus and
     Qwen3.8 have none; their largest are 0.30 and 0.25 m.
   - Over the nine main episodes it claimed 179 tag fixes, 74 of them without `fix_pose`. Opus and Qwen3.8 never did.
+  - **Where the error grows.** This splits each step's growth of the position error (its error minus the previous
+    step's) by kind of step, over the nine main episodes. It is against the batch's tracked truth, which carries the
+    car's odometry between tag fixes (the same odometry B2 composes), so it measures disagreement with that track as
+    much as with the car. The `error_growth_by_step_kind` field of [`stats.json`](stats.json) has it; the parts add up
+    to the summed final error.
+
+    | Arm | fix claimed without `fix_pose` | fallback | no tool call, no fix claimed | everything else | summed final error |
+    | --- | --- | --- | --- | --- | --- |
+    | Opus 5.5 | 0 steps, +0 cm | 0, +0 | 4, +0 | 801, +113 | 113 cm |
+    | Qwen3.8 | 0, +0 | 2, +2 | 10, +20 | 793, +119 | 141 cm |
+    | Gemma 4 | 74, +1,188 | 37, +33 | 182, +33 | 512, +21 | 1,275 cm |
+
+    So 93 % of Gemma's summed final error (1,188 of 1,275 cm) grows on the 74 steps where it claimed a tag fix it did
+    not compute.
 - **Its pose source differs from the procedure's on 43 % of steps.** It often keeps its prior, or composes odometry
   only, where the procedure takes a fix, and sometimes the reverse.
 - **It skipped the `compose_odometry` tool on 264 of the 840 moved steps.** On the turns among them with no fix, it
@@ -374,4 +388,4 @@ folder keeps the run headers, logs, scripts and results, as text and JSON only.
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the replays and the chains, repaired the crash's ledger,
 wrote the analysis, this summary and the scripts in this folder. 2026-11-27: scored Gemma 4, wrote
-the findings for all three models and answered review findings 46 to 51.
+the findings for all three models and answered review findings 46 to 51 and 56.

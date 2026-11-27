@@ -2995,5 +2995,76 @@
     "other report": 1
    }
   }
+ },
+ "error_growth_by_step_kind": {
+  "claude-opus-5-5": {
+   "truth": "the batch's tracked (logged) truth",
+   "kinds": {
+    "tag fix claimed without fix_pose": {
+     "steps": 0,
+     "growth_m": 0
+    },
+    "fallback": {
+     "steps": 0,
+     "growth_m": 0
+    },
+    "no tool call and no fix claimed": {
+     "steps": 4,
+     "growth_m": 0.0
+    },
+    "everything else": {
+     "steps": 801,
+     "growth_m": 1.1344956774945882
+    }
+   },
+   "total_final_m": 1.1344956774945885,
+   "steps": 805
+  },
+  "qwen38-flash-xhigh": {
+   "truth": "the batch's tracked (logged) truth",
+   "kinds": {
+    "tag fix claimed without fix_pose": {
+     "steps": 0,
+     "growth_m": 0
+    },
+    "fallback": {
+     "steps": 2,
+     "growth_m": 0.017924507052308133
+    },
+    "no tool call and no fix claimed": {
+     "steps": 10,
+     "growth_m": 0.1993671189168109
+    },
+    "everything else": {
+     "steps": 793,
+     "growth_m": 1.1916926044616636
+    }
+   },
+   "total_final_m": 1.408984230430783,
+   "steps": 805
+  },
+  "gemma4-26b": {
+   "truth": "the batch's tracked (logged) truth",
+   "kinds": {
+    "tag fix claimed without fix_pose": {
+     "steps": 74,
+     "growth_m": 11.875671248085007
+    },
+    "fallback": {
+     "steps": 37,
+     "growth_m": 0.3329146716193788
+    },
+    "no tool call and no fix claimed": {
+     "steps": 182,
+     "growth_m": 0.32996748963683176
+    },
+    "everything else": {
+     "steps": 512,
+     "growth_m": 0.21163223007654514
+    }
+   },
+   "total_final_m": 12.750185639417763,
+   "steps": 805
+  }
  }
 }

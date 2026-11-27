@@ -147,3 +147,24 @@ def test_jumps_are_measured_from_the_harness_prior_and_sorted_by_kind(tmp_path):
     assert [x["step"] for x in j["largest"]] == [1, 3, 2]
     assert j["largest"][0]["jump_m"] == pytest.approx(1.2) and j["largest"][0]["kind"] == "claimed fix without fix_pose"
     assert j["beyond_by_kind"] == {"claimed fix without fix_pose": 1, "other report": 1}
+
+
+def test_error_growth_by_step_kind_adds_up_to_the_final_error(tmp_path):
+    """Review finding 56: each step's error growth against the tracked truth, by kind of step; the parts sum to the
+    final error."""
+    p = lambda x: {"x_m": x, "y_m": 0.0, "theta_deg": 0.0}  # noqa: E731
+    recs = [{"step": k, "truth": p(0.0)} for k in range(4)]
+    run = tmp_path / "gemma"
+    run.mkdir()
+    rows = [{"step": 0, "estimate_pose": p(0.02), "report": {"pose_source": "odometry"}, "calls": [{"tool": "compose_odometry"}]},
+            {"step": 1, "estimate_pose": p(0.50), "report": {"pose_source": "position_fix"}, "calls": []},
+            {"step": 2, "estimate_pose": p(0.55), "report": None, "fallback": True, "calls": []},
+            {"step": 3, "estimate_pose": p(0.60), "report": {"pose_source": "odometry"}, "calls": []}]
+    (run / "seed_1.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    v = rs.error_growth_by_step_kind({1: {"records": recs}}, {"gemma4-26b": str(run)}, [1], ["gemma4-26b"])["gemma4-26b"]
+    k = v["kinds"]
+    assert k["tag fix claimed without fix_pose"]["steps"] == 1 and k["tag fix claimed without fix_pose"]["growth_m"] == pytest.approx(0.48)
+    assert k["fallback"]["steps"] == 1 and k["fallback"]["growth_m"] == pytest.approx(0.05)
+    assert k["no tool call and no fix claimed"]["growth_m"] == pytest.approx(0.05)
+    assert k["everything else"]["growth_m"] == pytest.approx(0.02)
+    assert v["total_final_m"] == pytest.approx(0.60) and sum(x["growth_m"] for x in k.values()) == pytest.approx(0.60)
