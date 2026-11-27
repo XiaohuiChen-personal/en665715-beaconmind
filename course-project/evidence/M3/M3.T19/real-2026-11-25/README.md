@@ -182,7 +182,8 @@ Mean ranks among the models (1 = smallest error): Qwen3.8 1.44, Opus 5.5 1.81, G
 - **Tag fixes claimed without a `fix_pose` call that step:** Opus 0 of 329, Qwen3.8 0 of 326, Gemma 4 74 of 179 (76
   over all ten episodes).
   - Gemma's 179 include 2 claims under its own label "relocalised". 72 of its 74 had no tool call at all.
-  - All 37 of its beacon-fix and "relocalised" claims without a call carry `fix_verified: false` in the run files.
+  - All 36 of its beacon-fix and "relocalised" claims without `fix_pose` in the nine main episodes (35 of them with no
+    tool call at all; 37 with the flagged episode) carry `fix_verified: false` in the run files.
   - **The limit of this count:** it checks that `fix_pose` was called that step, not that the call succeeded, and the
     harness verifies full (beacon) fixes only.
 - **Gemma's wall time:** 34.25 h, from 23:09:36 UTC on 11-25 to 09:24:36 on 11-27.
@@ -389,4 +390,4 @@ folder keeps the run headers, logs, scripts and results, as text and JSON only.
 
 AI-assisted: Claude Opus 5.5 via Claude Code, 2026-11-25: ran the replays and the chains, repaired the crash's ledger,
 wrote the analysis, this summary and the scripts in this folder. 2026-11-27: scored Gemma 4, wrote
-the findings for all three models and answered review findings 46 to 51 and 56.
+the findings for all three models and answered review findings 46 to 51, 56 and 58.
