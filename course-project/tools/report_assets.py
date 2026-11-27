@@ -731,6 +731,17 @@ def build_numbers(src):
         b = RS["behaviour"][arm]
         put("rbeh.%s.claims" % k, b["fix_claims"], snote + " behaviour %s fix_claims" % arm)
         put("rbeh.%s.claims-nofix" % k, b["fix_claims_without_fix_pose"], snote + " behaviour %s fix_claims_without_fix_pose" % arm)
+    EG = RS["error_growth_by_step_kind"]
+    eg = EG["gemma4-26b"]
+    kind = eg["kinds"]["tag fix claimed without fix_pose"]
+    if abs(sum(k["growth_m"] for k in eg["kinds"].values()) - eg["total_final_m"]) > 1e-6:
+        raise SystemExit("report_assets: Gemma 4's error growth by step kind does not add up to its total")
+    put("rgrow.gemma.claimed.steps", kind["steps"], snote + " error_growth_by_step_kind gemma4-26b, fix claimed without fix_pose: steps")
+    put("rgrow.gemma.claimed.cm", thousands(kind["growth_m"] * 100), snote + " ... growth (m to cm)")
+    put("rgrow.gemma.total.cm", thousands(eg["total_final_m"] * 100), snote + " ... total_final_m (m to cm)")
+    put("rgrow.gemma.claimed.pct", "%.0f" % (100 * kind["growth_m"] / eg["total_final_m"]), snote + " ... share of the total (%)")
+    for arm, k in (("claude-opus-5-5", "opus"), ("qwen38-flash-xhigh", "qwen")):
+        put("rgrow.%s.total.cm" % k, "%.1f" % (EG[arm]["total_final_m"] * 100), snote + " error_growth_by_step_kind %s total_final_m (cm)" % arm)
     J = RS["jumps"]
     gl = J["gemma4-26b"]["largest"]
     put("rjump.gemma.top.n", len(gl), snote + " jumps gemma4-26b largest (count)")

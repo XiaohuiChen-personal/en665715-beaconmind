@@ -577,6 +577,12 @@ reh.steps.median | 56 | evidence/M3/M3.T12/rehearsal-b2-tables.md table 1c, C20 
 repaired.gemma | 0 | study_summary.json per_seed repaired_reports, summed
 repaired.opus | 0 | study_summary.json per_seed repaired_reports, summed
 repaired.qwen | 97 | study_summary.json per_seed repaired_reports, summed
+rgrow.gemma.claimed.cm | 1,188 | evidence/M3/M3.T19/real-2026-11-25/stats.json ... growth (m to cm)
+rgrow.gemma.claimed.pct | 93 | evidence/M3/M3.T19/real-2026-11-25/stats.json ... share of the total (%)
+rgrow.gemma.claimed.steps | 74 | evidence/M3/M3.T19/real-2026-11-25/stats.json error_growth_by_step_kind gemma4-26b, fix claimed without fix_pose: steps
+rgrow.gemma.total.cm | 1,275 | evidence/M3/M3.T19/real-2026-11-25/stats.json ... total_final_m (m to cm)
+rgrow.opus.total.cm | 113.4 | evidence/M3/M3.T19/real-2026-11-25/stats.json error_growth_by_step_kind claude-opus-5-5 total_final_m (cm)
+rgrow.qwen.total.cm | 140.9 | evidence/M3/M3.T19/real-2026-11-25/stats.json error_growth_by_step_kind qwen38-flash-xhigh total_final_m (cm)
 rjump.beyond-m | 0.5 | evidence/M3/M3.T19/real-2026-11-25/stats.json jumps beyond_m
 rjump.gemma.beyond.claimed | 11 | evidence/M3/M3.T19/real-2026-11-25/stats.json jumps: Gemma 4 beyond, claimed without fix_pose
 rjump.gemma.beyond.other | 1 | evidence/M3/M3.T19/real-2026-11-25/stats.json jumps: Gemma 4 beyond, other kinds

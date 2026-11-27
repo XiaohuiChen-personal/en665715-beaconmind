@@ -862,7 +862,12 @@ called, not that it succeeded (\path{evidence/M3/M3.T19/real-2026-11-25/stats.md
 \texttt{move} calls were real moves, all refused by the replay. Over whole episodes its trajectory error exceeds the
 procedure's by \bmnum{rstat.ate.gemma-b2.est}\,cm (\bmnum{rstat.ate.gemma-b2.lo} to \bmnum{rstat.ate.gemma-b2.hi},
 Hodges--Lehmann, against the tracked truth). This resembles its failure in the simulated study
-(Section~\ref{sec:gemma}): a pose the model asserts rather than computes with a tool.
+(Section~\ref{sec:gemma}): a pose the model asserts rather than computes with a tool. On the real logs nearly all
+of its error grew at those assertions: against the tracked truth, which carries the car's odometry between tag
+fixes, its position errors summed over the nine episodes grew by \bmnum{rgrow.gemma.claimed.cm} of
+\bmnum{rgrow.gemma.total.cm}\,cm (\bmnum{rgrow.gemma.claimed.pct}\,\%) on the \bmnum{rgrow.gemma.claimed.steps} steps
+with a tag fix claimed without \texttt{fix\_pose}, against totals of \bmnum{rgrow.opus.total.cm}\,cm for Opus and
+\bmnum{rgrow.qwen.total.cm}\,cm for Qwen3.8.
 
 \textbf{Paired differences} (exploratory and not pre-registered: the pre-registration keeps the real logs
 descriptive, and this endpoint was chosen after the data; estimates with exact 95\,\% intervals, no tests;
@@ -1026,7 +1031,8 @@ episode; step by step they left the procedure's estimate for a few steps in \bmn
 the next fix; whether a model adds anything when the odometry
 is this poor is not answered by episodes in which it did not. So did the study's finding on Gemma~4: it again fell
 behind dead reckoning, on \bmnum{rstat.gemma-b0.above} of the \bmnum{rstat.n} episodes, this time through tag fixes it
-claimed without computing them.
+claimed without computing them, where \bmnum{rgrow.gemma.claimed.pct}\,\% of its error growth against the tracked truth
+(which carries the car's odometry between fixes) occurred.
 
 \subsection{Discussion and Limitations}\label{sec:limits}
 In this simulated setting an LLM agent kept a landmark-SLAM estimate that beats dead reckoning, but the
